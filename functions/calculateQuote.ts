@@ -123,9 +123,22 @@ Deno.serve(async (req) => {
       conditionSurcharge = cogsSurcharges.not_sure_inspection || 20;
     }
 
+    // Apply seasonal multiplier to COGS (internal only, not base price)
+    let rainySeasonChemAdder = 0;
+    if (isRainySeason) {
+      rainySeasonChemAdder = seasonality.rainySeasonChemicalAdder || 0.05;
+    }
+
+    let pollenSeasonChemAdder = 0;
+    if (isPollenSeason && questionnaireData.environmentalFactors?.includes('frequent_pollen')) {
+      pollenSeasonChemAdder = seasonality.pollenSeasonChemicalAdder || 0.04;
+    }
+
+    const totalSeasonalChemMultiplier = seasonalChemMultiplier * (1 + rainySeasonChemAdder + pollenSeasonChemAdder);
+
     // Calculate total estimated monthly COGS
     const estimatedMonthlyChemicalCOGS = 
-      (baseCOGS * enclosureCogsMultiplier * usageCogsMultiplier * petsCogsMultiplier * (1 + envCogsAdder) * chlorinationCogsAdjustment) 
+      (baseCOGS * enclosureCogsMultiplier * usageCogsMultiplier * petsCogsMultiplier * (1 + envCogsAdder) * chlorinationCogsAdjustment * totalSeasonalChemMultiplier) 
       + conditionSurcharge 
       + saltCellWearReserve;
 
