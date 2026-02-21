@@ -51,6 +51,7 @@ import Home from './pages/Home';
 import Admin from './pages/Admin';
 import Onboarding from './pages/Onboarding';
 import QuoteResults from './pages/QuoteResults';
+import TechnicianSummary from './pages/TechnicianSummary';
 import __Layout from './Layout.jsx';
 
 
@@ -59,6 +60,7 @@ export const PAGES = {
     "Admin": Admin,
     "Onboarding": Onboarding,
     "QuoteResults": QuoteResults,
+    "TechnicianSummary": TechnicianSummary,
 }
 
 export const pagesConfig = {
