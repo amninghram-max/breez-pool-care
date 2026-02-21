@@ -514,6 +514,17 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Upsell 4: Pollen season filter care
+    if (isPollenSeason && questionnaireData.environmentalFactors?.includes('frequent_pollen')) {
+      upsellSuggestions.push({
+        id: 'pollen_filter_care',
+        title: 'Filter Rinse/Check Cadence',
+        reason: 'Pollen season increases filter load; regular checks prevent clogs and maintain circulation.',
+        price: 0,
+        accepted: false
+      });
+    }
+
     // Limit to 3 upsells
     upsellSuggestions = upsellSuggestions.slice(0, 3);
 
