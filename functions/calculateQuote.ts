@@ -385,6 +385,35 @@ Deno.serve(async (req) => {
       riskScore += seasonality.pollenSeasonRiskBoost || 3;
     }
 
+    // Summer algae risk boosts
+    let summerRiskBoost = 0;
+    if (isSummerHighRisk) {
+      summerRiskBoost += summerAlgae.baselineRiskBoost || 6;
+      if (questionnaireData.enclosure === 'unscreened') {
+        summerRiskBoost += summerAlgae.unscreenedRiskBoost || 6;
+      }
+      if (questionnaireData.environmentalFactors?.includes('heavy_debris')) {
+        summerRiskBoost += summerAlgae.heavyDebrisRiskBoost || 5;
+      }
+      if (questionnaireData.petsAccess && questionnaireData.petSwimFrequency === 'frequently') {
+        summerRiskBoost += summerAlgae.petsFrequentRiskBoost || 4;
+      }
+      if (questionnaireData.useFrequency === 'daily' || questionnaireData.useFrequency === 'several_week') {
+        summerRiskBoost += summerAlgae.heavyUsageRiskBoost || 4;
+      }
+      if (questionnaireData.knownIssues?.includes('algae_problems')) {
+        summerRiskBoost += summerAlgae.algaeHistoryRiskBoost || 8;
+      }
+      riskScore += summerRiskBoost;
+    }
+
+    // Storm mode risk boost
+    if (isStormModeActive && stormSeverityLevel === 'hurricane') {
+      riskScore += 10;
+    } else if (isStormModeActive && stormSeverityLevel === 'severe') {
+      riskScore += 5;
+    }
+
     riskScore = Math.min(100, Math.max(0, riskScore));
     const riskLevel = riskScore < 40 ? 'low' : riskScore < 70 ? 'medium' : 'high';
 
