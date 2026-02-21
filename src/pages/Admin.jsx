@@ -487,6 +487,87 @@ export default function Admin() {
           </Card>
         </TabsContent>
 
+        {/* MARGIN TAB */}
+        <TabsContent value="margin" className="space-y-4 mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Profit Margin Protection</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-900 font-semibold">
+                    These settings ensure quotes meet profitability targets while framing adjustments as "high-maintenance conditions" to clients.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Label>Target Gross Margin (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      defaultValue={(settings.profitMargin?.target_margin_percent || 0.55) * 100}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        profitMargin: {...(prev.profitMargin || {}), target_margin_percent: parseFloat(e.target.value) / 100}
+                      }))}
+                      className="mt-2"
+                    />
+                    <p className="text-xs text-gray-500 mt-2">Recommended: 55%</p>
+                  </div>
+                  <div>
+                    <Label>Minimum Gross Margin (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      defaultValue={(settings.profitMargin?.minimum_margin_percent || 0.45) * 100}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        profitMargin: {...(prev.profitMargin || {}), minimum_margin_percent: parseFloat(e.target.value) / 100}
+                      }))}
+                      className="mt-2"
+                    />
+                    <p className="text-xs text-gray-500 mt-2">Hard floor: auto-adjust price to meet this</p>
+                  </div>
+                  <div>
+                    <Label>Labor Cost Per Hour ($)</Label>
+                    <Input
+                      type="number"
+                      defaultValue={settings.profitMargin?.labor_cost_per_hour || 50}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        profitMargin: {...(prev.profitMargin || {}), labor_cost_per_hour: parseFloat(e.target.value)}
+                      }))}
+                      className="mt-2"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-6">
+                <h4 className="font-semibold text-gray-900 mb-4">Labor Minutes Per Visit by Pool Size</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {['under_10k', '10_15k', '15_20k', '20_30k', '30k_plus'].map(size => (
+                    <div key={size}>
+                      <Label>{size.replace(/_/g, '-')} gallons</Label>
+                      <Input
+                        type="number"
+                        defaultValue={settings.profitMargin?.labor_minutes_per_visit?.[size] || 35}
+                        className="mt-2"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Button onClick={() => handleSave(settings)}>
+                Save Margin Settings
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* STORM TAB */}
         <TabsContent value="storm" className="space-y-4 mt-6">
           <Card>
