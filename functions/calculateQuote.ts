@@ -31,6 +31,31 @@ Deno.serve(async (req) => {
     const frequencyThresholds = settings.frequencyThresholds || {};
     const profitMargin = settings.profitMargin || {};
     const chemicalCosts = settings.chemicalCosts || {};
+    const seasonality = settings.seasonality || {};
+
+    // ============================================
+    // SEASONALITY DETECTION
+    // ============================================
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth() + 1; // 1-12
+
+    const peakStart = seasonality.peakSeasonStartMonth || 3;
+    const peakEnd = seasonality.peakSeasonEndMonth || 10;
+    const rainyStart = seasonality.rainySeasonStartMonth || 6;
+    const rainyEnd = seasonality.rainySeasonEndMonth || 9;
+    const pollenStart = seasonality.pollenSeasonStartMonth || 2;
+    const pollenEnd = seasonality.pollenSeasonEndMonth || 5;
+
+    // Determine season (peak or shoulder)
+    const isPeakSeason = (currentMonth >= peakStart && currentMonth <= peakEnd);
+    const seasonName = isPeakSeason ? 'peak' : 'shoulder';
+    const seasonalChemMultiplier = isPeakSeason 
+      ? (seasonality.peakSeasonChemicalMultiplier || 1.15)
+      : (seasonality.shoulderSeasonChemicalMultiplier || 0.95);
+
+    // Sub-season flags
+    const isRainySeason = (seasonality.enableRainySeasonLogic !== false) && (currentMonth >= rainyStart && currentMonth <= rainyEnd);
+    const isPollenSeason = (seasonality.enablePollenSeasonLogic !== false) && (currentMonth >= pollenStart && currentMonth <= pollenEnd);
 
     // ============================================
     // A) CALCULATE CHEMICAL COST ESTIMATOR (COGS)
