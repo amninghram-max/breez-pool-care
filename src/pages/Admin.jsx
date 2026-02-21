@@ -11,6 +11,7 @@ import { AlertCircle } from 'lucide-react';
 export default function Admin() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('pricing');
+  const [formData, setFormData] = useState({});
 
   const { data: user } = useQuery({
     queryKey: ['user'],
