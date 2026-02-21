@@ -373,8 +373,13 @@ Deno.serve(async (req) => {
     riskScore = Math.min(100, Math.max(0, riskScore));
     const riskLevel = riskScore < 40 ? 'low' : riskScore < 70 ? 'medium' : 'high';
 
-    // Adjust recommendation based on risk
+    // Adjust recommendation based on risk and seasonal thresholds
     if (riskScore >= weeklyRiskThreshold || chemDemandIndex >= weeklyChemThreshold) {
+      recommendedFrequency = 'weekly';
+    }
+
+    // In rainy season + unscreened + heavy debris, force weekly
+    if (isRainySeason && questionnaireData.enclosure === 'unscreened' && questionnaireData.environmentalFactors?.includes('heavy_debris')) {
       recommendedFrequency = 'weekly';
     }
 
