@@ -149,7 +149,8 @@ Deno.serve(async (req) => {
       { category: 'Environment adjustment', amount: Math.round((baseCOGS * envCogsAdder) * 100) / 100 },
       { category: 'Chlorination adjustment', amount: Math.round((baseCOGS * (chlorinationCogsAdjustment - 1)) * 100) / 100 },
       { category: 'Condition surcharge', amount: conditionSurcharge },
-      { category: 'Salt cell wear reserve', amount: saltCellWearReserve }
+      { category: 'Salt cell wear reserve', amount: saltCellWearReserve },
+      { category: `Seasonal multiplier (${seasonName}${isRainySeason ? ' + rainy' : ''}${isPollenSeason ? ' + pollen' : ''})`, amount: Math.round((baseCOGS * (totalSeasonalChemMultiplier - 1)) * 100) / 100 }
     );
 
     // Chemistry demand index (0-100 scale)
