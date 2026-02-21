@@ -362,6 +362,14 @@ Deno.serve(async (req) => {
       riskScore += riskWeights.issue_algae || 12;
     }
 
+    // Seasonal risk boosts
+    if (isRainySeason) {
+      riskScore += seasonality.rainySeasonRiskBoost || 5;
+    }
+    if (isPollenSeason && questionnaireData.environmentalFactors?.includes('frequent_pollen')) {
+      riskScore += seasonality.pollenSeasonRiskBoost || 3;
+    }
+
     riskScore = Math.min(100, Math.max(0, riskScore));
     const riskLevel = riskScore < 40 ? 'low' : riskScore < 70 ? 'medium' : 'high';
 
