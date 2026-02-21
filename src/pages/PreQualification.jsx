@@ -11,30 +11,35 @@ import { AlertCircle, Loader2, Check } from 'lucide-react';
 
 export default function PreQualification() {
   const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [quoteResult, setQuoteResult] = useState(null);
-  const [error, setError] = useState(null);
+      const [loading, setLoading] = useState(false);
+      const [quoteResult, setQuoteResult] = useState(null);
+      const [error, setError] = useState(null);
 
-  const [formData, setFormData] = useState({
-    poolSize: '',
-    poolType: '',
-    enclosure: '',
-    filterType: '',
-    chlorinationMethod: '',
-    chlorinatorType: '',
-    useFrequency: '',
-    petsAccess: false,
-    petSwimFrequency: 'none',
-    environmentalFactors: [],
-    poolCondition: '',
-    knownIssues: [],
-    equipment: [],
-    accessType: '',
-    accessNotes: '',
-    clientEmail: '',
-    clientPhone: '',
-    recommendedFrequency: 'weekly'
-  });
+      const [formData, setFormData] = useState({
+        poolSize: '',
+        poolType: '',
+        enclosure: '',
+        filterType: '',
+        chlorinationMethod: '',
+        chlorinatorType: '',
+        useFrequency: '',
+        petsAccess: false,
+        petSwimFrequency: 'none',
+        environmentalFactors: [],
+        poolCondition: '',
+        greenPoolGreenness: '',
+        greenPoolDebris: '',
+        greenPoolDuration: '',
+        greenPoolPumpRunning: false,
+        knownIssues: [],
+        equipment: [],
+        accessType: '',
+        accessNotes: '',
+        clientEmail: '',
+        clientPhone: '',
+        clientSelectedFrequency: 'weekly',
+        biweeklyAcknowledged: false
+      });
 
   const toggleMultiSelect = (field, value) => {
     setFormData(prev => {
