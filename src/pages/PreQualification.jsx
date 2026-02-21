@@ -575,6 +575,8 @@ const stepIsValid = () => {
 }
 
 function QuoteDisplay({ quote, formData }) {
+  const recommendedButNotSelected = quote.recommendedFrequency === 'weekly' && formData.clientSelectedFrequency === 'biweekly';
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="space-y-2">
@@ -586,6 +588,16 @@ function QuoteDisplay({ quote, formData }) {
         </div>
         <p className="text-gray-600">Here's what we calculated for your pool</p>
       </div>
+
+      {recommendedButNotSelected && (
+        <Card className="bg-amber-50 border-amber-200">
+          <CardContent className="pt-6">
+            <p className="text-sm text-amber-900 font-medium">
+              💡 We recommend <strong>weekly service</strong> for your pool, but you selected biweekly. You acknowledged the risks—reach out anytime if algae issues develop.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Price Summary */}
       <Card className="bg-gradient-to-br from-teal-50 to-blue-50 border-teal-200">
