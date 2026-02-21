@@ -50,10 +50,11 @@ export default function Layout({ children, currentPageName }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link to={createPageUrl('Home')} className="flex items-center gap-2 group">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-400 flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
-                <span className="text-white font-bold text-lg">B</span>
-              </div>
-              <span className="hidden sm:inline text-lg font-semibold text-gray-900">Breez</span>
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/0b0c31666_Breez2.png"
+                alt="Breez Pool Care"
+                className="h-12 w-auto group-hover:opacity-80 transition-opacity"
+              />
             </Link>
 
             <div className="flex items-center gap-4">
