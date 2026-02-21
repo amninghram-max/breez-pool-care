@@ -385,69 +385,47 @@ export default function Admin() {
         <TabsContent value="risk" className="space-y-4 mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Risk Scoring</CardTitle>
+              <CardTitle>Risk Scoring Weights</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
+              <p className="text-sm text-gray-600">Weights determine how much each factor contributes to the risk score. Higher = more risky.</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <Label>Baseline Risk Score</Label>
+                  <Label>Unscreened Pool</Label>
                   <Input
                     type="number"
-                    defaultValue={settings.baselineRiskScore || 40}
+                    defaultValue={settings.riskWeights?.enclosure_unscreened || 15}
                     className="mt-2"
                   />
                 </div>
                 <div>
-                  <Label>Rainy Season Risk Boost</Label>
+                  <Label>Green Pool Condition</Label>
                   <Input
                     type="number"
-                    defaultValue={settings.rainySeasonRiskBoost || 6}
+                    defaultValue={settings.riskWeights?.condition_green_pool || 25}
                     className="mt-2"
                   />
                 </div>
                 <div>
-                  <Label>Pollen Season Risk Boost</Label>
+                  <Label>Heavy Debris / Trees</Label>
                   <Input
                     type="number"
-                    defaultValue={settings.pollenSeasonRiskBoost || 3}
+                    defaultValue={settings.riskWeights?.environment_heavy_debris || 12}
                     className="mt-2"
                   />
                 </div>
                 <div>
-                  <Label>Unscreened Pool Risk Boost</Label>
+                  <Label>Leaks / Equipment Issues</Label>
                   <Input
                     type="number"
-                    defaultValue={settings.unscreenedPoolRiskBoost || 5}
+                    defaultValue={settings.riskWeights?.issue_leaks || 15}
                     className="mt-2"
                   />
-                </div>
-              </div>
-
-              <div className="border-t pt-6">
-                <h4 className="font-semibold text-gray-900 mb-4">Frequency Thresholds</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <Label>Peak Season Weekly Threshold</Label>
-                    <Input
-                      type="number"
-                      defaultValue={settings.peakSeasonWeeklyThreshold || 55}
-                      className="mt-2"
-                    />
-                    <p className="text-xs text-gray-500 mt-2">Weekly if RiskScore or ChemDemand ≥ this</p>
-                  </div>
-                  <div>
-                    <Label>Winter Season Weekly Threshold</Label>
-                    <Input
-                      type="number"
-                      defaultValue={settings.winterSeasonWeeklyThreshold || 65}
-                      className="mt-2"
-                    />
-                  </div>
                 </div>
               </div>
 
               <Button onClick={() => handleSave(settings)}>
-                Save Risk Settings
+                Save Risk Weights
               </Button>
             </CardContent>
           </Card>
