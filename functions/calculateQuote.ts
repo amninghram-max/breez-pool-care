@@ -288,11 +288,19 @@ Deno.serve(async (req) => {
     // D) MAINTENANCE FREQUENCY RECOMMENDATIONS
     // ============================================
     let recommendedFrequency = 'weekly';
-    const weeklyRiskThreshold = frequencyThresholds.weekly_risk_threshold || 60;
-    const weeklyChemThreshold = frequencyThresholds.weekly_chem_demand_threshold || 60;
+    
+    // Season-adjusted thresholds
+    let weeklyRiskThreshold, weeklyChemThreshold;
+    if (isPeakSeason) {
+      weeklyRiskThreshold = seasonality.peakSeasonWeeklyThreshold || 55;
+      weeklyChemThreshold = 55;
+    } else {
+      weeklyRiskThreshold = seasonality.shoulderSeasonWeeklyThreshold || 65;
+      weeklyChemThreshold = 65;
+    }
 
     // Risk score calculation (done later, but we'll use ChemDemandIndex here)
-    if (chemDemandIndex < 60 && questionnaireData.enclosure !== 'unscreened' && !questionnaireData.environmentalFactors?.includes('heavy_debris')) {
+    if (chemDemandIndex < weeklyChemThreshold && questionnaireData.enclosure !== 'unscreened' && !questionnaireData.environmentalFactors?.includes('heavy_debris')) {
       recommendedFrequency = 'biweekly';
     }
 
