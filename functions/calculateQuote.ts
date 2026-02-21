@@ -578,7 +578,13 @@ NOTE: Base monthly price is stable year-round. COGS and recommendations may adju
         greenRecoveryTier,
         greenRecoveryExpectedVisits,
         upsellSuggestions,
-        technicianNotes
+        technicianNotes,
+        seasonality: {
+          seasonName,
+          seasonalChemMultiplier: parseFloat(totalSeasonalChemMultiplier.toFixed(3)),
+          isRainySeason,
+          isPollenSeason
+        }
       }
     });
   } catch (error) {
