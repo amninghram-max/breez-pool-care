@@ -669,6 +669,66 @@ function QuoteDisplay({ quote, formData }) {
         </CardContent>
       </Card>
 
+      {/* Green Recovery Plan */}
+      {quote.greenRecoveryTier !== 'none' && (
+        <Card className="bg-red-50 border-red-200">
+          <CardHeader>
+            <CardTitle className="text-lg text-red-900">Green-to-Clean Recovery Plan</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <p className="text-sm font-semibold text-red-900">Tier: {quote.greenRecoveryTier.replace(/_/g, ' ')}</p>
+              <p className="text-xs text-red-800 mt-2">Expected visits: {quote.greenRecoveryExpectedVisits}</p>
+            </div>
+            <p className="text-xs text-red-900 bg-red-100 p-3 rounded">
+              ⚠️ Multiple visits may be required; immediate clarity is not guaranteed. Our technicians will assess progress and adjust as needed.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Chemical COGS */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Estimated Chemical Costs</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex justify-between items-center border-b pb-2">
+            <span className="text-sm font-medium text-gray-700">Monthly chemical estimate</span>
+            <span className="text-lg font-bold text-gray-900">${quote.estimatedMonthlyChemicalCOGS.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-600">Chemistry demand index</span>
+            <span className="text-sm font-semibold">{quote.chemDemandIndex}/100</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Upsell Suggestions */}
+      {quote.upsellSuggestions.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Recommended Add-Ons</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {quote.upsellSuggestions.map((upsell) => (
+              <div key={upsell.id} className="flex items-start justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex-1">
+                  <p className="font-semibold text-sm text-gray-900">{upsell.title}</p>
+                  <p className="text-xs text-gray-600 mt-1">{upsell.reason}</p>
+                </div>
+                {upsell.price > 0 && (
+                  <div className="text-right ml-4 flex-shrink-0">
+                    <p className="font-bold text-teal-700">${upsell.price.toFixed(2)}</p>
+                    <p className="text-xs text-gray-500">one-time</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Price Influencers */}
       {quote.priceInfluencers.length > 0 && (
         <Card>
