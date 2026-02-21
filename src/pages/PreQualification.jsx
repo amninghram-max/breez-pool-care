@@ -606,7 +606,7 @@ function QuoteDisplay({ quote, formData }) {
             <div>
               <p className="text-sm text-gray-600 font-medium">Monthly Service</p>
               <p className="text-3xl font-bold text-gray-900 mt-2">${quote.estimatedMonthlyPrice.toFixed(2)}</p>
-              <p className="text-xs text-gray-600 mt-1">{formData.recommendedFrequency === 'weekly' ? 'Weekly visits' : 'Biweekly visits'}</p>
+              <p className="text-xs text-gray-600 mt-1">{formData.clientSelectedFrequency === 'weekly' ? 'Weekly visits' : 'Biweekly visits'}</p>
             </div>
             <div>
               <p className="text-sm text-gray-600 font-medium">Per Visit</p>
@@ -619,6 +619,14 @@ function QuoteDisplay({ quote, formData }) {
             <div className="border-t pt-4">
               <p className="text-sm text-gray-600 font-medium">One-Time Setup & Fees</p>
               <p className="text-2xl font-bold text-teal-700 mt-2">${quote.estimatedOneTimeFees.toFixed(2)}</p>
+            </div>
+          )}
+
+          {quote.marginAdjustmentApplied > 0 && (
+            <div className="border-t pt-4 bg-blue-50 rounded-lg p-4">
+              <p className="text-xs text-gray-600 font-medium uppercase tracking-wide">Adjustment Applied</p>
+              <p className="text-lg font-semibold text-blue-900 mt-1">${quote.marginAdjustmentApplied.toFixed(2)}</p>
+              <p className="text-xs text-blue-800 mt-2">{quote.marginAdjustmentReason}</p>
             </div>
           )}
 
