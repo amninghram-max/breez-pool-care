@@ -131,27 +131,52 @@ export default function Admin() {
         <TabsContent value="seasonality" className="space-y-4 mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Peak Season</CardTitle>
+              <CardTitle>Region & Climate</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Region</Label>
+                <Input
+                  type="text"
+                  defaultValue={settings.seasonality?.region || 'florida'}
+                  className="mt-2"
+                />
+                <p className="text-xs text-gray-500 mt-2">Default: florida (affects season dates & defaults)</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Peak Season (Higher Chemical Demand)</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <Label>Start Month (MM)</Label>
+                  <Label>Start Month (1-12)</Label>
                   <Input
                     type="number"
                     min="1"
                     max="12"
-                    defaultValue={settings.peakSeasonStart || '03'}
+                    defaultValue={settings.seasonality?.peakSeasonStartMonth || 3}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      seasonality: {...(prev.seasonality || {}), peakSeasonStartMonth: parseInt(e.target.value)}
+                    }))}
                     className="mt-2"
                   />
                 </div>
                 <div>
-                  <Label>End Month (MM)</Label>
+                  <Label>End Month (1-12)</Label>
                   <Input
                     type="number"
                     min="1"
                     max="12"
-                    defaultValue={settings.peakSeasonEnd || '10'}
+                    defaultValue={settings.seasonality?.peakSeasonEndMonth || 10}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      seasonality: {...(prev.seasonality || {}), peakSeasonEndMonth: parseInt(e.target.value)}
+                    }))}
                     className="mt-2"
                   />
                 </div>
@@ -160,63 +185,125 @@ export default function Admin() {
                   <Input
                     type="number"
                     step="0.01"
-                    defaultValue={settings.peakSeasonMultiplier || 1.18}
+                    defaultValue={settings.seasonality?.peakSeasonChemicalMultiplier || 1.15}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      seasonality: {...(prev.seasonality || {}), peakSeasonChemicalMultiplier: parseFloat(e.target.value)}
+                    }))}
                     className="mt-2"
                   />
                 </div>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Winter Season</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
               <div>
-                <Label>Chemical Multiplier</Label>
+                <Label>Weekly Frequency Threshold (Risk Score)</Label>
                 <Input
                   type="number"
-                  step="0.01"
-                  defaultValue={settings.winterSeasonMultiplier || 0.95}
+                  defaultValue={settings.seasonality?.peakSeasonWeeklyThreshold || 55}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    seasonality: {...(prev.seasonality || {}), peakSeasonWeeklyThreshold: parseInt(e.target.value)}
+                  }))}
                   className="mt-2"
                 />
+                <p className="text-xs text-gray-500 mt-2">Weekly if RiskScore ≥ this (peak season)</p>
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Rainy Season</CardTitle>
+              <CardTitle>Shoulder Season (Lower Chemical Demand)</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label>Chemical Multiplier</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    defaultValue={settings.seasonality?.shoulderSeasonChemicalMultiplier || 0.95}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      seasonality: {...(prev.seasonality || {}), shoulderSeasonChemicalMultiplier: parseFloat(e.target.value)}
+                    }))}
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label>Weekly Frequency Threshold (Risk Score)</Label>
+                  <Input
+                    type="number"
+                    defaultValue={settings.seasonality?.shoulderSeasonWeeklyThreshold || 65}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      seasonality: {...(prev.seasonality || {}), shoulderSeasonWeeklyThreshold: parseInt(e.target.value)}
+                    }))}
+                    className="mt-2"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">Weekly if RiskScore ≥ this (shoulder season)</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Rainy Season (Additional Dilution/Refill)</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <Label>Start Month (MM)</Label>
+                  <Label>Start Month (1-12)</Label>
                   <Input
                     type="number"
                     min="1"
                     max="12"
-                    defaultValue={settings.rainySeasonStart || '06'}
+                    defaultValue={settings.seasonality?.rainySeasonStartMonth || 6}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      seasonality: {...(prev.seasonality || {}), rainySeasonStartMonth: parseInt(e.target.value)}
+                    }))}
                     className="mt-2"
                   />
                 </div>
                 <div>
-                  <Label>End Month (MM)</Label>
+                  <Label>End Month (1-12)</Label>
                   <Input
                     type="number"
                     min="1"
                     max="12"
-                    defaultValue={settings.rainySeasonEnd || '09'}
+                    defaultValue={settings.seasonality?.rainySeasonEndMonth || 9}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      seasonality: {...(prev.seasonality || {}), rainySeasonEndMonth: parseInt(e.target.value)}
+                    }))}
                     className="mt-2"
                   />
                 </div>
                 <div>
-                  <Label>Additional Multiplier</Label>
+                  <Label>Additional COGS Adder</Label>
                   <Input
                     type="number"
                     step="0.01"
-                    defaultValue={settings.rainySeasonMultiplier || 0.05}
+                    defaultValue={settings.seasonality?.rainySeasonChemicalAdder || 0.05}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      seasonality: {...(prev.seasonality || {}), rainySeasonChemicalAdder: parseFloat(e.target.value)}
+                    }))}
+                    className="mt-2"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label>Risk Score Boost</Label>
+                  <Input
+                    type="number"
+                    defaultValue={settings.seasonality?.rainySeasonRiskBoost || 5}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      seasonality: {...(prev.seasonality || {}), rainySeasonRiskBoost: parseInt(e.target.value)}
+                    }))}
                     className="mt-2"
                   />
                 </div>
@@ -226,36 +313,62 @@ export default function Admin() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Pollen Season</CardTitle>
+              <CardTitle>Pollen Season (if Frequent Pollen Selected)</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <Label>Start Month (MM)</Label>
+                  <Label>Start Month (1-12)</Label>
                   <Input
                     type="number"
                     min="1"
                     max="12"
-                    defaultValue={settings.pollenSeasonStart || '02'}
+                    defaultValue={settings.seasonality?.pollenSeasonStartMonth || 2}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      seasonality: {...(prev.seasonality || {}), pollenSeasonStartMonth: parseInt(e.target.value)}
+                    }))}
                     className="mt-2"
                   />
                 </div>
                 <div>
-                  <Label>End Month (MM)</Label>
+                  <Label>End Month (1-12)</Label>
                   <Input
                     type="number"
                     min="1"
                     max="12"
-                    defaultValue={settings.pollenSeasonEnd || '05'}
+                    defaultValue={settings.seasonality?.pollenSeasonEndMonth || 5}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      seasonality: {...(prev.seasonality || {}), pollenSeasonEndMonth: parseInt(e.target.value)}
+                    }))}
                     className="mt-2"
                   />
                 </div>
                 <div>
-                  <Label>Multiplier (if pollen selected)</Label>
+                  <Label>Additional COGS Adder</Label>
                   <Input
                     type="number"
                     step="0.01"
-                    defaultValue={settings.pollenSeasonMultiplier || 0.04}
+                    defaultValue={settings.seasonality?.pollenSeasonChemicalAdder || 0.04}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      seasonality: {...(prev.seasonality || {}), pollenSeasonChemicalAdder: parseFloat(e.target.value)}
+                    }))}
+                    className="mt-2"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label>Risk Score Boost</Label>
+                  <Input
+                    type="number"
+                    defaultValue={settings.seasonality?.pollenSeasonRiskBoost || 3}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      seasonality: {...(prev.seasonality || {}), pollenSeasonRiskBoost: parseInt(e.target.value)}
+                    }))}
                     className="mt-2"
                   />
                 </div>
