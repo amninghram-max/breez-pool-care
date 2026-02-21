@@ -19,6 +19,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Dashboard', path: 'Home', icon: Home },
     { name: 'Analytics', path: 'Analytics', icon: BarChart3 },
     { name: 'Messages', path: 'Messages', icon: MessageSquare },
+    { name: 'Design', path: 'DesignSystem', icon: Settings },
     ...(isAdmin ? [{ name: 'Admin', path: 'Admin', icon: Settings }] : []),
   ];
 
