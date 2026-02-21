@@ -87,15 +87,25 @@ export default function PreQualification() {
     calculateQuoteMutation.mutate();
   };
 
-  const stepIsValid = () => {
+const stepIsValid = () => {
     if (step === 1) {
       return formData.poolSize && formData.poolType && formData.enclosure;
     }
     if (step === 2) {
-      return formData.filterType && formData.chlorinationMethod && formData.useFrequency && formData.poolCondition;
+      let baseValid = formData.filterType && formData.chlorinationMethod && formData.useFrequency && formData.poolCondition;
+      // If green algae, require green pool follow-ups
+      if (formData.poolCondition === 'green_algae') {
+        return baseValid && formData.greenPoolGreenness && formData.greenPoolDebris && formData.greenPoolDuration;
+      }
+      return baseValid;
     }
     if (step === 3) {
-      return formData.clientEmail && formData.accessType;
+      let baseValid = formData.clientEmail && formData.accessType;
+      // If biweekly selected but frequency might be recommended weekly, require acknowledgment
+      if (formData.clientSelectedFrequency === 'biweekly') {
+        return baseValid && formData.biweeklyAcknowledged;
+      }
+      return baseValid;
     }
     return true;
   };
