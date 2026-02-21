@@ -292,6 +292,66 @@ const stepIsValid = () => {
                 </Select>
               </div>
 
+{formData.poolCondition === 'green_algae' && (
+                <div className="border-t pt-6 bg-red-50 p-4 rounded-lg">
+                  <Label className="font-semibold mb-3 block text-red-900">Green Pool Details</Label>
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-sm">How green is it?</Label>
+                      <Select value={formData.greenPoolGreenness} onValueChange={(v) => setFormData({ ...formData, greenPoolGreenness: v })}>
+                        <SelectTrigger className="mt-2">
+                          <SelectValue placeholder="Select greenness level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="light_green">Light green (can see bottom)</SelectItem>
+                          <SelectItem value="medium_green">Medium green (bottom barely visible)</SelectItem>
+                          <SelectItem value="dark_green">Dark green (bottom not visible)</SelectItem>
+                          <SelectItem value="not_sure">Not sure</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label className="text-sm">Visible debris level?</Label>
+                      <Select value={formData.greenPoolDebris} onValueChange={(v) => setFormData({ ...formData, greenPoolDebris: v })}>
+                        <SelectTrigger className="mt-2">
+                          <SelectValue placeholder="Select debris level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Low</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="heavy">Heavy</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label className="text-sm">How long has it been green?</Label>
+                      <Select value={formData.greenPoolDuration} onValueChange={(v) => setFormData({ ...formData, greenPoolDuration: v })}>
+                        <SelectTrigger className="mt-2">
+                          <SelectValue placeholder="Select duration" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="less_than_1_week">&lt; 1 week</SelectItem>
+                          <SelectItem value="1_to_4_weeks">1–4 weeks</SelectItem>
+                          <SelectItem value="more_than_4_weeks">&gt; 4 weeks</SelectItem>
+                          <SelectItem value="not_sure">Not sure</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex items-center gap-3 pt-2">
+                      <Checkbox
+                        id="pump_running"
+                        checked={formData.greenPoolPumpRunning}
+                        onCheckedChange={(checked) => setFormData({ ...formData, greenPoolPumpRunning: checked })}
+                      />
+                      <Label htmlFor="pump_running" className="cursor-pointer font-normal text-sm">Pump is running daily</Label>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="border-t pt-6">
                 <Label className="font-semibold mb-3 block">Environmental Factors</Label>
                 <div className="space-y-3">
