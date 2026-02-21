@@ -477,7 +477,7 @@ const stepIsValid = () => {
 
               <div>
                 <Label>Service Frequency Preference</Label>
-                <Select value={formData.recommendedFrequency} onValueChange={(v) => setFormData({ ...formData, recommendedFrequency: v })}>
+                <Select value={formData.clientSelectedFrequency} onValueChange={(v) => setFormData({ ...formData, clientSelectedFrequency: v })}>
                   <SelectTrigger className="mt-2">
                     <SelectValue />
                   </SelectTrigger>
@@ -487,6 +487,21 @@ const stepIsValid = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {formData.clientSelectedFrequency === 'biweekly' && (
+                <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      id="biweekly_ack"
+                      checked={formData.biweeklyAcknowledged}
+                      onCheckedChange={(checked) => setFormData({ ...formData, biweeklyAcknowledged: checked })}
+                    />
+                    <Label htmlFor="biweekly_ack" className="cursor-pointer font-normal text-sm text-amber-900">
+                      I understand biweekly service may increase the chance of algae or cloudiness
+                    </Label>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <Label>Access Type</Label>
