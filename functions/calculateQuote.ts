@@ -487,13 +487,16 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Upsell 2: Debris management
+    // Upsell 2: Debris management (enhanced in rainy season)
     if (questionnaireData.environmentalFactors?.includes('trees_overhead') || 
         questionnaireData.environmentalFactors?.includes('heavy_debris')) {
+      const debrisReason = isRainySeason 
+        ? 'Rainy season increases debris; skimmer socks and leaf canisters are highly recommended.'
+        : 'Skimmer socks and leaf canisters can reduce maintenance burden and chemical costs.';
       upsellSuggestions.push({
         id: 'debris_management',
         title: 'Debris Management System',
-        reason: 'Skimmer socks and leaf canisters can reduce maintenance burden and chemical costs.',
+        reason: debrisReason,
         price: (settings.upsellPrices?.debris_management_addon || 35),
         accepted: false
       });
