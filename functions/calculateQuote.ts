@@ -160,6 +160,10 @@ Deno.serve(async (req) => {
     if (petsCogsMultiplier > 1.08) chemDemandIndex += 15;
     if (envCogsAdder > 0.08) chemDemandIndex += 10;
     if (questionnaireData.poolCondition === 'green_algae') chemDemandIndex = 90;
+    // Seasonal demand boosts
+    if (isPeakSeason) chemDemandIndex += Math.round((seasonalChemMultiplier - 1) * 10);
+    if (isRainySeason) chemDemandIndex += 3;
+    if (isPollenSeason && questionnaireData.environmentalFactors?.includes('frequent_pollen')) chemDemandIndex += 2;
     chemDemandIndex = Math.min(100, chemDemandIndex);
 
     // ============================================
