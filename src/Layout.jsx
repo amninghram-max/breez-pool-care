@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Home, BarChart3, MessageSquare, Settings, LogOut } from 'lucide-react';
+import { Home, BarChart3, MessageSquare, Settings, LogOut, Droplet } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 
