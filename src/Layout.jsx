@@ -27,21 +27,29 @@ export default function Layout({ children, currentPageName }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+    <div className="min-h-screen bg-white">
       <style>{`
         :root {
           --color-primary: #1B9B9F;
-          --color-secondary: #87CEEB;
-          --color-accent: #FF7F7F;
+          --color-secondary: #5DADE2;
+          --color-accent: #FF9999;
           --color-white: #FFFFFF;
           --color-off-white: #F9FAFB;
           --color-gray-light: #E5E7EB;
           --color-gray-medium: #D1D5DB;
           --color-gray-dark: #6B7280;
           --color-text: #1F2937;
-          --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+          --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
           --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
           --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        * {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+        }
+        
+        button, a {
+          transition: all 200ms ease;
         }
       `}</style>
 
