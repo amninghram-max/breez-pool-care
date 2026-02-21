@@ -542,9 +542,9 @@ Features: ${equipmentList}
 Access: ${questionnaireData.accessType.replace(/_/g, ' ')}${questionnaireData.accessNotes ? ` - ${questionnaireData.accessNotes}` : ''}
 
 ANALYSIS
-Risk Score: ${riskScore} (${riskLevel})
+Risk Score: ${riskScore} (${riskLevel})${isRainySeason ? ' [+rainy season]' : ''}${isPollenSeason ? ' [+pollen season]' : ''}
 Chemistry Demand: ${chemDemandIndex} (scale 0-100)
-Est. Monthly Chemical COGS: $${estimatedMonthlyChemicalCOGS.toFixed(2)}
+Est. Monthly Chemical COGS: $${estimatedMonthlyChemicalCOGS.toFixed(2)} (${seasonName} season, multiplier: ${totalSeasonalChemMultiplier.toFixed(2)})
 Est. Monthly Labor: $${monthlyLaborCost.toFixed(2)}
 Gross Margin: ${Math.round(actualMargin * 100)}%
 
@@ -553,7 +553,9 @@ Recommended Frequency: ${recommendedFrequency} service
 Monthly Quote: $${estimatedMonthlyPrice.toFixed(2)}
 Per-Visit: $${perVisitPrice.toFixed(2)}
 One-Time Fees: $${estimatedOneTimeFees.toFixed(2)}
-First Month Est: $${estimatedFirstMonthTotal.toFixed(2)}`;
+First Month Est: $${estimatedFirstMonthTotal.toFixed(2)}
+
+NOTE: Base monthly price is stable year-round. COGS and recommendations may adjust seasonally.`;
 
     return Response.json({
       success: true,
