@@ -17,6 +17,7 @@ export default function Layout({ children, currentPageName }) {
 
   const navigationItems = [
     { name: 'Dashboard', path: 'Home', icon: Home },
+    { name: 'Get Quote', path: 'PreQualification', icon: Droplet },
     { name: 'Analytics', path: 'Analytics', icon: BarChart3 },
     { name: 'Messages', path: 'Messages', icon: MessageSquare },
     { name: 'Design', path: 'DesignSystem', icon: Settings },
