@@ -58,6 +58,21 @@ Deno.serve(async (req) => {
     const isPollenSeason = (seasonality.enablePollenSeasonLogic !== false) && (currentMonth >= pollenStart && currentMonth <= pollenEnd);
 
     // ============================================
+    // SUMMER ALGAE RISK DETECTION
+    // ============================================
+    const summerAlgae = settings.summerAlgaeRisk || {};
+    const summerStart = summerAlgae.startMonth || 5;
+    const summerEnd = summerAlgae.endMonth || 9;
+    const isSummerHighRisk = (summerAlgae.enabled !== false) && (currentMonth >= summerStart && currentMonth <= summerEnd);
+
+    // ============================================
+    // STORM RECOVERY MODE
+    // ============================================
+    const stormRecovery = settings.stormRecovery || {};
+    const isStormModeActive = stormRecovery.modeActive || false;
+    const stormSeverityLevel = stormRecovery.severityLevel || 'minor';
+
+    // ============================================
     // A) CALCULATE CHEMICAL COST ESTIMATOR (COGS)
     // ============================================
     let baseCOGS = baselineChemicalCOGS[questionnaireData.poolSize] || 50;
