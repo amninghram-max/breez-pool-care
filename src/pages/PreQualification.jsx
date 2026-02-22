@@ -114,7 +114,8 @@ const stepIsValid = () => {
       return baseValid;
     }
     if (step === 3) {
-      let baseValid = formData.clientFirstName && formData.clientLastName && formData.clientEmail && formData.accessType;
+      // Last name is now optional - only require first name, email, and access type
+      let baseValid = formData.clientFirstName && formData.clientEmail && formData.accessType;
       // If biweekly selected but frequency might be recommended weekly, require acknowledgment
       if (formData.clientSelectedFrequency === 'biweekly') {
         return baseValid && formData.biweeklyAcknowledged;
@@ -499,7 +500,7 @@ const stepIsValid = () => {
                   />
                 </div>
                 <div>
-                  <Label>Last Name</Label>
+                  <Label>Last Name (Optional)</Label>
                   <Input
                     value={formData.clientLastName || ''}
                     onChange={(e) => setFormData({ ...formData, clientLastName: e.target.value })}

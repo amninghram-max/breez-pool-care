@@ -35,6 +35,9 @@ export default function Onboarding() {
     mobilePhone: storedQuoteData?.formData?.clientPhone || '',
     preferredContact: storedQuoteData?.formData?.preferredContact || 'text',
     secondaryContact: 'none',
+    preferredContactMethod: '',
+    preferredCallDay: '',
+    preferredCallTime: '',
     poolType: storedQuoteData?.formData?.poolType || '',
     spaPresent: storedQuoteData?.formData?.spaPresent || '',
     poolSurface: storedQuoteData?.formData?.poolSurface || '',
@@ -122,7 +125,7 @@ export default function Onboarding() {
   const handleContactSubmit = () => {
     if (storedQuoteData) {
       // Quote flow - only validate address and phone
-      if (!leadData.streetAddress || !leadData.city || !leadData.state || !leadData.zipCode || !leadData.mobilePhone) {
+      if (!leadData.streetAddress || !leadData.city || !leadData.state || !leadData.zipCode || !leadData.mobilePhone || !leadData.preferredContactMethod) {
         alert('Please fill in all required fields');
         return;
       }
@@ -130,8 +133,8 @@ export default function Onboarding() {
       setLeadData({ ...leadData, serviceAddress: fullAddress });
       setStep(16); // Skip to inspection scheduling
     } else {
-      // Regular flow
-      if (!leadData.firstName || !leadData.lastName || !leadData.streetAddress || !leadData.city || !leadData.state || !leadData.zipCode || !leadData.email || !leadData.mobilePhone) {
+      // Regular flow - lastName is now optional
+      if (!leadData.firstName || !leadData.streetAddress || !leadData.city || !leadData.state || !leadData.zipCode || !leadData.email || !leadData.mobilePhone) {
         alert('Please fill in all required fields');
         return;
       }
@@ -212,7 +215,7 @@ export default function Onboarding() {
 
                   </div>
                   <div>
-                    <Label>Last Name</Label>
+                    <Label>Last Name (Optional)</Label>
                     <Input
                   value={leadData.lastName}
                   onChange={(e) => setLeadData({ ...leadData, lastName: e.target.value })}
@@ -310,15 +313,58 @@ export default function Onboarding() {
             }
 
               {storedQuoteData &&
-            <div>
-                  <Label>Mobile Phone</Label>
-                  <Input
-                type="tel"
-                value={leadData.mobilePhone}
-                onChange={(e) => setLeadData({ ...leadData, mobilePhone: e.target.value })}
-                className="mt-2"
-                placeholder="(555) 000-0000" />
+            <>
+              <div>
+                <Label>Mobile Phone</Label>
+                <Input
+                  type="tel"
+                  value={leadData.mobilePhone}
+                  onChange={(e) => setLeadData({ ...leadData, mobilePhone: e.target.value })}
+                  className="mt-2"
+                  placeholder="(555) 000-0000" />
+              </div>
+              
+              <div>
+                <Label>How would you like us to contact you about your inspection?</Label>
+                <Select value={leadData.preferredContactMethod} onValueChange={(v) => setLeadData({ ...leadData, preferredContactMethod: v })}>
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="Select contact method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="text">Text Message</SelectItem>
+                    <SelectItem value="phone">Phone Call</SelectItem>
+                    <SelectItem value="email">Email</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {leadData.preferredContactMethod === 'phone' && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
+                  <p className="text-sm text-blue-900 font-medium">When would you like us to call you?</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm">Preferred Call Day</Label>
+                      <Input
+                        type="date"
+                        value={leadData.preferredCallDay}
+                        onChange={(e) => setLeadData({ ...leadData, preferredCallDay: e.target.value })}
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm">Preferred Call Time</Label>
+                      <Input
+                        type="time"
+                        value={leadData.preferredCallTime}
+                        onChange={(e) => setLeadData({ ...leadData, preferredCallTime: e.target.value })}
+                        className="mt-2"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-blue-800">We'll call to confirm your inspection appointment details.</p>
                 </div>
+              )}
+            </>
             }
               
               <Button onClick={handleContactSubmit} className="w-full bg-teal-600 hover:bg-teal-700">
