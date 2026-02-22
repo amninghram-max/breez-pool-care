@@ -693,13 +693,26 @@ function QuoteDisplay({ quote, formData }) {
 
   const isAdmin = user?.role === 'admin';
 
-  const handleContinueToSetup = () => {
+  const handleContinueToSetup = async () => {
     // Store quote acceptance
     localStorage.setItem('quoteData', JSON.stringify({
       quote,
       formData,
       timestamp: new Date().toISOString()
     }));
+    
+    // Send quote email if not continuing immediately
+    // This will be sent if user closes browser before scheduling
+    try {
+      await base44.functions.invoke('sendQuoteEmail', {
+        quote,
+        firstName: formData.clientFirstName,
+        email: formData.clientEmail
+      });
+    } catch (error) {
+      console.error('Failed to send quote email:', error);
+    }
+    
     window.location.href = createPageUrl('Onboarding');
   };
 
