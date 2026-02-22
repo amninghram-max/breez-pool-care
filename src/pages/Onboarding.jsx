@@ -36,6 +36,7 @@ export default function Onboarding() {
     preferredContact: storedQuoteData?.formData?.preferredContact || 'text',
     secondaryContact: 'none',
     poolType: storedQuoteData?.formData?.poolType || '',
+    spaPresent: '',
     poolSurface: storedQuoteData?.formData?.poolSurface || '',
     filterType: storedQuoteData?.formData?.filterType || '',
     sanitizerType: storedQuoteData?.formData?.chlorinationMethod || '',
@@ -105,12 +106,12 @@ export default function Onboarding() {
     }
 
     // Skip tablet feeder question if not using tablets
-    if (field === 'sanitizerType' && value !== 'tablets' && step === 7) {
+    if (field === 'sanitizerType' && value !== 'tablets' && step === 8) {
       setStep(step + 2);
       return;
     }
 
-    if (field === 'hasPets' && value === false && step === 11) {
+    if (field === 'hasPets' && value === false && step === 12) {
       setStep(step + 2);
       return;
     }
@@ -318,14 +319,31 @@ export default function Onboarding() {
             question="What type of pool do you have?"
             options={[
               { label: 'In-ground', value: 'in_ground' },
-              { label: 'Above-ground', value: 'above_ground' }
+              { label: 'Above-ground', value: 'above_ground' },
+              { label: 'Not sure', value: 'not_sure' }
             ]}
             onSelect={(value) => handleSelect('poolType', value)}
           />
         )}
 
-        {/* Pool Surface */}
+        {/* Spa / Hot Tub */}
         {step === 4 && (
+          <QuestionCard
+            question="Does your pool include a spa or hot tub?"
+            options={[
+              { label: 'Yes', value: 'true' },
+              { label: 'No', value: 'false' },
+              { label: 'Not sure', value: 'unknown' }
+            ]}
+            onSelect={(value) => {
+              setLeadData({ ...leadData, spaPresent: value });
+              setStep(step + 1);
+            }}
+          />
+        )}
+
+        {/* Pool Surface */}
+        {step === 5 && (
           <QuestionCard
             question="What is your pool surface?"
             options={[
@@ -339,7 +357,7 @@ export default function Onboarding() {
         )}
 
         {/* Filter Type */}
-        {step === 5 && (
+        {step === 6 && (
           <QuestionCard
             question="What type of filter do you have?"
             options={[
@@ -353,7 +371,7 @@ export default function Onboarding() {
         )}
 
         {/* Sanitizer Type */}
-        {step === 6 && (
+        {step === 7 && (
           <QuestionCard
             question="How is your pool sanitized?"
             options={[
@@ -368,7 +386,7 @@ export default function Onboarding() {
         )}
 
         {/* Tablet Feeder (conditional) */}
-        {step === 7 && leadData.sanitizerType === 'tablets' && (
+        {step === 8 && leadData.sanitizerType === 'tablets' && (
           <QuestionCard
             question="What type of tablet feeder do you use?"
             options={[
@@ -383,7 +401,7 @@ export default function Onboarding() {
         )}
 
         {/* Screened Area */}
-        {step === 8 && (
+        {step === 9 && (
           <QuestionCard
             question="Is your pool area screened?"
             options={[
@@ -397,7 +415,7 @@ export default function Onboarding() {
         )}
 
         {/* Usage Frequency */}
-        {step === 9 && (
+        {step === 10 && (
           <QuestionCard
             question="How often is the pool used?"
             options={[
@@ -411,7 +429,7 @@ export default function Onboarding() {
         )}
 
         {/* Pets */}
-        {step === 10 && (
+        {step === 11 && (
           <QuestionCard
             question="Are there dogs or pets on the property?"
             options={[
@@ -423,7 +441,7 @@ export default function Onboarding() {
         )}
 
         {/* Pet Follow-ups */}
-        {step === 11 && leadData.hasPets && (
+        {step === 12 && leadData.hasPets && (
           <Card>
             <CardHeader>
               <CardTitle>About Your Pets</CardTitle>
@@ -466,7 +484,7 @@ export default function Onboarding() {
         )}
 
         {/* Access Restrictions */}
-        {step === 12 && (
+        {step === 13 && (
           <QuestionCard
             question="Are there any access restrictions?"
             options={[
@@ -481,7 +499,7 @@ export default function Onboarding() {
         )}
 
         {/* Gate Code (conditional) */}
-        {step === 13 && leadData.accessRestrictions === 'code_required' && (
+        {step === 14 && leadData.accessRestrictions === 'code_required' && (
           <Card>
             <CardHeader>
               <CardTitle>How would you like to provide the access code?</CardTitle>
@@ -527,7 +545,7 @@ export default function Onboarding() {
         )}
 
         {/* Pool Condition */}
-        {step === 14 && (
+        {step === 15 && (
           <QuestionCard
             question="What is the current pool condition?"
             options={[
@@ -544,7 +562,7 @@ export default function Onboarding() {
         )}
 
         {/* Inspection Scheduling */}
-        {step === 15 && (
+        {step === 16 && (
           <Card>
             <CardHeader>
               <CardTitle>Schedule Your Free Pool Inspection</CardTitle>
