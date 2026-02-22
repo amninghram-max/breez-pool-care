@@ -73,7 +73,7 @@ export default function Admin() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-7 w-full bg-gray-100 p-1 rounded-lg overflow-x-auto">
+        <TabsList className="grid grid-cols-8 w-full bg-gray-100 p-1 rounded-lg overflow-x-auto">
           <TabsTrigger value="pricing">Pricing</TabsTrigger>
           <TabsTrigger value="seasonality">Seasonality</TabsTrigger>
           <TabsTrigger value="risk">Risk</TabsTrigger>
@@ -81,6 +81,7 @@ export default function Admin() {
           <TabsTrigger value="margin">Margin</TabsTrigger>
           <TabsTrigger value="summer">Summer</TabsTrigger>
           <TabsTrigger value="storm">Storm</TabsTrigger>
+          <TabsTrigger value="targets">Targets</TabsTrigger>
         </TabsList>
 
         {/* PRICING TAB */}
@@ -698,6 +699,111 @@ export default function Admin() {
 
               <Button onClick={() => handleSave(settings)}>
                 Save Summer Algae Settings
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* CHEMISTRY TARGETS TAB */}
+        <TabsContent value="targets" className="space-y-4 mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Water Chemistry Target Ranges</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-900 font-semibold">
+                  Set recommended ranges for water chemistry metrics. These are used for graphs, suggestions, and trend alerts.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="font-semibold text-gray-900">Required Metrics</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <Label>Free Chlorine Min (ppm)</Label>
+                    <Input type="number" step="0.1" defaultValue={1.0} className="mt-2" />
+                  </div>
+                  <div>
+                    <Label>Free Chlorine Max (ppm)</Label>
+                    <Input type="number" step="0.1" defaultValue={3.0} className="mt-2" />
+                  </div>
+                  <div></div>
+                  <div>
+                    <Label>pH Min</Label>
+                    <Input type="number" step="0.1" defaultValue={7.2} className="mt-2" />
+                  </div>
+                  <div>
+                    <Label>pH Max</Label>
+                    <Input type="number" step="0.1" defaultValue={7.8} className="mt-2" />
+                  </div>
+                  <div></div>
+                  <div>
+                    <Label>Total Alkalinity Min (ppm)</Label>
+                    <Input type="number" step="1" defaultValue={80} className="mt-2" />
+                  </div>
+                  <div>
+                    <Label>Total Alkalinity Max (ppm)</Label>
+                    <Input type="number" step="1" defaultValue={120} className="mt-2" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-6">
+                <h4 className="font-semibold text-gray-900 mb-4">Optional Metrics (Enable/Disable)</h4>
+                <div className="space-y-3">
+                  <label className="flex items-center gap-3">
+                    <input type="checkbox" defaultChecked={true} className="w-4 h-4" />
+                    <span>Cyanuric Acid (CYA)</span>
+                  </label>
+                  <div className="ml-7 grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm">Min (ppm)</Label>
+                      <Input type="number" step="1" defaultValue={30} className="mt-2" />
+                    </div>
+                    <div>
+                      <Label className="text-sm">Max (ppm)</Label>
+                      <Input type="number" step="1" defaultValue={50} className="mt-2" />
+                    </div>
+                  </div>
+
+                  <label className="flex items-center gap-3">
+                    <input type="checkbox" defaultChecked={false} className="w-4 h-4" />
+                    <span>Calcium Hardness</span>
+                  </label>
+                  
+                  <label className="flex items-center gap-3">
+                    <input type="checkbox" defaultChecked={false} className="w-4 h-4" />
+                    <span>Salt (for saltwater pools)</span>
+                  </label>
+                  
+                  <label className="flex items-center gap-3">
+                    <input type="checkbox" defaultChecked={true} className="w-4 h-4" />
+                    <span>Water Temperature</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="border-t pt-6">
+                <h4 className="font-semibold text-gray-900 mb-4">Chemical Estimation Formulas</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Chlorine per ppm (oz/1000gal)</Label>
+                    <Input type="number" step="0.001" defaultValue={0.013} className="mt-2" />
+                  </div>
+                  <div>
+                    <Label>Acid per 0.2 pH drop (oz/1000gal)</Label>
+                    <Input type="number" step="0.01" defaultValue={0.02} className="mt-2" />
+                  </div>
+                  <div>
+                    <Label>Baking Soda per 10 ppm TA (oz/1000gal)</Label>
+                    <Input type="number" step="0.1" defaultValue={1.5} className="mt-2" />
+                  </div>
+                </div>
+              </div>
+
+              <Button onClick={() => handleSave(settings)}>
+                Save Chemistry Targets
               </Button>
             </CardContent>
           </Card>
