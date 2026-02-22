@@ -61,17 +61,17 @@ export default function Onboarding() {
     }
     if (field === 'poolSurface' && (value === 'fiberglass' || value === 'vinyl')) {
       setDisqualified(true);
-      setDisqualificationReason('We're unable to service pools with this surface type at this time.');
+      setDisqualificationReason("We're unable to service pools with this surface type at this time.");
       return false;
     }
     if (field === 'filterType' && value === 'de') {
       setDisqualified(true);
-      setDisqualificationReason('We're unable to service pools with DE filters at this time.');
+      setDisqualificationReason("We're unable to service pools with DE filters at this time.");
       return false;
     }
     if (field === 'sanitizerType' && value === 'mineral') {
       setDisqualified(true);
-      setDisqualificationReason('We're unable to service pools with mineral sanitizer systems at this time.');
+      setDisqualificationReason("We're unable to service pools with mineral sanitizer systems at this time.");
       return false;
     }
     return true;
@@ -484,7 +484,7 @@ export default function Onboarding() {
               </div>
               <div className="p-4 bg-blue-50 rounded-lg">
                 <p className="text-sm text-blue-900">
-                  We'll contact you via <strong>{leadData.preferredContact === 'text' ? 'text message' : leadData.preferredContact === 'phone' ? 'phone call' : 'email'}</strong> to confirm
+                  {"We'll contact you via "}<strong>{leadData.preferredContact === 'text' ? 'text message' : leadData.preferredContact === 'phone' ? 'phone call' : 'email'}</strong>{" to confirm"}
                 </p>
               </div>
               <Button 
@@ -539,7 +539,7 @@ function DisqualificationScreen({ reason }) {
         </CardHeader>
         <CardContent className="space-y-6">
           <p className="text-gray-600">
-            Unfortunately, we're unable to service this type of pool at this time.
+            {"Unfortunately, we're unable to service this type of pool at this time."}
           </p>
           <div className="p-4 bg-gray-50 rounded-lg">
             <p className="text-sm text-gray-700">{reason}</p>
@@ -593,8 +593,8 @@ function ConfirmationScreen({ inspector }) {
 
           <div className="p-4 bg-blue-50 rounded-lg">
             <p className="text-sm text-blue-900">
-              <strong>What's next?</strong><br />
-              We'll confirm your appointment and send you all the details.
+              <strong>{"What's next?"}</strong><br />
+              {"We'll confirm your appointment and send you all the details."}
             </p>
           </div>
 
