@@ -9,7 +9,7 @@ import { Check, AlertCircle } from 'lucide-react';
 
 export default function Onboarding() {
   const [step, setStep] = useState(0);
-  
+
   // Check for quote data from localStorage
   const storedQuoteData = React.useMemo(() => {
     const data = localStorage.getItem('quoteData');
@@ -100,7 +100,7 @@ export default function Onboarding() {
   const handleSelect = (field, value) => {
     const eligible = checkEligibility(field, value);
     setLeadData({ ...leadData, [field]: value });
-    
+
     if (!eligible) {
       return;
     }
@@ -151,42 +151,42 @@ export default function Onboarding() {
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-blue-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Welcome Screen */}
-        {step === 0 && (
-          <Card className="text-center">
+        {step === 0 &&
+        <Card className="text-center">
             <CardHeader className="pb-4">
               <div className="mx-auto mb-4">
-                <img 
-                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/0b0c31666_Breez2.png"
-                  alt="Breez"
-                  className="h-16 mx-auto"
-                />
+                <img
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/0b0c31666_Breez2.png"
+                alt="Breez"
+                className="h-16 mx-auto" />
+
               </div>
               <CardTitle className="text-2xl">
                 {storedQuoteData ? "Great news! Let's set up your account" : 'Welcome to Breez'}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {storedQuoteData ? (
-                <>
+              {storedQuoteData ?
+            <>
                   <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
                     <p className="font-semibold text-teal-900">Your Quote: ${storedQuoteData.quote.estimatedMonthlyPrice.toFixed(2)}/month</p>
                     <p className="text-sm text-teal-700 mt-1">{"We've saved your information to make setup quick and easy"}</p>
                   </div>
                   <p className="text-gray-600">{"Let's confirm a few details and schedule your first service"}</p>
-                </>
-              ) : (
-                <p className="text-gray-600">We provide professional pool cleaning with chemicals included.</p>
-              )}
+                </> :
+
+            <p className="text-gray-600">Professional pool cleaning, everything included.</p>
+            }
               <Button onClick={() => setStep(1)} className="w-full bg-teal-600 hover:bg-teal-700 text-lg py-6">
                 {storedQuoteData ? 'Continue Setup' : 'Get Started'}
               </Button>
             </CardContent>
           </Card>
-        )}
+        }
 
         {/* Contact Information */}
-        {step === 1 && (
-          <Card>
+        {step === 1 &&
+        <Card>
             <CardHeader>
               <CardTitle>Your Information</CardTitle>
             </CardHeader>
@@ -195,57 +195,57 @@ export default function Onboarding() {
                 <div>
                   <Label>First Name</Label>
                   <Input
-                    value={leadData.firstName}
-                    onChange={(e) => setLeadData({ ...leadData, firstName: e.target.value })}
-                    className="mt-2"
-                  />
+                  value={leadData.firstName}
+                  onChange={(e) => setLeadData({ ...leadData, firstName: e.target.value })}
+                  className="mt-2" />
+
                 </div>
                 <div>
                   <Label>Last Name</Label>
                   <Input
-                    value={leadData.lastName}
-                    onChange={(e) => setLeadData({ ...leadData, lastName: e.target.value })}
-                    className="mt-2"
-                  />
+                  value={leadData.lastName}
+                  onChange={(e) => setLeadData({ ...leadData, lastName: e.target.value })}
+                  className="mt-2" />
+
                 </div>
               </div>
               
               <div>
                 <Label>Street Address</Label>
                 <Input
-                  value={leadData.streetAddress}
-                  onChange={(e) => setLeadData({ ...leadData, streetAddress: e.target.value })}
-                  className="mt-2"
-                  placeholder="123 Main St"
-                />
+                value={leadData.streetAddress}
+                onChange={(e) => setLeadData({ ...leadData, streetAddress: e.target.value })}
+                className="mt-2"
+                placeholder="123 Main St" />
+
               </div>
               
               <div>
                 <Label>Apt/Suite (optional)</Label>
                 <Input
-                  value={leadData.aptSuite}
-                  onChange={(e) => setLeadData({ ...leadData, aptSuite: e.target.value })}
-                  className="mt-2"
-                  placeholder="Apt 4B"
-                />
+                value={leadData.aptSuite}
+                onChange={(e) => setLeadData({ ...leadData, aptSuite: e.target.value })}
+                className="mt-2"
+                placeholder="Apt 4B" />
+
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>City</Label>
                   <Input
-                    value={leadData.city}
-                    onChange={(e) => setLeadData({ ...leadData, city: e.target.value })}
-                    className="mt-2"
-                  />
+                  value={leadData.city}
+                  onChange={(e) => setLeadData({ ...leadData, city: e.target.value })}
+                  className="mt-2" />
+
                 </div>
                 <div>
                   <Label>State</Label>
                   <select
-                    value={leadData.state}
-                    onChange={(e) => setLeadData({ ...leadData, state: e.target.value })}
-                    className="w-full mt-2 p-3 border rounded-lg"
-                  >
+                  value={leadData.state}
+                  onChange={(e) => setLeadData({ ...leadData, state: e.target.value })}
+                  className="w-full mt-2 p-3 border rounded-lg">
+
                     <option value="">Select</option>
                     <option value="FL">Florida</option>
                     <option value="AL">Alabama</option>
@@ -264,33 +264,33 @@ export default function Onboarding() {
               <div>
                 <Label>ZIP Code</Label>
                 <Input
-                  value={leadData.zipCode}
-                  onChange={(e) => setLeadData({ ...leadData, zipCode: e.target.value })}
-                  className="mt-2"
-                  placeholder="12345"
-                  maxLength={5}
-                />
+                value={leadData.zipCode}
+                onChange={(e) => setLeadData({ ...leadData, zipCode: e.target.value })}
+                className="mt-2"
+                placeholder="12345"
+                maxLength={5} />
+
               </div>
               
               <div>
                 <Label>Email</Label>
                 <Input
-                  type="email"
-                  value={leadData.email}
-                  onChange={(e) => setLeadData({ ...leadData, email: e.target.value })}
-                  className="mt-2"
-                />
+                type="email"
+                value={leadData.email}
+                onChange={(e) => setLeadData({ ...leadData, email: e.target.value })}
+                className="mt-2" />
+
               </div>
               
               <div>
                 <Label>Mobile Phone</Label>
                 <Input
-                  type="tel"
-                  value={leadData.mobilePhone}
-                  onChange={(e) => setLeadData({ ...leadData, mobilePhone: e.target.value })}
-                  className="mt-2"
-                  placeholder="(555) 000-0000"
-                />
+                type="tel"
+                value={leadData.mobilePhone}
+                onChange={(e) => setLeadData({ ...leadData, mobilePhone: e.target.value })}
+                className="mt-2"
+                placeholder="(555) 000-0000" />
+
               </div>
               
               <Button onClick={handleContactSubmit} className="w-full bg-teal-600 hover:bg-teal-700">
@@ -298,151 +298,151 @@ export default function Onboarding() {
               </Button>
             </CardContent>
           </Card>
-        )}
+        }
 
         {/* Preferred Contact */}
-        {step === 2 && (
-          <QuestionCard
-            question="How should we contact you?"
-            options={[
-              { label: 'Text Message', value: 'text' },
-              { label: 'Phone Call', value: 'phone' },
-              { label: 'Email', value: 'email' }
-            ]}
-            onSelect={(value) => handleSelect('preferredContact', value)}
-          />
-        )}
+        {step === 2 &&
+        <QuestionCard
+          question="How should we contact you?"
+          options={[
+          { label: 'Text Message', value: 'text' },
+          { label: 'Phone Call', value: 'phone' },
+          { label: 'Email', value: 'email' }]
+          }
+          onSelect={(value) => handleSelect('preferredContact', value)} />
+
+        }
 
         {/* Pool Type */}
-        {step === 3 && (
-          <QuestionCard
-            question="What type of pool do you have?"
-            options={[
-              { label: 'In-ground', value: 'in_ground' },
-              { label: 'Above-ground', value: 'above_ground' },
-              { label: 'Not sure', value: 'not_sure' }
-            ]}
-            onSelect={(value) => handleSelect('poolType', value)}
-          />
-        )}
+        {step === 3 &&
+        <QuestionCard
+          question="What type of pool do you have?"
+          options={[
+          { label: 'In-ground', value: 'in_ground' },
+          { label: 'Above-ground', value: 'above_ground' },
+          { label: 'Not sure', value: 'not_sure' }]
+          }
+          onSelect={(value) => handleSelect('poolType', value)} />
+
+        }
 
         {/* Spa / Hot Tub */}
-        {step === 4 && (
-          <QuestionCard
-            question="Does your pool include a spa or hot tub?"
-            options={[
-              { label: 'Yes', value: 'true' },
-              { label: 'No', value: 'false' },
-              { label: 'Not sure', value: 'unknown' }
-            ]}
-            onSelect={(value) => {
-              setLeadData({ ...leadData, spaPresent: value });
-              setStep(step + 1);
-            }}
-          />
-        )}
+        {step === 4 &&
+        <QuestionCard
+          question="Does your pool include a spa or hot tub?"
+          options={[
+          { label: 'Yes', value: 'true' },
+          { label: 'No', value: 'false' },
+          { label: 'Not sure', value: 'unknown' }]
+          }
+          onSelect={(value) => {
+            setLeadData({ ...leadData, spaPresent: value });
+            setStep(step + 1);
+          }} />
+
+        }
 
         {/* Pool Surface */}
-        {step === 5 && (
-          <QuestionCard
-            question="What is your pool surface?"
-            options={[
-              { label: 'Concrete', value: 'concrete' },
-              { label: 'Fiberglass', value: 'fiberglass' },
-              { label: 'Vinyl', value: 'vinyl' },
-              { label: 'Not sure', value: 'not_sure' }
-            ]}
-            onSelect={(value) => handleSelect('poolSurface', value)}
-          />
-        )}
+        {step === 5 &&
+        <QuestionCard
+          question="What is your pool surface?"
+          options={[
+          { label: 'Concrete', value: 'concrete' },
+          { label: 'Fiberglass', value: 'fiberglass' },
+          { label: 'Vinyl', value: 'vinyl' },
+          { label: 'Not sure', value: 'not_sure' }]
+          }
+          onSelect={(value) => handleSelect('poolSurface', value)} />
+
+        }
 
         {/* Filter Type */}
-        {step === 6 && (
-          <QuestionCard
-            question="What type of filter do you have?"
-            options={[
-              { label: 'Sand', value: 'sand' },
-              { label: 'Cartridge', value: 'cartridge' },
-              { label: 'DE (powder filter)', value: 'de' },
-              { label: 'Not sure', value: 'not_sure' }
-            ]}
-            onSelect={(value) => handleSelect('filterType', value)}
-          />
-        )}
+        {step === 6 &&
+        <QuestionCard
+          question="What type of filter do you have?"
+          options={[
+          { label: 'Sand', value: 'sand' },
+          { label: 'Cartridge', value: 'cartridge' },
+          { label: 'DE (powder filter)', value: 'de' },
+          { label: 'Not sure', value: 'not_sure' }]
+          }
+          onSelect={(value) => handleSelect('filterType', value)} />
+
+        }
 
         {/* Sanitizer Type */}
-        {step === 7 && (
-          <QuestionCard
-            question="How is your pool sanitized?"
-            options={[
-              { label: 'Saltwater System', value: 'saltwater' },
-              { label: 'Chlorine Tablets', value: 'tablets' },
-              { label: 'Liquid Chlorine', value: 'liquid_chlorine' },
-              { label: 'Mineral System (non-salt)', value: 'mineral' },
-              { label: 'Not sure', value: 'not_sure' }
-            ]}
-            onSelect={(value) => handleSelect('sanitizerType', value)}
-          />
-        )}
+        {step === 7 &&
+        <QuestionCard
+          question="How is your pool sanitized?"
+          options={[
+          { label: 'Saltwater System', value: 'saltwater' },
+          { label: 'Chlorine Tablets', value: 'tablets' },
+          { label: 'Liquid Chlorine', value: 'liquid_chlorine' },
+          { label: 'Mineral System (non-salt)', value: 'mineral' },
+          { label: 'Not sure', value: 'not_sure' }]
+          }
+          onSelect={(value) => handleSelect('sanitizerType', value)} />
+
+        }
 
         {/* Tablet Feeder (conditional) */}
-        {step === 8 && leadData.sanitizerType === 'tablets' && (
-          <QuestionCard
-            question="What type of tablet feeder do you use?"
-            options={[
-              { label: 'Built-in / Inline', value: 'inline' },
-              { label: 'Separate / Offline', value: 'offline' },
-              { label: 'Floating dispenser', value: 'floating' },
-              { label: 'Skimmer basket', value: 'skimmer' },
-              { label: 'Not sure', value: 'not_sure' }
-            ]}
-            onSelect={(value) => handleSelect('tabletFeederType', value)}
-          />
-        )}
+        {step === 8 && leadData.sanitizerType === 'tablets' &&
+        <QuestionCard
+          question="What type of tablet feeder do you use?"
+          options={[
+          { label: 'Built-in / Inline', value: 'inline' },
+          { label: 'Separate / Offline', value: 'offline' },
+          { label: 'Floating dispenser', value: 'floating' },
+          { label: 'Skimmer basket', value: 'skimmer' },
+          { label: 'Not sure', value: 'not_sure' }]
+          }
+          onSelect={(value) => handleSelect('tabletFeederType', value)} />
+
+        }
 
         {/* Screened Area */}
-        {step === 9 && (
-          <QuestionCard
-            question="Is your pool area screened?"
-            options={[
-              { label: 'Fully screened', value: 'fully_screened' },
-              { label: 'Partially screened', value: 'partially_screened' },
-              { label: 'Unscreened', value: 'unscreened' },
-              { label: 'Indoor', value: 'indoor' }
-            ]}
-            onSelect={(value) => handleSelect('screenedArea', value)}
-          />
-        )}
+        {step === 9 &&
+        <QuestionCard
+          question="Is your pool area screened?"
+          options={[
+          { label: 'Fully screened', value: 'fully_screened' },
+          { label: 'Partially screened', value: 'partially_screened' },
+          { label: 'Unscreened', value: 'unscreened' },
+          { label: 'Indoor', value: 'indoor' }]
+          }
+          onSelect={(value) => handleSelect('screenedArea', value)} />
+
+        }
 
         {/* Usage Frequency */}
-        {step === 10 && (
-          <QuestionCard
-            question="How often is the pool used?"
-            options={[
-              { label: 'Rarely', value: 'rarely' },
-              { label: 'Weekends', value: 'weekends' },
-              { label: 'Several times per week', value: 'several_week' },
-              { label: 'Daily', value: 'daily' }
-            ]}
-            onSelect={(value) => handleSelect('usageFrequency', value)}
-          />
-        )}
+        {step === 10 &&
+        <QuestionCard
+          question="How often is the pool used?"
+          options={[
+          { label: 'Rarely', value: 'rarely' },
+          { label: 'Weekends', value: 'weekends' },
+          { label: 'Several times per week', value: 'several_week' },
+          { label: 'Daily', value: 'daily' }]
+          }
+          onSelect={(value) => handleSelect('usageFrequency', value)} />
+
+        }
 
         {/* Pets */}
-        {step === 11 && (
-          <QuestionCard
-            question="Are there dogs or pets on the property?"
-            options={[
-              { label: 'No', value: false },
-              { label: 'Yes', value: true }
-            ]}
-            onSelect={(value) => handleSelect('hasPets', value)}
-          />
-        )}
+        {step === 11 &&
+        <QuestionCard
+          question="Are there dogs or pets on the property?"
+          options={[
+          { label: 'No', value: false },
+          { label: 'Yes', value: true }]
+          }
+          onSelect={(value) => handleSelect('hasPets', value)} />
+
+        }
 
         {/* Pet Follow-ups */}
-        {step === 12 && leadData.hasPets && (
-          <Card>
+        {step === 12 && leadData.hasPets &&
+        <Card>
             <CardHeader>
               <CardTitle>About Your Pets</CardTitle>
             </CardHeader>
@@ -450,29 +450,29 @@ export default function Onboarding() {
               <div className="space-y-3">
                 <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
                   <input
-                    type="checkbox"
-                    checked={leadData.petsEnterPoolArea}
-                    onChange={(e) => setLeadData({ ...leadData, petsEnterPoolArea: e.target.checked })}
-                    className="w-4 h-4"
-                  />
+                  type="checkbox"
+                  checked={leadData.petsEnterPoolArea}
+                  onChange={(e) => setLeadData({ ...leadData, petsEnterPoolArea: e.target.checked })}
+                  className="w-4 h-4" />
+
                   <span>Pets enter the pool area</span>
                 </label>
                 <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
                   <input
-                    type="checkbox"
-                    checked={leadData.petsSwimInPool}
-                    onChange={(e) => setLeadData({ ...leadData, petsSwimInPool: e.target.checked })}
-                    className="w-4 h-4"
-                  />
+                  type="checkbox"
+                  checked={leadData.petsSwimInPool}
+                  onChange={(e) => setLeadData({ ...leadData, petsSwimInPool: e.target.checked })}
+                  className="w-4 h-4" />
+
                   <span>Pets swim in the pool</span>
                 </label>
                 <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
                   <input
-                    type="checkbox"
-                    checked={leadData.petsCanBeSecured}
-                    onChange={(e) => setLeadData({ ...leadData, petsCanBeSecured: e.target.checked })}
-                    className="w-4 h-4"
-                  />
+                  type="checkbox"
+                  checked={leadData.petsCanBeSecured}
+                  onChange={(e) => setLeadData({ ...leadData, petsCanBeSecured: e.target.checked })}
+                  className="w-4 h-4" />
+
                   <span>Pets can be secured during service</span>
                 </label>
               </div>
@@ -481,89 +481,89 @@ export default function Onboarding() {
               </Button>
             </CardContent>
           </Card>
-        )}
+        }
 
         {/* Access Restrictions */}
-        {step === 13 && (
-          <QuestionCard
-            question="Are there any access restrictions?"
-            options={[
-              { label: 'No restrictions', value: 'none' },
-              { label: 'Locked gate', value: 'locked_gate' },
-              { label: 'Access code required', value: 'code_required' },
-              { label: 'HOA / Community permission', value: 'hoa' },
-              { label: 'Other', value: 'other' }
-            ]}
-            onSelect={(value) => handleSelect('accessRestrictions', value)}
-          />
-        )}
+        {step === 13 &&
+        <QuestionCard
+          question="Are there any access restrictions?"
+          options={[
+          { label: 'No restrictions', value: 'none' },
+          { label: 'Locked gate', value: 'locked_gate' },
+          { label: 'Access code required', value: 'code_required' },
+          { label: 'HOA / Community permission', value: 'hoa' },
+          { label: 'Other', value: 'other' }]
+          }
+          onSelect={(value) => handleSelect('accessRestrictions', value)} />
+
+        }
 
         {/* Gate Code (conditional) */}
-        {step === 14 && leadData.accessRestrictions === 'code_required' && (
-          <Card>
+        {step === 14 && leadData.accessRestrictions === 'code_required' &&
+        <Card>
             <CardHeader>
               <CardTitle>How would you like to provide the access code?</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Button 
-                onClick={() => {
-                  setLeadData({ ...leadData, gateCodeProvisionMethod: 'at_inspection' });
-                  setStep(step + 1);
-                }}
-                variant="outline"
-                className="w-full justify-start text-left h-auto py-4"
-              >
+              <Button
+              onClick={() => {
+                setLeadData({ ...leadData, gateCodeProvisionMethod: 'at_inspection' });
+                setStep(step + 1);
+              }}
+              variant="outline"
+              className="w-full justify-start text-left h-auto py-4">
+
                 Provide at inspection
               </Button>
-              <Button 
-                onClick={() => {
-                  setLeadData({ ...leadData, gateCodeProvisionMethod: 'call_me' });
-                  setStep(step + 1);
-                }}
-                variant="outline"
-                className="w-full justify-start text-left h-auto py-4"
-              >
+              <Button
+              onClick={() => {
+                setLeadData({ ...leadData, gateCodeProvisionMethod: 'call_me' });
+                setStep(step + 1);
+              }}
+              variant="outline"
+              className="w-full justify-start text-left h-auto py-4">
+
                 Call/Text me for it
               </Button>
               <div className="space-y-2">
                 <Label>Or enter now (stored securely)</Label>
                 <Input
-                  value={leadData.gateCode}
-                  onChange={(e) => setLeadData({ ...leadData, gateCode: e.target.value, gateCodeProvisionMethod: 'entered' })}
-                  placeholder="Enter code"
-                />
-                <Button 
-                  onClick={() => setStep(step + 1)}
-                  disabled={!leadData.gateCode}
-                  className="w-full bg-teal-600 hover:bg-teal-700"
-                >
+                value={leadData.gateCode}
+                onChange={(e) => setLeadData({ ...leadData, gateCode: e.target.value, gateCodeProvisionMethod: 'entered' })}
+                placeholder="Enter code" />
+
+                <Button
+                onClick={() => setStep(step + 1)}
+                disabled={!leadData.gateCode}
+                className="w-full bg-teal-600 hover:bg-teal-700">
+
                   Continue
                 </Button>
               </div>
             </CardContent>
           </Card>
-        )}
+        }
 
         {/* Pool Condition */}
-        {step === 15 && (
-          <QuestionCard
-            question="What is the current pool condition?"
-            options={[
-              { label: 'Clear', value: 'clear' },
-              { label: 'Slightly cloudy', value: 'slightly_cloudy' },
-              { label: 'Green / algae', value: 'green' },
-              { label: 'Not sure', value: 'not_sure' }
-            ]}
-            onSelect={(value) => {
-              setLeadData({ ...leadData, poolCondition: value });
-              setStep(step + 1);
-            }}
-          />
-        )}
+        {step === 15 &&
+        <QuestionCard
+          question="What is the current pool condition?"
+          options={[
+          { label: 'Clear', value: 'clear' },
+          { label: 'Slightly cloudy', value: 'slightly_cloudy' },
+          { label: 'Green / algae', value: 'green' },
+          { label: 'Not sure', value: 'not_sure' }]
+          }
+          onSelect={(value) => {
+            setLeadData({ ...leadData, poolCondition: value });
+            setStep(step + 1);
+          }} />
+
+        }
 
         {/* Inspection Scheduling */}
-        {step === 16 && (
-          <Card>
+        {step === 16 &&
+        <Card>
             <CardHeader>
               <CardTitle>Schedule Your Free Pool Inspection</CardTitle>
             </CardHeader>
@@ -571,20 +571,20 @@ export default function Onboarding() {
               <div>
                 <Label>Preferred Date</Label>
                 <Input
-                  type="date"
-                  value={leadData.requestedInspectionDate}
-                  onChange={(e) => setLeadData({ ...leadData, requestedInspectionDate: e.target.value })}
-                  className="mt-2"
-                  min={new Date().toISOString().split('T')[0]}
-                />
+                type="date"
+                value={leadData.requestedInspectionDate}
+                onChange={(e) => setLeadData({ ...leadData, requestedInspectionDate: e.target.value })}
+                className="mt-2"
+                min={new Date().toISOString().split('T')[0]} />
+
               </div>
               <div>
                 <Label>Preferred Time</Label>
                 <select
-                  value={leadData.requestedInspectionTime}
-                  onChange={(e) => setLeadData({ ...leadData, requestedInspectionTime: e.target.value })}
-                  className="w-full mt-2 p-3 border rounded-lg"
-                >
+                value={leadData.requestedInspectionTime}
+                onChange={(e) => setLeadData({ ...leadData, requestedInspectionTime: e.target.value })}
+                className="w-full mt-2 p-3 border rounded-lg">
+
                   <option value="">Select time</option>
                   <option value="morning">Morning (8am - 12pm)</option>
                   <option value="afternoon">Afternoon (12pm - 4pm)</option>
@@ -596,19 +596,19 @@ export default function Onboarding() {
                   {"We'll contact you via "}<strong>{leadData.preferredContact === 'text' ? 'text message' : leadData.preferredContact === 'phone' ? 'phone call' : 'email'}</strong>{" to confirm"}
                 </p>
               </div>
-              <Button 
-                onClick={handleScheduleSubmit}
-                disabled={submitLeadMutation.isPending}
-                className="w-full bg-teal-600 hover:bg-teal-700"
-              >
+              <Button
+              onClick={handleScheduleSubmit}
+              disabled={submitLeadMutation.isPending}
+              className="w-full bg-teal-600 hover:bg-teal-700">
+
                 {submitLeadMutation.isPending ? 'Submitting...' : 'Request Inspection'}
               </Button>
             </CardContent>
           </Card>
-        )}
+        }
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 function QuestionCard({ question, options, onSelect }) {
@@ -618,19 +618,19 @@ function QuestionCard({ question, options, onSelect }) {
         <CardTitle className="text-lg">{question}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {options.map((option) => (
-          <Button
-            key={option.value}
-            onClick={() => onSelect(option.value)}
-            variant="outline"
-            className="w-full justify-start text-left h-auto py-4 hover:bg-teal-50 hover:border-teal-600"
-          >
+        {options.map((option) =>
+        <Button
+          key={option.value}
+          onClick={() => onSelect(option.value)}
+          variant="outline"
+          className="w-full justify-start text-left h-auto py-4 hover:bg-teal-50 hover:border-teal-600">
+
             {option.label}
           </Button>
-        ))}
+        )}
       </CardContent>
-    </Card>
-  );
+    </Card>);
+
 }
 
 function DisqualificationScreen({ reason }) {
@@ -660,8 +660,8 @@ function DisqualificationScreen({ reason }) {
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>);
+
 }
 
 function ConfirmationScreen({ inspector }) {
@@ -681,11 +681,11 @@ function ConfirmationScreen({ inspector }) {
             <p className="text-sm text-gray-600 mb-4">Your inspection will be handled by:</p>
             <div className="flex flex-col items-center gap-4">
               <div className="w-24 h-24 rounded-full bg-gray-200 overflow-hidden">
-                <img 
+                <img
                   src="https://via.placeholder.com/150/1B9B9F/FFFFFF?text=Matt"
                   alt={inspector}
-                  className="w-full h-full object-cover"
-                />
+                  className="w-full h-full object-cover" />
+
               </div>
               <div>
                 <p className="font-semibold text-lg">{inspector}</p>
@@ -709,6 +709,6 @@ function ConfirmationScreen({ inspector }) {
           </Button>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>);
+
 }
