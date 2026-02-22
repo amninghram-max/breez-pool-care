@@ -103,7 +103,12 @@ export default function PreQualification() {
 
 const stepIsValid = () => {
     if (step === 1) {
-      return formData.poolSize && formData.poolType && formData.spaPresent && formData.enclosure;
+      let baseValid = formData.poolSize && formData.poolType && formData.spaPresent && formData.enclosure;
+      // If unscreened, require trees and debris questions
+      if (formData.enclosure === 'unscreened') {
+        return baseValid && formData.treesOverhead && formData.debrisLevel;
+      }
+      return baseValid;
     }
     if (step === 2) {
       let baseValid = formData.filterType && formData.chlorinationMethod && formData.useFrequency && formData.poolCondition;
