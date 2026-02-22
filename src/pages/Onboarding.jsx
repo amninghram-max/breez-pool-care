@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Check, AlertCircle } from 'lucide-react';
 
 export default function Onboarding() {
@@ -68,9 +69,24 @@ export default function Onboarding() {
       const response = await base44.functions.invoke('processLead', { leadData: data });
       return response.data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       if (data.isEligible) {
-        setStep(step + 1);
+        // Send inspection confirmation email
+        try {
+          await base44.functions.invoke('sendInspectionConfirmation', {
+            firstName: leadData.firstName,
+            email: leadData.email,
+            mobilePhone: leadData.mobilePhone,
+            inspectionDate: leadData.requestedInspectionDate,
+            inspectionTime: leadData.requestedInspectionTime,
+            serviceAddress: leadData.serviceAddress,
+            preferredContact: leadData.preferredContactMethod || leadData.preferredContact
+          });
+        } catch (emailError) {
+          console.error('Failed to send confirmation email:', emailError);
+        }
+        
+        setConfirmed(true);
       }
     }
   });
@@ -149,8 +165,16 @@ export default function Onboarding() {
       alert('Please select a date and time');
       return;
     }
-    submitLeadMutation.mutate(leadData);
-    setConfirmed(true);
+    
+    // Add tracking flags
+    const leadDataWithTracking = {
+      ...leadData,
+      inspectionScheduled: true,
+      quoteGenerated: !!storedQuoteData,
+      stage: 'inspection_scheduled'
+    };
+    
+    submitLeadMutation.mutate(leadDataWithTracking);
   };
 
   if (disqualified) {
