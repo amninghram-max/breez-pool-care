@@ -10,7 +10,13 @@ export default function Layout({ children, currentPageName }) {
   
   const { data: user } = useQuery({
     queryKey: ['user'],
-    queryFn: () => base44.auth.me(),
+    queryFn: async () => {
+      try {
+        return await base44.auth.me();
+      } catch (error) {
+        return null;
+      }
+    },
   });
 
   const isAdmin = user?.role === 'admin';
