@@ -55,6 +55,9 @@ import LeadsPipeline from './pages/LeadsPipeline';
 import Onboarding from './pages/Onboarding';
 import PreQualification from './pages/PreQualification';
 import ServiceVisitEntry from './pages/ServiceVisitEntry';
+import Billing from './pages/Billing';
+import ServiceReinstatement from './pages/ServiceReinstatement';
+import AdminReinstatements from './pages/AdminReinstatements';
 import __Layout from './Layout.jsx';
 
 
@@ -67,6 +70,9 @@ export const PAGES = {
     "Onboarding": Onboarding,
     "PreQualification": PreQualification,
     "ServiceVisitEntry": ServiceVisitEntry,
+    "Billing": Billing,
+    "ServiceReinstatement": ServiceReinstatement,
+    "AdminReinstatements": AdminReinstatements,
 }
 
 export const pagesConfig = {
