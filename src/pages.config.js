@@ -58,6 +58,8 @@ import ServiceVisitEntry from './pages/ServiceVisitEntry';
 import Billing from './pages/Billing';
 import ServiceReinstatement from './pages/ServiceReinstatement';
 import AdminReinstatements from './pages/AdminReinstatements';
+import AdminSchedule from './pages/AdminSchedule';
+import TechnicianRoute from './pages/TechnicianRoute';
 import __Layout from './Layout.jsx';
 
 
@@ -73,6 +75,8 @@ export const PAGES = {
     "Billing": Billing,
     "ServiceReinstatement": ServiceReinstatement,
     "AdminReinstatements": AdminReinstatements,
+    "AdminSchedule": AdminSchedule,
+    "TechnicianRoute": TechnicianRoute,
 }
 
 export const pagesConfig = {
