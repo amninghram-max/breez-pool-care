@@ -67,6 +67,11 @@ import PreQualification from './pages/PreQualification';
 import ServiceReinstatement from './pages/ServiceReinstatement';
 import ServiceVisitEntry from './pages/ServiceVisitEntry';
 import TechnicianRoute from './pages/TechnicianRoute';
+import ClientHome from './pages/ClientHome';
+import TechnicianHome from './pages/TechnicianHome';
+import StaffHome from './pages/StaffHome';
+import AdminHome from './pages/AdminHome';
+import StaffManagement from './pages/StaffManagement';
 import __Layout from './Layout.jsx';
 
 
@@ -91,6 +96,11 @@ export const PAGES = {
     "ServiceReinstatement": ServiceReinstatement,
     "ServiceVisitEntry": ServiceVisitEntry,
     "TechnicianRoute": TechnicianRoute,
+    "ClientHome": ClientHome,
+    "TechnicianHome": TechnicianHome,
+    "StaffHome": StaffHome,
+    "AdminHome": AdminHome,
+    "StaffManagement": StaffManagement,
 }
 
 export const pagesConfig = {
