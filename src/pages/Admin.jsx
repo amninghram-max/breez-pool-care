@@ -707,54 +707,137 @@ export default function Admin() {
         <TabsContent value="storm" className="space-y-4 mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Storm Recovery Mode</CardTitle>
+              <CardTitle>Storm Recovery Mode Control</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <Label className="text-blue-900 font-semibold">Activate Storm Mode</Label>
-                  <p className="text-sm text-blue-800 mt-2">
-                    When active, suspends service guarantees and allows schedule flexibility during severe weather.
-                  </p>
-                </div>
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-900 font-semibold">
+                  Activate Storm Mode when named storms, hurricanes, or severe weather impact service area.
+                </p>
+              </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label>Storm Recovery Mode</Label>
+                  <div className="mt-2 flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      defaultChecked={settings.stormRecovery?.modeActive || false}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        stormRecovery: {...(prev.stormRecovery || {}), modeActive: e.target.checked}
+                      }))}
+                      className="w-4 h-4"
+                    />
+                    <Label className="font-normal">Mode Active</Label>
+                  </div>
+                </div>
+                <div>
+                  <Label>Severity Level</Label>
+                  <Select
+                    defaultValue={settings.stormRecovery?.severityLevel || 'minor'}
+                    onValueChange={(value) => setFormData(prev => ({
+                      ...prev,
+                      stormRecovery: {...(prev.stormRecovery || {}), severityLevel: value}
+                    }))}
+                  >
+                    <SelectTrigger className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="minor">Minor Storm</SelectItem>
+                      <SelectItem value="severe">Severe Storm</SelectItem>
+                      <SelectItem value="hurricane">Hurricane Event</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="border-t pt-6">
+                <Label>Client-Facing Notice</Label>
+                <textarea
+                  defaultValue={settings.stormRecovery?.clientNotice || 'Service schedules may shift due to severe weather conditions.'}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    stormRecovery: {...(prev.stormRecovery || {}), clientNotice: e.target.value}
+                  }))}
+                  className="w-full mt-2 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
+                  rows={3}
+                />
+              </div>
+
+              <div className="border-t pt-6">
+                <h4 className="font-semibold text-gray-900 mb-4">Post-Storm Cleanup Pricing</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <Label>Cleanup Light (+$)</Label>
+                    <Label>Light Debris Cleanup ($)</Label>
                     <Input
                       type="number"
-                      defaultValue={settings.stormCleanupLightPrice || 25}
+                      defaultValue={settings.stormRecovery?.cleanupPricing?.light || 25}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        stormRecovery: {
+                          ...prev.stormRecovery,
+                          cleanupPricing: {...(prev.stormRecovery?.cleanupPricing || {}), light: parseFloat(e.target.value)}
+                        }
+                      }))}
                       className="mt-2"
                     />
+                    <p className="text-xs text-gray-500 mt-1">Minor leaves/dirt</p>
                   </div>
                   <div>
-                    <Label>Cleanup Moderate (+$)</Label>
+                    <Label>Moderate Debris Cleanup ($)</Label>
                     <Input
                       type="number"
-                      defaultValue={settings.stormCleanupModeratePrice || 45}
+                      defaultValue={settings.stormRecovery?.cleanupPricing?.moderate || 45}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        stormRecovery: {
+                          ...prev.stormRecovery,
+                          cleanupPricing: {...(prev.stormRecovery?.cleanupPricing || {}), moderate: parseFloat(e.target.value)}
+                        }
+                      }))}
                       className="mt-2"
                     />
+                    <p className="text-xs text-gray-500 mt-1">Visible accumulation</p>
                   </div>
                   <div>
-                    <Label>Cleanup Heavy (+$)</Label>
+                    <Label>Heavy Debris Cleanup ($)</Label>
                     <Input
                       type="number"
-                      defaultValue={settings.stormCleanupHeavyPrice || 75}
+                      defaultValue={settings.stormRecovery?.cleanupPricing?.heavy || 95}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        stormRecovery: {
+                          ...prev.stormRecovery,
+                          cleanupPricing: {...(prev.stormRecovery?.cleanupPricing || {}), heavy: parseFloat(e.target.value)}
+                        }
+                      }))}
                       className="mt-2"
                     />
+                    <p className="text-xs text-gray-500 mt-1">Branches, significant contamination</p>
                   </div>
                   <div>
-                    <Label>Damage Inspection (+$)</Label>
+                    <Label>Damage Inspection ($)</Label>
                     <Input
                       type="number"
-                      defaultValue={settings.stormDamageInspectionPrice || 35}
+                      defaultValue={settings.stormRecovery?.cleanupPricing?.inspection || 35}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        stormRecovery: {
+                          ...prev.stormRecovery,
+                          cleanupPricing: {...(prev.stormRecovery?.cleanupPricing || {}), inspection: parseFloat(e.target.value)}
+                        }
+                      }))}
                       className="mt-2"
                     />
+                    <p className="text-xs text-gray-500 mt-1">Equipment concerns diagnostic</p>
                   </div>
                 </div>
               </div>
+
               <Button onClick={() => handleSave(settings)}>
-                Save Storm Settings
+                Save Storm Recovery Settings
               </Button>
             </CardContent>
           </Card>
