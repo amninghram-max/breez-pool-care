@@ -422,8 +422,21 @@ Deno.serve(async (req) => {
       recommendedFrequency = 'weekly';
     }
 
+    // Summer algae risk: tighter threshold
+    if (isSummerHighRisk) {
+      const summerThreshold = summerAlgae.weeklyRecommendationThreshold || 52;
+      if (riskScore >= summerThreshold) {
+        recommendedFrequency = 'weekly';
+      }
+    }
+
     // In rainy season + unscreened + heavy debris, force weekly
     if (isRainySeason && questionnaireData.enclosure === 'unscreened' && questionnaireData.environmentalFactors?.includes('heavy_debris')) {
+      recommendedFrequency = 'weekly';
+    }
+
+    // Storm mode: force weekly
+    if (isStormModeActive) {
       recommendedFrequency = 'weekly';
     }
 
