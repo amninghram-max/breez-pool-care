@@ -15,7 +15,14 @@ export default function PreQualification() {
       const [quoteResult, setQuoteResult] = useState(null);
       const [error, setError] = useState(null);
 
-      const [formData, setFormData] = useState({
+      const { data: adminSettings } = useQuery({
+    queryKey: ['adminSettings'],
+    queryFn: () => base44.asServiceRole.entities.AdminSettings.filter({ settingKey: 'default' }),
+  });
+
+  const isStormModeActive = adminSettings?.[0]?.stormRecovery?.modeActive || false;
+
+  const [formData, setFormData] = useState({
         poolSize: '',
         poolType: '',
         enclosure: '',
@@ -38,7 +45,10 @@ export default function PreQualification() {
         clientEmail: '',
         clientPhone: '',
         clientSelectedFrequency: 'weekly',
-        biweeklyAcknowledged: false
+        biweeklyAcknowledged: false,
+        stormDebrisLevel: '',
+        stormWaterCondition: '',
+        stormEquipmentConcerns: 'no'
       });
 
   const toggleMultiSelect = (field, value) => {
