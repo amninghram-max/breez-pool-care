@@ -43,7 +43,7 @@ export default function Layout({ children, currentPageName }) {
 
   const handleLogout = () => {
     localStorage.clear();
-    window.location.href = '/';
+    window.location.reload();
   };
 
   return (

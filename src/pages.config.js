@@ -49,7 +49,9 @@
  */
 import AIChat from './pages/AIChat';
 import Admin from './pages/Admin';
+import AdminMessaging from './pages/AdminMessaging';
 import AdminReinstatements from './pages/AdminReinstatements';
+import Analytics from './pages/Analytics';
 import Billing from './pages/Billing';
 import Calendar from './pages/Calendar';
 import ChemistryDashboard from './pages/ChemistryDashboard';
@@ -58,22 +60,22 @@ import FAQ from './pages/FAQ';
 import HelpSupport from './pages/HelpSupport';
 import Home from './pages/Home';
 import LeadsPipeline from './pages/LeadsPipeline';
+import MessageThread from './pages/MessageThread';
 import Messages from './pages/Messages';
 import Onboarding from './pages/Onboarding';
 import PreQualification from './pages/PreQualification';
 import ServiceReinstatement from './pages/ServiceReinstatement';
 import ServiceVisitEntry from './pages/ServiceVisitEntry';
 import TechnicianRoute from './pages/TechnicianRoute';
-import MessageThread from './pages/MessageThread';
-import AdminMessaging from './pages/AdminMessaging';
-import Analytics from './pages/Analytics';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "AIChat": AIChat,
     "Admin": Admin,
+    "AdminMessaging": AdminMessaging,
     "AdminReinstatements": AdminReinstatements,
+    "Analytics": Analytics,
     "Billing": Billing,
     "Calendar": Calendar,
     "ChemistryDashboard": ChemistryDashboard,
@@ -82,15 +84,13 @@ export const PAGES = {
     "HelpSupport": HelpSupport,
     "Home": Home,
     "LeadsPipeline": LeadsPipeline,
+    "MessageThread": MessageThread,
     "Messages": Messages,
     "Onboarding": Onboarding,
     "PreQualification": PreQualification,
     "ServiceReinstatement": ServiceReinstatement,
     "ServiceVisitEntry": ServiceVisitEntry,
     "TechnicianRoute": TechnicianRoute,
-    "MessageThread": MessageThread,
-    "AdminMessaging": AdminMessaging,
-    "Analytics": Analytics,
 }
 
 export const pagesConfig = {
