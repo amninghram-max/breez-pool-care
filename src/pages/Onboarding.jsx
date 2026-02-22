@@ -507,8 +507,7 @@ export default function Onboarding() {
           question="Is your pool area screened?"
           options={[
           { label: 'Fully screened', value: 'fully_screened' },
-          { label: 'Partially screened', value: 'partially_screened' },
-          { label: 'Unscreened', value: 'unscreened' },
+          { label: 'Not screened', value: 'unscreened' },
           { label: 'Indoor', value: 'indoor' }]
           }
           onSelect={(value) => handleSelect('screenedArea', value)} />

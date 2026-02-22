@@ -82,8 +82,6 @@ Deno.serve(async (req) => {
     let enclosureCogsMultiplier = 1.0;
     if (questionnaireData.enclosure === 'unscreened') {
       enclosureCogsMultiplier = cogsMultipliers.enclosure_unscreened || 1.20;
-    } else if (questionnaireData.enclosure === 'partially_screened') {
-      enclosureCogsMultiplier = cogsMultipliers.enclosure_partially_screened || 1.10;
     } else {
       enclosureCogsMultiplier = cogsMultipliers.enclosure_screened || 1.00;
     }
@@ -197,9 +195,6 @@ Deno.serve(async (req) => {
     if (questionnaireData.enclosure === 'unscreened') {
       monthlyModifierSum += modifiers.enclosure_unscreened || 20;
       influencingFactors.push('Unscreened pool');
-    } else if (questionnaireData.enclosure === 'partially_screened') {
-      monthlyModifierSum += modifiers.enclosure_partially_screened || 10;
-      influencingFactors.push('Partially screened');
     }
 
     // Environmental modifiers (only for unscreened pools)
@@ -316,8 +311,6 @@ Deno.serve(async (req) => {
 
     if (questionnaireData.enclosure === 'unscreened') {
       riskScore += riskWeights.enclosure_unscreened || 15;
-    } else if (questionnaireData.enclosure === 'partially_screened') {
-      riskScore += riskWeights.enclosure_partially_screened || 5;
     }
 
     // Risk from trees/debris (only for unscreened)

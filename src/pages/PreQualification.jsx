@@ -233,7 +233,6 @@ const stepIsValid = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="fully_screened">Fully screened</SelectItem>
-                    <SelectItem value="partially_screened">Partially screened</SelectItem>
                     <SelectItem value="unscreened">Not screened</SelectItem>
                     <SelectItem value="indoor">Indoor</SelectItem>
                   </SelectContent>
