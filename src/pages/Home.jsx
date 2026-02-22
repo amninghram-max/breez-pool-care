@@ -21,9 +21,9 @@ export default function Home() {
     },
   });
 
-  // Redirect to role-specific home
+  // Redirect to role-specific home only if user is logged in
   React.useEffect(() => {
-    if (user) {
+    if (user?.email) {
       const role = user.role || 'customer';
       const homePages = {
         customer: 'ClientHome',
@@ -32,7 +32,9 @@ export default function Home() {
         admin: 'AdminHome'
       };
       const targetPage = homePages[role] || 'ClientHome';
-      window.location.href = createPageUrl(targetPage);
+      if (window.location.pathname !== `/${targetPage}`) {
+        window.location.href = createPageUrl(targetPage);
+      }
     }
   }, [user]);
 
