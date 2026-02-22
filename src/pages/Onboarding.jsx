@@ -24,8 +24,8 @@ export default function Onboarding() {
   }, []);
 
   const [leadData, setLeadData] = useState({
-    firstName: storedQuoteData?.formData?.clientEmail?.split('@')[0] || '',
-    lastName: '',
+    firstName: storedQuoteData?.formData?.clientFirstName || '',
+    lastName: storedQuoteData?.formData?.clientLastName || '',
     streetAddress: '',
     aptSuite: '',
     city: '',
@@ -36,7 +36,7 @@ export default function Onboarding() {
     preferredContact: storedQuoteData?.formData?.preferredContact || 'text',
     secondaryContact: 'none',
     poolType: storedQuoteData?.formData?.poolType || '',
-    spaPresent: '',
+    spaPresent: storedQuoteData?.formData?.spaPresent || '',
     poolSurface: storedQuoteData?.formData?.poolSurface || '',
     filterType: storedQuoteData?.formData?.filterType || '',
     sanitizerType: storedQuoteData?.formData?.chlorinationMethod || '',
@@ -120,14 +120,25 @@ export default function Onboarding() {
   };
 
   const handleContactSubmit = () => {
-    if (!leadData.firstName || !leadData.lastName || !leadData.streetAddress || !leadData.city || !leadData.state || !leadData.zipCode || !leadData.email || !leadData.mobilePhone) {
-      alert('Please fill in all required fields');
-      return;
+    if (storedQuoteData) {
+      // Quote flow - only validate address and phone
+      if (!leadData.streetAddress || !leadData.city || !leadData.state || !leadData.zipCode || !leadData.mobilePhone) {
+        alert('Please fill in all required fields');
+        return;
+      }
+      const fullAddress = `${leadData.streetAddress}${leadData.aptSuite ? ' ' + leadData.aptSuite : ''}, ${leadData.city}, ${leadData.state} ${leadData.zipCode}`;
+      setLeadData({ ...leadData, serviceAddress: fullAddress });
+      setStep(16); // Skip to inspection scheduling
+    } else {
+      // Regular flow
+      if (!leadData.firstName || !leadData.lastName || !leadData.streetAddress || !leadData.city || !leadData.state || !leadData.zipCode || !leadData.email || !leadData.mobilePhone) {
+        alert('Please fill in all required fields');
+        return;
+      }
+      const fullAddress = `${leadData.streetAddress}${leadData.aptSuite ? ' ' + leadData.aptSuite : ''}, ${leadData.city}, ${leadData.state} ${leadData.zipCode}`;
+      setLeadData({ ...leadData, serviceAddress: fullAddress });
+      setStep(step + 1);
     }
-    // Construct full service address
-    const fullAddress = `${leadData.streetAddress}${leadData.aptSuite ? ' ' + leadData.aptSuite : ''}, ${leadData.city}, ${leadData.state} ${leadData.zipCode}`;
-    setLeadData({ ...leadData, serviceAddress: fullAddress });
-    setStep(step + 1);
   };
 
   const handleScheduleSubmit = () => {
@@ -144,7 +155,7 @@ export default function Onboarding() {
   }
 
   if (confirmed) {
-    return <ConfirmationScreen inspector={leadData.assignedInspector} />;
+    return <ConfirmationScreen inspector={leadData.assignedInspector} firstName={leadData.firstName} />;
   }
 
   return (
@@ -681,20 +692,24 @@ function DisqualificationScreen({ reason }) {
 
 }
 
-function ConfirmationScreen({ inspector }) {
+function ConfirmationScreen({ inspector, firstName }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-blue-50 flex items-center justify-center p-4">
-      <Card className="max-w-md text-center">
+      <Card className="w-full max-w-md text-center">
         <CardHeader>
-          <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-teal-100 flex items-center justify-center">
-            <Check className="w-8 h-8 text-teal-600" />
+          <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
+            <Check className="w-8 h-8 text-emerald-600" />
           </div>
-          <CardTitle className="text-2xl">Inspection Confirmed ✅</CardTitle>
+          <CardTitle className="text-2xl">{"You're All Set 🎉"}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <p className="text-gray-600">Your inspection request has been received!</p>
-          
-          <div className="border-t border-b py-6">
+          <p className="text-gray-700">
+            Thank you, <strong>{firstName}</strong>.
+            <br />
+            Your free pool inspection has been scheduled.
+          </p>
+
+          <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
             <p className="text-sm text-gray-600 mb-4">Your inspection will be handled by:</p>
             <div className="flex flex-col items-center gap-4">
               <div className="w-24 h-24 rounded-full bg-gray-200 overflow-hidden">
@@ -709,20 +724,20 @@ function ConfirmationScreen({ inspector }) {
                 <p className="text-sm text-gray-600">Pool Care Specialist</p>
               </div>
             </div>
-            <p className="text-sm text-gray-600 mt-4">
-              {inspector} will perform your free pool assessment and answer any questions.
-            </p>
+            <p className="text-sm text-gray-700 mt-4">{inspector} will perform your initial pool assessment and answer any questions you have.</p>
           </div>
-
-          <div className="p-4 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-900">
-              <strong>{"What's next?"}</strong><br />
-              {"We'll confirm your appointment and send you all the details."}
-            </p>
+          
+          <div className="text-left space-y-3 text-sm text-gray-600">
+            <p>✓ {"You'll receive a reminder before your appointment"}</p>
+            <p>✓ {inspector} will call you approximately 30–60 minutes before arrival to ensure you are home</p>
           </div>
-
-          <Button className="w-full bg-teal-600 hover:bg-teal-700" onClick={() => window.location.href = '/'}>
-            Done
+          
+          <div className="bg-gray-50 rounded-lg p-4">
+            <p className="text-sm text-gray-700">{"We appreciate the opportunity to care for your pool."}</p>
+          </div>
+          
+          <Button onClick={() => window.location.href = '/'} className="w-full bg-teal-600 hover:bg-teal-700">
+            Back to Dashboard
           </Button>
         </CardContent>
       </Card>
