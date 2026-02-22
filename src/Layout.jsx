@@ -1,9 +1,11 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Home, BarChart3, MessageSquare, Settings, LogOut, Droplet, AlertCircle, Calendar as CalendarIcon, Navigation } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
+import CustomerNav from '../components/navigation/CustomerNav';
+import ProviderNav from '../components/navigation/ProviderNav';
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -20,59 +22,7 @@ export default function Layout({ children, currentPageName }) {
   });
 
   const userRole = user?.role || 'customer';
-  const isAdmin = userRole === 'admin';
-  const isStaff = userRole === 'staff' || isAdmin;
-  const isTechnician = userRole === 'technician' || isStaff;
   const isCustomer = userRole === 'customer';
-
-  // Role-based navigation
-  const navigationItems = [];
-
-  // Customer navigation
-  if (isCustomer) {
-    navigationItems.push(
-      { name: 'Home', path: 'ClientHome', icon: Home },
-      { name: 'Messages', path: 'Messages', icon: MessageSquare },
-      { name: 'Billing', path: 'Billing', icon: BarChart3 },
-      { name: 'Help & Support', path: 'HelpSupport', icon: MessageSquare }
-    );
-  }
-
-  // Technician navigation
-  if (isTechnician && !isCustomer) {
-    navigationItems.push(
-      { name: 'Home', path: 'TechnicianHome', icon: Home },
-      { name: 'My Route', path: 'TechnicianRoute', icon: Navigation },
-      { name: 'Service Entry', path: 'ServiceVisitEntry', icon: Droplet },
-      { name: 'Messages', path: 'AdminMessaging', icon: MessageSquare }
-    );
-  }
-
-  // Staff navigation (includes admin)
-  if (isStaff && !isCustomer) {
-    if (!isTechnician || isStaff) {
-      navigationItems.push(
-        { name: 'Dashboard', path: 'StaffHome', icon: Home },
-        { name: 'Calendar', path: 'Calendar', icon: CalendarIcon },
-        { name: 'Leads', path: 'LeadsPipeline', icon: BarChart3 },
-        { name: 'Routes', path: 'TechnicianRoute', icon: Navigation },
-        { name: 'Support Inbox', path: 'AdminMessaging', icon: MessageSquare },
-        { name: 'Service Entry', path: 'ServiceVisitEntry', icon: Droplet },
-        { name: 'Reinstatements', path: 'AdminReinstatements', icon: AlertCircle }
-      );
-    }
-  }
-
-  // Admin-only navigation
-  if (isAdmin) {
-    navigationItems.push(
-      { name: 'Admin Home', path: 'AdminHome', icon: Settings },
-      { name: 'Settings', path: 'Admin', icon: Settings },
-      { name: 'Staff', path: 'StaffManagement', icon: Home },
-      { name: 'Analytics', path: 'Analytics', icon: BarChart3 },
-      { name: 'Chemistry', path: 'ChemistryDashboard', icon: Droplet }
-    );
-  }
 
   const handleLogout = async () => {
     await base44.auth.logout('/');
@@ -131,31 +81,14 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </header>
 
-      {/* Main layout */}
+      {/* Main layout with role-specific navigation */}
       <div className="flex">
-        {/* Sidebar navigation */}
-        <nav className="hidden sm:flex flex-col w-64 border-r border-gray-light bg-white shadow-sm">
-          <div className="flex-1 overflow-y-auto p-4 space-y-2">
-            {navigationItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === `/${item.path}`;
-              return (
-                <Link
-                  key={item.name}
-                  to={createPageUrl(item.path)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                    isActive
-                      ? 'bg-teal-50 text-teal-700 border-l-4 border-teal-500'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className="font-medium text-sm">{item.name}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
+        {/* Render appropriate navigation based on role */}
+        {isCustomer ? (
+          <CustomerNav />
+        ) : (
+          <ProviderNav userRole={userRole} />
+        )}
 
         {/* Main content */}
         <main className="flex-1 overflow-auto">
@@ -164,28 +97,6 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </main>
       </div>
-
-      {/* Mobile bottom navigation */}
-      <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-light">
-        <div className="flex justify-around items-center h-16">
-          {navigationItems.slice(0, 3).map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === `/${item.path}`;
-            return (
-              <Link
-                key={item.name}
-                to={createPageUrl(item.path)}
-                className={`flex flex-col items-center gap-1 py-3 px-4 transition-colors ${
-                  isActive ? 'text-teal-600' : 'text-gray-600'
-                }`}
-              >
-                <Icon className="w-6 h-6" />
-                <span className="text-xs font-medium">{item.name}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
 
       {/* Mobile safe area padding */}
       <div className="sm:hidden h-20" />
