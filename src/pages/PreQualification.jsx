@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertCircle, Loader2, Check } from 'lucide-react';
+import { createPageUrl } from '@/utils';
 
 export default function PreQualification() {
   const [step, setStep] = useState(1);
@@ -645,6 +646,24 @@ const stepIsValid = () => {
 
 function QuoteDisplay({ quote, formData }) {
   const recommendedButNotSelected = quote.recommendedFrequency === 'weekly' && formData.clientSelectedFrequency === 'biweekly';
+  const [showInternalBreakdown, setShowInternalBreakdown] = React.useState(false);
+
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const isAdmin = user?.role === 'admin';
+
+  const handleContinueToSetup = () => {
+    // Store quote acceptance
+    localStorage.setItem('quoteData', JSON.stringify({
+      quote,
+      formData,
+      timestamp: new Date().toISOString()
+    }));
+    window.location.href = createPageUrl('Onboarding');
+  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -653,9 +672,9 @@ function QuoteDisplay({ quote, formData }) {
           <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
             <Check className="w-5 h-5 text-emerald-600" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Your Quote Ready!</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Your Recommended Service Plan</h1>
         </div>
-        <p className="text-gray-600">Here's what we calculated for your pool</p>
+        <p className="text-gray-600">Simple pricing. No surprises.</p>
       </div>
 
       {recommendedButNotSelected && (
@@ -668,75 +687,137 @@ function QuoteDisplay({ quote, formData }) {
         </Card>
       )}
 
-      {/* Price Summary */}
+      {/* Clean Customer Pricing */}
       <Card className="bg-gradient-to-br from-teal-50 to-blue-50 border-teal-200">
         <CardContent className="pt-6 space-y-6">
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <p className="text-sm text-gray-600 font-medium">Monthly Service</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">${quote.estimatedMonthlyPrice.toFixed(2)}</p>
-              <p className="text-xs text-gray-600 mt-1">{formData.clientSelectedFrequency === 'weekly' ? 'Weekly visits' : 'Biweekly visits'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600 font-medium">Per Visit</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">${quote.estimatedPerVisitPrice.toFixed(2)}</p>
-              <p className="text-xs text-gray-600 mt-1">Estimated per visit</p>
-            </div>
+          <div className="text-center">
+            <p className="text-sm text-gray-600 font-medium">Monthly Service</p>
+            <p className="text-5xl font-bold text-gray-900 mt-3">${quote.estimatedMonthlyPrice.toFixed(2)}</p>
+            <p className="text-sm text-gray-600 mt-2">{formData.clientSelectedFrequency === 'weekly' ? 'Weekly visits' : 'Biweekly visits'}</p>
+          </div>
+
+          <div className="border-t pt-4 text-center">
+            <p className="text-sm text-gray-600 font-medium">Per Visit</p>
+            <p className="text-2xl font-bold text-gray-900 mt-2">${quote.estimatedPerVisitPrice.toFixed(2)}</p>
           </div>
 
           {quote.estimatedOneTimeFees > 0 && (
-            <div className="border-t pt-4">
-              <p className="text-sm text-gray-600 font-medium">One-Time Setup & Fees</p>
+            <div className="border-t pt-4 text-center">
+              <p className="text-sm text-gray-600 font-medium">One-Time Setup</p>
               <p className="text-2xl font-bold text-teal-700 mt-2">${quote.estimatedOneTimeFees.toFixed(2)}</p>
             </div>
           )}
-
-          {quote.marginAdjustmentApplied > 0 && (
-            <div className="border-t pt-4 bg-blue-50 rounded-lg p-4">
-              <p className="text-xs text-gray-600 font-medium uppercase tracking-wide">Adjustment Applied</p>
-              <p className="text-lg font-semibold text-blue-900 mt-1">${quote.marginAdjustmentApplied.toFixed(2)}</p>
-              <p className="text-xs text-blue-800 mt-2">{quote.marginAdjustmentReason}</p>
-            </div>
-          )}
-
-          <div className="border-t pt-4 bg-white/50 rounded-lg p-4">
-            <p className="text-sm text-gray-600 font-medium">First Month Total</p>
-            <p className="text-4xl font-bold text-gray-900 mt-2">${quote.estimatedFirstMonthTotal.toFixed(2)}</p>
-          </div>
         </CardContent>
       </Card>
 
-      {/* Risk Score */}
+      {/* What's Included */}
       <Card>
         <CardHeader>
-          <CardTitle>Pool Maintenance Risk</CardTitle>
+          <CardTitle className="text-lg">{"What's Included"}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700">Risk Score</span>
-              <span className={`text-2xl font-bold ${
-                quote.riskLevel === 'low' ? 'text-emerald-600' :
-                quote.riskLevel === 'medium' ? 'text-amber-600' :
-                'text-red-600'
-              }`}>
-                {quote.riskScore}
-              </span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-3">
-              <div
-                className={`h-3 rounded-full transition-all ${
-                  quote.riskLevel === 'low' ? 'bg-emerald-600' :
-                  quote.riskLevel === 'medium' ? 'bg-amber-600' :
-                  'bg-red-600'
-                }`}
-                style={{ width: `${quote.riskScore}%` }}
-              />
-            </div>
-            <p className="text-sm text-gray-600 mt-2 capitalize">{quote.riskLevel} maintenance complexity</p>
-          </div>
+        <CardContent>
+          <ul className="space-y-3">
+            {[
+              'Chemicals included',
+              'Water testing & balancing',
+              'Brushing & vacuuming',
+              'Debris removal',
+              'Skimmer & filter check'
+            ].map((item, i) => (
+              <li key={i} className="flex items-center gap-3">
+                <Check className="w-5 h-5 text-teal-600 flex-shrink-0" />
+                <span className="text-gray-700">{item}</span>
+              </li>
+            ))}
+          </ul>
         </CardContent>
       </Card>
+
+      {/* Continue to Setup CTA */}
+      <Card className="bg-gradient-to-r from-teal-600 to-blue-600 text-white border-0">
+        <CardContent className="pt-6 text-center">
+          <h3 className="text-2xl font-bold mb-2">Ready to get started?</h3>
+          <p className="text-teal-50 mb-6">{"Let's set up your account and schedule your first service"}</p>
+          <Button 
+            onClick={handleContinueToSetup}
+            size="lg"
+            className="bg-white text-teal-600 hover:bg-gray-100 text-lg px-8 py-6"
+          >
+            Continue to Setup →
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Admin-Only Internal Breakdown */}
+      {isAdmin && (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-amber-900">Internal Breakdown (Admin Only)</CardTitle>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowInternalBreakdown(!showInternalBreakdown)}
+              >
+                {showInternalBreakdown ? 'Hide' : 'Show'} Details
+              </Button>
+            </div>
+          </CardHeader>
+          {showInternalBreakdown && (
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-sm font-semibold text-amber-900 mb-2">Risk Score</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700">Score</span>
+                  <span className="font-bold">{quote.riskScore} ({quote.riskLevel})</span>
+                </div>
+              </div>
+              
+              <div>
+                <p className="text-sm font-semibold text-amber-900 mb-2">Chemical COGS</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700">Monthly Estimate</span>
+                  <span className="font-bold">${quote.estimatedMonthlyChemicalCOGS.toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-sm text-gray-700">Demand Index</span>
+                  <span className="font-bold">{quote.chemDemandIndex}/100</span>
+                </div>
+              </div>
+
+              {quote.marginAdjustmentApplied > 0 && (
+                <div>
+                  <p className="text-sm font-semibold text-amber-900 mb-2">Margin Protection</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700">Adjustment</span>
+                    <span className="font-bold">${quote.marginAdjustmentApplied.toFixed(2)}</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">{quote.marginAdjustmentReason}</p>
+                </div>
+              )}
+
+              <div>
+                <p className="text-sm font-semibold text-amber-900 mb-2">Gross Margin</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700">Percentage</span>
+                  <span className="font-bold">{quote.estimatedGrossMarginPercent}%</span>
+                </div>
+              </div>
+
+              {quote.priceInfluencers.length > 0 && (
+                <div>
+                  <p className="text-sm font-semibold text-amber-900 mb-2">Price Factors</p>
+                  <ul className="space-y-1">
+                    {quote.priceInfluencers.map((factor, i) => (
+                      <li key={i} className="text-xs text-gray-700">• {factor}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </CardContent>
+          )}
+        </Card>
+      )}
 
       {/* Green Recovery Plan */}
       {quote.greenRecoveryTier !== 'none' && (
@@ -756,22 +837,7 @@ function QuoteDisplay({ quote, formData }) {
         </Card>
       )}
 
-      {/* Chemical COGS */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Estimated Chemical Costs</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex justify-between items-center border-b pb-2">
-            <span className="text-sm font-medium text-gray-700">Monthly chemical estimate</span>
-            <span className="text-lg font-bold text-gray-900">${quote.estimatedMonthlyChemicalCOGS.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-600">Chemistry demand index</span>
-            <span className="text-sm font-semibold">{quote.chemDemandIndex}/100</span>
-          </div>
-        </CardContent>
-      </Card>
+
 
       {/* Upsell Suggestions */}
       {quote.upsellSuggestions.length > 0 && (
@@ -798,43 +864,11 @@ function QuoteDisplay({ quote, formData }) {
         </Card>
       )}
 
-      {/* Price Influencers */}
-      {quote.priceInfluencers.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">What's Affecting Your Price</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              {quote.priceInfluencers.map((factor, i) => (
-                <li key={i} className="flex items-center gap-3 text-sm text-gray-700">
-                  <div className="w-2 h-2 rounded-full bg-teal-600" />
-                  {factor}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
 
-      {/* Tech Notes Preview */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Service Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <pre className="bg-gray-50 p-4 rounded-lg text-xs text-gray-700 overflow-x-auto whitespace-pre-wrap break-words">
-            {quote.technicianNotes}
-          </pre>
-        </CardContent>
-      </Card>
 
       <div className="flex gap-3">
         <Button variant="outline" className="flex-1" onClick={() => window.history.back()}>
           Modify Answers
-        </Button>
-        <Button className="flex-1 bg-teal-600 hover:bg-teal-700">
-          Next Steps
         </Button>
       </div>
     </div>

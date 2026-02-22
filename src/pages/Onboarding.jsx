@@ -9,32 +9,47 @@ import { Check, AlertCircle } from 'lucide-react';
 
 export default function Onboarding() {
   const [step, setStep] = useState(0);
+  
+  // Check for quote data from localStorage
+  const storedQuoteData = React.useMemo(() => {
+    const data = localStorage.getItem('quoteData');
+    if (data) {
+      try {
+        return JSON.parse(data);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }, []);
+
   const [leadData, setLeadData] = useState({
-    firstName: '',
+    firstName: storedQuoteData?.formData?.clientEmail?.split('@')[0] || '',
     lastName: '',
     serviceAddress: '',
-    email: '',
-    mobilePhone: '',
-    preferredContact: 'text',
+    email: storedQuoteData?.formData?.clientEmail || '',
+    mobilePhone: storedQuoteData?.formData?.clientPhone || '',
+    preferredContact: storedQuoteData?.formData?.preferredContact || 'text',
     secondaryContact: 'none',
-    poolType: '',
-    poolSurface: '',
-    filterType: '',
-    sanitizerType: '',
-    tabletFeederType: 'n/a',
-    screenedArea: '',
-    usageFrequency: '',
-    hasPets: false,
+    poolType: storedQuoteData?.formData?.poolType || '',
+    poolSurface: storedQuoteData?.formData?.poolSurface || '',
+    filterType: storedQuoteData?.formData?.filterType || '',
+    sanitizerType: storedQuoteData?.formData?.chlorinationMethod || '',
+    tabletFeederType: storedQuoteData?.formData?.chlorinatorType || 'n/a',
+    screenedArea: storedQuoteData?.formData?.enclosure || '',
+    usageFrequency: storedQuoteData?.formData?.useFrequency || '',
+    hasPets: storedQuoteData?.formData?.petsAccess || false,
     petsEnterPoolArea: false,
     petsSwimInPool: false,
     petsCanBeSecured: false,
-    accessRestrictions: 'none',
-    gateCode: '',
+    accessRestrictions: storedQuoteData?.formData?.accessType || 'none',
+    gateCode: storedQuoteData?.formData?.accessNotes || '',
     gateCodeProvisionMethod: 'n/a',
-    poolCondition: '',
+    poolCondition: storedQuoteData?.formData?.poolCondition || '',
     assignedInspector: 'Matt',
     requestedInspectionDate: '',
-    requestedInspectionTime: ''
+    requestedInspectionTime: '',
+    quoteData: storedQuoteData?.quote || null
   });
   const [disqualified, setDisqualified] = useState(false);
   const [disqualificationReason, setDisqualificationReason] = useState('');
@@ -138,12 +153,24 @@ export default function Onboarding() {
                   className="h-16 mx-auto"
                 />
               </div>
-              <CardTitle className="text-2xl">Welcome to Breez</CardTitle>
+              <CardTitle className="text-2xl">
+                {storedQuoteData ? "Great news! Let's set up your account" : 'Welcome to Breez'}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <p className="text-gray-600">We provide professional pool cleaning with chemicals included.</p>
+              {storedQuoteData ? (
+                <>
+                  <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
+                    <p className="font-semibold text-teal-900">Your Quote: ${storedQuoteData.quote.estimatedMonthlyPrice.toFixed(2)}/month</p>
+                    <p className="text-sm text-teal-700 mt-1">{"We've saved your information to make setup quick and easy"}</p>
+                  </div>
+                  <p className="text-gray-600">{"Let's confirm a few details and schedule your first service"}</p>
+                </>
+              ) : (
+                <p className="text-gray-600">We provide professional pool cleaning with chemicals included.</p>
+              )}
               <Button onClick={() => setStep(1)} className="w-full bg-teal-600 hover:bg-teal-700 text-lg py-6">
-                Check Pool Eligibility
+                {storedQuoteData ? 'Continue Setup' : 'Check Pool Eligibility'}
               </Button>
             </CardContent>
           </Card>
