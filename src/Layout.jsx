@@ -8,8 +8,6 @@ import CustomerNav from '../components/navigation/CustomerNav';
 import ProviderNav from '../components/navigation/ProviderNav';
 
 export default function Layout({ children, currentPageName }) {
-  const location = useLocation();
-  
   const { data: user } = useQuery({
     queryKey: ['user'],
     queryFn: async () => {
