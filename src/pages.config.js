@@ -60,6 +60,10 @@ import ServiceReinstatement from './pages/ServiceReinstatement';
 import AdminReinstatements from './pages/AdminReinstatements';
 import Calendar from './pages/Calendar';
 import TechnicianRoute from './pages/TechnicianRoute';
+import HelpSupport from './pages/HelpSupport';
+import FAQ from './pages/FAQ';
+import AIChat from './pages/AIChat';
+import Messages from './pages/Messages';
 import __Layout from './Layout.jsx';
 
 
@@ -77,6 +81,10 @@ export const PAGES = {
     "AdminReinstatements": AdminReinstatements,
     "Calendar": Calendar,
     "TechnicianRoute": TechnicianRoute,
+    "HelpSupport": HelpSupport,
+    "FAQ": FAQ,
+    "AIChat": AIChat,
+    "Messages": Messages,
 }
 
 export const pagesConfig = {
