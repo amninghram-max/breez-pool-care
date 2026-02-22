@@ -444,6 +444,8 @@ Deno.serve(async (req) => {
     // ONE-TIME FEES & FIRST MONTH
     // ============================================
     let estimatedOneTimeFees = 0;
+    let stormCleanupClassification = 'none';
+    let stormCleanupFee = 0;
 
     if (questionnaireData.poolCondition === 'slightly_cloudy') {
       estimatedOneTimeFees += oneTimeFees.condition_slightly_cloudy || 25;
@@ -459,6 +461,26 @@ Deno.serve(async (req) => {
     }
     if (questionnaireData.knownIssues?.includes('staining')) {
       estimatedOneTimeFees += oneTimeFees.issue_staining || 25;
+    }
+
+    // Storm cleanup pricing (if storm mode active)
+    if (isStormModeActive && questionnaireData.stormDebrisLevel) {
+      if (questionnaireData.stormDebrisLevel === 'light') {
+        stormCleanupClassification = 'light';
+        stormCleanupFee = stormRecovery.cleanupPricing?.light || 25;
+      } else if (questionnaireData.stormDebrisLevel === 'moderate') {
+        stormCleanupClassification = 'moderate';
+        stormCleanupFee = stormRecovery.cleanupPricing?.moderate || 45;
+      } else if (questionnaireData.stormDebrisLevel === 'heavy') {
+        stormCleanupClassification = 'heavy';
+        stormCleanupFee = stormRecovery.cleanupPricing?.heavy || 95;
+      }
+      estimatedOneTimeFees += stormCleanupFee;
+    }
+
+    // Storm damage inspection fee
+    if (isStormModeActive && questionnaireData.stormEquipmentConcerns === 'yes') {
+      estimatedOneTimeFees += stormRecovery.cleanupPricing?.inspection || 35;
     }
 
     // Add green pool recovery startup
