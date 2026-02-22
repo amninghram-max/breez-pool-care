@@ -12,8 +12,29 @@ export default function Home() {
 
   const { data: user } = useQuery({
     queryKey: ['user'],
-    queryFn: () => base44.auth.me(),
+    queryFn: async () => {
+      try {
+        return await base44.auth.me();
+      } catch (error) {
+        return null;
+      }
+    },
   });
+
+  // Redirect to role-specific home
+  React.useEffect(() => {
+    if (user) {
+      const role = user.role || 'customer';
+      const homePages = {
+        customer: 'ClientHome',
+        technician: 'TechnicianHome',
+        staff: 'StaffHome',
+        admin: 'AdminHome'
+      };
+      const targetPage = homePages[role] || 'ClientHome';
+      window.location.href = createPageUrl(targetPage);
+    }
+  }, [user]);
 
   const { data: properties = [] } = useQuery({
     queryKey: ['properties'],

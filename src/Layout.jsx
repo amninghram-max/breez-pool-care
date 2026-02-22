@@ -19,27 +19,60 @@ export default function Layout({ children, currentPageName }) {
     },
   });
 
-  const isAdmin = user?.role === 'admin';
+  const userRole = user?.role || 'customer';
+  const isAdmin = userRole === 'admin';
+  const isStaff = userRole === 'staff' || isAdmin;
+  const isTechnician = userRole === 'technician' || isStaff;
+  const isCustomer = userRole === 'customer';
 
-  const navigationItems = [
-    { name: 'Dashboard', path: 'Home', icon: Home },
-    { name: 'Get Quote', path: 'PreQualification', icon: Droplet },
-    { name: 'Onboarding', path: 'Onboarding', icon: Droplet },
-    { name: 'Billing', path: 'Billing', icon: BarChart3 },
-    { name: 'My Route', path: 'TechnicianRoute', icon: Navigation },
-    { name: 'Help & Support', path: 'HelpSupport', icon: MessageSquare },
-    { name: 'Chemistry', path: 'ChemistryDashboard', icon: Droplet },
-    { name: 'Analytics', path: 'Analytics', icon: BarChart3 },
-    { name: 'Design', path: 'DesignSystem', icon: Settings },
-    ...(isAdmin ? [
-      { name: 'Admin', path: 'Admin', icon: Settings },
-      { name: 'Calendar', path: 'Calendar', icon: CalendarIcon },
-      { name: 'Support Inbox', path: 'AdminMessaging', icon: MessageSquare },
-      { name: 'Leads', path: 'LeadsPipeline', icon: BarChart3 },
+  // Role-based navigation
+  const navigationItems = [];
+
+  // Customer navigation
+  if (isCustomer) {
+    navigationItems.push(
+      { name: 'Home', path: 'ClientHome', icon: Home },
+      { name: 'Messages', path: 'Messages', icon: MessageSquare },
+      { name: 'Billing', path: 'Billing', icon: BarChart3 },
+      { name: 'Help & Support', path: 'HelpSupport', icon: MessageSquare }
+    );
+  }
+
+  // Technician navigation
+  if (isTechnician && !isCustomer) {
+    navigationItems.push(
+      { name: 'Home', path: 'TechnicianHome', icon: Home },
+      { name: 'My Route', path: 'TechnicianRoute', icon: Navigation },
       { name: 'Service Entry', path: 'ServiceVisitEntry', icon: Droplet },
-      { name: 'Reinstatements', path: 'AdminReinstatements', icon: AlertCircle }
-    ] : []),
-  ];
+      { name: 'Messages', path: 'AdminMessaging', icon: MessageSquare }
+    );
+  }
+
+  // Staff navigation (includes admin)
+  if (isStaff && !isCustomer) {
+    if (!isTechnician || isStaff) {
+      navigationItems.push(
+        { name: 'Dashboard', path: 'StaffHome', icon: Home },
+        { name: 'Calendar', path: 'Calendar', icon: CalendarIcon },
+        { name: 'Leads', path: 'LeadsPipeline', icon: BarChart3 },
+        { name: 'Routes', path: 'TechnicianRoute', icon: Navigation },
+        { name: 'Support Inbox', path: 'AdminMessaging', icon: MessageSquare },
+        { name: 'Service Entry', path: 'ServiceVisitEntry', icon: Droplet },
+        { name: 'Reinstatements', path: 'AdminReinstatements', icon: AlertCircle }
+      );
+    }
+  }
+
+  // Admin-only navigation
+  if (isAdmin) {
+    navigationItems.push(
+      { name: 'Admin Home', path: 'AdminHome', icon: Settings },
+      { name: 'Settings', path: 'Admin', icon: Settings },
+      { name: 'Staff', path: 'StaffManagement', icon: Home },
+      { name: 'Analytics', path: 'Analytics', icon: BarChart3 },
+      { name: 'Chemistry', path: 'ChemistryDashboard', icon: Droplet }
+    );
+  }
 
   const handleLogout = () => {
     localStorage.clear();
