@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Home, BarChart3, MessageSquare, Settings, LogOut, Droplet, AlertCircle } from 'lucide-react';
+import { Home, BarChart3, MessageSquare, Settings, LogOut, Droplet, AlertCircle, Calendar as CalendarIcon, Navigation } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 
@@ -20,12 +20,14 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Get Quote', path: 'PreQualification', icon: Droplet },
     { name: 'Onboarding', path: 'Onboarding', icon: Droplet },
     { name: 'Billing', path: 'Billing', icon: BarChart3 },
+    { name: 'My Route', path: 'TechnicianRoute', icon: Navigation },
     { name: 'Chemistry', path: 'ChemistryDashboard', icon: Droplet },
     { name: 'Analytics', path: 'Analytics', icon: BarChart3 },
     { name: 'Messages', path: 'Messages', icon: MessageSquare },
     { name: 'Design', path: 'DesignSystem', icon: Settings },
     ...(isAdmin ? [
       { name: 'Admin', path: 'Admin', icon: Settings },
+      { name: 'Calendar', path: 'Calendar', icon: CalendarIcon },
       { name: 'Leads', path: 'LeadsPipeline', icon: BarChart3 },
       { name: 'Service Entry', path: 'ServiceVisitEntry', icon: Droplet },
       { name: 'Reinstatements', path: 'AdminReinstatements', icon: AlertCircle }
