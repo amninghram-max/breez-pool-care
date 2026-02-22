@@ -432,7 +432,7 @@ export default function ServiceVisitEntry() {
                   checked={visitData.servicesPerformed?.includes(service)}
                   onCheckedChange={() => toggleService(service)}
                 />
-                <span className="text-sm capitalize">{service.replace(/_/g, ' ')}</span>
+                <span className="text-sm capitalize">{service === 'filter_check' ? 'filter check/cleaning' : service.replace(/_/g, ' ')}</span>
               </label>
             ))}
           </div>
