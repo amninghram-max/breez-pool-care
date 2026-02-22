@@ -151,7 +151,7 @@ export default function Onboarding() {
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-blue-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Welcome Screen */}
-        {step === 0 &&
+        {step === 0 && !storedQuoteData &&
         <Card className="text-center">
             <CardHeader className="pb-4">
               <div className="mx-auto mb-4">
@@ -162,53 +162,54 @@ export default function Onboarding() {
 
               </div>
               <CardTitle className="text-2xl">
-                {storedQuoteData ? "Great news! Let's set up your account" : 'Welcome to Breez'}
+                Welcome to Breez
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {storedQuoteData ?
-            <>
-                  <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
-                    <p className="font-semibold text-teal-900">Your Quote: ${storedQuoteData.quote.estimatedMonthlyPrice.toFixed(2)}/month</p>
-                    <p className="text-sm text-teal-700 mt-1">{"We've saved your information to make setup quick and easy"}</p>
-                  </div>
-                  <p className="text-gray-600">{"Let's confirm a few details and schedule your first service"}</p>
-                </> :
-
-            <p className="text-gray-600">Professional pool cleaning, everything included.</p>
-            }
+              <p className="text-gray-600">Professional pool cleaning, everything included.</p>
               <Button onClick={() => setStep(1)} className="w-full bg-teal-600 hover:bg-teal-700 text-lg py-6">
-                {storedQuoteData ? 'Continue Setup' : 'Get Started'}
+                Get Started
               </Button>
             </CardContent>
           </Card>
         }
 
+        {/* Quote Flow Welcome - Skip to Address */}
+        {step === 0 && storedQuoteData && (() => {
+          setStep(1);
+          return null;
+        })()}
+
         {/* Contact Information */}
         {step === 1 &&
         <Card>
             <CardHeader>
-              <CardTitle>Your Information</CardTitle>
+              <CardTitle>{storedQuoteData ? `Hi ${leadData.firstName}! Let's finalize your inspection` : 'Your Information'}</CardTitle>
+              {storedQuoteData && (
+                <p className="text-sm text-gray-600 mt-2">Your quote: ${storedQuoteData.quote.estimatedMonthlyPrice.toFixed(2)}/month</p>
+              )}
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>First Name</Label>
-                  <Input
-                  value={leadData.firstName}
-                  onChange={(e) => setLeadData({ ...leadData, firstName: e.target.value })}
-                  className="mt-2" />
+              {!storedQuoteData && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>First Name</Label>
+                    <Input
+                    value={leadData.firstName}
+                    onChange={(e) => setLeadData({ ...leadData, firstName: e.target.value })}
+                    className="mt-2" />
 
-                </div>
-                <div>
-                  <Label>Last Name</Label>
-                  <Input
-                  value={leadData.lastName}
-                  onChange={(e) => setLeadData({ ...leadData, lastName: e.target.value })}
-                  className="mt-2" />
+                  </div>
+                  <div>
+                    <Label>Last Name</Label>
+                    <Input
+                    value={leadData.lastName}
+                    onChange={(e) => setLeadData({ ...leadData, lastName: e.target.value })}
+                    className="mt-2" />
 
+                  </div>
                 </div>
-              </div>
+              )}
               
               <div>
                 <Label>Street Address</Label>
@@ -272,29 +273,45 @@ export default function Onboarding() {
 
               </div>
               
-              <div>
-                <Label>Email</Label>
-                <Input
-                type="email"
-                value={leadData.email}
-                onChange={(e) => setLeadData({ ...leadData, email: e.target.value })}
-                className="mt-2" />
+              {!storedQuoteData && (
+                <>
+                  <div>
+                    <Label>Email</Label>
+                    <Input
+                    type="email"
+                    value={leadData.email}
+                    onChange={(e) => setLeadData({ ...leadData, email: e.target.value })}
+                    className="mt-2" />
 
-              </div>
-              
-              <div>
-                <Label>Mobile Phone</Label>
-                <Input
-                type="tel"
-                value={leadData.mobilePhone}
-                onChange={(e) => setLeadData({ ...leadData, mobilePhone: e.target.value })}
-                className="mt-2"
-                placeholder="(555) 000-0000" />
+                  </div>
+                  
+                  <div>
+                    <Label>Mobile Phone</Label>
+                    <Input
+                    type="tel"
+                    value={leadData.mobilePhone}
+                    onChange={(e) => setLeadData({ ...leadData, mobilePhone: e.target.value })}
+                    className="mt-2"
+                    placeholder="(555) 000-0000" />
 
-              </div>
+                  </div>
+                </>
+              )}
+
+              {storedQuoteData && (
+                <div>
+                  <Label>Mobile Phone</Label>
+                  <Input
+                  type="tel"
+                  value={leadData.mobilePhone}
+                  onChange={(e) => setLeadData({ ...leadData, mobilePhone: e.target.value })}
+                  className="mt-2"
+                  placeholder="(555) 000-0000" />
+                </div>
+              )}
               
               <Button onClick={handleContactSubmit} className="w-full bg-teal-600 hover:bg-teal-700">
-                Continue
+                {storedQuoteData ? 'Continue to Schedule Inspection' : 'Continue'}
               </Button>
             </CardContent>
           </Card>

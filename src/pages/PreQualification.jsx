@@ -44,6 +44,8 @@ export default function PreQualification() {
         equipment: [],
         accessType: '',
         accessNotes: '',
+        clientFirstName: '',
+        clientLastName: '',
         clientEmail: '',
         clientPhone: '',
         clientSelectedFrequency: 'weekly',
@@ -112,7 +114,7 @@ const stepIsValid = () => {
       return baseValid;
     }
     if (step === 3) {
-      let baseValid = formData.clientEmail && formData.accessType;
+      let baseValid = formData.clientFirstName && formData.clientLastName && formData.clientEmail && formData.accessType;
       // If biweekly selected but frequency might be recommended weekly, require acknowledgment
       if (formData.clientSelectedFrequency === 'biweekly') {
         return baseValid && formData.biweeklyAcknowledged;
@@ -486,6 +488,27 @@ const stepIsValid = () => {
           {/* STEP 3: CONTACT & ACCESS */}
           {step === 3 && (
             <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>First Name</Label>
+                  <Input
+                    value={formData.clientFirstName || ''}
+                    onChange={(e) => setFormData({ ...formData, clientFirstName: e.target.value })}
+                    placeholder="John"
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label>Last Name</Label>
+                  <Input
+                    value={formData.clientLastName || ''}
+                    onChange={(e) => setFormData({ ...formData, clientLastName: e.target.value })}
+                    placeholder="Doe"
+                    className="mt-2"
+                  />
+                </div>
+              </div>
+
               <div>
                 <Label>Email</Label>
                 <Input
@@ -751,13 +774,13 @@ function QuoteDisplay({ quote, formData }) {
       <Card className="bg-gradient-to-r from-teal-600 to-blue-600 text-white border-0">
         <CardContent className="pt-6 text-center">
           <h3 className="text-2xl font-bold mb-2">Ready to get started?</h3>
-          <p className="text-teal-50 mb-6">{"Let's set up your account and schedule your first service"}</p>
+          <p className="text-teal-50 mb-6">{"Let's schedule your free pool inspection"}</p>
           <Button 
             onClick={handleContinueToSetup}
             size="lg"
             className="bg-white text-teal-600 hover:bg-gray-100 text-lg px-8 py-6"
           >
-            Book Free Inspection
+            Continue to Schedule Your Free Inspection
           </Button>
         </CardContent>
       </Card>
