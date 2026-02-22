@@ -26,7 +26,11 @@ export default function Onboarding() {
   const [leadData, setLeadData] = useState({
     firstName: storedQuoteData?.formData?.clientEmail?.split('@')[0] || '',
     lastName: '',
-    serviceAddress: '',
+    streetAddress: '',
+    aptSuite: '',
+    city: '',
+    state: '',
+    zipCode: '',
     email: storedQuoteData?.formData?.clientEmail || '',
     mobilePhone: storedQuoteData?.formData?.clientPhone || '',
     preferredContact: storedQuoteData?.formData?.preferredContact || 'text',
@@ -115,10 +119,13 @@ export default function Onboarding() {
   };
 
   const handleContactSubmit = () => {
-    if (!leadData.firstName || !leadData.lastName || !leadData.serviceAddress || !leadData.email || !leadData.mobilePhone) {
+    if (!leadData.firstName || !leadData.lastName || !leadData.streetAddress || !leadData.city || !leadData.state || !leadData.zipCode || !leadData.email || !leadData.mobilePhone) {
       alert('Please fill in all required fields');
       return;
     }
+    // Construct full service address
+    const fullAddress = `${leadData.streetAddress}${leadData.aptSuite ? ' ' + leadData.aptSuite : ''}, ${leadData.city}, ${leadData.state} ${leadData.zipCode}`;
+    setLeadData({ ...leadData, serviceAddress: fullAddress });
     setStep(step + 1);
   };
 
@@ -183,30 +190,87 @@ export default function Onboarding() {
               <CardTitle>Your Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>First Name</Label>
+                  <Input
+                    value={leadData.firstName}
+                    onChange={(e) => setLeadData({ ...leadData, firstName: e.target.value })}
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label>Last Name</Label>
+                  <Input
+                    value={leadData.lastName}
+                    onChange={(e) => setLeadData({ ...leadData, lastName: e.target.value })}
+                    className="mt-2"
+                  />
+                </div>
+              </div>
+              
               <div>
-                <Label>First Name</Label>
+                <Label>Street Address</Label>
                 <Input
-                  value={leadData.firstName}
-                  onChange={(e) => setLeadData({ ...leadData, firstName: e.target.value })}
+                  value={leadData.streetAddress}
+                  onChange={(e) => setLeadData({ ...leadData, streetAddress: e.target.value })}
                   className="mt-2"
+                  placeholder="123 Main St"
                 />
               </div>
+              
               <div>
-                <Label>Last Name</Label>
+                <Label>Apt/Suite (optional)</Label>
                 <Input
-                  value={leadData.lastName}
-                  onChange={(e) => setLeadData({ ...leadData, lastName: e.target.value })}
+                  value={leadData.aptSuite}
+                  onChange={(e) => setLeadData({ ...leadData, aptSuite: e.target.value })}
                   className="mt-2"
+                  placeholder="Apt 4B"
                 />
               </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>City</Label>
+                  <Input
+                    value={leadData.city}
+                    onChange={(e) => setLeadData({ ...leadData, city: e.target.value })}
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label>State</Label>
+                  <select
+                    value={leadData.state}
+                    onChange={(e) => setLeadData({ ...leadData, state: e.target.value })}
+                    className="w-full mt-2 p-3 border rounded-lg"
+                  >
+                    <option value="">Select</option>
+                    <option value="FL">Florida</option>
+                    <option value="AL">Alabama</option>
+                    <option value="AZ">Arizona</option>
+                    <option value="CA">California</option>
+                    <option value="GA">Georgia</option>
+                    <option value="LA">Louisiana</option>
+                    <option value="MS">Mississippi</option>
+                    <option value="NC">North Carolina</option>
+                    <option value="SC">South Carolina</option>
+                    <option value="TX">Texas</option>
+                  </select>
+                </div>
+              </div>
+              
               <div>
-                <Label>Service Address</Label>
+                <Label>ZIP Code</Label>
                 <Input
-                  value={leadData.serviceAddress}
-                  onChange={(e) => setLeadData({ ...leadData, serviceAddress: e.target.value })}
+                  value={leadData.zipCode}
+                  onChange={(e) => setLeadData({ ...leadData, zipCode: e.target.value })}
                   className="mt-2"
+                  placeholder="12345"
+                  maxLength={5}
                 />
               </div>
+              
               <div>
                 <Label>Email</Label>
                 <Input
@@ -216,6 +280,7 @@ export default function Onboarding() {
                   className="mt-2"
                 />
               </div>
+              
               <div>
                 <Label>Mobile Phone</Label>
                 <Input
@@ -226,6 +291,7 @@ export default function Onboarding() {
                   placeholder="(555) 000-0000"
                 />
               </div>
+              
               <Button onClick={handleContactSubmit} className="w-full bg-teal-600 hover:bg-teal-700">
                 Continue
               </Button>
@@ -251,8 +317,8 @@ export default function Onboarding() {
           <QuestionCard
             question="What type of pool do you have?"
             options={[
-              { label: 'In-ground', value: 'in_ground', emoji: '✅' },
-              { label: 'Above-ground', value: 'above_ground', emoji: '❌' }
+              { label: 'In-ground', value: 'in_ground' },
+              { label: 'Above-ground', value: 'above_ground' }
             ]}
             onSelect={(value) => handleSelect('poolType', value)}
           />
@@ -263,12 +329,10 @@ export default function Onboarding() {
           <QuestionCard
             question="What is your pool surface?"
             options={[
-              { label: 'Plaster / Marcite', value: 'plaster', emoji: '✅' },
-              { label: 'Pebble / Aggregate', value: 'pebble', emoji: '✅' },
-              { label: 'Tile', value: 'tile', emoji: '✅' },
-              { label: 'Fiberglass', value: 'fiberglass', emoji: '❌' },
-              { label: 'Vinyl', value: 'vinyl', emoji: '❌' },
-              { label: 'Not sure', value: 'not_sure', emoji: '✅' }
+              { label: 'Concrete', value: 'concrete' },
+              { label: 'Fiberglass', value: 'fiberglass' },
+              { label: 'Vinyl', value: 'vinyl' },
+              { label: 'Not sure', value: 'not_sure' }
             ]}
             onSelect={(value) => handleSelect('poolSurface', value)}
           />
@@ -279,10 +343,10 @@ export default function Onboarding() {
           <QuestionCard
             question="What type of filter do you have?"
             options={[
-              { label: 'Sand', value: 'sand', emoji: '✅' },
-              { label: 'Cartridge', value: 'cartridge', emoji: '✅' },
-              { label: 'DE (powder filter)', value: 'de', emoji: '❌' },
-              { label: 'Not sure', value: 'not_sure', emoji: '✅' }
+              { label: 'Sand', value: 'sand' },
+              { label: 'Cartridge', value: 'cartridge' },
+              { label: 'DE (powder filter)', value: 'de' },
+              { label: 'Not sure', value: 'not_sure' }
             ]}
             onSelect={(value) => handleSelect('filterType', value)}
           />
@@ -293,11 +357,11 @@ export default function Onboarding() {
           <QuestionCard
             question="How is your pool sanitized?"
             options={[
-              { label: 'Saltwater System', value: 'saltwater', emoji: '✅' },
-              { label: 'Chlorine Tablets', value: 'tablets', emoji: '✅' },
-              { label: 'Liquid Chlorine', value: 'liquid_chlorine', emoji: '✅' },
-              { label: 'Mineral System (non-salt)', value: 'mineral', emoji: '❌' },
-              { label: 'Not sure', value: 'not_sure', emoji: '✅' }
+              { label: 'Saltwater System', value: 'saltwater' },
+              { label: 'Chlorine Tablets', value: 'tablets' },
+              { label: 'Liquid Chlorine', value: 'liquid_chlorine' },
+              { label: 'Mineral System (non-salt)', value: 'mineral' },
+              { label: 'Not sure', value: 'not_sure' }
             ]}
             onSelect={(value) => handleSelect('sanitizerType', value)}
           />
@@ -543,10 +607,7 @@ function QuestionCard({ question, options, onSelect }) {
             variant="outline"
             className="w-full justify-start text-left h-auto py-4 hover:bg-teal-50 hover:border-teal-600"
           >
-            <span className="flex items-center gap-3">
-              {option.emoji && <span className="text-xl">{option.emoji}</span>}
-              <span>{option.label}</span>
-            </span>
+            {option.label}
           </Button>
         ))}
       </CardContent>

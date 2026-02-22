@@ -48,25 +48,25 @@
  * The mainPage value must match a key in the PAGES object exactly.
  */
 import Admin from './pages/Admin';
+import ChemistryDashboard from './pages/ChemistryDashboard';
 import DesignSystem from './pages/DesignSystem';
 import Home from './pages/Home';
-import PreQualification from './pages/PreQualification';
-import Onboarding from './pages/Onboarding';
 import LeadsPipeline from './pages/LeadsPipeline';
+import Onboarding from './pages/Onboarding';
+import PreQualification from './pages/PreQualification';
 import ServiceVisitEntry from './pages/ServiceVisitEntry';
-import ChemistryDashboard from './pages/ChemistryDashboard';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "Admin": Admin,
+    "ChemistryDashboard": ChemistryDashboard,
     "DesignSystem": DesignSystem,
     "Home": Home,
-    "PreQualification": PreQualification,
-    "Onboarding": Onboarding,
     "LeadsPipeline": LeadsPipeline,
+    "Onboarding": Onboarding,
+    "PreQualification": PreQualification,
     "ServiceVisitEntry": ServiceVisitEntry,
-    "ChemistryDashboard": ChemistryDashboard,
 }
 
 export const pagesConfig = {
