@@ -196,31 +196,31 @@ export default function Onboarding() {
         <Card>
             <CardHeader>
               <CardTitle>{storedQuoteData ? `Hi ${leadData.firstName}! Let's finalize your inspection` : 'Your Information'}</CardTitle>
-              {storedQuoteData && (
-                <p className="text-sm text-gray-600 mt-2">Your quote: ${storedQuoteData.quote.estimatedMonthlyPrice.toFixed(2)}/month</p>
-              )}
+              {storedQuoteData &&
+            <p className="text-sm text-gray-600 mt-2">Your quote: ${storedQuoteData.quote.estimatedMonthlyPrice.toFixed(2)}/month</p>
+            }
             </CardHeader>
             <CardContent className="space-y-4">
-              {!storedQuoteData && (
-                <div className="grid grid-cols-2 gap-4">
+              {!storedQuoteData &&
+            <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>First Name</Label>
                     <Input
-                    value={leadData.firstName}
-                    onChange={(e) => setLeadData({ ...leadData, firstName: e.target.value })}
-                    className="mt-2" />
+                  value={leadData.firstName}
+                  onChange={(e) => setLeadData({ ...leadData, firstName: e.target.value })}
+                  className="mt-2" />
 
                   </div>
                   <div>
                     <Label>Last Name</Label>
                     <Input
-                    value={leadData.lastName}
-                    onChange={(e) => setLeadData({ ...leadData, lastName: e.target.value })}
-                    className="mt-2" />
+                  value={leadData.lastName}
+                  onChange={(e) => setLeadData({ ...leadData, lastName: e.target.value })}
+                  className="mt-2" />
 
                   </div>
                 </div>
-              )}
+            }
               
               <div>
                 <Label>Street Address</Label>
@@ -284,42 +284,42 @@ export default function Onboarding() {
 
               </div>
               
-              {!storedQuoteData && (
-                <>
+              {!storedQuoteData &&
+            <>
                   <div>
                     <Label>Email</Label>
                     <Input
-                    type="email"
-                    value={leadData.email}
-                    onChange={(e) => setLeadData({ ...leadData, email: e.target.value })}
-                    className="mt-2" />
+                  type="email"
+                  value={leadData.email}
+                  onChange={(e) => setLeadData({ ...leadData, email: e.target.value })}
+                  className="mt-2" />
 
                   </div>
                   
                   <div>
                     <Label>Mobile Phone</Label>
                     <Input
-                    type="tel"
-                    value={leadData.mobilePhone}
-                    onChange={(e) => setLeadData({ ...leadData, mobilePhone: e.target.value })}
-                    className="mt-2"
-                    placeholder="(555) 000-0000" />
-
-                  </div>
-                </>
-              )}
-
-              {storedQuoteData && (
-                <div>
-                  <Label>Mobile Phone</Label>
-                  <Input
                   type="tel"
                   value={leadData.mobilePhone}
                   onChange={(e) => setLeadData({ ...leadData, mobilePhone: e.target.value })}
                   className="mt-2"
                   placeholder="(555) 000-0000" />
+
+                  </div>
+                </>
+            }
+
+              {storedQuoteData &&
+            <div>
+                  <Label>Mobile Phone</Label>
+                  <Input
+                type="tel"
+                value={leadData.mobilePhone}
+                onChange={(e) => setLeadData({ ...leadData, mobilePhone: e.target.value })}
+                className="mt-2"
+                placeholder="(555) 000-0000" />
                 </div>
-              )}
+            }
               
               <Button onClick={handleContactSubmit} className="w-full bg-teal-600 hover:bg-teal-700">
                 {storedQuoteData ? 'Continue to Schedule Inspection' : 'Continue'}
@@ -710,7 +710,7 @@ function ConfirmationScreen({ inspector, firstName }) {
           </p>
 
           <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
-            <p className="text-sm text-gray-600 mb-4">Your inspection will be handled by:</p>
+            <p className="text-sm text-gray-600 mb-4">Your inspection will be with:</p>
             <div className="flex flex-col items-center gap-4">
               <div className="w-24 h-24 rounded-full bg-gray-200 overflow-hidden">
                 <img
@@ -721,7 +721,7 @@ function ConfirmationScreen({ inspector, firstName }) {
               </div>
               <div>
                 <p className="font-semibold text-lg">{inspector}</p>
-                <p className="text-sm text-gray-600">Pool Care Specialist</p>
+                <p className="text-sm text-gray-600">Owner/Operator</p>
               </div>
             </div>
             <p className="text-sm text-gray-700 mt-4">{inspector} will perform your initial pool assessment and answer any questions you have.</p>
@@ -733,7 +733,8 @@ function ConfirmationScreen({ inspector, firstName }) {
           </div>
           
           <div className="bg-gray-50 rounded-lg p-4">
-            <p className="text-sm text-gray-700">{"We appreciate the opportunity to care for your pool."}</p>
+            <p className="text-sm text-gray-700">We appreciate the opportunity to care for your pool.
+            </p>
           </div>
           
           <Button onClick={() => window.location.href = '/'} className="w-full bg-teal-600 hover:bg-teal-700">
@@ -742,5 +743,4 @@ function ConfirmationScreen({ inspector, firstName }) {
         </CardContent>
       </Card>
     </div>);
-
 }
