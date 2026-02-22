@@ -28,20 +28,20 @@ export default function PreQualification() {
         poolType: '',
         spaPresent: '',
         enclosure: '',
+        treesOverhead: '',
+        debrisLevel: '',
         filterType: '',
         chlorinationMethod: '',
         chlorinatorType: '',
         useFrequency: '',
         petsAccess: false,
-        petSwimFrequency: 'none',
-        environmentalFactors: [],
+        petSwimFrequency: 'never',
         poolCondition: '',
         greenPoolGreenness: '',
         greenPoolDebris: '',
         greenPoolDuration: '',
         greenPoolPumpRunning: false,
         knownIssues: [],
-        equipment: [],
         accessType: '',
         accessNotes: '',
         clientFirstName: '',
@@ -221,19 +221,52 @@ const stepIsValid = () => {
               </div>
 
               <div>
-                <Label>Enclosure</Label>
+                <Label>Is your pool area screened?</Label>
                 <Select value={formData.enclosure} onValueChange={(v) => setFormData({ ...formData, enclosure: v })}>
                   <SelectTrigger className="mt-2">
-                    <SelectValue placeholder="Select enclosure type" />
+                    <SelectValue placeholder="Select option" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="fully_screened">Fully Screened</SelectItem>
-                    <SelectItem value="partially_screened">Partially Screened</SelectItem>
-                    <SelectItem value="unscreened">Unscreened</SelectItem>
+                    <SelectItem value="fully_screened">Fully screened</SelectItem>
+                    <SelectItem value="partially_screened">Partially screened</SelectItem>
+                    <SelectItem value="unscreened">Not screened</SelectItem>
                     <SelectItem value="indoor">Indoor</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
+              {formData.enclosure === 'unscreened' && (
+                <>
+                  <div>
+                    <Label>Are there trees overhead?</Label>
+                    <Select value={formData.treesOverhead} onValueChange={(v) => setFormData({ ...formData, treesOverhead: v })}>
+                      <SelectTrigger className="mt-2">
+                        <SelectValue placeholder="Select option" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="yes">Yes</SelectItem>
+                        <SelectItem value="no">No</SelectItem>
+                        <SelectItem value="not_sure">Not sure</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>How much debris usually gets into the pool?</Label>
+                    <Select value={formData.debrisLevel} onValueChange={(v) => setFormData({ ...formData, debrisLevel: v })}>
+                      <SelectTrigger className="mt-2">
+                        <SelectValue placeholder="Select debris level" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="heavy">Heavy</SelectItem>
+                        <SelectItem value="not_sure">Not sure</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
 
               <div>
                 <Label>Filter Type</Label>
@@ -381,28 +414,6 @@ const stepIsValid = () => {
               )}
 
               <div className="border-t pt-6">
-                <Label className="font-semibold mb-3 block">Environmental Factors</Label>
-                <div className="space-y-3">
-                  {[
-                    { id: 'trees_overhead', label: 'Trees overhead' },
-                    { id: 'heavy_debris', label: 'Heavy debris/leaves' },
-                    { id: 'frequent_pollen', label: 'Frequent pollen' },
-                    { id: 'waterfront', label: 'Waterfront property' },
-                    { id: 'construction_nearby', label: 'Construction nearby' }
-                  ].map(factor => (
-                    <div key={factor.id} className="flex items-center gap-3">
-                      <Checkbox
-                        id={factor.id}
-                        checked={formData.environmentalFactors.includes(factor.id)}
-                        onCheckedChange={() => toggleMultiSelect('environmentalFactors', factor.id)}
-                      />
-                      <Label htmlFor={factor.id} className="cursor-pointer font-normal">{factor.label}</Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="border-t pt-6">
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <Checkbox
@@ -415,15 +426,17 @@ const stepIsValid = () => {
 
                   {formData.petsAccess && (
                     <div className="ml-6">
-                      <Label>How often do pets swim?</Label>
+                      <Label>Do pets swim in the pool?</Label>
                       <Select value={formData.petSwimFrequency} onValueChange={(v) => setFormData({ ...formData, petSwimFrequency: v })}>
                         <SelectTrigger className="mt-2">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="never">Never</SelectItem>
                           <SelectItem value="rarely">Rarely</SelectItem>
                           <SelectItem value="occasionally">Occasionally</SelectItem>
                           <SelectItem value="frequently">Frequently</SelectItem>
+                          <SelectItem value="not_sure">Not sure</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -453,28 +466,7 @@ const stepIsValid = () => {
                 </div>
               </div>
 
-              <div className="border-t pt-6">
-                <Label className="font-semibold mb-3 block">Equipment & Features</Label>
-                <div className="space-y-3">
-                  {[
-                    { id: 'heater', label: 'Heater' },
-                    { id: 'spa', label: 'Spa' },
-                    { id: 'water_features', label: 'Water features (fountain, etc)' },
-                    { id: 'automatic_cleaner', label: 'Automatic cleaner' },
-                    { id: 'variable_speed_pump', label: 'Variable-speed pump' },
-                    { id: 'automation_system', label: 'Automation system' }
-                  ].map(equip => (
-                    <div key={equip.id} className="flex items-center gap-3">
-                      <Checkbox
-                        id={equip.id}
-                        checked={formData.equipment.includes(equip.id)}
-                        onCheckedChange={() => toggleMultiSelect('equipment', equip.id)}
-                      />
-                      <Label htmlFor={equip.id} className="cursor-pointer font-normal">{equip.label}</Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
+
             </div>
           )}
 
