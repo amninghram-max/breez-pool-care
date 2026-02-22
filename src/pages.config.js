@@ -47,48 +47,50 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import AIChat from './pages/AIChat';
 import Admin from './pages/Admin';
+import AdminReinstatements from './pages/AdminReinstatements';
+import Billing from './pages/Billing';
+import Calendar from './pages/Calendar';
 import ChemistryDashboard from './pages/ChemistryDashboard';
 import DesignSystem from './pages/DesignSystem';
+import FAQ from './pages/FAQ';
+import HelpSupport from './pages/HelpSupport';
 import Home from './pages/Home';
 import LeadsPipeline from './pages/LeadsPipeline';
+import Messages from './pages/Messages';
 import Onboarding from './pages/Onboarding';
 import PreQualification from './pages/PreQualification';
-import ServiceVisitEntry from './pages/ServiceVisitEntry';
-import Billing from './pages/Billing';
 import ServiceReinstatement from './pages/ServiceReinstatement';
-import AdminReinstatements from './pages/AdminReinstatements';
-import Calendar from './pages/Calendar';
+import ServiceVisitEntry from './pages/ServiceVisitEntry';
 import TechnicianRoute from './pages/TechnicianRoute';
-import HelpSupport from './pages/HelpSupport';
-import FAQ from './pages/FAQ';
-import AIChat from './pages/AIChat';
-import Messages from './pages/Messages';
 import MessageThread from './pages/MessageThread';
 import AdminMessaging from './pages/AdminMessaging';
+import Analytics from './pages/Analytics';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "AIChat": AIChat,
     "Admin": Admin,
+    "AdminReinstatements": AdminReinstatements,
+    "Billing": Billing,
+    "Calendar": Calendar,
     "ChemistryDashboard": ChemistryDashboard,
     "DesignSystem": DesignSystem,
+    "FAQ": FAQ,
+    "HelpSupport": HelpSupport,
     "Home": Home,
     "LeadsPipeline": LeadsPipeline,
+    "Messages": Messages,
     "Onboarding": Onboarding,
     "PreQualification": PreQualification,
-    "ServiceVisitEntry": ServiceVisitEntry,
-    "Billing": Billing,
     "ServiceReinstatement": ServiceReinstatement,
-    "AdminReinstatements": AdminReinstatements,
-    "Calendar": Calendar,
+    "ServiceVisitEntry": ServiceVisitEntry,
     "TechnicianRoute": TechnicianRoute,
-    "HelpSupport": HelpSupport,
-    "FAQ": FAQ,
-    "AIChat": AIChat,
-    "Messages": Messages,
     "MessageThread": MessageThread,
     "AdminMessaging": AdminMessaging,
+    "Analytics": Analytics,
 }
 
 export const pagesConfig = {
