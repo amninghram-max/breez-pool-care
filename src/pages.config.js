@@ -53,6 +53,8 @@ import Home from './pages/Home';
 import PreQualification from './pages/PreQualification';
 import Onboarding from './pages/Onboarding';
 import LeadsPipeline from './pages/LeadsPipeline';
+import ServiceVisitEntry from './pages/ServiceVisitEntry';
+import ChemistryDashboard from './pages/ChemistryDashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -63,6 +65,8 @@ export const PAGES = {
     "PreQualification": PreQualification,
     "Onboarding": Onboarding,
     "LeadsPipeline": LeadsPipeline,
+    "ServiceVisitEntry": ServiceVisitEntry,
+    "ChemistryDashboard": ChemistryDashboard,
 }
 
 export const pagesConfig = {
