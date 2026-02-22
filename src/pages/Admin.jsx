@@ -73,12 +73,13 @@ export default function Admin() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-6 w-full bg-gray-100 p-1 rounded-lg overflow-x-auto">
+        <TabsList className="grid grid-cols-7 w-full bg-gray-100 p-1 rounded-lg overflow-x-auto">
           <TabsTrigger value="pricing">Pricing</TabsTrigger>
           <TabsTrigger value="seasonality">Seasonality</TabsTrigger>
           <TabsTrigger value="risk">Risk</TabsTrigger>
           <TabsTrigger value="chemistry">Chemistry</TabsTrigger>
           <TabsTrigger value="margin">Margin</TabsTrigger>
+          <TabsTrigger value="summer">Summer</TabsTrigger>
           <TabsTrigger value="storm">Storm</TabsTrigger>
         </TabsList>
 
