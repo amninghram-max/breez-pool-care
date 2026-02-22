@@ -42,7 +42,8 @@ export default function Layout({ children, currentPageName }) {
   ];
 
   const handleLogout = () => {
-    base44.auth.logout();
+    localStorage.clear();
+    window.location.href = '/';
   };
 
   return (
