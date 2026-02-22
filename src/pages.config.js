@@ -51,6 +51,8 @@ import Admin from './pages/Admin';
 import DesignSystem from './pages/DesignSystem';
 import Home from './pages/Home';
 import PreQualification from './pages/PreQualification';
+import Onboarding from './pages/Onboarding';
+import LeadsPipeline from './pages/LeadsPipeline';
 import __Layout from './Layout.jsx';
 
 
@@ -59,6 +61,8 @@ export const PAGES = {
     "DesignSystem": DesignSystem,
     "Home": Home,
     "PreQualification": PreQualification,
+    "Onboarding": Onboarding,
+    "LeadsPipeline": LeadsPipeline,
 }
 
 export const pagesConfig = {
