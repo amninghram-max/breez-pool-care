@@ -460,6 +460,14 @@ const stepIsValid = () => {
             </div>
           )}
 
+          {/* STORM MODE NOTICE */}
+          {isStormModeActive && (
+            <div className="bg-red-50 border border-red-200 p-4 rounded-lg mb-6">
+              <p className="text-sm text-red-900 font-semibold">⚠️ Storm Recovery Mode Active</p>
+              <p className="text-sm text-red-800 mt-1">{adminSettings?.[0]?.stormRecovery?.clientNotice}</p>
+            </div>
+          )}
+
           {/* STEP 3: CONTACT & ACCESS */}
           {step === 3 && (
             <div className="space-y-6">
