@@ -21,13 +21,14 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Onboarding', path: 'Onboarding', icon: Droplet },
     { name: 'Billing', path: 'Billing', icon: BarChart3 },
     { name: 'My Route', path: 'TechnicianRoute', icon: Navigation },
+    { name: 'Help & Support', path: 'HelpSupport', icon: MessageSquare },
     { name: 'Chemistry', path: 'ChemistryDashboard', icon: Droplet },
     { name: 'Analytics', path: 'Analytics', icon: BarChart3 },
-    { name: 'Messages', path: 'Messages', icon: MessageSquare },
     { name: 'Design', path: 'DesignSystem', icon: Settings },
     ...(isAdmin ? [
       { name: 'Admin', path: 'Admin', icon: Settings },
       { name: 'Calendar', path: 'Calendar', icon: CalendarIcon },
+      { name: 'Support Inbox', path: 'AdminMessaging', icon: MessageSquare },
       { name: 'Leads', path: 'LeadsPipeline', icon: BarChart3 },
       { name: 'Service Entry', path: 'ServiceVisitEntry', icon: Droplet },
       { name: 'Reinstatements', path: 'AdminReinstatements', icon: AlertCircle }

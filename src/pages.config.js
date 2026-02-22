@@ -64,6 +64,8 @@ import HelpSupport from './pages/HelpSupport';
 import FAQ from './pages/FAQ';
 import AIChat from './pages/AIChat';
 import Messages from './pages/Messages';
+import MessageThread from './pages/MessageThread';
+import AdminMessaging from './pages/AdminMessaging';
 import __Layout from './Layout.jsx';
 
 
@@ -85,6 +87,8 @@ export const PAGES = {
     "FAQ": FAQ,
     "AIChat": AIChat,
     "Messages": Messages,
+    "MessageThread": MessageThread,
+    "AdminMessaging": AdminMessaging,
 }
 
 export const pagesConfig = {
