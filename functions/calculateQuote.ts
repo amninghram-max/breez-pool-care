@@ -604,6 +604,28 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Additional upsells during summer high-risk period
+    if (isSummerHighRisk && recommendedFrequency === 'weekly') {
+      upsellSuggestions.push({
+        id: 'summer_algaecide',
+        title: 'Preventive Algaecide Program',
+        reason: 'Summer months increase algae bloom risk; preventive treatment maintains water clarity.',
+        price: 0,
+        accepted: false
+      });
+    }
+
+    // Storm cleanup + chemistry stabilization
+    if (isStormModeActive && stormCleanupFee > 0) {
+      upsellSuggestions.push({
+        id: 'storm_chemistry_stabil',
+        title: 'Post-Storm Chemistry Stabilization',
+        reason: 'Storm debris and refilled water require balanced chemistry to prevent algae.',
+        price: 0,
+        accepted: false
+      });
+    }
+
     // Limit to 3 upsells
     upsellSuggestions = upsellSuggestions.slice(0, 3);
 
