@@ -108,19 +108,18 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Environmental COGS adders (capped)
+    // Environmental COGS adders (for unscreened pools only)
     let envCogsAdder = 0;
-    if (questionnaireData.environmentalFactors?.includes('trees_overhead')) {
-      envCogsAdder += cogsMultipliers.environment_trees_add || 0.05;
+    if (questionnaireData.enclosure === 'unscreened') {
+      if (questionnaireData.treesOverhead === 'yes') {
+        envCogsAdder += cogsMultipliers.environment_trees_add || 0.05;
+      }
+      if (questionnaireData.debrisLevel === 'heavy') {
+        envCogsAdder += cogsMultipliers.environment_heavy_debris_add || 0.08;
+      } else if (questionnaireData.debrisLevel === 'medium') {
+        envCogsAdder += (cogsMultipliers.environment_heavy_debris_add || 0.08) * 0.5;
+      }
     }
-    if (questionnaireData.environmentalFactors?.includes('heavy_debris')) {
-      envCogsAdder += cogsMultipliers.environment_heavy_debris_add || 0.08;
-    }
-    if (questionnaireData.environmentalFactors?.includes('frequent_pollen')) {
-      envCogsAdder += cogsMultipliers.environment_pollen_add || 0.03;
-    }
-    const envCapCogs = cogsMultipliers.environment_cap || 0.15;
-    envCogsAdder = Math.min(envCogsAdder, envCapCogs);
 
     // Chlorination method adjustment
     let chlorinationCogsAdjustment = 1.0;
@@ -203,30 +202,21 @@ Deno.serve(async (req) => {
       influencingFactors.push('Partially screened');
     }
 
+    // Environmental modifiers (only for unscreened pools)
     let envModifiers = 0;
-    if (questionnaireData.environmentalFactors?.includes('trees_overhead')) {
-      envModifiers += modifiers.environment_trees || 10;
-      influencingFactors.push('Trees overhead');
+    if (questionnaireData.enclosure === 'unscreened') {
+      if (questionnaireData.treesOverhead === 'yes') {
+        envModifiers += modifiers.environment_trees || 10;
+        influencingFactors.push('Trees overhead');
+      }
+      if (questionnaireData.debrisLevel === 'heavy') {
+        envModifiers += modifiers.environment_heavy_debris || 15;
+        influencingFactors.push('Heavy debris');
+      } else if (questionnaireData.debrisLevel === 'medium') {
+        envModifiers += (modifiers.environment_heavy_debris || 15) * 0.5;
+        influencingFactors.push('Medium debris');
+      }
     }
-    if (questionnaireData.environmentalFactors?.includes('heavy_debris')) {
-      envModifiers += modifiers.environment_heavy_debris || 15;
-      influencingFactors.push('Heavy debris');
-    }
-    if (questionnaireData.environmentalFactors?.includes('frequent_pollen')) {
-      envModifiers += modifiers.environment_pollen || 5;
-      influencingFactors.push('Frequent pollen');
-    }
-    if (questionnaireData.environmentalFactors?.includes('waterfront')) {
-      envModifiers += modifiers.environment_waterfront || 5;
-      influencingFactors.push('Waterfront property');
-    }
-    if (questionnaireData.environmentalFactors?.includes('construction_nearby')) {
-      envModifiers += modifiers.environment_construction || 5;
-      influencingFactors.push('Construction nearby');
-    }
-
-    const envCap = modifiers.environment_cap || 30;
-    envModifiers = Math.min(envModifiers, envCap);
     monthlyModifierSum += envModifiers;
 
     if (questionnaireData.filterType === 'cartridge') {
@@ -315,7 +305,7 @@ Deno.serve(async (req) => {
     }
 
     // Risk score calculation (done later, but we'll use ChemDemandIndex here)
-    if (chemDemandIndex < weeklyChemThreshold && questionnaireData.enclosure !== 'unscreened' && !questionnaireData.environmentalFactors?.includes('heavy_debris')) {
+    if (chemDemandIndex < weeklyChemThreshold && questionnaireData.enclosure !== 'unscreened' && questionnaireData.debrisLevel !== 'heavy') {
       recommendedFrequency = 'biweekly';
     }
 
@@ -330,17 +320,16 @@ Deno.serve(async (req) => {
       riskScore += riskWeights.enclosure_partially_screened || 5;
     }
 
-    if (questionnaireData.environmentalFactors?.includes('trees_overhead')) {
-      riskScore += riskWeights.environment_trees || 10;
-    }
-    if (questionnaireData.environmentalFactors?.includes('heavy_debris')) {
-      riskScore += riskWeights.environment_heavy_debris || 12;
-    }
-    if (questionnaireData.environmentalFactors?.includes('frequent_pollen')) {
-      riskScore += riskWeights.environment_pollen || 8;
-    }
-    if (questionnaireData.environmentalFactors?.includes('waterfront')) {
-      riskScore += riskWeights.environment_waterfront || 6;
+    // Risk from trees/debris (only for unscreened)
+    if (questionnaireData.enclosure === 'unscreened') {
+      if (questionnaireData.treesOverhead === 'yes') {
+        riskScore += riskWeights.environment_trees || 10;
+      }
+      if (questionnaireData.debrisLevel === 'heavy') {
+        riskScore += riskWeights.environment_heavy_debris || 12;
+      } else if (questionnaireData.debrisLevel === 'medium') {
+        riskScore += (riskWeights.environment_heavy_debris || 12) * 0.5;
+      }
     }
 
     if (questionnaireData.useFrequency === 'daily') {
@@ -392,7 +381,7 @@ Deno.serve(async (req) => {
       if (questionnaireData.enclosure === 'unscreened') {
         summerRiskBoost += summerAlgae.unscreenedRiskBoost || 6;
       }
-      if (questionnaireData.environmentalFactors?.includes('heavy_debris')) {
+      if (questionnaireData.debrisLevel === 'heavy') {
         summerRiskBoost += summerAlgae.heavyDebrisRiskBoost || 5;
       }
       if (questionnaireData.petsAccess && questionnaireData.petSwimFrequency === 'frequently') {
@@ -431,7 +420,7 @@ Deno.serve(async (req) => {
     }
 
     // In rainy season + unscreened + heavy debris, force weekly
-    if (isRainySeason && questionnaireData.enclosure === 'unscreened' && questionnaireData.environmentalFactors?.includes('heavy_debris')) {
+    if (isRainySeason && questionnaireData.enclosure === 'unscreened' && questionnaireData.debrisLevel === 'heavy') {
       recommendedFrequency = 'weekly';
     }
 
@@ -566,9 +555,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Upsell 2: Debris management (enhanced in rainy season)
-    if (questionnaireData.environmentalFactors?.includes('trees_overhead') || 
-        questionnaireData.environmentalFactors?.includes('heavy_debris')) {
+    // Upsell 2: Debris management (for unscreened with trees/debris)
+    if (questionnaireData.enclosure === 'unscreened' && 
+        (questionnaireData.treesOverhead === 'yes' || questionnaireData.debrisLevel === 'heavy' || questionnaireData.debrisLevel === 'medium')) {
       const debrisReason = isRainySeason 
         ? 'Rainy season increases debris; skimmer socks and leaf canisters are highly recommended.'
         : 'Skimmer socks and leaf canisters can reduce maintenance burden and chemical costs.';
@@ -583,23 +572,12 @@ Deno.serve(async (req) => {
 
     // Upsell 3: Filter deep clean
     if ((questionnaireData.filterType === 'cartridge' || questionnaireData.filterType === 'de') &&
-        (questionnaireData.environmentalFactors?.includes('heavy_debris') || greenRecoveryTier !== 'none')) {
+        (questionnaireData.debrisLevel === 'heavy' || greenRecoveryTier !== 'none')) {
       upsellSuggestions.push({
         id: 'filter_deep_clean',
         title: 'Filter Deep Clean Add-On',
         reason: 'Heavy debris or recovery conditions will stress your filter; professional cleaning extends its life.',
         price: (settings.upsellPrices?.filter_deep_clean || 75),
-        accepted: false
-      });
-    }
-
-    // Upsell 4: Pollen season filter care
-    if (isPollenSeason && questionnaireData.environmentalFactors?.includes('frequent_pollen')) {
-      upsellSuggestions.push({
-        id: 'pollen_filter_care',
-        title: 'Filter Rinse/Check Cadence',
-        reason: 'Pollen season increases filter load; regular checks prevent clogs and maintain circulation.',
-        price: 0,
         accepted: false
       });
     }
@@ -632,14 +610,14 @@ Deno.serve(async (req) => {
     // ============================================
     // GENERATE TECHNICIAN NOTES
     // ============================================
-    const equipmentList = (questionnaireData.equipment || []).join(', ') || 'Standard';
+    const treesInfo = questionnaireData.enclosure === 'unscreened' && questionnaireData.treesOverhead ? ` | Trees: ${questionnaireData.treesOverhead}` : '';
+    const debrisInfo = questionnaireData.enclosure === 'unscreened' && questionnaireData.debrisLevel ? ` | Debris: ${questionnaireData.debrisLevel}` : '';
     const technicianNotes = `PROPERTY SUMMARY
 Pool Size: ${questionnaireData.poolSize.replace(/_/g, '-')} gallons (est)
-Type: ${questionnaireData.poolType.replace(/_/g, ' ')} | Enclosure: ${questionnaireData.enclosure.replace(/_/g, ' ')}
+Type: ${questionnaireData.poolType.replace(/_/g, ' ')} | Enclosure: ${questionnaireData.enclosure.replace(/_/g, ' ')}${treesInfo}${debrisInfo}
 Filter: ${questionnaireData.filterType} | Sanitizer: ${questionnaireData.chlorinationMethod.replace(/_/g, ' ')}${questionnaireData.chlorinatorType ? ` (${questionnaireData.chlorinatorType.replace(/_/g, ' ')})` : ''}
 Usage: ${questionnaireData.useFrequency.replace(/_/g, ' ')} | Pets: ${questionnaireData.petsAccess ? `Yes (${questionnaireData.petSwimFrequency})` : 'No'}
 Condition: ${questionnaireData.poolCondition.replace(/_/g, ' ')}${greenRecoveryTier !== 'none' ? ` - ${greenRecoveryTier.replace(/_/g, ' ')} recovery (expect ${greenRecoveryExpectedVisits} visits)` : ''}
-Features: ${equipmentList}
 Access: ${questionnaireData.accessType.replace(/_/g, ' ')}${questionnaireData.accessNotes ? ` - ${questionnaireData.accessNotes}` : ''}
 
 ANALYSIS
