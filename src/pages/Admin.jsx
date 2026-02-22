@@ -547,6 +547,162 @@ export default function Admin() {
           </Card>
         </TabsContent>
 
+        {/* SUMMER ALGAE TAB */}
+        <TabsContent value="summer" className="space-y-4 mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Summer Algae Bloom Prevention</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-900 font-semibold">
+                  Increase preventive logic during high-risk algae months (May–September) without raising base prices.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <Label>Enabled</Label>
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      defaultChecked={settings.summerAlgaeRisk?.enabled !== false}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        summerAlgaeRisk: {...(prev.summerAlgaeRisk || {}), enabled: e.target.checked}
+                      }))}
+                      className="w-4 h-4"
+                    />
+                    <Label className="font-normal">Enable summer algae logic</Label>
+                  </div>
+                </div>
+                <div>
+                  <Label>Start Month (1-12)</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="12"
+                    defaultValue={settings.summerAlgaeRisk?.startMonth || 5}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      summerAlgaeRisk: {...(prev.summerAlgaeRisk || {}), startMonth: parseInt(e.target.value)}
+                    }))}
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label>End Month (1-12)</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="12"
+                    defaultValue={settings.summerAlgaeRisk?.endMonth || 9}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      summerAlgaeRisk: {...(prev.summerAlgaeRisk || {}), endMonth: parseInt(e.target.value)}
+                    }))}
+                    className="mt-2"
+                  />
+                </div>
+              </div>
+
+              <div className="border-t pt-6">
+                <h4 className="font-semibold text-gray-900 mb-4">Risk & Demand Adjustments</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Label>Baseline Risk Boost</Label>
+                    <Input
+                      type="number"
+                      defaultValue={settings.summerAlgaeRisk?.baselineRiskBoost || 6}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        summerAlgaeRisk: {...(prev.summerAlgaeRisk || {}), baselineRiskBoost: parseInt(e.target.value)}
+                      }))}
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label>Chemical Demand Multiplier</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      defaultValue={settings.summerAlgaeRisk?.chemicalDemandMultiplier || 1.05}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        summerAlgaeRisk: {...(prev.summerAlgaeRisk || {}), chemicalDemandMultiplier: parseFloat(e.target.value)}
+                      }))}
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label>Weekly Recommendation Threshold</Label>
+                    <Input
+                      type="number"
+                      defaultValue={settings.summerAlgaeRisk?.weeklyRecommendationThreshold || 52}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        summerAlgaeRisk: {...(prev.summerAlgaeRisk || {}), weeklyRecommendationThreshold: parseInt(e.target.value)}
+                      }))}
+                      className="mt-2"
+                    />
+                    <p className="text-xs text-gray-500 mt-2">Weekly if RiskScore ≥ this (tighter than normal 55-65)</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-6">
+                <h4 className="font-semibold text-gray-900 mb-4">Conditional Risk Boosts (if true during summer)</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Unscreened Pool</Label>
+                    <Input
+                      type="number"
+                      defaultValue={settings.summerAlgaeRisk?.unscreenedRiskBoost || 6}
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label>Heavy Debris</Label>
+                    <Input
+                      type="number"
+                      defaultValue={settings.summerAlgaeRisk?.heavyDebrisRiskBoost || 5}
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label>Pets Swim Frequently</Label>
+                    <Input
+                      type="number"
+                      defaultValue={settings.summerAlgaeRisk?.petsFrequentRiskBoost || 4}
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label>Heavy Usage (several/week or daily)</Label>
+                    <Input
+                      type="number"
+                      defaultValue={settings.summerAlgaeRisk?.heavyUsageRiskBoost || 4}
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label>History of Algae Issues</Label>
+                    <Input
+                      type="number"
+                      defaultValue={settings.summerAlgaeRisk?.algaeHistoryRiskBoost || 8}
+                      className="mt-2"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Button onClick={() => handleSave(settings)}>
+                Save Summer Algae Settings
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* STORM TAB */}
         <TabsContent value="storm" className="space-y-4 mt-6">
           <Card>
