@@ -178,7 +178,7 @@ export default function Onboarding() {
                 <p className="text-gray-600">We provide professional pool cleaning with chemicals included.</p>
               )}
               <Button onClick={() => setStep(1)} className="w-full bg-teal-600 hover:bg-teal-700 text-lg py-6">
-                {storedQuoteData ? 'Continue Setup' : 'Check Pool Eligibility'}
+                {storedQuoteData ? 'Continue Setup' : 'Get Started'}
               </Button>
             </CardContent>
           </Card>
