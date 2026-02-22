@@ -757,7 +757,7 @@ function QuoteDisplay({ quote, formData }) {
             size="lg"
             className="bg-white text-teal-600 hover:bg-gray-100 text-lg px-8 py-6"
           >
-            Continue to Setup →
+            Book Free Inspection
           </Button>
         </CardContent>
       </Card>
