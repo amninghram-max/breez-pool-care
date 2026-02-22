@@ -770,7 +770,7 @@ function QuoteDisplay({ quote, formData }) {
               'Water testing & balancing',
               'Brushing & vacuuming',
               'Debris removal',
-              'Skimmer & filter check'
+              'Skimmer & filter check/cleaning'
             ].map((item, i) => (
               <li key={i} className="flex items-center gap-3">
                 <Check className="w-5 h-5 text-teal-600 flex-shrink-0" />
