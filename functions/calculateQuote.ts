@@ -684,7 +684,14 @@ NOTE: Base monthly price is stable year-round. COGS and recommendations may adju
           seasonName,
           seasonalChemMultiplier: parseFloat(totalSeasonalChemMultiplier.toFixed(3)),
           isRainySeason,
-          isPollenSeason
+          isPollenSeason,
+          isSummerHighRisk
+        },
+        stormRecovery: {
+          isActive: isStormModeActive,
+          severityLevel: stormSeverityLevel,
+          cleanupClassification: stormCleanupClassification,
+          cleanupFee: parseFloat(stormCleanupFee.toFixed(2))
         }
       }
     });
