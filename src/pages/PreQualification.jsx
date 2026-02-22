@@ -26,6 +26,7 @@ export default function PreQualification() {
   const [formData, setFormData] = useState({
         poolSize: '',
         poolType: '',
+        spaPresent: '',
         enclosure: '',
         filterType: '',
         chlorinationMethod: '',
@@ -100,7 +101,7 @@ export default function PreQualification() {
 
 const stepIsValid = () => {
     if (step === 1) {
-      return formData.poolSize && formData.poolType && formData.enclosure;
+      return formData.poolSize && formData.poolType && formData.spaPresent && formData.enclosure;
     }
     if (step === 2) {
       let baseValid = formData.filterType && formData.chlorinationMethod && formData.useFrequency && formData.poolCondition;
@@ -189,16 +190,29 @@ const stepIsValid = () => {
               </div>
 
               <div>
-                <Label>Pool Type</Label>
+                <Label>What type of pool do you have?</Label>
                 <Select value={formData.poolType} onValueChange={(v) => setFormData({ ...formData, poolType: v })}>
                   <SelectTrigger className="mt-2">
                     <SelectValue placeholder="Select pool type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="in_ground">In-Ground</SelectItem>
-                    <SelectItem value="above_ground">Above-Ground</SelectItem>
-                    <SelectItem value="spa">Spa</SelectItem>
-                    <SelectItem value="pool_spa">Pool + Spa</SelectItem>
+                    <SelectItem value="in_ground">In-ground</SelectItem>
+                    <SelectItem value="above_ground">Above-ground</SelectItem>
+                    <SelectItem value="not_sure">Not sure</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Does your pool include a spa or hot tub?</Label>
+                <Select value={formData.spaPresent} onValueChange={(v) => setFormData({ ...formData, spaPresent: v })}>
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="Select option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="true">Yes</SelectItem>
+                    <SelectItem value="false">No</SelectItem>
+                    <SelectItem value="unknown">Not sure</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
