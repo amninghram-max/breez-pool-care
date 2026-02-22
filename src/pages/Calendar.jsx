@@ -1,0 +1,219 @@
+import React, { useState } from 'react';
+import { base44 } from '@/api/base44Client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Cloud, Navigation, AlertTriangle } from 'lucide-react';
+import DayView from '@/components/scheduling/DayView';
+import WeekView from '@/components/scheduling/WeekView';
+import StormModeTools from '@/components/scheduling/StormModeTools';
+
+export default function Calendar() {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState('day'); // 'day', 'week'
+  const [selectedTechnician, setSelectedTechnician] = useState('all');
+  const [showStormTools, setShowStormTools] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: () => base44.auth.me()
+  });
+
+  const { data: settings } = useQuery({
+    queryKey: ['schedulingSettings'],
+    queryFn: async () => {
+      const result = await base44.entities.SchedulingSettings.filter({ settingKey: 'default' });
+      return result[0] || {};
+    }
+  });
+
+  const { data: stormDays = [] } = useQuery({
+    queryKey: ['stormDays'],
+    queryFn: () => base44.entities.StormDay.filter({})
+  });
+
+  const optimizeRouteMutation = useMutation({
+    mutationFn: async ({ date, technicianName }) => {
+      const response = await base44.functions.invoke('optimizeRoute', {
+        date,
+        technicianName
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
+      alert('Route optimized successfully!');
+    }
+  });
+
+  // Check admin access
+  if (user && user.role !== 'admin') {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <Card>
+          <CardContent className="p-12 text-center">
+            <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+            <h2 className="text-xl font-bold mb-2">Access Denied</h2>
+            <p className="text-gray-600">This page is only accessible to administrators.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const technicians = settings?.technicians || [{ name: 'Matt', active: true }];
+  const activeTechnicians = technicians.filter(t => t.active);
+
+  const handlePrevious = () => {
+    const newDate = new Date(currentDate);
+    if (viewMode === 'day') {
+      newDate.setDate(newDate.getDate() - 1);
+    } else {
+      newDate.setDate(newDate.getDate() - 7);
+    }
+    setCurrentDate(newDate);
+  };
+
+  const handleNext = () => {
+    const newDate = new Date(currentDate);
+    if (viewMode === 'day') {
+      newDate.setDate(newDate.getDate() + 1);
+    } else {
+      newDate.setDate(newDate.getDate() + 7);
+    }
+    setCurrentDate(newDate);
+  };
+
+  const handleToday = () => {
+    setCurrentDate(new Date());
+  };
+
+  const handleOptimizeRoute = () => {
+    const dateStr = currentDate.toISOString().split('T')[0];
+    optimizeRouteMutation.mutate({
+      date: dateStr,
+      technicianName: selectedTechnician === 'all' ? activeTechnicians[0]?.name : selectedTechnician
+    });
+  };
+
+  const isStormDay = stormDays.some(sd => sd.date === currentDate.toISOString().split('T')[0]);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Schedule & Routes</h1>
+          <p className="text-gray-600 mt-1">Manage service scheduling and optimize routes</p>
+        </div>
+        <Button
+          onClick={() => setShowStormTools(!showStormTools)}
+          variant={showStormTools ? 'default' : 'outline'}
+          className={showStormTools ? 'bg-orange-600 hover:bg-orange-700' : ''}
+        >
+          <Cloud className="w-4 h-4 mr-2" />
+          Storm Mode
+        </Button>
+      </div>
+
+      {/* Storm Tools */}
+      {showStormTools && (
+        <StormModeTools 
+          currentDate={currentDate}
+          onClose={() => setShowStormTools(false)}
+        />
+      )}
+
+      {/* Controls */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            {/* Navigation */}
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={handlePrevious}>
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleToday}>
+                Today
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleNext}>
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+              <div className="text-lg font-semibold ml-4">
+                {currentDate.toLocaleDateString('en-US', { 
+                  weekday: 'long',
+                  month: 'long', 
+                  day: 'numeric', 
+                  year: 'numeric' 
+                })}
+                {isStormDay && (
+                  <Badge className="ml-2 bg-orange-100 text-orange-800">
+                    <AlertTriangle className="w-3 h-3 mr-1" />
+                    Storm Day
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            {/* View Mode */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === 'day' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('day')}
+              >
+                Day
+              </Button>
+              <Button
+                variant={viewMode === 'week' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('week')}
+              >
+                Week
+              </Button>
+            </div>
+
+            {/* Technician Filter */}
+            <div className="flex items-center gap-2">
+              <select
+                value={selectedTechnician}
+                onChange={(e) => setSelectedTechnician(e.target.value)}
+                className="border rounded px-3 py-2 text-sm"
+              >
+                <option value="all">All Technicians</option>
+                {activeTechnicians.map(tech => (
+                  <option key={tech.name} value={tech.name}>{tech.name}</option>
+                ))}
+              </select>
+
+              <Button
+                size="sm"
+                onClick={handleOptimizeRoute}
+                disabled={optimizeRouteMutation.isPending}
+                className="bg-teal-600 hover:bg-teal-700"
+              >
+                <Navigation className="w-4 h-4 mr-2" />
+                {optimizeRouteMutation.isPending ? 'Optimizing...' : 'Optimize Route'}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Calendar View */}
+      {viewMode === 'day' ? (
+        <DayView 
+          date={currentDate} 
+          technicianFilter={selectedTechnician}
+        />
+      ) : (
+        <WeekView 
+          startDate={currentDate}
+          technicianFilter={selectedTechnician}
+        />
+      )}
+    </div>
+  );
+}
