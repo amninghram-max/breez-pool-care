@@ -547,6 +547,57 @@ const stepIsValid = () => {
                   rows={4}
                 />
               </div>
+
+              {/* Storm Recovery Questions */}
+              {isStormModeActive && (
+                <div className="border-t pt-6 bg-red-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-red-900 mb-4">Post-Storm Cleanup Assessment</h4>
+
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-medium">Debris Level</Label>
+                      <Select value={formData.stormDebrisLevel} onValueChange={(v) => setFormData({ ...formData, stormDebrisLevel: v })}>
+                        <SelectTrigger className="mt-2">
+                          <SelectValue placeholder="Select debris level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="light">Light (minor leaves/dirt)</SelectItem>
+                          <SelectItem value="moderate">Moderate (visible accumulation)</SelectItem>
+                          <SelectItem value="heavy">Heavy (branches, contamination)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label className="text-sm font-medium">Water Condition</Label>
+                      <Select value={formData.stormWaterCondition} onValueChange={(v) => setFormData({ ...formData, stormWaterCondition: v })}>
+                        <SelectTrigger className="mt-2">
+                          <SelectValue placeholder="Select water condition" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="clear">Clear</SelectItem>
+                          <SelectItem value="cloudy">Cloudy</SelectItem>
+                          <SelectItem value="green">Green/Discolored</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label className="text-sm font-medium">Equipment Concerns?</Label>
+                      <Select value={formData.stormEquipmentConcerns} onValueChange={(v) => setFormData({ ...formData, stormEquipmentConcerns: v })}>
+                        <SelectTrigger className="mt-2">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="no">No</SelectItem>
+                          <SelectItem value="yes">Yes</SelectItem>
+                          <SelectItem value="unsure">Not sure</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
