@@ -142,12 +142,12 @@ export default function PublicHome() {
               { 
                 num: '2', 
                 title: 'Schedule Your Free Inspection', 
-                desc: 'We'll visit your property, assess your pool, and answer any questions you have.'
+                desc: "We'll visit your property, assess your pool, and answer any questions you have."
               },
               { 
                 num: '3', 
                 title: 'Activate & Relax', 
-                desc: 'Accept our service agreement, complete payment, and we'll schedule your first visit. That's it!'
+                desc: "Accept our service agreement, complete payment, and we'll schedule your first visit. That's it!"
               }
             ].map((step) => (
               <div key={step.num} className="text-center">
