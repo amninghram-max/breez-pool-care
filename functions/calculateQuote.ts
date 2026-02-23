@@ -3,12 +3,6 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const payload = await req.json();
     const { questionnaireData } = payload;
 
@@ -18,655 +12,281 @@ Deno.serve(async (req) => {
     });
     const settings = settingsResult[0] || {};
 
-    // Extract configuration with defaults
-    const baseWeeklyPrices = settings.baseWeeklyPrices || {};
-    const modifiers = settings.modifiers || {};
-    const oneTimeFees = settings.oneTimeFees || {};
-    const riskWeights = settings.riskWeights || {};
-    const biweeklyMultiplier = settings.biweeklyMultiplier || 0.75;
-    const baselineChemicalCOGS = settings.baselineChemicalCOGS || {};
-    const cogsMultipliers = settings.cogsMultipliers || {};
-    const cogsSurcharges = settings.cogsSurcharges || {};
-    const greenPoolTiers = settings.greenPoolRecoveryTiers || {};
-    const frequencyThresholds = settings.frequencyThresholds || {};
-    const profitMargin = settings.profitMargin || {};
-    const chemicalCosts = settings.chemicalCosts || {};
-    const seasonality = settings.seasonality || {};
+    // Extract new pricing configuration
+    const baseTiers = settings.baseTierPrices || {};
+    const tokens = settings.additiveTokens || {};
+    const initialFees = settings.initialFees || {};
+    const riskEngine = settings.riskEngine || {};
+    const frequencyLogic = settings.frequencyLogic || {};
+    const autopayDiscount = settings.autopayDiscount || 10;
 
     // ============================================
-    // SEASONALITY DETECTION
+    // 1) DETERMINE SIZE TIER
     // ============================================
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth() + 1; // 1-12
+    let sizeTier = 'tier_a';
+    let baseMonthly = baseTiers.tier_a_10_15k || 140;
 
-    const peakStart = seasonality.peakSeasonStartMonth || 3;
-    const peakEnd = seasonality.peakSeasonEndMonth || 10;
-    const rainyStart = seasonality.rainySeasonStartMonth || 6;
-    const rainyEnd = seasonality.rainySeasonEndMonth || 9;
-    const pollenStart = seasonality.pollenSeasonStartMonth || 2;
-    const pollenEnd = seasonality.pollenSeasonEndMonth || 5;
-
-    // Determine season (peak or shoulder)
-    const isPeakSeason = (currentMonth >= peakStart && currentMonth <= peakEnd);
-    const seasonName = isPeakSeason ? 'peak' : 'shoulder';
-    const seasonalChemMultiplier = isPeakSeason 
-      ? (seasonality.peakSeasonChemicalMultiplier || 1.15)
-      : (seasonality.shoulderSeasonChemicalMultiplier || 0.95);
-
-    // Sub-season flags
-    const isRainySeason = (seasonality.enableRainySeasonLogic !== false) && (currentMonth >= rainyStart && currentMonth <= rainyEnd);
-    const isPollenSeason = (seasonality.enablePollenSeasonLogic !== false) && (currentMonth >= pollenStart && currentMonth <= pollenEnd);
+    if (questionnaireData.poolSize === '10_15k' || questionnaireData.poolSize === 'not_sure') {
+      sizeTier = 'tier_a';
+      baseMonthly = baseTiers.tier_a_10_15k || 140;
+    } else if (questionnaireData.poolSize === '15_20k') {
+      sizeTier = 'tier_b';
+      baseMonthly = baseTiers.tier_b_15_20k || 160;
+    } else if (questionnaireData.poolSize === '20_30k') {
+      sizeTier = 'tier_c';
+      baseMonthly = baseTiers.tier_c_20_30k || 190;
+    } else if (questionnaireData.poolSize === '30k_plus') {
+      sizeTier = 'tier_d';
+      baseMonthly = baseTiers.tier_d_30k_plus || 230;
+    }
 
     // ============================================
-    // SUMMER ALGAE RISK DETECTION
+    // 2) APPLY ADDITIVE TOKENS
     // ============================================
-    const summerAlgae = settings.summerAlgaeRisk || {};
-    const summerStart = summerAlgae.startMonth || 5;
-    const summerEnd = summerAlgae.endMonth || 9;
-    const isSummerHighRisk = (summerAlgae.enabled !== false) && (currentMonth >= summerStart && currentMonth <= summerEnd);
+    let monthlyAdditiveSum = 0;
+    let additiveTokensApplied = [];
 
-    // ============================================
-    // STORM RECOVERY MODE
-    // ============================================
-    const stormRecovery = settings.stormRecovery || {};
-    const isStormModeActive = stormRecovery.modeActive || false;
-    const stormSeverityLevel = stormRecovery.severityLevel || 'minor';
-
-    // ============================================
-    // A) CALCULATE CHEMICAL COST ESTIMATOR (COGS)
-    // ============================================
-    let baseCOGS = baselineChemicalCOGS[questionnaireData.poolSize] || 50;
-    let cogsBreakdown = [{ category: 'Baseline COGS', amount: baseCOGS }];
-
-    // Enclosure COGS multiplier
-    let enclosureCogsMultiplier = 1.0;
+    // 2.1 Environmental - Unscreened
     if (questionnaireData.enclosure === 'unscreened') {
-      enclosureCogsMultiplier = cogsMultipliers.enclosure_unscreened || 1.20;
-    } else {
-      enclosureCogsMultiplier = cogsMultipliers.enclosure_screened || 1.00;
+      let unscreenedAmount = 0;
+      if (sizeTier === 'tier_a') unscreenedAmount = tokens.unscreened_tier_a || 20;
+      else if (sizeTier === 'tier_b') unscreenedAmount = tokens.unscreened_tier_b || 25;
+      else if (sizeTier === 'tier_c') unscreenedAmount = tokens.unscreened_tier_c || 30;
+      else if (sizeTier === 'tier_d') unscreenedAmount = tokens.unscreened_tier_d || 40;
+
+      monthlyAdditiveSum += unscreenedAmount;
+      additiveTokensApplied.push({ token_name: 'Not screened', amount: unscreenedAmount });
     }
 
-    // Usage frequency COGS multiplier
-    let usageCogsMultiplier = 1.0;
-    if (questionnaireData.useFrequency === 'daily') {
-      usageCogsMultiplier = cogsMultipliers.usage_daily || 1.15;
+    // Trees overhead (only if unscreened)
+    if (questionnaireData.enclosure === 'unscreened' && questionnaireData.treesOverhead === 'yes') {
+      const treesAmount = tokens.trees_overhead || 10;
+      monthlyAdditiveSum += treesAmount;
+      additiveTokensApplied.push({ token_name: 'Trees overhead', amount: treesAmount });
+    }
+
+    // 2.2 Usage
+    if (questionnaireData.useFrequency === 'weekends') {
+      const amount = tokens.usage_weekends || 10;
+      monthlyAdditiveSum += amount;
+      additiveTokensApplied.push({ token_name: 'Weekends usage', amount });
     } else if (questionnaireData.useFrequency === 'several_week') {
-      usageCogsMultiplier = cogsMultipliers.usage_several_week || 1.08;
-    } else if (questionnaireData.useFrequency === 'weekends') {
-      usageCogsMultiplier = cogsMultipliers.usage_weekends || 1.04;
+      const amount = tokens.usage_several_week || 10;
+      monthlyAdditiveSum += amount;
+      additiveTokensApplied.push({ token_name: 'Several times/week usage', amount });
+    } else if (questionnaireData.useFrequency === 'daily') {
+      const amount = tokens.usage_daily || 20;
+      monthlyAdditiveSum += amount;
+      additiveTokensApplied.push({ token_name: 'Daily usage', amount });
     }
 
-    // Pets COGS multiplier
-    let petsCogsMultiplier = 1.0;
+    // 2.3 Sanitation / Chlorination
+    const chlorMethod = questionnaireData.chlorinationMethod;
+    const chlorType = questionnaireData.chlorinatorType;
+
+    // Floater or skimmer upcharge (scales by tier)
+    if (chlorMethod === 'tablets' && (chlorType === 'floating' || chlorType === 'skimmer')) {
+      let amount = 0;
+      if (sizeTier === 'tier_a') amount = tokens.chlorinator_floater_tier_a || 5;
+      else if (sizeTier === 'tier_b') amount = tokens.chlorinator_floater_tier_b || 10;
+      else if (sizeTier === 'tier_c') amount = tokens.chlorinator_floater_tier_c || 15;
+      else if (sizeTier === 'tier_d') amount = tokens.chlorinator_floater_tier_d || 20;
+
+      monthlyAdditiveSum += amount;
+      additiveTokensApplied.push({ token_name: 'Floater/skimmer chlorinator', amount });
+    }
+
+    // Liquid only upcharge
+    if (chlorMethod === 'liquid_chlorine') {
+      const amount = tokens.chlorinator_liquid_only || 10;
+      monthlyAdditiveSum += amount;
+      additiveTokensApplied.push({ token_name: 'Liquid chlorine only', amount });
+    }
+
+    // 2.4 Pets
+    if (questionnaireData.petsAccess) {
+      if (questionnaireData.petSwimFrequency === 'occasionally') {
+        const amount = tokens.pets_occasional || 5;
+        monthlyAdditiveSum += amount;
+        additiveTokensApplied.push({ token_name: 'Pets swim occasionally', amount });
+      } else if (questionnaireData.petSwimFrequency === 'frequently') {
+        const amount = tokens.pets_frequent || 10;
+        monthlyAdditiveSum += amount;
+        additiveTokensApplied.push({ token_name: 'Pets swim frequently', amount });
+      }
+    }
+
+    // Subtotal after tokens
+    let monthlyAfterTokens = baseMonthly + monthlyAdditiveSum;
+
+    // ============================================
+    // 3) ADMIN-ONLY RISK ENGINE (HIDDEN ESCALATION)
+    // ============================================
+    const riskPoints = riskEngine.points || {};
+    const sizeMultipliers = riskEngine.size_multipliers || {};
+    const escalationBrackets = riskEngine.escalation_brackets || [];
+
+    let rawRisk = 0;
+
+    if (questionnaireData.enclosure === 'unscreened') {
+      rawRisk += riskPoints.unscreened || 2;
+    }
+
+    if (questionnaireData.enclosure === 'unscreened' && questionnaireData.treesOverhead === 'yes') {
+      rawRisk += riskPoints.trees_overhead || 1;
+    }
+
+    if (questionnaireData.useFrequency === 'daily') {
+      rawRisk += riskPoints.usage_daily || 2;
+    } else if (questionnaireData.useFrequency === 'several_week') {
+      rawRisk += riskPoints.usage_several_week || 1;
+    }
+
+    if (chlorMethod === 'tablets' && (chlorType === 'floating' || chlorType === 'skimmer')) {
+      rawRisk += riskPoints.chlorinator_floater_skimmer || 1;
+    }
+
+    if (chlorMethod === 'liquid_chlorine') {
+      rawRisk += riskPoints.chlorinator_liquid_only || 2;
+    }
+
     if (questionnaireData.petsAccess) {
       if (questionnaireData.petSwimFrequency === 'frequently') {
-        petsCogsMultiplier = cogsMultipliers.pets_frequent || 1.15;
+        rawRisk += riskPoints.pets_frequent || 1;
       } else if (questionnaireData.petSwimFrequency === 'occasionally') {
-        petsCogsMultiplier = cogsMultipliers.pets_occasional || 1.08;
+        rawRisk += riskPoints.pets_occasional || 0.5;
       }
     }
-
-    // Environmental COGS adders (for unscreened pools only)
-    let envCogsAdder = 0;
-    if (questionnaireData.enclosure === 'unscreened') {
-      if (questionnaireData.treesOverhead === 'yes') {
-        envCogsAdder += cogsMultipliers.environment_trees_add || 0.05;
-      }
-      if (questionnaireData.debrisLevel === 'heavy') {
-        envCogsAdder += cogsMultipliers.environment_heavy_debris_add || 0.08;
-      } else if (questionnaireData.debrisLevel === 'medium') {
-        envCogsAdder += (cogsMultipliers.environment_heavy_debris_add || 0.08) * 0.5;
-      }
-    }
-
-    // Chlorination method adjustment
-    let chlorinationCogsAdjustment = 1.0;
-    let saltCellWearReserve = 0;
-    if (questionnaireData.chlorinationMethod === 'saltwater') {
-      chlorinationCogsAdjustment = cogsMultipliers.saltwater_chlorine_reduction || 0.92;
-      saltCellWearReserve = cogsMultipliers.salt_cell_wear_reserve || 8.00;
-    }
-
-    // Condition surcharges
-    let conditionSurcharge = 0;
-    if (questionnaireData.poolCondition === 'slightly_cloudy') {
-      conditionSurcharge = cogsSurcharges.slightly_cloudy || 15;
-    } else if (questionnaireData.poolCondition === 'not_sure') {
-      conditionSurcharge = cogsSurcharges.not_sure_inspection || 20;
-    }
-
-    // Apply seasonal multiplier to COGS (internal only, not base price)
-    let rainySeasonChemAdder = 0;
-    if (isRainySeason) {
-      rainySeasonChemAdder = seasonality.rainySeasonChemicalAdder || 0.05;
-    }
-
-    let pollenSeasonChemAdder = 0;
-    if (isPollenSeason && questionnaireData.environmentalFactors?.includes('frequent_pollen')) {
-      pollenSeasonChemAdder = seasonality.pollenSeasonChemicalAdder || 0.04;
-    }
-
-    const totalSeasonalChemMultiplier = seasonalChemMultiplier * (1 + rainySeasonChemAdder + pollenSeasonChemAdder);
-
-    // Calculate total estimated monthly COGS
-    const estimatedMonthlyChemicalCOGS = 
-      (baseCOGS * enclosureCogsMultiplier * usageCogsMultiplier * petsCogsMultiplier * (1 + envCogsAdder) * chlorinationCogsAdjustment * totalSeasonalChemMultiplier) 
-      + conditionSurcharge 
-      + saltCellWearReserve;
-
-    cogsBreakdown.push(
-      { category: 'Enclosure adjustment', amount: Math.round((baseCOGS * (enclosureCogsMultiplier - 1)) * 100) / 100 },
-      { category: 'Usage adjustment', amount: Math.round((baseCOGS * (usageCogsMultiplier - 1)) * 100) / 100 },
-      { category: 'Pets adjustment', amount: Math.round((baseCOGS * (petsCogsMultiplier - 1)) * 100) / 100 },
-      { category: 'Environment adjustment', amount: Math.round((baseCOGS * envCogsAdder) * 100) / 100 },
-      { category: 'Chlorination adjustment', amount: Math.round((baseCOGS * (chlorinationCogsAdjustment - 1)) * 100) / 100 },
-      { category: 'Condition surcharge', amount: conditionSurcharge },
-      { category: 'Salt cell wear reserve', amount: saltCellWearReserve },
-      { category: `Seasonal multiplier (${seasonName}${isRainySeason ? ' + rainy' : ''}${isPollenSeason ? ' + pollen' : ''})`, amount: Math.round((baseCOGS * (totalSeasonalChemMultiplier - 1)) * 100) / 100 }
-    );
-
-    // Chemistry demand index (0-100 scale)
-    let chemDemandIndex = 30; // baseline
-    if (enclosureCogsMultiplier > 1.1) chemDemandIndex += 20;
-    if (usageCogsMultiplier > 1.08) chemDemandIndex += 15;
-    if (petsCogsMultiplier > 1.08) chemDemandIndex += 15;
-    if (envCogsAdder > 0.08) chemDemandIndex += 10;
-    if (questionnaireData.poolCondition === 'green_algae') chemDemandIndex = 90;
-    // Seasonal demand boosts
-    if (isPeakSeason) chemDemandIndex += Math.round((seasonalChemMultiplier - 1) * 10);
-    if (isRainySeason) chemDemandIndex += 3;
-    if (isPollenSeason && questionnaireData.environmentalFactors?.includes('frequent_pollen')) chemDemandIndex += 2;
-    chemDemandIndex = Math.min(100, chemDemandIndex);
-
-    // ============================================
-    // CALCULATE BASE PRICE (pricing engine from before)
-    // ============================================
-    let baseWeekly = baseWeeklyPrices[questionnaireData.poolSize] || 140;
-    let uncertaintyFee = 0;
-
-    if (questionnaireData.poolSize === 'not_sure') {
-      uncertaintyFee = baseWeeklyPrices.not_sure_fee || 10;
-    }
-
-    // Calculate monthly modifiers
-    let monthlyModifierSum = 0;
-    let influencingFactors = [];
-
-    if (questionnaireData.enclosure === 'unscreened') {
-      monthlyModifierSum += modifiers.enclosure_unscreened || 20;
-      influencingFactors.push('Unscreened pool');
-    }
-
-    // Environmental modifiers (only for unscreened pools)
-    let envModifiers = 0;
-    if (questionnaireData.enclosure === 'unscreened') {
-      if (questionnaireData.treesOverhead === 'yes') {
-        envModifiers += modifiers.environment_trees || 10;
-        influencingFactors.push('Trees overhead');
-      }
-      if (questionnaireData.debrisLevel === 'heavy') {
-        envModifiers += modifiers.environment_heavy_debris || 15;
-        influencingFactors.push('Heavy debris');
-      } else if (questionnaireData.debrisLevel === 'medium') {
-        envModifiers += (modifiers.environment_heavy_debris || 15) * 0.5;
-        influencingFactors.push('Medium debris');
-      }
-    }
-    monthlyModifierSum += envModifiers;
-
-    if (questionnaireData.filterType === 'cartridge') {
-      monthlyModifierSum += modifiers.filter_cartridge || 10;
-      influencingFactors.push('Cartridge filter');
-    } else if (questionnaireData.filterType === 'de') {
-      monthlyModifierSum += modifiers.filter_de || 15;
-      influencingFactors.push('DE filter');
-    }
-
-    if (questionnaireData.useFrequency === 'daily') {
-      monthlyModifierSum += modifiers.usage_daily || 15;
-      influencingFactors.push('Daily usage');
-    } else if (questionnaireData.useFrequency === 'several_week') {
-      monthlyModifierSum += modifiers.usage_several_week || 8;
-      influencingFactors.push('Several times per week');
-    }
-
-    if (questionnaireData.petsAccess && questionnaireData.petSwimFrequency === 'frequently') {
-      monthlyModifierSum += modifiers.pets_frequent || 15;
-      influencingFactors.push('Pets swim frequently');
-    } else if (questionnaireData.petsAccess && questionnaireData.petSwimFrequency === 'occasionally') {
-      monthlyModifierSum += modifiers.pets_occasional || 8;
-      influencingFactors.push('Pets swim occasionally');
-    }
-
-    if (questionnaireData.accessType === 'hoa_community') {
-      monthlyModifierSum += modifiers.access_hoa || 5;
-      influencingFactors.push('HOA/community access');
-    } else if (questionnaireData.accessType === 'locked_gate') {
-      monthlyModifierSum += modifiers.access_locked_gate || 5;
-      influencingFactors.push('Locked gate access');
-    } else if (questionnaireData.accessType === 'code_required') {
-      monthlyModifierSum += modifiers.access_code || 3;
-      influencingFactors.push('Code-required access');
-    }
-
-    let estimatedMonthlyPrice = baseWeekly + monthlyModifierSum + uncertaintyFee;
-    let perVisitPrice = estimatedMonthlyPrice / 4.33;
-
-    // ============================================
-    // B) GREEN POOL RECOVERY TIER PRICING
-    // ============================================
-    let greenRecoveryTier = 'none';
-    let greenRecoveryExpectedVisits = '';
-    let greenRecoveryStartupFee = 0;
-    let greenRecoveryMonthlySurcharge = 0;
 
     if (questionnaireData.poolCondition === 'green_algae') {
-      // Determine tier based on greenness level
-      let tierData;
-      if (questionnaireData.greenPoolGreenness === 'light_green') {
-        greenRecoveryTier = 'tier1_light';
-        tierData = greenPoolTiers.tier1_light || {};
-      } else if (questionnaireData.greenPoolGreenness === 'medium_green') {
-        greenRecoveryTier = 'tier2_medium';
-        tierData = greenPoolTiers.tier2_medium || {};
-      } else if (questionnaireData.greenPoolGreenness === 'dark_green') {
-        greenRecoveryTier = 'tier3_dark';
-        tierData = greenPoolTiers.tier3_dark || {};
+      rawRisk += riskPoints.condition_green || 2;
+    }
+
+    // Apply size multiplier
+    let sizeMultiplier = 1.0;
+    if (sizeTier === 'tier_a') sizeMultiplier = sizeMultipliers.tier_a || 1.0;
+    else if (sizeTier === 'tier_b') sizeMultiplier = sizeMultipliers.tier_b || 1.1;
+    else if (sizeTier === 'tier_c') sizeMultiplier = sizeMultipliers.tier_c || 1.2;
+    else if (sizeTier === 'tier_d') sizeMultiplier = sizeMultipliers.tier_d || 1.3;
+
+    const adjustedRisk = rawRisk * sizeMultiplier;
+
+    // Find escalation bracket
+    let riskAddonAmount = 0;
+    let riskBracket = null;
+    for (const bracket of escalationBrackets) {
+      if (adjustedRisk >= bracket.min_risk && adjustedRisk <= bracket.max_risk) {
+        riskAddonAmount = bracket.addon_amount || 0;
+        riskBracket = `${bracket.min_risk}-${bracket.max_risk}`;
+        break;
+      }
+    }
+
+    // Apply risk add-on (hidden from customer)
+    monthlyAfterTokens += riskAddonAmount;
+    if (riskAddonAmount > 0) {
+      additiveTokensApplied.push({ token_name: 'Risk escalation buffer (internal)', amount: riskAddonAmount });
+    }
+
+    // ============================================
+    // 4) FREQUENCY LOGIC & MULTIPLIER
+    // ============================================
+    const autoRequireThreshold = frequencyLogic.auto_require_threshold || 9;
+    let frequencySelectedOrRequired = 'weekly';
+    let frequencyMultiplier = 1.0;
+    let frequencyAutoRequired = false;
+
+    if (adjustedRisk >= autoRequireThreshold) {
+      frequencySelectedOrRequired = 'twice_weekly';
+      frequencyMultiplier = frequencyLogic.twice_weekly_multiplier || 1.8;
+      frequencyAutoRequired = true;
+    }
+
+    // Apply frequency multiplier to monthly price
+    let finalMonthlyPrice = monthlyAfterTokens * frequencyMultiplier;
+
+    // Apply absolute floor
+    const absoluteFloor = baseTiers.absolute_floor || 120;
+    if (finalMonthlyPrice < absoluteFloor) {
+      finalMonthlyPrice = absoluteFloor;
+    }
+
+    // Calculate per-visit price
+    const visitsPerMonth = frequencySelectedOrRequired === 'weekly' ? 4.33 : 8.66;
+    const perVisitPrice = finalMonthlyPrice / visitsPerMonth;
+
+    // ============================================
+    // 5) ONE-TIME FEES (WATER CONDITION)
+    // ============================================
+    let oneTimeFees = 0;
+    let greenSizeGroup = null;
+
+    // Slightly cloudy
+    if (questionnaireData.poolCondition === 'slightly_cloudy') {
+      oneTimeFees += initialFees.slightly_cloudy || 25;
+    }
+
+    // Green pool pricing
+    if (questionnaireData.poolCondition === 'green_algae') {
+      // Determine size group
+      if (sizeTier === 'tier_a') greenSizeGroup = 'small';
+      else if (sizeTier === 'tier_b' || sizeTier === 'tier_c') greenSizeGroup = 'medium';
+      else greenSizeGroup = 'large';
+
+      const severity = questionnaireData.greenPoolSeverity || 'moderate';
+      let greenFeeKey = '';
+
+      if (severity === 'light') {
+        greenFeeKey = `green_light_${greenSizeGroup}`;
+      } else if (severity === 'moderate') {
+        greenFeeKey = `green_moderate_${greenSizeGroup}`;
+      } else if (severity === 'black_swamp') {
+        greenFeeKey = `green_black_${greenSizeGroup}`;
       } else {
-        // default to tier 2 for unknown
-        greenRecoveryTier = 'tier2_medium';
-        tierData = greenPoolTiers.tier2_medium || {};
+        // Default to moderate if not sure
+        greenFeeKey = `green_moderate_${greenSizeGroup}`;
       }
 
-      greenRecoveryStartupFee = tierData.startup_fee || 250;
-      greenRecoveryMonthlySurcharge = tierData.monthly_surcharge || 50;
-      greenRecoveryExpectedVisits = tierData.expected_visits || '2-3';
-      influencingFactors.push(`Green pool recovery (${greenRecoveryTier.replace('tier', 'Tier ')})`);
+      oneTimeFees += initialFees[greenFeeKey] || 100;
     }
 
     // ============================================
-    // D) MAINTENANCE FREQUENCY RECOMMENDATIONS
+    // 6) FINAL TOTALS
     // ============================================
-    let recommendedFrequency = 'weekly';
-    
-    // Season-adjusted thresholds
-    let weeklyRiskThreshold, weeklyChemThreshold;
-    if (isPeakSeason) {
-      weeklyRiskThreshold = seasonality.peakSeasonWeeklyThreshold || 55;
-      weeklyChemThreshold = 55;
-    } else {
-      weeklyRiskThreshold = seasonality.shoulderSeasonWeeklyThreshold || 65;
-      weeklyChemThreshold = 65;
-    }
-
-    // Risk score calculation (done later, but we'll use ChemDemandIndex here)
-    if (chemDemandIndex < weeklyChemThreshold && questionnaireData.enclosure !== 'unscreened' && questionnaireData.debrisLevel !== 'heavy') {
-      recommendedFrequency = 'biweekly';
-    }
+    const estimatedFirstMonthTotal = finalMonthlyPrice + oneTimeFees;
 
     // ============================================
-    // C) CALCULATE RISK SCORE
+    // 7) RESPONSE (Customer sees only clean pricing)
     // ============================================
-    let riskScore = 0;
-
-    if (questionnaireData.enclosure === 'unscreened') {
-      riskScore += riskWeights.enclosure_unscreened || 15;
-    }
-
-    // Risk from trees/debris (only for unscreened)
-    if (questionnaireData.enclosure === 'unscreened') {
-      if (questionnaireData.treesOverhead === 'yes') {
-        riskScore += riskWeights.environment_trees || 10;
-      }
-      if (questionnaireData.debrisLevel === 'heavy') {
-        riskScore += riskWeights.environment_heavy_debris || 12;
-      } else if (questionnaireData.debrisLevel === 'medium') {
-        riskScore += (riskWeights.environment_heavy_debris || 12) * 0.5;
-      }
-    }
-
-    if (questionnaireData.useFrequency === 'daily') {
-      riskScore += riskWeights.usage_daily || 10;
-    } else if (questionnaireData.useFrequency === 'several_week') {
-      riskScore += riskWeights.usage_several_week || 5;
-    }
-
-    if (questionnaireData.petsAccess && questionnaireData.petSwimFrequency === 'frequently') {
-      riskScore += riskWeights.pets_frequent || 12;
-    } else if (questionnaireData.petsAccess && questionnaireData.petSwimFrequency === 'occasionally') {
-      riskScore += riskWeights.pets_occasional || 6;
-    }
-
-    if (questionnaireData.poolCondition === 'green_algae') {
-      riskScore += riskWeights.condition_green_pool || 25;
-    } else if (questionnaireData.poolCondition === 'slightly_cloudy') {
-      riskScore += riskWeights.condition_slightly_cloudy || 8;
-    }
-
-    if (questionnaireData.filterType === 'cartridge') {
-      riskScore += riskWeights.filter_cartridge || 6;
-    } else if (questionnaireData.filterType === 'de') {
-      riskScore += riskWeights.filter_de || 8;
-    }
-
-    if (questionnaireData.knownIssues?.includes('equipment_concerns')) {
-      riskScore += riskWeights.issue_equipment_concerns || 10;
-    }
-    if (questionnaireData.knownIssues?.includes('leaks')) {
-      riskScore += riskWeights.issue_leaks || 15;
-    }
-    if (questionnaireData.knownIssues?.includes('algae_problems')) {
-      riskScore += riskWeights.issue_algae || 12;
-    }
-
-    // Seasonal risk boosts
-    if (isRainySeason) {
-      riskScore += seasonality.rainySeasonRiskBoost || 5;
-    }
-    if (isPollenSeason && questionnaireData.environmentalFactors?.includes('frequent_pollen')) {
-      riskScore += seasonality.pollenSeasonRiskBoost || 3;
-    }
-
-    // Summer algae risk boosts
-    let summerRiskBoost = 0;
-    if (isSummerHighRisk) {
-      summerRiskBoost += summerAlgae.baselineRiskBoost || 6;
-      if (questionnaireData.enclosure === 'unscreened') {
-        summerRiskBoost += summerAlgae.unscreenedRiskBoost || 6;
-      }
-      if (questionnaireData.debrisLevel === 'heavy') {
-        summerRiskBoost += summerAlgae.heavyDebrisRiskBoost || 5;
-      }
-      if (questionnaireData.petsAccess && questionnaireData.petSwimFrequency === 'frequently') {
-        summerRiskBoost += summerAlgae.petsFrequentRiskBoost || 4;
-      }
-      if (questionnaireData.useFrequency === 'daily' || questionnaireData.useFrequency === 'several_week') {
-        summerRiskBoost += summerAlgae.heavyUsageRiskBoost || 4;
-      }
-      if (questionnaireData.knownIssues?.includes('algae_problems')) {
-        summerRiskBoost += summerAlgae.algaeHistoryRiskBoost || 8;
-      }
-      riskScore += summerRiskBoost;
-    }
-
-    // Storm mode risk boost
-    if (isStormModeActive && stormSeverityLevel === 'hurricane') {
-      riskScore += 10;
-    } else if (isStormModeActive && stormSeverityLevel === 'severe') {
-      riskScore += 5;
-    }
-
-    riskScore = Math.min(100, Math.max(0, riskScore));
-    const riskLevel = riskScore < 40 ? 'low' : riskScore < 70 ? 'medium' : 'high';
-
-    // Adjust recommendation based on risk and seasonal thresholds
-    if (riskScore >= weeklyRiskThreshold || chemDemandIndex >= weeklyChemThreshold) {
-      recommendedFrequency = 'weekly';
-    }
-
-    // Summer algae risk: tighter threshold
-    if (isSummerHighRisk) {
-      const summerThreshold = summerAlgae.weeklyRecommendationThreshold || 52;
-      if (riskScore >= summerThreshold) {
-        recommendedFrequency = 'weekly';
-      }
-    }
-
-    // In rainy season + unscreened + heavy debris, force weekly
-    if (isRainySeason && questionnaireData.enclosure === 'unscreened' && questionnaireData.debrisLevel === 'heavy') {
-      recommendedFrequency = 'weekly';
-    }
-
-    // Storm mode: force weekly
-    if (isStormModeActive) {
-      recommendedFrequency = 'weekly';
-    }
-
-    // ============================================
-    // ONE-TIME FEES & FIRST MONTH
-    // ============================================
-    let estimatedOneTimeFees = 0;
-    let stormCleanupClassification = 'none';
-    let stormCleanupFee = 0;
-
-    if (questionnaireData.poolCondition === 'slightly_cloudy') {
-      estimatedOneTimeFees += oneTimeFees.condition_slightly_cloudy || 25;
-    } else if (questionnaireData.poolCondition === 'not_sure') {
-      estimatedOneTimeFees += oneTimeFees.condition_not_sure_inspection || 25;
-    }
-
-    if (questionnaireData.knownIssues?.includes('equipment_concerns')) {
-      estimatedOneTimeFees += oneTimeFees.issue_equipment_concerns || 35;
-    }
-    if (questionnaireData.knownIssues?.includes('leaks')) {
-      estimatedOneTimeFees += oneTimeFees.issue_leaks || 50;
-    }
-    if (questionnaireData.knownIssues?.includes('staining')) {
-      estimatedOneTimeFees += oneTimeFees.issue_staining || 25;
-    }
-
-    // Storm cleanup pricing (if storm mode active)
-    if (isStormModeActive && questionnaireData.stormDebrisLevel) {
-      if (questionnaireData.stormDebrisLevel === 'light') {
-        stormCleanupClassification = 'light';
-        stormCleanupFee = stormRecovery.cleanupPricing?.light || 25;
-      } else if (questionnaireData.stormDebrisLevel === 'moderate') {
-        stormCleanupClassification = 'moderate';
-        stormCleanupFee = stormRecovery.cleanupPricing?.moderate || 45;
-      } else if (questionnaireData.stormDebrisLevel === 'heavy') {
-        stormCleanupClassification = 'heavy';
-        stormCleanupFee = stormRecovery.cleanupPricing?.heavy || 95;
-      }
-      estimatedOneTimeFees += stormCleanupFee;
-    }
-
-    // Storm damage inspection fee
-    if (isStormModeActive && questionnaireData.stormEquipmentConcerns === 'yes') {
-      estimatedOneTimeFees += stormRecovery.cleanupPricing?.inspection || 35;
-    }
-
-    // Add green pool recovery startup
-    estimatedOneTimeFees += greenRecoveryStartupFee;
-
-    let estimatedFirstMonthTotal = estimatedMonthlyPrice + estimatedOneTimeFees + greenRecoveryMonthlySurcharge;
-
-    // ============================================
-    // E) PROFIT MARGIN PROTECTION
-    // ============================================
-    const targetMargin = profitMargin.target_margin_percent || 0.55;
-    const minimumMargin = profitMargin.minimum_margin_percent || 0.45;
-    const laborCostPerHour = profitMargin.labor_cost_per_hour || 50;
-    const laborMinutesPerVisit = profitMargin.labor_minutes_per_visit || {};
-
-    // Determine how many visits per month
-    const visitsPerMonth = recommendedFrequency === 'weekly' ? 4.33 : 2.16;
-
-    // Labor cost
-    const minutesPerVisit = laborMinutesPerVisit[questionnaireData.poolSize] || 35;
-    const laborCostPerVisit = (minutesPerVisit / 60) * laborCostPerHour;
-    const monthlyLaborCost = laborCostPerVisit * visitsPerMonth;
-
-    // Total cost
-    const totalMonthlyCost = monthlyLaborCost + estimatedMonthlyChemicalCOGS;
-
-    // Calculate actual margin
-    let actualMargin = (estimatedMonthlyPrice - totalMonthlyCost) / estimatedMonthlyPrice;
-    let marginAdjustmentApplied = 0;
-    let marginAdjustmentReason = '';
-
-    if (actualMargin < minimumMargin) {
-      // Need to increase price to hit minimum margin
-      // Target: (Price - Cost) / Price = minimumMargin
-      // => Price = Cost / (1 - minimumMargin)
-      const requiredPrice = totalMonthlyCost / (1 - minimumMargin);
-      marginAdjustmentApplied = Math.ceil((requiredPrice - estimatedMonthlyPrice) * 100) / 100;
-      estimatedMonthlyPrice += marginAdjustmentApplied;
-      perVisitPrice = estimatedMonthlyPrice / 4.33;
-      marginAdjustmentReason = 'High-maintenance conditions adjustment (heavy chemical demand or labor requirements)';
-      actualMargin = minimumMargin;
-    } else if (actualMargin < targetMargin && riskScore > 50) {
-      // Suggest weekly or add-ons, but don't force increase yet
-      // (handled in upsells)
-    }
-
-    // Update first month if there's adjustment
-    estimatedFirstMonthTotal = estimatedMonthlyPrice + estimatedOneTimeFees + greenRecoveryMonthlySurcharge;
-
-    // ============================================
-    // CREATE QUOTE BREAKDOWN
-    // ============================================
-    let quoteBreakdown = [
-      { lineItem: 'Base weekly price', amount: baseWeekly, isAdjustment: false },
-      { lineItem: 'Modifiers (enclosure, environment, filter, usage, etc)', amount: monthlyModifierSum, isAdjustment: false }
-    ];
-
-    if (uncertaintyFee > 0) {
-      quoteBreakdown.push({ lineItem: 'Pool size uncertainty fee', amount: uncertaintyFee, isAdjustment: false });
-    }
-
-    if (greenRecoveryMonthlySurcharge > 0) {
-      quoteBreakdown.push({ lineItem: 'Green pool recovery monthly surcharge (first month)', amount: greenRecoveryMonthlySurcharge, isAdjustment: false });
-    }
-
-    if (marginAdjustmentApplied > 0) {
-      quoteBreakdown.push({ lineItem: marginAdjustmentReason, amount: marginAdjustmentApplied, isAdjustment: true });
-    }
-
-    // ============================================
-    // C) DYNAMIC UPSELL TRIGGERS
-    // ============================================
-    let upsellSuggestions = [];
-
-    // Upsell 1: Weekly upgrade if recommended but not selected
-    if (recommendedFrequency === 'weekly' && questionnaireData.clientSelectedFrequency !== 'weekly') {
-      upsellSuggestions.push({
-        id: 'weekly_upgrade',
-        title: 'Upgrade to Weekly Service',
-        reason: 'Your pool has higher maintenance needs that weekly visits will address more reliably.',
-        price: (settings.upsellPrices?.weekly_upgrade || 25),
-        accepted: false
-      });
-    }
-
-    // Upsell 2: Debris management (for unscreened with trees/debris)
-    if (questionnaireData.enclosure === 'unscreened' && 
-        (questionnaireData.treesOverhead === 'yes' || questionnaireData.debrisLevel === 'heavy' || questionnaireData.debrisLevel === 'medium')) {
-      const debrisReason = isRainySeason 
-        ? 'Rainy season increases debris; skimmer socks and leaf canisters are highly recommended.'
-        : 'Skimmer socks and leaf canisters can reduce maintenance burden and chemical costs.';
-      upsellSuggestions.push({
-        id: 'debris_management',
-        title: 'Debris Management System',
-        reason: debrisReason,
-        price: (settings.upsellPrices?.debris_management_addon || 35),
-        accepted: false
-      });
-    }
-
-    // Upsell 3: Filter deep clean
-    if ((questionnaireData.filterType === 'cartridge' || questionnaireData.filterType === 'de') &&
-        (questionnaireData.debrisLevel === 'heavy' || greenRecoveryTier !== 'none')) {
-      upsellSuggestions.push({
-        id: 'filter_deep_clean',
-        title: 'Filter Deep Clean Add-On',
-        reason: 'Heavy debris or recovery conditions will stress your filter; professional cleaning extends its life.',
-        price: (settings.upsellPrices?.filter_deep_clean || 75),
-        accepted: false
-      });
-    }
-
-    // Additional upsells during summer high-risk period
-    if (isSummerHighRisk && recommendedFrequency === 'weekly') {
-      upsellSuggestions.push({
-        id: 'summer_algaecide',
-        title: 'Preventive Algaecide Program',
-        reason: 'Summer months increase algae bloom risk; preventive treatment maintains water clarity.',
-        price: 0,
-        accepted: false
-      });
-    }
-
-    // Storm cleanup + chemistry stabilization
-    if (isStormModeActive && stormCleanupFee > 0) {
-      upsellSuggestions.push({
-        id: 'storm_chemistry_stabil',
-        title: 'Post-Storm Chemistry Stabilization',
-        reason: 'Storm debris and refilled water require balanced chemistry to prevent algae.',
-        price: 0,
-        accepted: false
-      });
-    }
-
-    // Limit to 3 upsells
-    upsellSuggestions = upsellSuggestions.slice(0, 3);
-
-    // ============================================
-    // GENERATE TECHNICIAN NOTES
-    // ============================================
-    const treesInfo = questionnaireData.enclosure === 'unscreened' && questionnaireData.treesOverhead ? ` | Trees: ${questionnaireData.treesOverhead}` : '';
-    const debrisInfo = questionnaireData.enclosure === 'unscreened' && questionnaireData.debrisLevel ? ` | Debris: ${questionnaireData.debrisLevel}` : '';
-    const technicianNotes = `PROPERTY SUMMARY
-Pool Size: ${questionnaireData.poolSize.replace(/_/g, '-')} gallons (est)
-Type: ${questionnaireData.poolType.replace(/_/g, ' ')} | Enclosure: ${questionnaireData.enclosure.replace(/_/g, ' ')}${treesInfo}${debrisInfo}
-Filter: ${questionnaireData.filterType} | Sanitizer: ${questionnaireData.chlorinationMethod.replace(/_/g, ' ')}${questionnaireData.chlorinatorType ? ` (${questionnaireData.chlorinatorType.replace(/_/g, ' ')})` : ''}
-Usage: ${questionnaireData.useFrequency.replace(/_/g, ' ')} | Pets: ${questionnaireData.petsAccess ? `Yes (${questionnaireData.petSwimFrequency})` : 'No'}
-Condition: ${questionnaireData.poolCondition.replace(/_/g, ' ')}${greenRecoveryTier !== 'none' ? ` - ${greenRecoveryTier.replace(/_/g, ' ')} recovery (expect ${greenRecoveryExpectedVisits} visits)` : ''}
-Access: ${questionnaireData.accessType.replace(/_/g, ' ')}${questionnaireData.accessNotes ? ` - ${questionnaireData.accessNotes}` : ''}
-
-ANALYSIS
-Risk Score: ${riskScore} (${riskLevel})${isRainySeason ? ' [+rainy season]' : ''}${isPollenSeason ? ' [+pollen season]' : ''}
-Chemistry Demand: ${chemDemandIndex} (scale 0-100)
-Est. Monthly Chemical COGS: $${estimatedMonthlyChemicalCOGS.toFixed(2)} (${seasonName} season, multiplier: ${totalSeasonalChemMultiplier.toFixed(2)})
-Est. Monthly Labor: $${monthlyLaborCost.toFixed(2)}
-Gross Margin: ${Math.round(actualMargin * 100)}%
-
-QUOTE
-Recommended Frequency: ${recommendedFrequency} service
-Monthly Quote: $${estimatedMonthlyPrice.toFixed(2)}
-Per-Visit: $${perVisitPrice.toFixed(2)}
-One-Time Fees: $${estimatedOneTimeFees.toFixed(2)}
-First Month Est: $${estimatedFirstMonthTotal.toFixed(2)}
-
-NOTE: Base monthly price is stable year-round. COGS and recommendations may adjust seasonally.`;
-
     return Response.json({
       success: true,
       quote: {
-        estimatedMonthlyPrice: parseFloat(estimatedMonthlyPrice.toFixed(2)),
+        // Customer-visible fields
+        estimatedMonthlyPrice: parseFloat(finalMonthlyPrice.toFixed(2)),
         estimatedPerVisitPrice: parseFloat(perVisitPrice.toFixed(2)),
-        estimatedOneTimeFees: parseFloat(estimatedOneTimeFees.toFixed(2)),
+        estimatedOneTimeFees: parseFloat(oneTimeFees.toFixed(2)),
         estimatedFirstMonthTotal: parseFloat(estimatedFirstMonthTotal.toFixed(2)),
-        estimatedMonthlyChemicalCOGS: parseFloat(estimatedMonthlyChemicalCOGS.toFixed(2)),
-        chemDemandIndex: Math.round(chemDemandIndex),
-        cogsBreakdown,
-        riskScore: Math.round(riskScore),
-        riskLevel,
-        priceInfluencers: influencingFactors,
-        quoteBreakdown,
-        marginAdjustmentApplied: parseFloat(marginAdjustmentApplied.toFixed(2)),
-        marginAdjustmentReason,
-        estimatedGrossMarginPercent: parseFloat((actualMargin * 100).toFixed(2)),
-        recommendedFrequency,
-        greenRecoveryTier,
-        greenRecoveryExpectedVisits,
-        upsellSuggestions,
-        technicianNotes,
-        seasonality: {
-          seasonName,
-          seasonalChemMultiplier: parseFloat(totalSeasonalChemMultiplier.toFixed(3)),
-          isRainySeason,
-          isPollenSeason,
-          isSummerHighRisk
-        },
-        stormRecovery: {
-          isActive: isStormModeActive,
-          severityLevel: stormSeverityLevel,
-          cleanupClassification: stormCleanupClassification,
-          cleanupFee: parseFloat(stormCleanupFee.toFixed(2))
-        }
+        frequencySelectedOrRequired,
+        frequencyAutoRequired,
+        greenSizeGroup,
+
+        // Staff/Admin-visible fields (internal breakdown)
+        sizeTier,
+        baseMonthly: parseFloat(baseMonthly.toFixed(2)),
+        additiveTokensApplied,
+        rawRisk: parseFloat(rawRisk.toFixed(2)),
+        adjustedRisk: parseFloat(adjustedRisk.toFixed(2)),
+        riskBracket,
+        riskAddonAmount: parseFloat(riskAddonAmount.toFixed(2)),
+        frequencyMultiplier,
+        oneTimeFees: parseFloat(oneTimeFees.toFixed(2)),
+        finalMonthlyPrice: parseFloat(finalMonthlyPrice.toFixed(2)),
+        quoteLogicVersionId: 'v2_tokens_risk_frequency',
+        autopayDiscountAmount: autopayDiscount
       }
     });
   } catch (error) {
+    console.error('calculateQuote error:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
