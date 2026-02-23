@@ -135,6 +135,14 @@ Deno.serve(async (req) => {
     const riskPoints = riskEngine.points || {};
     const sizeMultipliers = riskEngine.size_multipliers || {};
     const escalationBrackets = riskEngine.escalation_brackets || [];
+    
+    console.log('DEBUG Risk Engine Config:', {
+      hasRiskEngine: !!riskEngine,
+      hasPoints: !!riskPoints,
+      hasBrackets: !!escalationBrackets,
+      bracketsLength: escalationBrackets?.length,
+      bracketsRaw: JSON.stringify(escalationBrackets)
+    });
 
     let rawRisk = 0;
 
