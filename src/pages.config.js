@@ -52,6 +52,7 @@ import Admin from './pages/Admin';
 import AdminHome from './pages/AdminHome';
 import AdminMessaging from './pages/AdminMessaging';
 import AdminReinstatements from './pages/AdminReinstatements';
+import Agreements from './pages/Agreements';
 import Analytics from './pages/Analytics';
 import Billing from './pages/Billing';
 import Calendar from './pages/Calendar';
@@ -65,17 +66,16 @@ import LeadsPipeline from './pages/LeadsPipeline';
 import MessageThread from './pages/MessageThread';
 import Messages from './pages/Messages';
 import Onboarding from './pages/Onboarding';
+import PaymentSetup from './pages/PaymentSetup';
+import PaymentSuccess from './pages/PaymentSuccess';
 import PreQualification from './pages/PreQualification';
+import PublicHome from './pages/PublicHome';
 import ServiceReinstatement from './pages/ServiceReinstatement';
 import ServiceVisitEntry from './pages/ServiceVisitEntry';
 import StaffHome from './pages/StaffHome';
 import StaffManagement from './pages/StaffManagement';
 import TechnicianHome from './pages/TechnicianHome';
 import TechnicianRoute from './pages/TechnicianRoute';
-import Agreements from './pages/Agreements';
-import PaymentSetup from './pages/PaymentSetup';
-import PaymentSuccess from './pages/PaymentSuccess';
-import PublicHome from './pages/PublicHome';
 import __Layout from './Layout.jsx';
 
 
@@ -85,6 +85,7 @@ export const PAGES = {
     "AdminHome": AdminHome,
     "AdminMessaging": AdminMessaging,
     "AdminReinstatements": AdminReinstatements,
+    "Agreements": Agreements,
     "Analytics": Analytics,
     "Billing": Billing,
     "Calendar": Calendar,
@@ -98,17 +99,16 @@ export const PAGES = {
     "MessageThread": MessageThread,
     "Messages": Messages,
     "Onboarding": Onboarding,
+    "PaymentSetup": PaymentSetup,
+    "PaymentSuccess": PaymentSuccess,
     "PreQualification": PreQualification,
+    "PublicHome": PublicHome,
     "ServiceReinstatement": ServiceReinstatement,
     "ServiceVisitEntry": ServiceVisitEntry,
     "StaffHome": StaffHome,
     "StaffManagement": StaffManagement,
     "TechnicianHome": TechnicianHome,
     "TechnicianRoute": TechnicianRoute,
-    "Agreements": Agreements,
-    "PaymentSetup": PaymentSetup,
-    "PaymentSuccess": PaymentSuccess,
-    "PublicHome": PublicHome,
 }
 
 export const pagesConfig = {

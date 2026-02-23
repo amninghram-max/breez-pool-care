@@ -12,48 +12,30 @@ import { createPageUrl } from '@/utils';
 
 export default function PreQualification() {
   const [step, setStep] = useState(1);
-      const [loading, setLoading] = useState(false);
-      const [quoteResult, setQuoteResult] = useState(null);
-      const [error, setError] = useState(null);
-
-      const { data: adminSettings } = useQuery({
-    queryKey: ['adminSettings'],
-    queryFn: () => base44.asServiceRole.entities.AdminSettings.filter({ settingKey: 'default' }),
-  });
-
-  const isStormModeActive = adminSettings?.[0]?.stormRecovery?.modeActive || false;
+  const [loading, setLoading] = useState(false);
+  const [quoteResult, setQuoteResult] = useState(null);
+  const [error, setError] = useState(null);
 
   const [formData, setFormData] = useState({
-        poolSize: '',
-        poolType: '',
-        spaPresent: '',
-        enclosure: '',
-        treesOverhead: '',
-        debrisLevel: '',
-        filterType: '',
-        chlorinationMethod: '',
-        chlorinatorType: '',
-        useFrequency: '',
-        petsAccess: false,
-        petSwimFrequency: 'never',
-        poolCondition: '',
-        greenPoolGreenness: '',
-        greenPoolDebris: '',
-        greenPoolDuration: '',
-        greenPoolPumpRunning: false,
-        knownIssues: [],
-        accessType: '',
-        accessNotes: '',
-        clientFirstName: '',
-        clientLastName: '',
-        clientEmail: '',
-        clientPhone: '',
-        clientSelectedFrequency: 'weekly',
-        biweeklyAcknowledged: false,
-        stormDebrisLevel: '',
-        stormWaterCondition: '',
-        stormEquipmentConcerns: 'no'
-      });
+    poolSize: '',
+    poolType: '',
+    spaPresent: '',
+    enclosure: '',
+    treesOverhead: '',
+    filterType: '',
+    chlorinationMethod: '',
+    chlorinatorType: '',
+    useFrequency: '',
+    petsAccess: false,
+    petSwimFrequency: 'never',
+    poolCondition: '',
+    greenPoolSeverity: '',
+    knownIssues: [],
+    clientFirstName: '',
+    clientLastName: '',
+    clientEmail: '',
+    clientPhone: ''
+  });
 
   const toggleMultiSelect = (field, value) => {
     setFormData(prev => {
@@ -101,31 +83,25 @@ export default function PreQualification() {
     calculateQuoteMutation.mutate();
   };
 
-const stepIsValid = () => {
+  const stepIsValid = () => {
     if (step === 1) {
       let baseValid = formData.poolSize && formData.poolType && formData.spaPresent && formData.enclosure;
-      // If unscreened, require trees and debris questions
+      // If unscreened, require trees question
       if (formData.enclosure === 'unscreened') {
-        return baseValid && formData.treesOverhead && formData.debrisLevel;
+        return baseValid && formData.treesOverhead;
       }
       return baseValid;
     }
     if (step === 2) {
       let baseValid = formData.filterType && formData.chlorinationMethod && formData.useFrequency && formData.poolCondition;
-      // If green algae, require green pool follow-ups
+      // If green algae, require severity
       if (formData.poolCondition === 'green_algae') {
-        return baseValid && formData.greenPoolGreenness && formData.greenPoolDebris && formData.greenPoolDuration;
+        return baseValid && formData.greenPoolSeverity;
       }
       return baseValid;
     }
     if (step === 3) {
-      // Last name is now optional - only require first name, email, and access type
-      let baseValid = formData.clientFirstName && formData.clientEmail && formData.accessType;
-      // If biweekly selected but frequency might be recommended weekly, require acknowledgment
-      if (formData.clientSelectedFrequency === 'biweekly') {
-        return baseValid && formData.biweeklyAcknowledged;
-      }
-      return baseValid;
+      return formData.clientFirstName && formData.clientEmail;
     }
     return true;
   };
@@ -135,11 +111,11 @@ const stepIsValid = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6 py-8">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-gray-900">Pool Pre-Qualification</h1>
-        <p className="text-gray-600">Let's learn about your pool and get an instant quote</p>
+        <h1 className="text-3xl font-bold text-gray-900">Get Your Free Quote</h1>
+        <p className="text-gray-600">Answer a few quick questions about your pool</p>
       </div>
 
       {error && (
@@ -171,8 +147,8 @@ const stepIsValid = () => {
         <CardHeader>
           <CardTitle>
             {step === 1 && 'Pool Details'}
-            {step === 2 && 'Pool Condition & Features'}
-            {step === 3 && 'Contact & Access Info'}
+            {step === 2 && 'Pool Features & Condition'}
+            {step === 3 && 'Your Contact Information'}
           </CardTitle>
         </CardHeader>
 
@@ -187,7 +163,6 @@ const stepIsValid = () => {
                     <SelectValue placeholder="Select pool size" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="under_10k">Under 10k gallons</SelectItem>
                     <SelectItem value="10_15k">10k - 15k gallons</SelectItem>
                     <SelectItem value="15_20k">15k - 20k gallons</SelectItem>
                     <SelectItem value="20_30k">20k - 30k gallons</SelectItem>
@@ -240,36 +215,19 @@ const stepIsValid = () => {
               </div>
 
               {formData.enclosure === 'unscreened' && (
-                <>
-                  <div>
-                    <Label>Are there trees overhead?</Label>
-                    <Select value={formData.treesOverhead} onValueChange={(v) => setFormData({ ...formData, treesOverhead: v })}>
-                      <SelectTrigger className="mt-2">
-                        <SelectValue placeholder="Select option" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="yes">Yes</SelectItem>
-                        <SelectItem value="no">No</SelectItem>
-                        <SelectItem value="not_sure">Not sure</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label>How much debris usually gets into the pool?</Label>
-                    <Select value={formData.debrisLevel} onValueChange={(v) => setFormData({ ...formData, debrisLevel: v })}>
-                      <SelectTrigger className="mt-2">
-                        <SelectValue placeholder="Select debris level" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="heavy">Heavy</SelectItem>
-                        <SelectItem value="not_sure">Not sure</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </>
+                <div>
+                  <Label>Are there trees overhead?</Label>
+                  <Select value={formData.treesOverhead} onValueChange={(v) => setFormData({ ...formData, treesOverhead: v })}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue placeholder="Select option" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="yes">Yes</SelectItem>
+                      <SelectItem value="no">No</SelectItem>
+                      <SelectItem value="not_sure">Not sure</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               )}
 
               <div>
@@ -289,7 +247,7 @@ const stepIsValid = () => {
             </div>
           )}
 
-          {/* STEP 2: CONDITION & FEATURES */}
+          {/* STEP 2: FEATURES & CONDITION */}
           {step === 2 && (
             <div className="space-y-6">
               <div>
@@ -299,7 +257,7 @@ const stepIsValid = () => {
                     <SelectValue placeholder="Select method" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="saltwater">Saltwater</SelectItem>
+                    <SelectItem value="saltwater">Saltwater System</SelectItem>
                     <SelectItem value="tablets">Chlorine Tablets</SelectItem>
                     <SelectItem value="liquid_chlorine">Liquid Chlorine</SelectItem>
                     <SelectItem value="mineral_alternative">Mineral/Alternative</SelectItem>
@@ -310,21 +268,66 @@ const stepIsValid = () => {
 
               {formData.chlorinationMethod === 'tablets' && (
                 <div>
-                  <Label>Chlorinator Type</Label>
+                  <Label>How are tablets delivered?</Label>
                   <Select value={formData.chlorinatorType} onValueChange={(v) => setFormData({ ...formData, chlorinatorType: v })}>
                     <SelectTrigger className="mt-2">
-                      <SelectValue placeholder="Select chlorinator" />
+                      <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="inline_plumbed">Inline/Plumbed-in</SelectItem>
-                      <SelectItem value="offline">Offline</SelectItem>
-                      <SelectItem value="floating">Floating</SelectItem>
-                      <SelectItem value="skimmer">Skimmer</SelectItem>
+                      <SelectItem value="inline_plumbed">Inline/Plumbed-in Chlorinator</SelectItem>
+                      <SelectItem value="offline">Offline Chlorinator</SelectItem>
+                      <SelectItem value="floating">Floating Dispenser</SelectItem>
+                      <SelectItem value="skimmer">Directly in Skimmer</SelectItem>
                       <SelectItem value="not_sure">Not Sure</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               )}
+
+              <div>
+                <Label>Pool Usage Frequency</Label>
+                <Select value={formData.useFrequency} onValueChange={(v) => setFormData({ ...formData, useFrequency: v })}>
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="Select frequency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="rarely">Rarely</SelectItem>
+                    <SelectItem value="weekends">Weekends</SelectItem>
+                    <SelectItem value="several_week">Several times per week</SelectItem>
+                    <SelectItem value="daily">Daily</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="border-t pt-6">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      id="pets"
+                      checked={formData.petsAccess}
+                      onCheckedChange={(checked) => setFormData({ ...formData, petsAccess: checked, petSwimFrequency: checked ? formData.petSwimFrequency : 'never' })}
+                    />
+                    <Label htmlFor="pets" className="cursor-pointer font-normal">Pets have pool access</Label>
+                  </div>
+
+                  {formData.petsAccess && (
+                    <div className="ml-6">
+                      <Label>Do pets swim in the pool?</Label>
+                      <Select value={formData.petSwimFrequency} onValueChange={(v) => setFormData({ ...formData, petSwimFrequency: v })}>
+                        <SelectTrigger className="mt-2">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="never">Never</SelectItem>
+                          <SelectItem value="rarely">Rarely</SelectItem>
+                          <SelectItem value="occasionally">Occasionally</SelectItem>
+                          <SelectItem value="frequently">Frequently</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+              </div>
 
               <div>
                 <Label>Current Pool Condition</Label>
@@ -342,114 +345,30 @@ const stepIsValid = () => {
                 </Select>
               </div>
 
-              <div>
-                <Label>Pool Usage Frequency</Label>
-                <Select value={formData.useFrequency} onValueChange={(v) => setFormData({ ...formData, useFrequency: v })}>
-                  <SelectTrigger className="mt-2">
-                    <SelectValue placeholder="Select frequency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="rarely">Rarely</SelectItem>
-                    <SelectItem value="weekends">Weekends</SelectItem>
-                    <SelectItem value="several_week">Several times per week</SelectItem>
-                    <SelectItem value="daily">Daily</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-{formData.poolCondition === 'green_algae' && (
+              {formData.poolCondition === 'green_algae' && (
                 <div className="border-t pt-6 bg-red-50 p-4 rounded-lg">
-                  <Label className="font-semibold mb-3 block text-red-900">Green Pool Details</Label>
+                  <Label className="font-semibold mb-3 block text-red-900">Green Pool Recovery</Label>
                   <div className="space-y-4">
                     <div>
-                      <Label className="text-sm">How green is it?</Label>
-                      <Select value={formData.greenPoolGreenness} onValueChange={(v) => setFormData({ ...formData, greenPoolGreenness: v })}>
+                      <Label className="text-sm">How severe is the algae?</Label>
+                      <Select value={formData.greenPoolSeverity} onValueChange={(v) => setFormData({ ...formData, greenPoolSeverity: v })}>
                         <SelectTrigger className="mt-2">
-                          <SelectValue placeholder="Select greenness level" />
+                          <SelectValue placeholder="Select severity" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="light_green">Light green (can see bottom)</SelectItem>
-                          <SelectItem value="medium_green">Medium green (bottom barely visible)</SelectItem>
-                          <SelectItem value="dark_green">Dark green (bottom not visible)</SelectItem>
+                          <SelectItem value="light">Light (slightly green, can see floor)</SelectItem>
+                          <SelectItem value="moderate">Moderate (green, limited visibility)</SelectItem>
+                          <SelectItem value="black_swamp">Heavy (black swamp, cannot see floor)</SelectItem>
                           <SelectItem value="not_sure">Not sure</SelectItem>
                         </SelectContent>
                       </Select>
-                    </div>
-
-                    <div>
-                      <Label className="text-sm">Visible debris level?</Label>
-                      <Select value={formData.greenPoolDebris} onValueChange={(v) => setFormData({ ...formData, greenPoolDebris: v })}>
-                        <SelectTrigger className="mt-2">
-                          <SelectValue placeholder="Select debris level" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="low">Low</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="heavy">Heavy</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label className="text-sm">How long has it been green?</Label>
-                      <Select value={formData.greenPoolDuration} onValueChange={(v) => setFormData({ ...formData, greenPoolDuration: v })}>
-                        <SelectTrigger className="mt-2">
-                          <SelectValue placeholder="Select duration" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="less_than_1_week">&lt; 1 week</SelectItem>
-                          <SelectItem value="1_to_4_weeks">1–4 weeks</SelectItem>
-                          <SelectItem value="more_than_4_weeks">&gt; 4 weeks</SelectItem>
-                          <SelectItem value="not_sure">Not sure</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="flex items-center gap-3 pt-2">
-                      <Checkbox
-                        id="pump_running"
-                        checked={formData.greenPoolPumpRunning}
-                        onCheckedChange={(checked) => setFormData({ ...formData, greenPoolPumpRunning: checked })}
-                      />
-                      <Label htmlFor="pump_running" className="cursor-pointer font-normal text-sm">Pump is running daily</Label>
                     </div>
                   </div>
                 </div>
               )}
 
               <div className="border-t pt-6">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      id="pets"
-                      checked={formData.petsAccess}
-                      onCheckedChange={(checked) => setFormData({ ...formData, petsAccess: checked })}
-                    />
-                    <Label htmlFor="pets" className="cursor-pointer font-normal">Pets have pool access</Label>
-                  </div>
-
-                  {formData.petsAccess && (
-                    <div className="ml-6">
-                      <Label>Do pets swim in the pool?</Label>
-                      <Select value={formData.petSwimFrequency} onValueChange={(v) => setFormData({ ...formData, petSwimFrequency: v })}>
-                        <SelectTrigger className="mt-2">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="never">Never</SelectItem>
-                          <SelectItem value="rarely">Rarely</SelectItem>
-                          <SelectItem value="occasionally">Occasionally</SelectItem>
-                          <SelectItem value="frequently">Frequently</SelectItem>
-                          <SelectItem value="not_sure">Not sure</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="border-t pt-6">
-                <Label className="font-semibold mb-3 block">Known Issues</Label>
+                <Label className="font-semibold mb-3 block">Known Issues (select all that apply)</Label>
                 <div className="space-y-3">
                   {[
                     { id: 'algae_problems', label: 'Algae problems' },
@@ -469,20 +388,10 @@ const stepIsValid = () => {
                   ))}
                 </div>
               </div>
-
-
             </div>
           )}
 
-          {/* STORM MODE NOTICE */}
-          {isStormModeActive && (
-            <div className="bg-red-50 border border-red-200 p-4 rounded-lg mb-6">
-              <p className="text-sm text-red-900 font-semibold">⚠️ Storm Recovery Mode Active</p>
-              <p className="text-sm text-red-800 mt-1">{adminSettings?.[0]?.stormRecovery?.clientNotice}</p>
-            </div>
-          )}
-
-          {/* STEP 3: CONTACT & ACCESS */}
+          {/* STEP 3: CONTACT INFO (NO ACCESS QUESTIONS) */}
           {step === 3 && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
@@ -518,7 +427,7 @@ const stepIsValid = () => {
               </div>
 
               <div>
-                <Label>Phone (optional)</Label>
+                <Label>Phone (Optional)</Label>
                 <Input
                   type="tel"
                   value={formData.clientPhone}
@@ -527,112 +436,6 @@ const stepIsValid = () => {
                   className="mt-2"
                 />
               </div>
-
-              <div>
-                <Label>Service Frequency Preference</Label>
-                <Select value={formData.clientSelectedFrequency} onValueChange={(v) => setFormData({ ...formData, clientSelectedFrequency: v })}>
-                  <SelectTrigger className="mt-2">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="biweekly">Biweekly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {formData.clientSelectedFrequency === 'biweekly' && (
-                <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <Checkbox
-                      id="biweekly_ack"
-                      checked={formData.biweeklyAcknowledged}
-                      onCheckedChange={(checked) => setFormData({ ...formData, biweeklyAcknowledged: checked })}
-                    />
-                    <Label htmlFor="biweekly_ack" className="cursor-pointer font-normal text-sm text-amber-900">
-                      I understand biweekly service may increase the chance of algae or cloudiness
-                    </Label>
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <Label>Access Type</Label>
-                <Select value={formData.accessType} onValueChange={(v) => setFormData({ ...formData, accessType: v })}>
-                  <SelectTrigger className="mt-2">
-                    <SelectValue placeholder="Select access type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="no_restrictions">No Restrictions</SelectItem>
-                    <SelectItem value="locked_gate">Locked Gate</SelectItem>
-                    <SelectItem value="code_required">Code Required</SelectItem>
-                    <SelectItem value="hoa_community">HOA/Community</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>Access Instructions (gate codes, special notes, etc)</Label>
-                <textarea
-                  value={formData.accessNotes}
-                  onChange={(e) => setFormData({ ...formData, accessNotes: e.target.value })}
-                  placeholder="Gate code: 1234, enter through side gate, etc"
-                  className="w-full mt-2 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
-                  rows={4}
-                />
-              </div>
-
-              {/* Storm Recovery Questions */}
-              {isStormModeActive && (
-                <div className="border-t pt-6 bg-red-50 p-4 rounded-lg">
-                  <h4 className="font-semibold text-red-900 mb-4">Post-Storm Cleanup Assessment</h4>
-
-                  <div className="space-y-4">
-                    <div>
-                      <Label className="text-sm font-medium">Debris Level</Label>
-                      <Select value={formData.stormDebrisLevel} onValueChange={(v) => setFormData({ ...formData, stormDebrisLevel: v })}>
-                        <SelectTrigger className="mt-2">
-                          <SelectValue placeholder="Select debris level" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="light">Light (minor leaves/dirt)</SelectItem>
-                          <SelectItem value="moderate">Moderate (visible accumulation)</SelectItem>
-                          <SelectItem value="heavy">Heavy (branches, contamination)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label className="text-sm font-medium">Water Condition</Label>
-                      <Select value={formData.stormWaterCondition} onValueChange={(v) => setFormData({ ...formData, stormWaterCondition: v })}>
-                        <SelectTrigger className="mt-2">
-                          <SelectValue placeholder="Select water condition" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="clear">Clear</SelectItem>
-                          <SelectItem value="cloudy">Cloudy</SelectItem>
-                          <SelectItem value="green">Green/Discolored</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label className="text-sm font-medium">Equipment Concerns?</Label>
-                      <Select value={formData.stormEquipmentConcerns} onValueChange={(v) => setFormData({ ...formData, stormEquipmentConcerns: v })}>
-                        <SelectTrigger className="mt-2">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="no">No</SelectItem>
-                          <SelectItem value="yes">Yes</SelectItem>
-                          <SelectItem value="unsure">Not sure</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
@@ -679,56 +482,50 @@ const stepIsValid = () => {
 }
 
 function QuoteDisplay({ quote, formData }) {
-  const recommendedButNotSelected = quote.recommendedFrequency === 'weekly' && formData.clientSelectedFrequency === 'biweekly';
-  const [showInternalBreakdown, setShowInternalBreakdown] = React.useState(false);
-
   const { data: user } = useQuery({
     queryKey: ['user'],
-    queryFn: () => base44.auth.me(),
+    queryFn: async () => {
+      try {
+        return await base44.auth.me();
+      } catch {
+        return null;
+      }
+    },
   });
 
-  const isAdmin = user?.role === 'admin';
+  const isStaffOrAdmin = user && ['admin', 'staff'].includes(user.role);
+  const [showInternalBreakdown, setShowInternalBreakdown] = React.useState(false);
 
   const handleContinueToSetup = async () => {
-    // Store quote acceptance
+    // Store quote data for onboarding
     localStorage.setItem('quoteData', JSON.stringify({
       quote,
       formData,
       timestamp: new Date().toISOString()
     }));
-    
-    // Send quote email if not continuing immediately
-    // This will be sent if user closes browser before scheduling
-    try {
-      await base44.functions.invoke('sendQuoteEmail', {
-        quote,
-        firstName: formData.clientFirstName,
-        email: formData.clientEmail
-      });
-    } catch (error) {
-      console.error('Failed to send quote email:', error);
-    }
-    
+
+    // Navigate to onboarding (inspection scheduling)
     window.location.href = createPageUrl('Onboarding');
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6 py-8">
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
             <Check className="w-5 h-5 text-emerald-600" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Your Recommended Service Plan</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Your Service Plan</h1>
         </div>
-        <p className="text-gray-600">Simple pricing. No surprises.</p>
+        <p className="text-gray-600">Simple pricing. All chemicals included.</p>
       </div>
 
-      {recommendedButNotSelected && (
-        <Card className="bg-amber-50 border-amber-200">
+      {/* Auto-required frequency notice */}
+      {quote.frequencyAutoRequired && (
+        <Card className="bg-blue-50 border-blue-200">
           <CardContent className="pt-6">
-            <p className="text-sm text-amber-900 font-medium">
-              💡 We recommend <strong>weekly service</strong> for your pool, but you selected biweekly. You acknowledged the risks—reach out anytime if algae issues develop.
+            <p className="text-sm text-blue-900 font-medium">
+              💡 Based on your pool's needs, we recommend <strong>twice-weekly service</strong> for best results.
             </p>
           </CardContent>
         </Card>
@@ -740,7 +537,9 @@ function QuoteDisplay({ quote, formData }) {
           <div className="text-center">
             <p className="text-sm text-gray-600 font-medium">Monthly Service</p>
             <p className="text-5xl font-bold text-gray-900 mt-3">${quote.estimatedMonthlyPrice.toFixed(2)}</p>
-            <p className="text-sm text-gray-600 mt-2">{formData.clientSelectedFrequency === 'weekly' ? 'Weekly visits' : 'Biweekly visits'}</p>
+            <p className="text-sm text-gray-600 mt-2">
+              {quote.frequencySelectedOrRequired === 'weekly' ? 'Weekly visits' : 'Twice per week visits'}
+            </p>
           </div>
 
           <div className="border-t pt-4 text-center">
@@ -752,6 +551,15 @@ function QuoteDisplay({ quote, formData }) {
             <div className="border-t pt-4 text-center">
               <p className="text-sm text-gray-600 font-medium">One-Time Setup</p>
               <p className="text-2xl font-bold text-teal-700 mt-2">${quote.estimatedOneTimeFees.toFixed(2)}</p>
+              <p className="text-xs text-gray-500 mt-1">Water balancing & recovery</p>
+            </div>
+          )}
+
+          {quote.autopayDiscountAmount > 0 && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
+              <p className="text-sm text-green-900 font-medium">
+                💰 Enroll in AutoPay during activation and save ${quote.autopayDiscountAmount}/month
+              </p>
             </div>
           )}
         </CardContent>
@@ -760,16 +568,17 @@ function QuoteDisplay({ quote, formData }) {
       {/* What's Included */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">{"What's Included"}</CardTitle>
+          <CardTitle className="text-lg">What's Included</CardTitle>
         </CardHeader>
         <CardContent>
           <ul className="space-y-3">
             {[
-              'Chemicals included',
+              'All chemicals included',
               'Water testing & balancing',
               'Brushing & vacuuming',
               'Debris removal',
-              'Skimmer & filter check/cleaning'
+              'Skimmer & filter check/cleaning',
+              'Digital service reports'
             ].map((item, i) => (
               <li key={i} className="flex items-center gap-3">
                 <Check className="w-5 h-5 text-teal-600 flex-shrink-0" />
@@ -780,11 +589,11 @@ function QuoteDisplay({ quote, formData }) {
         </CardContent>
       </Card>
 
-      {/* Continue to Setup CTA */}
+      {/* Continue CTA */}
       <Card className="bg-gradient-to-r from-teal-600 to-blue-600 text-white border-0">
         <CardContent className="pt-6 text-center">
           <h3 className="text-2xl font-bold mb-2">Ready to get started?</h3>
-          <p className="text-teal-50 mb-6">{"Let's schedule your free pool inspection"}</p>
+          <p className="text-teal-50 mb-6">Schedule your free pool inspection</p>
           <Button 
             onClick={handleContinueToSetup}
             size="lg"
@@ -795,12 +604,12 @@ function QuoteDisplay({ quote, formData }) {
         </CardContent>
       </Card>
 
-      {/* Admin-Only Internal Breakdown */}
-      {isAdmin && (
+      {/* Staff/Admin Internal Breakdown */}
+      {isStaffOrAdmin && (
         <Card className="border-amber-200 bg-amber-50">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-amber-900">Internal Breakdown (Admin Only)</CardTitle>
+              <CardTitle className="text-amber-900">Internal Breakdown (Staff/Admin Only)</CardTitle>
               <Button
                 size="sm"
                 variant="outline"
@@ -813,105 +622,89 @@ function QuoteDisplay({ quote, formData }) {
           {showInternalBreakdown && (
             <CardContent className="space-y-4">
               <div>
-                <p className="text-sm font-semibold text-amber-900 mb-2">Risk Score</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700">Score</span>
-                  <span className="font-bold">{quote.riskScore} ({quote.riskLevel})</span>
-                </div>
-              </div>
-              
-              <div>
-                <p className="text-sm font-semibold text-amber-900 mb-2">Chemical COGS</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700">Monthly Estimate</span>
-                  <span className="font-bold">${quote.estimatedMonthlyChemicalCOGS.toFixed(2)}</span>
-                </div>
-                <div className="flex items-center justify-between mt-1">
-                  <span className="text-sm text-gray-700">Demand Index</span>
-                  <span className="font-bold">{quote.chemDemandIndex}/100</span>
-                </div>
-              </div>
-
-              {quote.marginAdjustmentApplied > 0 && (
-                <div>
-                  <p className="text-sm font-semibold text-amber-900 mb-2">Margin Protection</p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-700">Adjustment</span>
-                    <span className="font-bold">${quote.marginAdjustmentApplied.toFixed(2)}</span>
+                <p className="text-sm font-semibold text-amber-900 mb-2">Pricing Components</p>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span>Size Tier:</span>
+                    <span className="font-bold">{quote.sizeTier.toUpperCase()}</span>
                   </div>
-                  <p className="text-xs text-gray-600 mt-1">{quote.marginAdjustmentReason}</p>
+                  <div className="flex justify-between">
+                    <span>Base Monthly:</span>
+                    <span className="font-bold">${quote.baseMonthly.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {quote.additiveTokensApplied?.length > 0 && (
+                <div>
+                  <p className="text-sm font-semibold text-amber-900 mb-2">Additive Tokens</p>
+                  <div className="space-y-1 text-sm">
+                    {quote.additiveTokensApplied.map((token, i) => (
+                      <div key={i} className="flex justify-between">
+                        <span>{token.token_name}:</span>
+                        <span className="font-bold">+${token.amount.toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
               <div>
-                <p className="text-sm font-semibold text-amber-900 mb-2">Gross Margin</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700">Percentage</span>
-                  <span className="font-bold">{quote.estimatedGrossMarginPercent}%</span>
+                <p className="text-sm font-semibold text-amber-900 mb-2">Risk Engine (Admin-Only)</p>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span>Raw Risk:</span>
+                    <span className="font-bold">{quote.rawRisk.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Adjusted Risk:</span>
+                    <span className="font-bold">{quote.adjustedRisk.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Risk Bracket:</span>
+                    <span className="font-bold">{quote.riskBracket}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Risk Add-on:</span>
+                    <span className="font-bold">+${quote.riskAddonAmount.toFixed(2)}</span>
+                  </div>
                 </div>
               </div>
 
-              {quote.priceInfluencers.length > 0 && (
-                <div>
-                  <p className="text-sm font-semibold text-amber-900 mb-2">Price Factors</p>
-                  <ul className="space-y-1">
-                    {quote.priceInfluencers.map((factor, i) => (
-                      <li key={i} className="text-xs text-gray-700">• {factor}</li>
-                    ))}
-                  </ul>
+              <div>
+                <p className="text-sm font-semibold text-amber-900 mb-2">Frequency</p>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span>Selected/Required:</span>
+                    <span className="font-bold">{quote.frequencySelectedOrRequired.replace('_', ' ')}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Multiplier:</span>
+                    <span className="font-bold">{quote.frequencyMultiplier}x</span>
+                  </div>
+                  {quote.frequencyAutoRequired && (
+                    <p className="text-xs text-amber-800 mt-2">⚠️ Auto-required (risk ≥ 9)</p>
+                  )}
                 </div>
-              )}
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-amber-900 mb-2">Quote Logic</p>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span>Version:</span>
+                    <span className="font-bold">{quote.quoteLogicVersionId}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Final Monthly:</span>
+                    <span className="font-bold">${quote.finalMonthlyPrice.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           )}
         </Card>
       )}
-
-      {/* Green Recovery Plan */}
-      {quote.greenRecoveryTier !== 'none' && (
-        <Card className="bg-red-50 border-red-200">
-          <CardHeader>
-            <CardTitle className="text-lg text-red-900">Green-to-Clean Recovery Plan</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <p className="text-sm font-semibold text-red-900">Tier: {quote.greenRecoveryTier.replace(/_/g, ' ')}</p>
-              <p className="text-xs text-red-800 mt-2">Expected visits: {quote.greenRecoveryExpectedVisits}</p>
-            </div>
-            <p className="text-xs text-red-900 bg-red-100 p-3 rounded">
-              ⚠️ Multiple visits may be required; immediate clarity is not guaranteed. Our technicians will assess progress and adjust as needed.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-
-
-      {/* Upsell Suggestions */}
-      {quote.upsellSuggestions.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Recommended Add-Ons</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {quote.upsellSuggestions.map((upsell) => (
-              <div key={upsell.id} className="flex items-start justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="flex-1">
-                  <p className="font-semibold text-sm text-gray-900">{upsell.title}</p>
-                  <p className="text-xs text-gray-600 mt-1">{upsell.reason}</p>
-                </div>
-                {upsell.price > 0 && (
-                  <div className="text-right ml-4 flex-shrink-0">
-                    <p className="font-bold text-teal-700">${upsell.price.toFixed(2)}</p>
-                    <p className="text-xs text-gray-500">one-time</p>
-                  </div>
-                )}
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-
 
       <div className="flex gap-3">
         <Button variant="outline" className="flex-1" onClick={() => window.history.back()}>
