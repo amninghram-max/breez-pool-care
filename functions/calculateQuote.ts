@@ -75,6 +75,7 @@ const DEFAULT_CONFIG = {
 
 Deno.serve(async (req) => {
   try {
+    console.log("📊 calculateQuote v2.1.0 - WITH FALLBACK BRACKETS");
     const base44 = createClientFromRequest(req);
     const payload = await req.json();
     const { questionnaireData } = payload;
