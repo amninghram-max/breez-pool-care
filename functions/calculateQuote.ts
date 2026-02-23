@@ -171,24 +171,35 @@ Deno.serve(async (req) => {
 
     const adjustedRisk = rawRisk * sizeMultiplier;
 
-    // Find escalation bracket
+    // Find escalation bracket - ALWAYS applied (hidden from customer)
     let riskAddonAmount = 0;
     let riskBracket = null;
     
-    // Sort brackets by min_risk to ensure correct matching
-    const sortedBrackets = [...escalationBrackets].sort((a, b) => a.min_risk - b.min_risk);
+    console.log('Risk engine data:', { 
+      escalationBrackets, 
+      adjustedRisk,
+      bracketsLength: escalationBrackets?.length 
+    });
     
-    for (const bracket of sortedBrackets) {
-      // Handle edge cases: use > for min, <= for max to avoid gaps
-      // Special handling for the final bracket (999 max)
-      const matchesMin = adjustedRisk >= bracket.min_risk;
-      const matchesMax = bracket.max_risk >= 999 ? true : adjustedRisk <= bracket.max_risk;
+    if (escalationBrackets && escalationBrackets.length > 0) {
+      // Sort brackets by min_risk to ensure correct matching
+      const sortedBrackets = [...escalationBrackets].sort((a, b) => a.min_risk - b.min_risk);
       
-      if (matchesMin && matchesMax) {
-        riskAddonAmount = bracket.addon_amount || 0;
-        riskBracket = bracket.max_risk >= 999 ? `${bracket.min_risk}+` : `${bracket.min_risk}-${bracket.max_risk}`;
-        break;
+      for (const bracket of sortedBrackets) {
+        // Handle edge cases: use >= for min, <= for max
+        // Special handling for the final bracket (999 max)
+        const matchesMin = adjustedRisk >= bracket.min_risk;
+        const matchesMax = bracket.max_risk >= 999 ? true : adjustedRisk <= bracket.max_risk;
+        
+        if (matchesMin && matchesMax) {
+          riskAddonAmount = bracket.addon_amount || 0;
+          riskBracket = bracket.max_risk >= 999 ? `${bracket.min_risk}+` : `${bracket.min_risk}-${bracket.max_risk}`;
+          console.log('Matched bracket:', { bracket, riskAddonAmount, riskBracket });
+          break;
+        }
       }
+    } else {
+      console.warn('No escalation brackets found in settings');
     }
 
     // Apply risk add-on (hidden from customer)
