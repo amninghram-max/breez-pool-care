@@ -12,12 +12,22 @@ Deno.serve(async (req) => {
     });
     const settings = settingsResult[0] || {};
 
-    // Extract new pricing configuration
-    const baseTiers = settings.baseTierPrices || {};
-    const tokens = settings.additiveTokens || {};
-    const initialFees = settings.initialFees || {};
-    const riskEngine = settings.riskEngine || {};
-    const frequencyLogic = settings.frequencyLogic || {};
+    // Extract new pricing configuration (handle JSON strings from DB)
+    const baseTiers = typeof settings.baseTierPrices === 'string' 
+      ? JSON.parse(settings.baseTierPrices) 
+      : (settings.baseTierPrices || {});
+    const tokens = typeof settings.additiveTokens === 'string'
+      ? JSON.parse(settings.additiveTokens)
+      : (settings.additiveTokens || {});
+    const initialFees = typeof settings.initialFees === 'string'
+      ? JSON.parse(settings.initialFees)
+      : (settings.initialFees || {});
+    const riskEngine = typeof settings.riskEngine === 'string'
+      ? JSON.parse(settings.riskEngine)
+      : (settings.riskEngine || {});
+    const frequencyLogic = typeof settings.frequencyLogic === 'string'
+      ? JSON.parse(settings.frequencyLogic)
+      : (settings.frequencyLogic || {});
     const autopayDiscount = settings.autopayDiscount || 10;
 
     // ============================================
