@@ -48,9 +48,11 @@
  * The mainPage value must match a key in the PAGES object exactly.
  */
 import AIChat from './pages/AIChat';
+import AccessSetup from './pages/AccessSetup';
 import Admin from './pages/Admin';
 import AdminHome from './pages/AdminHome';
 import AdminMessaging from './pages/AdminMessaging';
+import AdminPricingConfig from './pages/AdminPricingConfig';
 import AdminReinstatements from './pages/AdminReinstatements';
 import Agreements from './pages/Agreements';
 import Analytics from './pages/Analytics';
@@ -76,17 +78,18 @@ import StaffHome from './pages/StaffHome';
 import StaffManagement from './pages/StaffManagement';
 import TechnicianHome from './pages/TechnicianHome';
 import TechnicianRoute from './pages/TechnicianRoute';
-import AccessSetup from './pages/AccessSetup';
-import AdminPricingConfig from './pages/AdminPricingConfig';
 import TestDashboard from './pages/TestDashboard';
+import MarginStressTest from './pages/MarginStressTest';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "AIChat": AIChat,
+    "AccessSetup": AccessSetup,
     "Admin": Admin,
     "AdminHome": AdminHome,
     "AdminMessaging": AdminMessaging,
+    "AdminPricingConfig": AdminPricingConfig,
     "AdminReinstatements": AdminReinstatements,
     "Agreements": Agreements,
     "Analytics": Analytics,
@@ -112,9 +115,8 @@ export const PAGES = {
     "StaffManagement": StaffManagement,
     "TechnicianHome": TechnicianHome,
     "TechnicianRoute": TechnicianRoute,
-    "AccessSetup": AccessSetup,
-    "AdminPricingConfig": AdminPricingConfig,
     "TestDashboard": TestDashboard,
+    "MarginStressTest": MarginStressTest,
 }
 
 export const pagesConfig = {
