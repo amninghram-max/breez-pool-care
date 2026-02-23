@@ -78,15 +78,27 @@ Deno.serve(async (req) => {
 
     // Classify critical failures
     const CRITICAL_SUITES = ['pricing', 'security'];
-    const CRITICAL_PATTERNS = ['payment', 'Payment', 'active', 'Active', 'gating'];
+    const CRITICAL_PATTERNS = ['payment', 'Payment', 'active', 'Active', 'gating', 'FIXTURE'];
     
     results.criticalFailures = results.failures.filter(f => {
       if (CRITICAL_SUITES.includes(f.suite)) return true;
       if (f.suite === 'lead-pipeline' && CRITICAL_PATTERNS.some(p => f.test.includes(p))) return true;
+      if (f.test.includes('[FIXTURE]')) return true; // All fixture tests are critical
       return false;
     });
     
     results.summary.criticalFailed = results.criticalFailures.length;
+    
+    // Extract snapshot mismatches for reporting
+    results.snapshotMismatches = [];
+    for (const suite of Object.values(results.suites)) {
+      if (suite.snapshotMismatches) {
+        results.snapshotMismatches.push(...suite.snapshotMismatches.map(m => ({
+          ...m,
+          suite: suite.name
+        })));
+      }
+    }
 
     // Calculate coverage
     results.coverage = calculateCoverage(results.suites);
@@ -245,6 +257,42 @@ function generateHTMLReport(results) {
         `).join('')}
       </div>
     </div>
+
+    ${results.snapshotMismatches && results.snapshotMismatches.length > 0 ? `
+      <div class="section">
+        <h2 style="color: #991B1B;">📸 SNAPSHOT MISMATCHES (${results.snapshotMismatches.length}) - PRICING REGRESSION</h2>
+        <p style="color: #7C2D12;">Golden fixtures changed. Review carefully before updating fixtures.</p>
+        ${results.snapshotMismatches.map(m => `
+          <div class="failure-card" style="border-color: #DC2626; background: #FEE2E2;">
+            <h4 style="color: #991B1B;">⛔ ${m.suite} / ${m.test}</h4>
+            <p><strong>Fixture ID:</strong> ${m.fixtureId || 'N/A'}</p>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+              <thead>
+                <tr style="background: #FCA5A5;">
+                  <th style="border: 1px solid #DC2626; padding: 8px; text-align: left;">Field</th>
+                  <th style="border: 1px solid #DC2626; padding: 8px; text-align: left;">Expected (Fixture)</th>
+                  <th style="border: 1px solid #DC2626; padding: 8px; text-align: left;">Actual (Current)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${Object.keys(m.expected).map(key => `
+                  <tr>
+                    <td style="border: 1px solid #DC2626; padding: 8px;"><code>${key}</code></td>
+                    <td style="border: 1px solid #DC2626; padding: 8px;">${JSON.stringify(m.expected[key])}</td>
+                    <td style="border: 1px solid #DC2626; padding: 8px; ${JSON.stringify(m.expected[key]) !== JSON.stringify(m.actual?.[key]) ? 'background: #FECACA;' : ''}">${JSON.stringify(m.actual?.[key])}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `).join('')}
+      </div>
+    ` : `
+      <div class="section">
+        <h2 style="color: #15803D;">✅ SNAPSHOT TESTS PASSED</h2>
+        <p style="color: #166534;">All golden fixtures match current pricing engine output.</p>
+      </div>
+    `}
 
     ${results.criticalFailures.length > 0 ? `
       <div class="section">
