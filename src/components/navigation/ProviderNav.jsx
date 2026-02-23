@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Home, Calendar, Users, MapPin, MessageSquare, Droplet, AlertCircle, Settings, BarChart3, Shield } from 'lucide-react';
+import { Home, Calendar, Users, MapPin, MessageSquare, Droplet, AlertCircle, Settings, BarChart3, Shield, Activity } from 'lucide-react';
 
 export default function ProviderNav({ userRole }) {
   const location = useLocation();
@@ -48,7 +48,8 @@ export default function ProviderNav({ userRole }) {
       { name: 'Settings', path: 'Admin', icon: Settings, section: 'admin' },
       { name: 'Staff', path: 'StaffManagement', icon: Users, section: 'admin' },
       { name: 'Analytics', path: 'Analytics', icon: BarChart3, section: 'admin' },
-      { name: 'Chemistry', path: 'ChemistryDashboard', icon: Droplet, section: 'admin' }
+      { name: 'Chemistry', path: 'ChemistryDashboard', icon: Droplet, section: 'admin' },
+      { name: 'Margin Testing', path: 'MarginStressTest', icon: Activity, section: 'admin' }
     );
   }
 
