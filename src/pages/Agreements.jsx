@@ -44,7 +44,7 @@ export default function Agreements() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myLead'] });
-      navigate(createPageUrl('PaymentSetup'));
+      navigate(createPageUrl('AccessSetup'));
     }
   });
 

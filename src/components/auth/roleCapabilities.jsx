@@ -11,6 +11,7 @@ export const ROLES = {
 export const PAGE_ACCESS = {
   // ============ PUBLIC PAGES (No auth required) ============
   PublicHome: ['public'], // Anyone can access
+  PreQualification: ['public'], // Quote form accessible to all
   
   // ============ CUSTOMER APP (Customer Portal) ============
   ClientHome: [ROLES.CUSTOMER],

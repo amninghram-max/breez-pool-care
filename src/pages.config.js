@@ -76,6 +76,7 @@ import StaffHome from './pages/StaffHome';
 import StaffManagement from './pages/StaffManagement';
 import TechnicianHome from './pages/TechnicianHome';
 import TechnicianRoute from './pages/TechnicianRoute';
+import AccessSetup from './pages/AccessSetup';
 import __Layout from './Layout.jsx';
 
 
@@ -109,6 +110,7 @@ export const PAGES = {
     "StaffManagement": StaffManagement,
     "TechnicianHome": TechnicianHome,
     "TechnicianRoute": TechnicianRoute,
+    "AccessSetup": AccessSetup,
 }
 
 export const pagesConfig = {
