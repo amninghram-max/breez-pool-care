@@ -1,7 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 // DEFAULT FALLBACK CONFIG (used only if AdminSettings is missing)
-const DEFAULT_BRACKETS = [
+// CRITICAL: These brackets protect margin — never run pricing without them
+const DEFAULT_ESCALATION_BRACKETS = [
   { min_risk: 0, max_risk: 2, addon_amount: 0 },
   { min_risk: 3, max_risk: 5, addon_amount: 15 },
   { min_risk: 6, max_risk: 8, addon_amount: 30 },
@@ -64,7 +65,7 @@ const DEFAULT_CONFIG = {
       tier_c: 1.2,
       tier_d: 1.3
     },
-    escalation_brackets: DEFAULT_BRACKETS
+    escalation_brackets: DEFAULT_ESCALATION_BRACKETS
   },
   frequencyLogic: {
     twice_weekly_multiplier: 1.8,
@@ -77,6 +78,17 @@ Deno.serve(async (req) => {
   try {
     console.log("📊 calculateQuote v2.1.0 - WITH FALLBACK BRACKETS");
     const base44 = createClientFromRequest(req);
+    
+    // STARTUP CONFIG VALIDATION: Ensure pricing config is valid before running
+    try {
+      const validationResponse = await base44.asServiceRole.functions.invoke('validatePricingConfig', {});
+      if (validationResponse.data?.seeded) {
+        console.log('✅ Config auto-seeded before pricing calculation');
+      }
+    } catch (validationError) {
+      console.warn('⚠️ Config validation skipped (non-blocking):', validationError.message);
+    }
+    
     const payload = await req.json();
     const { questionnaireData } = payload;
 
@@ -216,12 +228,30 @@ Deno.serve(async (req) => {
     const riskPoints = riskEngine.points || DEFAULT_CONFIG.riskEngine.points;
     const sizeMultipliers = riskEngine.size_multipliers || DEFAULT_CONFIG.riskEngine.size_multipliers;
     
-    // Use escalation_brackets with fallback to DEFAULT_BRACKETS
+    // CONFIG INTEGRITY GUARD: Validate escalation brackets before applying
     let escalationBrackets = riskEngine.escalation_brackets;
-    if (!escalationBrackets || escalationBrackets.length === 0) {
-      console.warn('⚠️ escalation_brackets missing - using DEFAULT_BRACKETS fallback');
-      escalationBrackets = DEFAULT_BRACKETS;
+    const bracketsInvalid = !escalationBrackets || escalationBrackets.length < 5;
+    
+    if (bracketsInvalid) {
+      console.error('🚨 CRITICAL: escalation_brackets missing or invalid (length < 5) - using DEFAULT_ESCALATION_BRACKETS');
+      escalationBrackets = DEFAULT_ESCALATION_BRACKETS;
       usingFallback = true;
+      
+      // Emit admin alert event
+      try {
+        await base44.asServiceRole.entities.AnalyticsEvent.create({
+          eventType: 'PricingConfigFallbackUsed',
+          source: 'system',
+          metadata: {
+            reason: 'escalation_brackets_invalid',
+            bracketsLength: escalationBrackets?.length || 0,
+            usingDefaultBrackets: true,
+            critical: true
+          }
+        });
+      } catch (e) {
+        console.error('Failed to log admin alert event:', e);
+      }
     }
     
     if (usingFallback) {
