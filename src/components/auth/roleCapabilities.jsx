@@ -9,6 +9,9 @@ export const ROLES = {
 
 // Page access by role - enforces hard separation
 export const PAGE_ACCESS = {
+  // ============ PUBLIC PAGES (No auth required) ============
+  PublicHome: ['public'], // Anyone can access
+  
   // ============ CUSTOMER APP (Customer Portal) ============
   ClientHome: [ROLES.CUSTOMER],
   Messages: [ROLES.CUSTOMER], // Customer's own message threads
@@ -108,6 +111,12 @@ export const ACTION_PERMISSIONS = {
 // Helper functions
 export function canAccessPage(userRole, pageName) {
   const allowedRoles = PAGE_ACCESS[pageName];
+  
+  // Public pages accessible by anyone
+  if (allowedRoles && allowedRoles.includes('public')) {
+    return true;
+  }
+  
   if (!allowedRoles) {
     // Default: deny customer, allow staff+
     return userRole !== ROLES.CUSTOMER;
