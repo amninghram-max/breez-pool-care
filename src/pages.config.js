@@ -75,6 +75,7 @@ import TechnicianRoute from './pages/TechnicianRoute';
 import Agreements from './pages/Agreements';
 import PaymentSetup from './pages/PaymentSetup';
 import PaymentSuccess from './pages/PaymentSuccess';
+import PublicHome from './pages/PublicHome';
 import __Layout from './Layout.jsx';
 
 
@@ -107,6 +108,7 @@ export const PAGES = {
     "Agreements": Agreements,
     "PaymentSetup": PaymentSetup,
     "PaymentSuccess": PaymentSuccess,
+    "PublicHome": PublicHome,
 }
 
 export const pagesConfig = {

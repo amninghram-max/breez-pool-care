@@ -10,12 +10,14 @@ import { Link } from 'react-router-dom';
 export default function Home() {
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
 
-  const { data: user } = useQuery({
+  const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['user'],
     queryFn: async () => {
       try {
         return await base44.auth.me();
       } catch (error) {
+        // Not authenticated - redirect to public home
+        navigate(createPageUrl('PublicHome'));
         return null;
       }
     },
