@@ -1,5 +1,78 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+// DEFAULT FALLBACK CONFIG (used only if AdminSettings is missing)
+const DEFAULT_BRACKETS = [
+  { min_risk: 0, max_risk: 2, addon_amount: 0 },
+  { min_risk: 3, max_risk: 5, addon_amount: 15 },
+  { min_risk: 6, max_risk: 8, addon_amount: 30 },
+  { min_risk: 9, max_risk: 11, addon_amount: 45 },
+  { min_risk: 12, max_risk: 999, addon_amount: 60 }
+];
+
+const DEFAULT_CONFIG = {
+  baseTierPrices: {
+    tier_a_10_15k: 140,
+    tier_b_15_20k: 160,
+    tier_c_20_30k: 190,
+    tier_d_30k_plus: 230,
+    absolute_floor: 120
+  },
+  additiveTokens: {
+    unscreened_tier_a: 20,
+    unscreened_tier_b: 25,
+    unscreened_tier_c: 30,
+    unscreened_tier_d: 40,
+    trees_overhead: 10,
+    usage_weekends: 10,
+    usage_several_week: 10,
+    usage_daily: 20,
+    chlorinator_floater_tier_a: 5,
+    chlorinator_floater_tier_b: 10,
+    chlorinator_floater_tier_c: 15,
+    chlorinator_floater_tier_d: 20,
+    chlorinator_liquid_only: 10,
+    pets_occasional: 5,
+    pets_frequent: 10
+  },
+  initialFees: {
+    slightly_cloudy: 25,
+    green_light_small: 60,
+    green_light_medium: 100,
+    green_light_large: 150,
+    green_moderate_small: 100,
+    green_moderate_medium: 150,
+    green_moderate_large: 200,
+    green_black_small: 250,
+    green_black_medium: 350,
+    green_black_large: 450
+  },
+  riskEngine: {
+    points: {
+      unscreened: 2,
+      trees_overhead: 1,
+      usage_daily: 2,
+      usage_several_week: 1,
+      chlorinator_floater_skimmer: 1,
+      chlorinator_liquid_only: 2,
+      pets_frequent: 1,
+      pets_occasional: 0.5,
+      condition_green: 2
+    },
+    size_multipliers: {
+      tier_a: 1.0,
+      tier_b: 1.1,
+      tier_c: 1.2,
+      tier_d: 1.3
+    },
+    escalation_brackets: DEFAULT_BRACKETS
+  },
+  frequencyLogic: {
+    twice_weekly_multiplier: 1.8,
+    auto_require_threshold: 9
+  },
+  autopayDiscount: 10
+};
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -10,25 +83,32 @@ Deno.serve(async (req) => {
     const settingsResult = await base44.asServiceRole.entities.AdminSettings.filter({
       settingKey: 'default'
     });
-    const settings = settingsResult[0] || {};
+    
+    let usingFallback = false;
+    const settings = settingsResult[0];
+    
+    if (!settings) {
+      console.warn('⚠️ AdminSettings not found - using DEFAULT_CONFIG fallback');
+      usingFallback = true;
+    }
 
-    // Extract new pricing configuration (handle JSON strings from DB)
-    const baseTiers = typeof settings.baseTierPrices === 'string' 
-      ? JSON.parse(settings.baseTierPrices) 
-      : (settings.baseTierPrices || {});
-    const tokens = typeof settings.additiveTokens === 'string'
+    // Extract pricing configuration with fallback
+    const baseTiers = settings?.baseTierPrices 
+      ? JSON.parse(settings.baseTierPrices)
+      : DEFAULT_CONFIG.baseTierPrices;
+    const tokens = settings?.additiveTokens
       ? JSON.parse(settings.additiveTokens)
-      : (settings.additiveTokens || {});
-    const initialFees = typeof settings.initialFees === 'string'
+      : DEFAULT_CONFIG.additiveTokens;
+    const initialFees = settings?.initialFees
       ? JSON.parse(settings.initialFees)
-      : (settings.initialFees || {});
-    const riskEngine = typeof settings.riskEngine === 'string'
+      : DEFAULT_CONFIG.initialFees;
+    const riskEngine = settings?.riskEngine
       ? JSON.parse(settings.riskEngine)
-      : (settings.riskEngine || {});
-    const frequencyLogic = typeof settings.frequencyLogic === 'string'
+      : DEFAULT_CONFIG.riskEngine;
+    const frequencyLogic = settings?.frequencyLogic
       ? JSON.parse(settings.frequencyLogic)
-      : (settings.frequencyLogic || {});
-    const autopayDiscount = settings.autopayDiscount || 10;
+      : DEFAULT_CONFIG.frequencyLogic;
+    const autopayDiscount = settings?.autopayDiscount || DEFAULT_CONFIG.autopayDiscount;
 
     // ============================================
     // 1) DETERMINE SIZE TIER
@@ -132,17 +212,20 @@ Deno.serve(async (req) => {
     // ============================================
     // 3) ADMIN-ONLY RISK ENGINE (HIDDEN ESCALATION)
     // ============================================
-    const riskPoints = riskEngine.points || {};
-    const sizeMultipliers = riskEngine.size_multipliers || {};
-    const escalationBrackets = riskEngine.escalation_brackets || [];
+    const riskPoints = riskEngine.points || DEFAULT_CONFIG.riskEngine.points;
+    const sizeMultipliers = riskEngine.size_multipliers || DEFAULT_CONFIG.riskEngine.size_multipliers;
     
-    console.log('DEBUG Risk Engine Config:', {
-      hasRiskEngine: !!riskEngine,
-      hasPoints: !!riskPoints,
-      hasBrackets: !!escalationBrackets,
-      bracketsLength: escalationBrackets?.length,
-      bracketsRaw: JSON.stringify(escalationBrackets)
-    });
+    // Use escalation_brackets with fallback to DEFAULT_BRACKETS
+    let escalationBrackets = riskEngine.escalation_brackets;
+    if (!escalationBrackets || escalationBrackets.length === 0) {
+      console.warn('⚠️ escalation_brackets missing - using DEFAULT_BRACKETS fallback');
+      escalationBrackets = DEFAULT_BRACKETS;
+      usingFallback = true;
+    }
+    
+    if (usingFallback) {
+      console.warn('⚠️ PRICING RUNNING ON FALLBACK CONFIG - AdminSettings needs seeding');
+    }
 
     let rawRisk = 0;
 
@@ -193,31 +276,20 @@ Deno.serve(async (req) => {
     let riskAddonAmount = 0;
     let riskBracket = null;
     
-    console.log('Risk engine data:', { 
-      escalationBrackets, 
-      adjustedRisk,
-      bracketsLength: escalationBrackets?.length 
-    });
-    
     if (escalationBrackets && escalationBrackets.length > 0) {
       // Sort brackets by min_risk to ensure correct matching
       const sortedBrackets = [...escalationBrackets].sort((a, b) => a.min_risk - b.min_risk);
       
       for (const bracket of sortedBrackets) {
-        // Handle edge cases: use >= for min, <= for max
-        // Special handling for the final bracket (999 max)
         const matchesMin = adjustedRisk >= bracket.min_risk;
         const matchesMax = bracket.max_risk >= 999 ? true : adjustedRisk <= bracket.max_risk;
         
         if (matchesMin && matchesMax) {
           riskAddonAmount = bracket.addon_amount || 0;
           riskBracket = bracket.max_risk >= 999 ? `${bracket.min_risk}+` : `${bracket.min_risk}-${bracket.max_risk}`;
-          console.log('Matched bracket:', { bracket, riskAddonAmount, riskBracket });
           break;
         }
       }
-    } else {
-      console.warn('No escalation brackets found in settings');
     }
 
     // Apply risk add-on (hidden from customer)
