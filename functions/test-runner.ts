@@ -7,6 +7,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 // Import test suites
 import { runPricingTests } from './tests/pricing-engine.test.js';
+import { runPricingSnapshotTests } from './tests/pricing-snapshots.test.js';
 import { runLeadPipelineTests } from './tests/lead-pipeline.test.js';
 import { runBillingTests } from './tests/billing-autopay.test.js';
 import { runSecurityTests } from './tests/security-rbac.test.js';
@@ -47,6 +48,7 @@ Deno.serve(async (req) => {
     // Execute test suites
     const suitesToRun = runAll ? [
       { name: 'pricing', fn: runPricingTests },
+      { name: 'pricing-snapshots', fn: runPricingSnapshotTests },
       { name: 'lead-pipeline', fn: runLeadPipelineTests },
       { name: 'billing', fn: runBillingTests },
       { name: 'security', fn: runSecurityTests },
@@ -77,17 +79,24 @@ Deno.serve(async (req) => {
     results.summary.duration = Date.now() - startTime;
 
     // Classify critical failures
-    const CRITICAL_SUITES = ['pricing', 'security'];
-    const CRITICAL_PATTERNS = ['payment', 'Payment', 'active', 'Active', 'gating', 'FIXTURE'];
+    const CRITICAL_SUITES = ['pricing', 'pricing-snapshots', 'security'];
+    const CRITICAL_PATTERNS = ['payment', 'Payment', 'active', 'Active', 'gating', 'FIXTURE', 'SNAPSHOT'];
     
     results.criticalFailures = results.failures.filter(f => {
       if (CRITICAL_SUITES.includes(f.suite)) return true;
       if (f.suite === 'lead-pipeline' && CRITICAL_PATTERNS.some(p => f.test.includes(p))) return true;
       if (f.test.includes('[FIXTURE]')) return true; // All fixture tests are critical
+      if (f.critical === true) return true; // Explicitly marked as critical
       return false;
     });
     
     results.summary.criticalFailed = results.criticalFailures.length;
+    
+    // CRITICAL: If any snapshot mismatches exist, deployment MUST be blocked
+    if (results.snapshotMismatches && results.snapshotMismatches.length > 0) {
+      results.summary.criticalFailed += results.snapshotMismatches.length;
+      results.summary.snapshotMismatchCount = results.snapshotMismatches.length;
+    }
     
     // Extract snapshot mismatches for reporting
     results.snapshotMismatches = [];
@@ -124,6 +133,7 @@ Deno.serve(async (req) => {
 function getSuiteFunction(suite) {
   const map = {
     'pricing': runPricingTests,
+    'pricing-snapshots': runPricingSnapshotTests,
     'lead-pipeline': runLeadPipelineTests,
     'billing': runBillingTests,
     'security': runSecurityTests,
@@ -260,28 +270,47 @@ function generateHTMLReport(results) {
 
     ${results.snapshotMismatches && results.snapshotMismatches.length > 0 ? `
       <div class="section">
-        <h2 style="color: #991B1B;">📸 SNAPSHOT MISMATCHES (${results.snapshotMismatches.length}) - PRICING REGRESSION</h2>
-        <p style="color: #7C2D12;">Golden fixtures changed. Review carefully before updating fixtures.</p>
+        <h2 style="color: #991B1B;">📸 CRITICAL: SNAPSHOT MISMATCHES (${results.snapshotMismatches.length}) - DEPLOYMENT BLOCKED</h2>
+        <p style="color: #7C2D12; font-weight: bold; background: #FEE2E2; padding: 15px; border-radius: 8px; border-left: 4px solid #DC2626;">
+          ⛔ PRICING ENGINE REGRESSION DETECTED<br>
+          Golden fixtures have changed. This indicates potential revenue drift.<br>
+          <strong>Admin approval required to update baselines.</strong>
+        </p>
         ${results.snapshotMismatches.map(m => `
           <div class="failure-card" style="border-color: #DC2626; background: #FEE2E2;">
-            <h4 style="color: #991B1B;">⛔ ${m.suite} / ${m.test}</h4>
-            <p><strong>Fixture ID:</strong> ${m.fixtureId || 'N/A'}</p>
+            <h4 style="color: #991B1B;">⛔ [CRITICAL] ${m.test}</h4>
+            <p><strong>Fixture ID:</strong> <code>${m.fixtureId || 'N/A'}</code></p>
             <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
               <thead>
                 <tr style="background: #FCA5A5;">
                   <th style="border: 1px solid #DC2626; padding: 8px; text-align: left;">Field</th>
-                  <th style="border: 1px solid #DC2626; padding: 8px; text-align: left;">Expected (Fixture)</th>
+                  <th style="border: 1px solid #DC2626; padding: 8px; text-align: left;">Expected (Baseline)</th>
                   <th style="border: 1px solid #DC2626; padding: 8px; text-align: left;">Actual (Current)</th>
+                  <th style="border: 1px solid #DC2626; padding: 8px; text-align: left;">Delta</th>
                 </tr>
               </thead>
               <tbody>
-                ${Object.keys(m.expected).map(key => `
-                  <tr>
-                    <td style="border: 1px solid #DC2626; padding: 8px;"><code>${key}</code></td>
-                    <td style="border: 1px solid #DC2626; padding: 8px;">${JSON.stringify(m.expected[key])}</td>
-                    <td style="border: 1px solid #DC2626; padding: 8px; ${JSON.stringify(m.expected[key]) !== JSON.stringify(m.actual?.[key]) ? 'background: #FECACA;' : ''}">${JSON.stringify(m.actual?.[key])}</td>
-                  </tr>
-                `).join('')}
+                ${Object.keys(m.expected).map(key => {
+                  const exp = m.expected[key];
+                  const act = m.actual?.[key];
+                  const mismatch = JSON.stringify(exp) !== JSON.stringify(act);
+                  let delta = '';
+                  
+                  if (typeof exp === 'number' && typeof act === 'number') {
+                    const diff = act - exp;
+                    const pct = exp !== 0 ? ((diff / exp) * 100).toFixed(2) : 'N/A';
+                    delta = `${diff > 0 ? '+' : ''}${diff} (${pct}%)`;
+                  }
+                  
+                  return `
+                    <tr style="${mismatch ? 'background: #FECACA;' : ''}">
+                      <td style="border: 1px solid #DC2626; padding: 8px;"><code><strong>${key}</strong></code></td>
+                      <td style="border: 1px solid #DC2626; padding: 8px;">${JSON.stringify(exp)}</td>
+                      <td style="border: 1px solid #DC2626; padding: 8px;">${JSON.stringify(act)}</td>
+                      <td style="border: 1px solid #DC2626; padding: 8px; font-weight: bold;">${delta}</td>
+                    </tr>
+                  `;
+                }).join('')}
               </tbody>
             </table>
           </div>
