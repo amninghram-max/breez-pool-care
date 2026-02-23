@@ -40,32 +40,32 @@ export default function Home() {
     }
   }, [user, userLoading, navigate]);
 
-  const { data: properties = [] } = useQuery({
-    queryKey: ['properties'],
-    queryFn: () => base44.entities.Property.list(),
+  const { data: leads = [] } = useQuery({
+    queryKey: ['leads'],
+    queryFn: () => base44.entities.Lead.list(),
   });
 
-  const { data: quotes = [] } = useQuery({
-    queryKey: ['quotes'],
-    queryFn: () => base44.entities.Quote.list(),
+  const { data: questionnaires = [] } = useQuery({
+    queryKey: ['questionnaires'],
+    queryFn: () => base44.entities.PoolQuestionnaire.list(),
   });
 
   const isAdmin = user?.role === 'admin';
 
   const handleGenerateSampleQuote = async () => {
-    if (!properties.length) {
-      alert('Please create a property first');
+    if (!leads.length) {
+      alert('Please create a lead first');
       return;
     }
 
     setIsLoadingQuote(true);
     try {
       const response = await base44.functions.invoke('generateQuote', {
-        propertyId: properties[0].id
+        leadId: leads[0].id
       });
 
       if (response.data.success) {
-        // Refresh quotes
+        // Refresh questionnaires
         window.location.reload();
       }
     } catch (error) {
@@ -90,8 +90,8 @@ export default function Home() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 font-medium">Properties</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{properties.length}</p>
+                <p className="text-sm text-gray-600 font-medium">Total Leads</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{leads.length}</p>
               </div>
               <div className="p-3 bg-teal-100 rounded-lg">
                 <Droplet className="w-6 h-6 text-teal-600" />
@@ -106,7 +106,7 @@ export default function Home() {
               <div>
                 <p className="text-sm text-gray-600 font-medium">Active Quotes</p>
                 <p className="text-2xl font-bold text-gray-900 mt-1">
-                  {quotes.filter(q => q.status !== 'expired').length}
+                  {questionnaires.filter(q => ['generated', 'sent'].includes(q.quoteStatus)).length}
                 </p>
               </div>
               <div className="p-3 bg-sky-100 rounded-lg">
@@ -120,9 +120,9 @@ export default function Home() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 font-medium">Total Revenue</p>
+                <p className="text-sm text-gray-600 font-medium">Monthly Revenue</p>
                 <p className="text-2xl font-bold text-gray-900 mt-1">
-                  ${quotes.reduce((sum, q) => sum + (q.monthlyBasePrice || 0), 0).toFixed(0)}
+                  ${leads.filter(l => l.stage === 'converted').reduce((sum, l) => sum + (l.monthlyServiceAmount || 0), 0).toFixed(0)}
                 </p>
               </div>
               <div className="p-3 bg-emerald-100 rounded-lg">
@@ -136,15 +136,9 @@ export default function Home() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 font-medium">Avg Margin</p>
+                <p className="text-sm text-gray-600 font-medium">Converted</p>
                 <p className="text-2xl font-bold text-gray-900 mt-1">
-                  {quotes.length > 0
-                    ? Math.round(
-                        quotes.reduce((sum, q) => sum + (q.grossMarginPercent || 0), 0) /
-                          quotes.length
-                      )
-                    : 0}
-                  %
+                  {leads.filter(l => l.stage === 'converted').length}
                 </p>
               </div>
               <div className="p-3 bg-amber-100 rounded-lg">
@@ -157,81 +151,78 @@ export default function Home() {
 
       {/* Main CTA section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* New Quote */}
+        {/* Lead Pipeline */}
         <Card className="bg-gradient-to-br from-teal-50 to-cyan-50 border-teal-200 shadow-md hover:shadow-lg transition-shadow">
           <CardHeader>
-            <CardTitle className="text-teal-900">Generate New Quote</CardTitle>
+            <CardTitle className="text-teal-900">Lead Pipeline</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-teal-800">
-              Create pre-qualification quotes with automated chemical cost estimation, risk scoring, and dynamic upsells.
+              Manage leads through the sales funnel from quote to conversion.
             </p>
-            <Button
-              onClick={handleGenerateSampleQuote}
-              disabled={isLoadingQuote || properties.length === 0}
-              className="w-full bg-teal-600 hover:bg-teal-700 text-white"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              {isLoadingQuote ? 'Generating...' : 'Generate Quote'}
-            </Button>
-            {properties.length === 0 && (
-              <p className="text-xs text-teal-600">
-                Add a property first to generate quotes
-              </p>
-            )}
+            <Link to={createPageUrl('LeadsPipeline')}>
+              <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white">
+                <Plus className="w-4 h-4 mr-2" />
+                View Pipeline
+              </Button>
+            </Link>
           </CardContent>
         </Card>
 
-        {/* Properties */}
+        {/* Quick Actions */}
         <Card className="bg-white border-gray-200 shadow-md hover:shadow-lg transition-shadow">
           <CardHeader>
-            <CardTitle>Properties</CardTitle>
+            <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-gray-600">
-              Manage your client pool properties and their characteristics.
+              Access key management features.
             </p>
-            <Link to={createPageUrl('Properties')}>
-              <Button variant="outline" className="w-full">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Property
-              </Button>
-            </Link>
-            {properties.length > 0 && (
-              <div className="text-xs text-gray-500">
-                {properties.length} property/ies in system
-              </div>
-            )}
+            <div className="space-y-2">
+              <Link to={createPageUrl('PreQualification')}>
+                <Button variant="outline" className="w-full">
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Quote Form
+                </Button>
+              </Link>
+              <Link to={createPageUrl('Calendar')}>
+                <Button variant="outline" className="w-full">
+                  Schedule & Routes
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Recent quotes */}
-      {quotes.length > 0 && (
+      {/* Recent leads */}
+      {leads.length > 0 && (
         <Card className="bg-white border-gray-200 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg">Recent Quotes</CardTitle>
+            <CardTitle className="text-lg">Recent Leads</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {quotes.slice(0, 5).map((quote) => (
-                <div key={quote.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              {leads.slice(0, 5).map((lead) => (
+                <div key={lead.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
                     <p className="font-medium text-gray-900 text-sm">
-                      Monthly: ${quote.monthlyBasePrice?.toFixed(2)}
+                      {lead.firstName} {lead.lastName || ''}
                     </p>
                     <p className="text-xs text-gray-500">
-                      Risk: {quote.riskScore} | Freq: {quote.recommendedFrequency}
+                      {lead.email} | {lead.city}
                     </p>
                   </div>
                   <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                    quote.status === 'accepted'
+                    lead.stage === 'converted'
                       ? 'bg-emerald-100 text-emerald-700'
-                      : quote.status === 'draft'
-                      ? 'bg-gray-100 text-gray-700'
+                      : lead.stage === 'new_lead'
+                      ? 'bg-blue-100 text-blue-700'
+                      : lead.stage === 'lost'
+                      ? 'bg-red-100 text-red-700'
                       : 'bg-orange-100 text-orange-700'
                   }`}>
-                    {quote.status}
+                    {lead.stage?.replace('_', ' ')}
                   </span>
                 </div>
               ))}
