@@ -174,10 +174,19 @@ Deno.serve(async (req) => {
     // Find escalation bracket
     let riskAddonAmount = 0;
     let riskBracket = null;
-    for (const bracket of escalationBrackets) {
-      if (adjustedRisk >= bracket.min_risk && adjustedRisk <= bracket.max_risk) {
+    
+    // Sort brackets by min_risk to ensure correct matching
+    const sortedBrackets = [...escalationBrackets].sort((a, b) => a.min_risk - b.min_risk);
+    
+    for (const bracket of sortedBrackets) {
+      // Handle edge cases: use > for min, <= for max to avoid gaps
+      // Special handling for the final bracket (999 max)
+      const matchesMin = adjustedRisk >= bracket.min_risk;
+      const matchesMax = bracket.max_risk >= 999 ? true : adjustedRisk <= bracket.max_risk;
+      
+      if (matchesMin && matchesMax) {
         riskAddonAmount = bracket.addon_amount || 0;
-        riskBracket = `${bracket.min_risk}-${bracket.max_risk}`;
+        riskBracket = bracket.max_risk >= 999 ? `${bracket.min_risk}+` : `${bracket.min_risk}-${bracket.max_risk}`;
         break;
       }
     }
@@ -236,18 +245,23 @@ Deno.serve(async (req) => {
       const severity = questionnaireData.greenPoolSeverity || 'moderate';
       let greenFeeKey = '';
 
+      // Map severity to fee key - handle all possible values
       if (severity === 'light') {
         greenFeeKey = `green_light_${greenSizeGroup}`;
-      } else if (severity === 'moderate') {
-        greenFeeKey = `green_moderate_${greenSizeGroup}`;
       } else if (severity === 'black_swamp') {
         greenFeeKey = `green_black_${greenSizeGroup}`;
       } else {
-        // Default to moderate if not sure
+        // moderate or not_sure defaults to moderate
         greenFeeKey = `green_moderate_${greenSizeGroup}`;
       }
 
-      oneTimeFees += initialFees[greenFeeKey] || 100;
+      const greenFee = initialFees[greenFeeKey];
+      if (greenFee !== undefined) {
+        oneTimeFees += greenFee;
+      } else {
+        console.warn(`Missing green fee for ${greenFeeKey}, using default based on size`);
+        oneTimeFees += greenSizeGroup === 'small' ? 100 : (greenSizeGroup === 'medium' ? 150 : 200);
+      }
     }
 
     // ============================================

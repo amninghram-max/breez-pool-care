@@ -162,8 +162,7 @@ export const pricingFixtures = [
       frequencySelectedOrRequired: 'twice_weekly', // adjustedRisk >= 9 forces twice/week
       frequencyMultiplier: 1.8,
       oneTimeFees: 0,
-      finalMonthlyPrice: 621, // (230 + 90 + 45) * 1.8 = 657... wait let me recalculate
-      // (230 + 90 + 45) = 365, then 365 * 1.8 = 657
+      finalMonthlyPrice: 657, // (230 + 90 + 45) = 365, then 365 * 1.8 = 657
       autopayDiscountApplicable: false
     }
   },
@@ -326,7 +325,8 @@ export const pricingFixtures = [
     },
     expected: {
       sizeTier: 'tier_b',
-      oneTimeFees: 350
+      oneTimeFees: 350,
+      finalMonthlyPrice: 160
     }
   },
 
