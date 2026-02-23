@@ -81,6 +81,7 @@ import TechnicianRoute from './pages/TechnicianRoute';
 import TestDashboard from './pages/TestDashboard';
 import MarginStressTest from './pages/MarginStressTest';
 import ChemicalAnalytics from './pages/ChemicalAnalytics';
+import ReleaseReadiness from './pages/ReleaseReadiness';
 import __Layout from './Layout.jsx';
 
 
@@ -119,6 +120,7 @@ export const PAGES = {
     "TestDashboard": TestDashboard,
     "MarginStressTest": MarginStressTest,
     "ChemicalAnalytics": ChemicalAnalytics,
+    "ReleaseReadiness": ReleaseReadiness,
 }
 
 export const pagesConfig = {

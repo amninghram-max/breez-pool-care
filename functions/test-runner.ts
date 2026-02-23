@@ -78,6 +78,9 @@ Deno.serve(async (req) => {
 
     results.summary.duration = Date.now() - startTime;
 
+    // Add release readiness flag
+    results.releaseReady = false; // Will be set after validation
+
     // Classify critical failures
     const CRITICAL_SUITES = ['pricing', 'pricing-snapshots', 'security'];
     const CRITICAL_PATTERNS = ['payment', 'Payment', 'active', 'Active', 'gating', 'FIXTURE', 'SNAPSHOT'];
@@ -111,6 +114,18 @@ Deno.serve(async (req) => {
 
     // Calculate coverage
     results.coverage = calculateCoverage(results.suites);
+
+    // Determine release readiness
+    results.releaseReady = (
+      results.summary.criticalFailed === 0 &&
+      (!results.snapshotMismatches || results.snapshotMismatches.length === 0)
+    );
+
+    if (results.releaseReady) {
+      console.log('✅ RELEASE READY - All critical checks passed');
+    } else {
+      console.error('🚨 RELEASE BLOCKED - Critical failures or snapshot mismatches detected');
+    }
 
     // Return JSON or HTML
     if (format === 'html') {
@@ -232,7 +247,27 @@ function generateHTMLReport(results) {
         <div class="stat-value ${summary.criticalFailed > 0 ? 'failed' : 'passed'}">${summary.criticalFailed}</div>
         <div class="stat-label">Critical Failures</div>
       </div>
+      <div class="stat">
+        <div class="stat-value ${results.releaseReady ? 'passed' : 'failed'}">${results.releaseReady ? '✅' : '🚨'}</div>
+        <div class="stat-label">Release Ready</div>
+      </div>
     </div>
+    
+    ${!results.releaseReady ? `
+      <div style="background: #FEE2E2; border: 2px solid #DC2626; border-radius: 8px; padding: 20px; margin: 20px 30px;">
+        <h2 style="color: #991B1B; margin: 0 0 10px 0;">🚨 DEPLOYMENT BLOCKED</h2>
+        <p style="color: #7C2D12; font-weight: bold; margin: 0;">
+          Critical issues detected. Production deploy is blocked until all critical checks pass.
+        </p>
+      </div>
+    ` : `
+      <div style="background: #D1FAE5; border: 2px solid #10B981; border-radius: 8px; padding: 20px; margin: 20px 30px;">
+        <h2 style="color: #065F46; margin: 0 0 10px 0;">✅ RELEASE READY</h2>
+        <p style="color: #047857; font-weight: bold; margin: 0;">
+          All critical checks passed. Safe to deploy to production.
+        </p>
+      </div>
+    `}
 
     <div class="section">
       <h2>📊 Coverage by Module</h2>
