@@ -23,6 +23,10 @@ export const PAGE_ACCESS = {
   AIChat: [ROLES.CUSTOMER],
   PreQualification: [ROLES.CUSTOMER], // Customer-facing quote flow
   Onboarding: [ROLES.CUSTOMER], // Customer onboarding
+  Agreements: [ROLES.CUSTOMER],
+  AccessSetup: [ROLES.CUSTOMER],
+  PaymentSetup: [ROLES.CUSTOMER],
+  PaymentSuccess: [ROLES.CUSTOMER],
   MessageThread: [ROLES.CUSTOMER], // Customer view of their thread
   
   // ============ PROVIDER PORTAL (Operations) ============
@@ -41,6 +45,7 @@ export const PAGE_ACCESS = {
   // Admin-only pages
   AdminHome: [ROLES.ADMIN],
   Admin: [ROLES.ADMIN], // Quote logic + pricing settings
+  AdminPricingConfig: [ROLES.ADMIN], // New pricing engine config
   StaffManagement: [ROLES.ADMIN],
   Analytics: [ROLES.ADMIN],
   ChemistryDashboard: [ROLES.ADMIN],
