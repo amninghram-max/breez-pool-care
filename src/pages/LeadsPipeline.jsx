@@ -37,13 +37,20 @@ export default function LeadsPipeline() {
     );
   }
 
+  const sendAcceptanceMutation = useMutation({
+    mutationFn: (leadId) => base44.functions.invoke('sendAcceptanceLink', { leadId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+    }
+  });
+
   const stages = [
     { key: 'new_lead', label: 'New Leads', color: 'bg-blue-100 text-blue-800' },
     { key: 'contacted', label: 'Contacted', color: 'bg-purple-100 text-purple-800' },
     { key: 'inspection_scheduled', label: 'Inspection Scheduled', color: 'bg-yellow-100 text-yellow-800' },
     { key: 'inspection_confirmed', label: 'Inspection Confirmed', color: 'bg-green-100 text-green-800' },
     { key: 'quote_sent', label: 'Quote Sent', color: 'bg-indigo-100 text-indigo-800' },
-    { key: 'converted', label: 'Converted', color: 'bg-emerald-100 text-emerald-800' },
+    { key: 'converted', label: 'Active Customer', color: 'bg-emerald-100 text-emerald-800' },
     { key: 'lost', label: 'Lost', color: 'bg-gray-100 text-gray-800' }
   ];
 
@@ -165,6 +172,7 @@ export default function LeadsPipeline() {
           lead={selectedLead} 
           onClose={() => setSelectedLead(null)}
           onUpdate={(data) => updateLeadMutation.mutate({ id: selectedLead.id, data })}
+          onSendAcceptance={(leadId) => sendAcceptanceMutation.mutate(leadId)}
         />
       )}
     </div>
@@ -199,7 +207,10 @@ function LeadCard({ lead, onClick, onUpdateStage }) {
   );
 }
 
-function LeadDetailModal({ lead, onClose, onUpdate }) {
+function LeadDetailModal({ lead, onClose, onUpdate, onSendAcceptance }) {
+  const [lostReason, setLostReason] = React.useState('');
+  const [showLostForm, setShowLostForm] = React.useState(false);
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <Card className="max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -311,21 +322,125 @@ function LeadDetailModal({ lead, onClose, onUpdate }) {
             </div>
           )}
 
+          {/* Conversion Status */}
+          {(lead.agreementsAccepted || lead.activationPaymentStatus) && (
+            <div>
+              <h3 className="font-semibold mb-3">Conversion Progress</h3>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  {lead.agreementsAccepted ? (
+                    <Check className="w-4 h-4 text-green-600" />
+                  ) : (
+                    <div className="w-4 h-4 border-2 rounded" />
+                  )}
+                  <span className="text-sm">Agreements Accepted</span>
+                  {lead.agreementsAcceptedAt && (
+                    <span className="text-xs text-gray-500">
+                      {new Date(lead.agreementsAcceptedAt).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {lead.activationPaymentStatus === 'paid' ? (
+                    <Check className="w-4 h-4 text-green-600" />
+                  ) : (
+                    <div className="w-4 h-4 border-2 rounded" />
+                  )}
+                  <span className="text-sm">Activation Payment</span>
+                  <Badge className={
+                    lead.activationPaymentStatus === 'paid' ? 'bg-green-100 text-green-800' :
+                    lead.activationPaymentStatus === 'failed' ? 'bg-red-100 text-red-800' :
+                    'bg-gray-100 text-gray-800'
+                  }>
+                    {lead.activationPaymentStatus || 'Pending'}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Quick Actions */}
-          {lead.isEligible && (
-            <div className="flex gap-3 pt-4 border-t">
-              <Button size="sm" className="flex-1 gap-2">
-                <Phone className="w-4 h-4" />
-                Call
-              </Button>
-              <Button size="sm" variant="outline" className="flex-1 gap-2">
-                <Mail className="w-4 h-4" />
-                Email
-              </Button>
-              <Button size="sm" variant="outline" className="flex-1 gap-2">
-                <MessageSquare className="w-4 h-4" />
-                Text
-              </Button>
+          {lead.isEligible && lead.stage !== 'converted' && lead.stage !== 'lost' && (
+            <div className="space-y-3 pt-4 border-t">
+              <div className="flex gap-3">
+                <Button size="sm" className="flex-1 gap-2">
+                  <Phone className="w-4 h-4" />
+                  Call
+                </Button>
+                <Button size="sm" variant="outline" className="flex-1 gap-2">
+                  <Mail className="w-4 h-4" />
+                  Email
+                </Button>
+                <Button size="sm" variant="outline" className="flex-1 gap-2">
+                  <MessageSquare className="w-4 h-4" />
+                  Text
+                </Button>
+              </div>
+
+              {/* Conversion Actions */}
+              {lead.stage === 'inspection_confirmed' && (
+                <Button 
+                  onClick={() => onSendAcceptance(lead.id)}
+                  className="w-full bg-teal-600 hover:bg-teal-700"
+                  size="sm"
+                >
+                  Send Acceptance Link
+                </Button>
+              )}
+
+              {/* Mark Lost */}
+              {!showLostForm ? (
+                <Button 
+                  onClick={() => setShowLostForm(true)}
+                  variant="outline"
+                  className="w-full text-red-600 border-red-300 hover:bg-red-50"
+                  size="sm"
+                >
+                  Mark as Lost
+                </Button>
+              ) : (
+                <div className="space-y-2">
+                  <textarea
+                    value={lostReason}
+                    onChange={(e) => setLostReason(e.target.value)}
+                    placeholder="Reason for marking as lost..."
+                    className="w-full p-2 border rounded text-sm"
+                    rows="2"
+                  />
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={() => {
+                        onUpdate({ stage: 'lost', lostReason });
+                        setShowLostForm(false);
+                        onClose();
+                      }}
+                      className="flex-1 bg-red-600 hover:bg-red-700"
+                      size="sm"
+                      disabled={!lostReason}
+                    >
+                      Confirm Lost
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        setShowLostForm(false);
+                        setLostReason('');
+                      }}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Lost Reason Display */}
+          {lead.stage === 'lost' && lead.lostReason && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <h4 className="font-semibold text-red-900 mb-1 text-sm">Lost Reason</h4>
+              <p className="text-sm text-red-700">{lead.lostReason}</p>
             </div>
           )}
         </CardContent>
