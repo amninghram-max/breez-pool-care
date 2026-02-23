@@ -49,12 +49,14 @@
  */
 import AIChat from './pages/AIChat';
 import Admin from './pages/Admin';
+import AdminHome from './pages/AdminHome';
 import AdminMessaging from './pages/AdminMessaging';
 import AdminReinstatements from './pages/AdminReinstatements';
 import Analytics from './pages/Analytics';
 import Billing from './pages/Billing';
 import Calendar from './pages/Calendar';
 import ChemistryDashboard from './pages/ChemistryDashboard';
+import ClientHome from './pages/ClientHome';
 import DesignSystem from './pages/DesignSystem';
 import FAQ from './pages/FAQ';
 import HelpSupport from './pages/HelpSupport';
@@ -66,24 +68,27 @@ import Onboarding from './pages/Onboarding';
 import PreQualification from './pages/PreQualification';
 import ServiceReinstatement from './pages/ServiceReinstatement';
 import ServiceVisitEntry from './pages/ServiceVisitEntry';
-import TechnicianRoute from './pages/TechnicianRoute';
-import ClientHome from './pages/ClientHome';
-import TechnicianHome from './pages/TechnicianHome';
 import StaffHome from './pages/StaffHome';
-import AdminHome from './pages/AdminHome';
 import StaffManagement from './pages/StaffManagement';
+import TechnicianHome from './pages/TechnicianHome';
+import TechnicianRoute from './pages/TechnicianRoute';
+import Agreements from './pages/Agreements';
+import PaymentSetup from './pages/PaymentSetup';
+import PaymentSuccess from './pages/PaymentSuccess';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "AIChat": AIChat,
     "Admin": Admin,
+    "AdminHome": AdminHome,
     "AdminMessaging": AdminMessaging,
     "AdminReinstatements": AdminReinstatements,
     "Analytics": Analytics,
     "Billing": Billing,
     "Calendar": Calendar,
     "ChemistryDashboard": ChemistryDashboard,
+    "ClientHome": ClientHome,
     "DesignSystem": DesignSystem,
     "FAQ": FAQ,
     "HelpSupport": HelpSupport,
@@ -95,12 +100,13 @@ export const PAGES = {
     "PreQualification": PreQualification,
     "ServiceReinstatement": ServiceReinstatement,
     "ServiceVisitEntry": ServiceVisitEntry,
-    "TechnicianRoute": TechnicianRoute,
-    "ClientHome": ClientHome,
-    "TechnicianHome": TechnicianHome,
     "StaffHome": StaffHome,
-    "AdminHome": AdminHome,
     "StaffManagement": StaffManagement,
+    "TechnicianHome": TechnicianHome,
+    "TechnicianRoute": TechnicianRoute,
+    "Agreements": Agreements,
+    "PaymentSetup": PaymentSetup,
+    "PaymentSuccess": PaymentSuccess,
 }
 
 export const pagesConfig = {
