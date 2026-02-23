@@ -35,10 +35,12 @@ Deno.serve(async (req) => {
         passed: 0,
         failed: 0,
         skipped: 0,
+        criticalFailed: 0,
         duration: 0
       },
       suites: {},
       failures: [],
+      criticalFailures: [],
       coverage: {}
     };
 
@@ -73,6 +75,18 @@ Deno.serve(async (req) => {
     }
 
     results.summary.duration = Date.now() - startTime;
+
+    // Classify critical failures
+    const CRITICAL_SUITES = ['pricing', 'security'];
+    const CRITICAL_PATTERNS = ['payment', 'Payment', 'active', 'Active', 'gating'];
+    
+    results.criticalFailures = results.failures.filter(f => {
+      if (CRITICAL_SUITES.includes(f.suite)) return true;
+      if (f.suite === 'lead-pipeline' && CRITICAL_PATTERNS.some(p => f.test.includes(p))) return true;
+      return false;
+    });
+    
+    results.summary.criticalFailed = results.criticalFailures.length;
 
     // Calculate coverage
     results.coverage = calculateCoverage(results.suites);
@@ -192,6 +206,10 @@ function generateHTMLReport(results) {
         <div class="stat-value">${coverage.overall}%</div>
         <div class="stat-label">Overall Coverage</div>
       </div>
+      <div class="stat">
+        <div class="stat-value ${summary.criticalFailed > 0 ? 'failed' : 'passed'}">${summary.criticalFailed}</div>
+        <div class="stat-label">Critical Failures</div>
+      </div>
     </div>
 
     <div class="section">
@@ -228,9 +246,23 @@ function generateHTMLReport(results) {
       </div>
     </div>
 
+    ${results.criticalFailures.length > 0 ? `
+      <div class="section">
+        <h2 style="color: #991B1B;">🚨 CRITICAL FAILURES (${results.criticalFailures.length}) - DEPLOYMENT BLOCKED</h2>
+        ${results.criticalFailures.map(f => `
+          <div class="failure-card" style="border-color: #DC2626; background: #FEE2E2;">
+            <h4 style="color: #991B1B;">⛔ [CRITICAL] ${f.suite} / ${f.test}</h4>
+            <p><strong>Expected:</strong> ${JSON.stringify(f.expected)}</p>
+            <p><strong>Actual:</strong> ${JSON.stringify(f.actual)}</p>
+            ${f.stack ? `<pre>${f.stack}</pre>` : ''}
+          </div>
+        `).join('')}
+      </div>
+    ` : ''}
+
     ${failures.length > 0 ? `
       <div class="section">
-        <h2>❌ Failures (${failures.length})</h2>
+        <h2>❌ All Failures (${failures.length})</h2>
         ${failures.map(f => `
           <div class="failure-card">
             <h4>${f.suite} / ${f.test}</h4>
