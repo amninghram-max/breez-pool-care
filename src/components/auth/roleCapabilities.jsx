@@ -46,6 +46,7 @@ export const PAGE_ACCESS = {
   AdminHome: [ROLES.ADMIN],
   Admin: [ROLES.ADMIN], // Quote logic + pricing settings
   AdminPricingConfig: [ROLES.ADMIN], // New pricing engine config
+  TestDashboard: [ROLES.ADMIN], // Automated test suite
   StaffManagement: [ROLES.ADMIN],
   Analytics: [ROLES.ADMIN],
   ChemistryDashboard: [ROLES.ADMIN],

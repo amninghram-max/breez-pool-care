@@ -78,6 +78,7 @@ import TechnicianHome from './pages/TechnicianHome';
 import TechnicianRoute from './pages/TechnicianRoute';
 import AccessSetup from './pages/AccessSetup';
 import AdminPricingConfig from './pages/AdminPricingConfig';
+import TestDashboard from './pages/TestDashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -113,6 +114,7 @@ export const PAGES = {
     "TechnicianRoute": TechnicianRoute,
     "AccessSetup": AccessSetup,
     "AdminPricingConfig": AdminPricingConfig,
+    "TestDashboard": TestDashboard,
 }
 
 export const pagesConfig = {
