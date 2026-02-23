@@ -137,14 +137,18 @@ export function canPerformAction(userRole, actionName) {
 }
 
 export function getHomePageForRole(role) {
-  switch (role) {
+  switch (role?.toLowerCase()) {
     case ROLES.CUSTOMER:
+    case 'customer':
       return 'ClientHome';
     case ROLES.TECHNICIAN:
+    case 'technician':
       return 'TechnicianHome';
     case ROLES.STAFF:
+    case 'staff':
       return 'StaffHome';
     case ROLES.ADMIN:
+    case 'admin':
       return 'AdminHome';
     default:
       return 'ClientHome';
