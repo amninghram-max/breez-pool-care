@@ -223,11 +223,51 @@ Deno.serve(async (req) => {
         : (greenSizeGroup === 'small' ? 100 : greenSizeGroup === 'medium' ? 150 : 200);
     }
 
-    // ─── 6) RESPONSE ────────────────────────────────────────────────────────────
+    // ─── 6) PERSIST QUOTE RECORD ────────────────────────────────────────────────
     const estimatedFirstMonthTotal = finalMonthlyPrice + oneTimeFees;
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
 
+    const quoteRecord = await base44.asServiceRole.entities.Quote.create({
+      clientEmail:               questionnaireData.clientEmail || null,
+      clientFirstName:           questionnaireData.clientFirstName || null,
+      clientLastName:            questionnaireData.clientLastName || null,
+      clientPhone:               questionnaireData.clientPhone || null,
+      sessionId:                 questionnaireData.sessionId || null,
+      status:                    'quoted',
+      inputPoolSize:             questionnaireData.poolSize,
+      inputPoolType:             questionnaireData.poolType,
+      inputSpaPresent:           questionnaireData.spaPresent,
+      inputEnclosure:            questionnaireData.enclosure,
+      inputTreesOverhead:        questionnaireData.treesOverhead || null,
+      inputFilterType:           questionnaireData.filterType,
+      inputChlorinationMethod:   questionnaireData.chlorinationMethod,
+      inputChlorinatiorType:     questionnaireData.chlorinatorType || null,
+      inputUseFrequency:         questionnaireData.useFrequency,
+      inputPetsAccess:           questionnaireData.petsAccess || false,
+      inputPetSwimFrequency:     questionnaireData.petSwimFrequency || null,
+      inputPoolCondition:        questionnaireData.poolCondition,
+      inputGreenPoolSeverity:    questionnaireData.greenPoolSeverity || null,
+      outputMonthlyPrice:        parseFloat(finalMonthlyPrice.toFixed(2)),
+      outputPerVisitPrice:       parseFloat(perVisitPrice.toFixed(2)),
+      outputOneTimeFees:         parseFloat(oneTimeFees.toFixed(2)),
+      outputFirstMonthTotal:     parseFloat(estimatedFirstMonthTotal.toFixed(2)),
+      outputFrequency:           frequencySelectedOrRequired,
+      outputFrequencyAutoRequired: frequencyAutoRequired,
+      outputSizeTier:            sizeTier,
+      outputGreenSizeGroup:      greenSizeGroup || null,
+      pricingEngineVersion:      PRICING_ENGINE_VERSION,
+      configRecordId:            settings.id,
+      expiresAt
+    });
+
+    console.log(`✅ Quote persisted: id=${quoteRecord.id}, email=${questionnaireData.clientEmail}, expires=${expiresAt}`);
+
+    // ─── 7) RESPONSE — customer-safe fields only (+ quoteId) ────────────────────
     return Response.json({
       success: true,
+      quoteId: quoteRecord.id,
+      expiresAt,
       quote: {
         estimatedMonthlyPrice:      parseFloat(finalMonthlyPrice.toFixed(2)),
         estimatedPerVisitPrice:     parseFloat(perVisitPrice.toFixed(2)),
@@ -246,7 +286,7 @@ Deno.serve(async (req) => {
         frequencyMultiplier,
         oneTimeFees:                parseFloat(oneTimeFees.toFixed(2)),
         finalMonthlyPrice:          parseFloat(finalMonthlyPrice.toFixed(2)),
-        quoteLogicVersionId:        'v2_tokens_risk_frequency',
+        quoteLogicVersionId:        PRICING_ENGINE_VERSION,
         autopayDiscountAmount:      autopayDiscount
       }
     });
