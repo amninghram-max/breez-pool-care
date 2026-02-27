@@ -84,6 +84,8 @@ function notesRequired(visitData) {
 export default function StepCloseout({ visitData, user }) {
   const [done, setDone] = useState(false);
   const [internalNotes, setInternalNotes] = useState('');
+  // "completed_now" | "follow_up_triggered" | null
+  const [criticalPartialResolution, setCriticalPartialResolution] = useState(null);
 
   const { readings = {}, riskEvents = [], dosePlan, retestResolved, retestReadings = {} } = visitData;
   const chemicalsAdded = dosePlan?.actions?.filter(a => a.applied !== false) || [];
