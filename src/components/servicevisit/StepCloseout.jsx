@@ -95,8 +95,13 @@ export default function StepCloseout({ visitData, user }) {
   const waterBalance = getWaterBalanceStatus(readings);
   const surfaceProtection = getSurfaceProtectionStatus(readings);
 
+  const criticalPartials = getCriticalPartials(visitData);
+  const hasCriticalPartials = criticalPartials.length > 0;
+
   const needsNotes = notesRequired(visitData);
-  const canClose = !needsNotes || internalNotes.trim().length > 0;
+  const canClose =
+    (!needsNotes || internalNotes.trim().length > 0) &&
+    (!hasCriticalPartials || criticalPartialResolution !== null);
 
   const closeMutation = useMutation({
     mutationFn: async () => {
