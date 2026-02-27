@@ -16,7 +16,11 @@ export default function ServiceVisitFlow() {
   const eventId = urlParams.get('eventId');
   const poolId = urlParams.get('poolId');
 
-  const [step, setStep] = useState('arrive');
+  // Restore step from localStorage (timer persistence + resume)
+  const FLOW_KEY = eventId ? `breez_flow_${eventId}` : null;
+  const savedFlow = FLOW_KEY ? (() => { try { return JSON.parse(localStorage.getItem(FLOW_KEY) || 'null'); } catch { return null; } })() : null;
+
+  const [step, setStep] = useState(savedFlow?.step || 'arrive');
   const [visitData, setVisitData] = useState({
     eventId,
     poolId,
@@ -26,7 +30,8 @@ export default function ServiceVisitFlow() {
     retestRequired: false,
     retestWaitMinutes: 30,
     retestRecordId: null,
-    closeoutNotes: ''
+    firstChemApplied: false,
+    ...(savedFlow?.visitData || {})
   });
 
   const { data: user } = useQuery({ queryKey: ['user'], queryFn: () => base44.auth.me() });
