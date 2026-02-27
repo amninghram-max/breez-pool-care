@@ -276,6 +276,9 @@ Deno.serve(async (req) => {
       releaseReady: false,
       usingDefaults: true,
       version: VERSION,
+      pricingEngineVersion: PRICING_ENGINE_VERSION,
+      configRecordId: null,
+      configUpdatedAt: null,
       blockers: ['Release check execution failed: ' + error.message],
       warnings: [],
       checks: {}
