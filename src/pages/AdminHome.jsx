@@ -125,6 +125,13 @@ export default function AdminHome() {
               Analytics Dashboard
             </Button>
           </Link>
+
+          <Link to={createPageUrl('AdminReviewDashboard')}>
+            <Button className="w-full bg-red-600 hover:bg-red-700" size="lg">
+              <Droplet className="w-5 h-5 mr-2" />
+              Chemistry Review
+            </Button>
+          </Link>
         </CardContent>
       </Card>
 
