@@ -4,13 +4,14 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  * acceptQuote
  * Customer accepts a specific Quote version post-inspection.
  * Creates Lead (if not exists) or links Lead to accepted quote.
+ * Stores acceptedQuoteId on Lead for payment invariants.
  * Next step: Payment setup.
  */
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { quoteId, acceptanceToken } = await req.json();
+    const { quoteId } = await req.json();
 
     if (!quoteId) {
       return Response.json({ error: 'quoteId required' }, { status: 400 });
@@ -44,9 +45,16 @@ Deno.serve(async (req) => {
         mobilePhone: quote.clientPhone || '',
         stage: 'quote_sent',
         isEligible: true,
-        quoteGenerated: true
+        quoteGenerated: true,
+        acceptedQuoteId: quoteId
       });
-      console.log(`✅ Lead created from quote: leadId=${lead.id}, email=${quote.clientEmail}`);
+      console.log(`✅ Lead created from quote: leadId=${lead.id}, email=${quote.clientEmail}, acceptedQuoteId=${quoteId}`);
+    } else if (lead) {
+      // Update existing lead with accepted quote ID
+      await base44.asServiceRole.entities.Lead.update(lead.id, {
+        acceptedQuoteId: quoteId
+      });
+      console.log(`✅ Lead updated with acceptedQuoteId: leadId=${lead.id}, acceptedQuoteId=${quoteId}`);
     }
 
     // Update quote status
@@ -60,8 +68,8 @@ Deno.serve(async (req) => {
       leadId: lead?.id,
       clientEmail: quote.clientEmail,
       monthlyPrice: quote.outputMonthlyPrice,
-      frequency: quote.outputFrequency,
       oneTimeFees: quote.outputOneTimeFees,
+      frequency: quote.outputFrequency,
       firstMonthTotal: quote.outputFirstMonthTotal
     });
   } catch (error) {

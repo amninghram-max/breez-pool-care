@@ -3,6 +3,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 /**
  * processFirstPayment
  * Create Invoice for first month (monthly + one-time fees).
+ * Load Quote and derive all totals from immutable quote fields.
  * Attempt payment via Stripe.
  * If successful: send receipt, schedule first service, update Lead.
  */
@@ -66,19 +67,27 @@ const stripe = (() => {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { leadId, quoteId, stripeCustomerId, monthlyPrice, oneTimeFees, autopayEnrolled } = await req.json();
+    const { leadId, quoteId, stripeCustomerId, autopayEnrolled } = await req.json();
 
     if (!leadId || !quoteId || !stripeCustomerId) {
       return Response.json({ error: 'leadId, quoteId, stripeCustomerId required' }, { status: 400 });
     }
 
-    const totalAmount = (monthlyPrice || 0) + (oneTimeFees || 0);
+    // Load quote — derive all totals from immutable fields
+    const quote = await base44.asServiceRole.entities.Quote.get(quoteId);
+    if (!quote) {
+      return Response.json({ error: 'Quote not found' }, { status: 404 });
+    }
 
-    // Create invoice
+    const monthlyPrice = quote.outputMonthlyPrice || 0;
+    const oneTimeFees = quote.outputOneTimeFees || 0;
+    const totalAmount = monthlyPrice + oneTimeFees;
+
+    // Create invoice with line items from quote
     const lineItems = [
-      { name: 'First month service', amount: monthlyPrice || 0 }
+      { name: 'First month service', amount: monthlyPrice }
     ];
-    if ((oneTimeFees || 0) > 0) {
+    if (oneTimeFees > 0) {
       lineItems.push({ name: 'Initial pool fees', amount: oneTimeFees });
     }
 
@@ -95,22 +104,26 @@ Deno.serve(async (req) => {
     // Finalize invoice (triggers charge)
     const finalizedInvoice = await stripe.finalizeInvoice(invoice.id);
 
-    console.log(`✅ Invoice created & finalized: id=${finalizedInvoice.id}, amount=${totalAmount}, status=${finalizedInvoice.status}`);
+    console.log(`✅ Invoice created & finalized: id=${finalizedInvoice.id}, amount=${totalAmount}, status=${finalizedInvoice.status}, quoteId=${quoteId}`);
 
-    // Store invoice reference on Lead
+    // Store invoice reference + immutable totals on Lead
     await base44.asServiceRole.entities.Lead.update(leadId, {
       activationPaymentStatus: 'paid',
       activationPaymentDate: new Date().toISOString(),
       autopayEnabled: autopayEnrolled || false,
+      monthlyServiceAmount: monthlyPrice,
       stage: 'onboarding_started'
     });
 
     return Response.json({
       success: true,
       leadId,
+      quoteId,
       invoiceId: finalizedInvoice.id,
       status: finalizedInvoice.status,
-      amountPaid: totalAmount,
+      chargedMonthly: monthlyPrice,
+      chargedOneTime: oneTimeFees,
+      chargedTotal: totalAmount,
       hostedInvoiceUrl: finalizedInvoice.hosted_invoice_url
     });
   } catch (error) {

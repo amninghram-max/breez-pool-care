@@ -2,8 +2,11 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 /**
  * scheduleFirstService
- * Create first CalendarEvent based on accepted quote frequency.
+ * Create first CalendarEvent based on accepted quote frequency (immutable).
  * Schedule next 4–8 weeks of recurring events.
+ * 
+ * Idempotent: if events already exist for this lead, return existing.
+ * Load frequency from Quote, not frontend params.
  */
 
 function getNextServiceDate() {
@@ -31,16 +34,44 @@ function getNextRecurringDates(startDate, frequency, weeks) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { leadId, quoteId, frequency, assignedTechnician } = await req.json();
+    const { leadId, quoteId } = await req.json();
 
-    if (!leadId || !frequency) {
-      return Response.json({ error: 'leadId and frequency required' }, { status: 400 });
+    if (!leadId || !quoteId) {
+      return Response.json({ error: 'leadId and quoteId required' }, { status: 400 });
     }
 
-    // Load lead for address
+    // Load lead
     const lead = await base44.asServiceRole.entities.Lead.get(leadId);
     if (!lead) {
       return Response.json({ error: 'Lead not found' }, { status: 404 });
+    }
+
+    // Load quote — derive frequency from immutable field
+    const quote = await base44.asServiceRole.entities.Quote.get(quoteId);
+    if (!quote) {
+      return Response.json({ error: 'Quote not found' }, { status: 404 });
+    }
+
+    const frequency = quote.outputFrequency;
+    if (!frequency) {
+      return Response.json({ error: 'Quote has no frequency' }, { status: 400 });
+    }
+
+    // Idempotency check: if events already exist for this lead, return existing
+    const existingEvents = await base44.asServiceRole.entities.CalendarEvent.filter({
+      leadId,
+      eventType: 'service'
+    }, '-created_date', 10);
+
+    if (existingEvents && existingEvents.length > 0) {
+      console.log(`⏭️ Service events already exist for leadId=${leadId}, returning existing`);
+      return Response.json({
+        success: true,
+        leadId,
+        alreadyScheduled: true,
+        eventCount: existingEvents.length,
+        upcomingDates: existingEvents.map(e => e.scheduledDate).slice(0, 4)
+      });
     }
 
     const serviceAddress = lead.serviceAddress || `${lead.streetAddress}, ${lead.city}, ${lead.state} ${lead.zipCode}`;
@@ -48,7 +79,7 @@ Deno.serve(async (req) => {
     const recurringWeeks = frequency === 'twice_weekly' ? 8 : 4;
     const serviceDates = getNextRecurringDates(firstDate, frequency, recurringWeeks);
 
-    // Create CalendarEvents for first month
+    // Create CalendarEvents for first period
     const events = [];
     for (const date of serviceDates.slice(0, (frequency === 'twice_weekly' ? 8 : 4))) {
       const event = await base44.asServiceRole.entities.CalendarEvent.create({
@@ -59,7 +90,7 @@ Deno.serve(async (req) => {
         startTime: '09:00',
         endTime: '10:00',
         estimatedDuration: 30,
-        assignedTechnician: assignedTechnician || 'Matt',
+        assignedTechnician: lead.assignedInspector || 'Matt',
         status: 'scheduled',
         serviceAddress,
         isRecurring: true,
@@ -74,11 +105,12 @@ Deno.serve(async (req) => {
       nextBillingDate: serviceDates[1] || firstDate
     });
 
-    console.log(`✅ First service scheduled: leadId=${leadId}, startDate=${firstDate}, frequency=${frequency}, events=${events.length}`);
+    console.log(`✅ First service scheduled: leadId=${leadId}, quoteId=${quoteId}, startDate=${firstDate}, frequency=${frequency}, events=${events.length}`);
 
     return Response.json({
       success: true,
       leadId,
+      quoteId,
       firstServiceDate: firstDate,
       frequency,
       eventCount: events.length,

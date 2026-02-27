@@ -1,30 +1,63 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import crypto from 'crypto';
 
 /**
  * sendQuoteReadyEmail
  * Sends Email #1: "Your quote is ready → Schedule Free Inspection"
  * Includes tokenized link for passwordless scheduling.
  * Called after Quote is persisted in calculateQuote.
+ * 
+ * Idempotent: Only sends if quoteEmailSent !== true
+ * Sets quoteEmailSent=true and quoteEmailSentAt after successful send
  */
 
-function createScheduleToken(quoteId, clientEmail) {
-  // Simple token: base64(quoteId + '|' + clientEmail + '|' + timestamp)
-  const payload = `${quoteId}|${clientEmail}|${Date.now()}`;
-  return Buffer.from(payload).toString('base64');
+function generateScheduleToken() {
+  // Use cryptographically secure random bytes
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes)
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { quoteId, clientEmail, clientFirstName, monthlyPrice, frequency, onceTimeFees } = await req.json();
+    const { quoteId } = await req.json();
 
-    if (!quoteId || !clientEmail) {
-      return Response.json({ error: 'quoteId and clientEmail required' }, { status: 400 });
+    if (!quoteId) {
+      return Response.json({ error: 'quoteId required' }, { status: 400 });
     }
 
-    const token = createScheduleToken(quoteId, clientEmail);
-    // Frontend will build: /schedule-inspection?token=<token>
+    // Load quote
+    const quote = await base44.asServiceRole.entities.Quote.get(quoteId);
+    if (!quote) {
+      return Response.json({ error: 'Quote not found' }, { status: 404 });
+    }
+
+    // Idempotency: only send if not already sent
+    if (quote.quoteEmailSent) {
+      console.log(`⏭️ Quote email already sent: quoteId=${quoteId}`);
+      return Response.json({ success: true, alreadySent: true });
+    }
+
+    const { clientEmail, clientFirstName, outputMonthlyPrice, outputFrequency, outputOneTimeFees } = quote;
+
+    if (!clientEmail) {
+      return Response.json({ error: 'clientEmail required' }, { status: 400 });
+    }
+
+    // Generate token + expiry (24 hours)
+    const token = generateScheduleToken();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+    // Update quote with token and sent flags
+    await base44.asServiceRole.entities.Quote.update(quoteId, {
+      scheduleToken: token,
+      scheduleTokenExpiresAt: expiresAt,
+      quoteEmailSent: true,
+      quoteEmailSentAt: new Date().toISOString()
+    });
+
     const scheduleLink = `${Deno.env.get('APP_URL') || 'https://breez.app'}/schedule-inspection?token=${token}`;
 
     const subject = 'Your Breez Quote Is Ready!';
@@ -34,8 +67,8 @@ Hi ${clientFirstName || 'there'},
 Great news — your personalized pool cleaning quote is ready!
 
 **Your Quote:**
-- Monthly: $${monthlyPrice?.toFixed(2) || 'TBD'} (${frequency || 'weekly'})
-- First month total: $${((monthlyPrice || 0) + (onceTimeFees || 0)).toFixed(2)}
+- Monthly: $${outputMonthlyPrice?.toFixed(2) || 'TBD'} (${outputFrequency || 'weekly'})
+- First month total: $${((outputMonthlyPrice || 0) + (outputOneTimeFees || 0)).toFixed(2)}
 
 **Next step:** Schedule your free pool inspection with Matt. This is where he'll confirm the quote and answer any questions.
 
@@ -61,9 +94,9 @@ Questions? Reply to this email or call us anytime.
       from_name: 'Breez Pool Care'
     });
 
-    console.log(`✅ Quote ready email sent: quoteId=${quoteId}, email=${clientEmail}, token=${token.slice(0, 20)}...`);
+    console.log(`✅ Quote ready email sent: quoteId=${quoteId}, email=${clientEmail}, token=${token.slice(0, 16)}...`);
 
-    return Response.json({ success: true, token });
+    return Response.json({ success: true, quoteId, tokenExpiresAt: expiresAt });
   } catch (error) {
     console.error('sendQuoteReadyEmail error:', error);
     return Response.json({ error: error.message }, { status: 500 });
