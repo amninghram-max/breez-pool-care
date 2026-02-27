@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useMutation } from '@tanstack/react-query';
-import { CheckCircle, Droplet, FlaskConical, CalendarCheck, AlertTriangle } from 'lucide-react';
+import { CheckCircle, Droplet, FlaskConical, CalendarCheck, AlertTriangle, Shield } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
 
@@ -14,16 +14,46 @@ const CHEMICAL_LABELS = {
   STABILIZER_CYA: 'Stabilizer / CYA', SALT: 'Pool Salt'
 };
 
+// Only the fields we show to the customer — no CC, no LSI
+const DISPLAY_FIELDS = ['freeChlorine', 'pH', 'totalAlkalinity', 'calciumHardness', 'cyanuricAcid', 'waterTemp'];
+
 const FIELD_LABELS = {
   freeChlorine: 'Free Chlorine', pH: 'pH', totalAlkalinity: 'Total Alkalinity',
-  combinedChlorine: 'Combined Chlorine', cyanuricAcid: 'CYA', calciumHardness: 'Calcium Hardness',
-  salt: 'Salt', waterTemp: 'Water Temp'
+  calciumHardness: 'Calcium Hardness', cyanuricAcid: 'CYA', waterTemp: 'Water Temp'
 };
 
 const FIELD_UNITS = {
-  freeChlorine: 'ppm', pH: '', totalAlkalinity: 'ppm', combinedChlorine: 'ppm',
-  cyanuricAcid: 'ppm', calciumHardness: 'ppm', salt: 'ppm', waterTemp: '°F'
+  freeChlorine: 'ppm', pH: '', totalAlkalinity: 'ppm',
+  calciumHardness: 'ppm', cyanuricAcid: 'ppm', waterTemp: '°F'
 };
+
+function getSanitationStatus(readings) {
+  const fc = readings.freeChlorine;
+  if (fc == null) return { label: 'Monitoring', color: 'text-yellow-600' };
+  if (fc >= 1 && fc <= 3) return { label: 'Optimal', color: 'text-green-600' };
+  if (fc > 0.5) return { label: 'Adjusting', color: 'text-orange-600' };
+  return { label: 'Treatment Applied', color: 'text-orange-600' };
+}
+
+function getWaterBalanceStatus(readings) {
+  const ph = readings.pH;
+  const ta = readings.totalAlkalinity;
+  if (ph == null || ta == null) return { label: 'Monitoring', color: 'text-yellow-600' };
+  const phOk = ph >= 7.2 && ph <= 7.8;
+  const taOk = ta >= 80 && ta <= 120;
+  if (phOk && taOk) return { label: 'Balanced', color: 'text-green-600' };
+  return { label: 'Actively Balancing', color: 'text-orange-600' };
+}
+
+function getSurfaceProtectionStatus(readings) {
+  const cya = readings.cyanuricAcid;
+  const ch = readings.calciumHardness;
+  if (cya == null && ch == null) return { label: 'Not Measured Today', color: 'text-gray-400' };
+  const cyaOk = cya == null || (cya >= 30 && cya <= 100);
+  const chOk = ch == null || (ch >= 200 && ch <= 500);
+  if (cyaOk && chOk) return { label: 'Protected', color: 'text-green-600' };
+  return { label: 'Adjustment in Progress', color: 'text-orange-600' };
+}
 
 export default function StepCloseout({ visitData, user }) {
   const [done, setDone] = useState(false);
@@ -32,9 +62,12 @@ export default function StepCloseout({ visitData, user }) {
   const chemicalsAdded = dosePlan?.actions?.filter(a => a.applied !== false) || [];
   const retestScheduled = retestResolved === false;
 
+  const sanitation = getSanitationStatus(readings);
+  const waterBalance = getWaterBalanceStatus(readings);
+  const surfaceProtection = getSurfaceProtectionStatus(readings);
+
   const closeMutation = useMutation({
     mutationFn: async () => {
-      // Mark calendar event completed
       if (visitData.eventId) {
         await base44.functions.invoke('updateEventStatus', {
           eventId: visitData.eventId, status: 'completed', sendNotification: true
@@ -68,7 +101,29 @@ export default function StepCloseout({ visitData, user }) {
         <p className="text-gray-500 text-sm mt-1">Customer clarity summary — what we measured, what we added, what to expect</p>
       </div>
 
-      {/* What we measured */}
+      {/* Customer status overview */}
+      <Card>
+        <CardContent className="pt-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Shield className="w-4 h-4 text-teal-600" />
+            <p className="text-sm font-bold text-gray-700 uppercase tracking-wide">Pool Status</p>
+          </div>
+          <div className="space-y-2">
+            {[
+              { label: 'Sanitation', status: sanitation },
+              { label: 'Water Balance', status: waterBalance },
+              { label: 'Surface Protection', status: surfaceProtection },
+            ].map(({ label, status }) => (
+              <div key={label} className="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-0">
+                <span className="text-sm text-gray-600">{label}</span>
+                <span className={`text-sm font-semibold ${status.color}`}>{status.label}</span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* What we measured — shows FC/pH/TA/CH/CYA/Temp only, no CC/LSI */}
       <Card>
         <CardContent className="pt-5 space-y-3">
           <div className="flex items-center gap-2">
@@ -76,8 +131,9 @@ export default function StepCloseout({ visitData, user }) {
             <p className="text-sm font-bold text-gray-700 uppercase tracking-wide">What We Measured</p>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            {Object.entries(readings).map(([key, val]) => {
-              if (val == null || !FIELD_LABELS[key]) return null;
+            {DISPLAY_FIELDS.map(key => {
+              const val = readings[key];
+              if (val == null) return null;
               const wasOor = visitData.outOfRange?.includes(key);
               return (
                 <div key={key} className={`p-2 rounded border ${wasOor ? 'border-orange-200 bg-orange-50' : 'border-gray-100 bg-gray-50'}`}>
@@ -178,6 +234,13 @@ export default function StepCloseout({ visitData, user }) {
           </CardContent>
         </Card>
       )}
+
+      {/* Disclaimer */}
+      <div className="px-1 pb-1">
+        <p className="text-xs text-gray-400 leading-relaxed">
+          Pool chemistry naturally fluctuates due to weather, sunlight, and normal use. Our job is to monitor those changes and make precise adjustments to keep your water consistently safe, clear, and balanced.
+        </p>
+      </div>
 
       <Button
         className="w-full bg-teal-600 hover:bg-teal-700 h-14 text-base"

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { FlaskConical, ChevronRight, AlertTriangle, Clock } from 'lucide-react';
+import { FlaskConical, ChevronRight, AlertTriangle, Clock, Lock } from 'lucide-react';
 
 const CHEMICAL_LABELS = {
   LIQUID_CHLORINE: 'Liquid Chlorine',
@@ -15,9 +15,9 @@ const CHEMICAL_LABELS = {
   SALT: 'Pool Salt'
 };
 
-export default function StepDoseConfirm({ visitData, user, settings, advance, goTo }) {
-  const [appliedActions, setAppliedActions] = useState({});
-  const [generating, setGenerating] = useState(false);
+export default function StepDoseConfirm({ visitData, user, settings, advance }) {
+  // Track which step index has been applied (0-indexed)
+  const [appliedUpTo, setAppliedUpTo] = useState(-1);
 
   const { data: pool } = useQuery({
     queryKey: ['pool', visitData.poolId],
@@ -25,15 +25,11 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
     enabled: !!visitData.poolId
   });
 
-  // Load or generate DosePlan
   const { data: dosePlan, isLoading } = useQuery({
     queryKey: ['dosePlan', visitData.testRecordId],
     queryFn: async () => {
-      // Check if one already exists for this test record
       const existing = await base44.entities.DosePlan.filter({ testRecordId: visitData.testRecordId });
       if (existing[0]) return existing[0];
-
-      // Generate via function
       const result = await base44.functions.invoke('calculateChemicalSuggestions', {
         poolId: visitData.poolId,
         testRecordId: visitData.testRecordId,
@@ -46,7 +42,6 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
 
   const confirmMutation = useMutation({
     mutationFn: async () => {
-      // Record applied actions on the dose plan (new DosePlan creation is the apply record)
       const appliedDosePlan = await base44.entities.DosePlan.create({
         poolId: visitData.poolId,
         leadId: pool?.leadId,
@@ -58,7 +53,7 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
         planHash: dosePlan?.planHash || 'manual',
         readiness: 'ready',
         retestRequired: true,
-        retestFields: Object.keys(appliedActions),
+        retestFields: dosePlan?.retestFields || [],
         retestWaitMinutes: dosePlan?.retestWaitMinutes || 30,
         actions: dosePlan?.actions || [],
         appliedAt: new Date().toISOString(),
@@ -87,7 +82,6 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
     );
   }
 
-  // No dose plan or no actions — skip to close
   if (!dosePlan || !dosePlan.actions?.length) {
     return (
       <div className="space-y-4">
@@ -111,13 +105,13 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
   }
 
   const actions = dosePlan.actions || [];
-  const allApplied = actions.length > 0 && actions.every((_, i) => appliedActions[i]);
+  const allApplied = actions.length > 0 && appliedUpTo >= actions.length - 1;
 
   return (
     <div className="space-y-4">
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Dose Plan</h2>
-        <p className="text-gray-500 text-sm mt-1">Confirm each chemical as you add it</p>
+        <p className="text-gray-500 text-sm mt-1">Apply each chemical in order — steps must be completed sequentially</p>
       </div>
 
       {dosePlan.blockedReasons?.length > 0 && (
@@ -147,22 +141,30 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
       )}
 
       {actions.map((action, i) => {
-        const applied = appliedActions[i];
+        const isApplied = appliedUpTo >= i;
+        // Step is locked if the previous step hasn't been applied yet
+        const isLocked = i > 0 && appliedUpTo < i - 1;
+
         return (
-          <Card key={i} className={`border-2 transition-colors ${applied ? 'border-green-400 bg-green-50' : 'border-gray-200'}`}>
+          <Card key={i} className={`border-2 transition-colors ${
+            isApplied ? 'border-green-400 bg-green-50' :
+            isLocked ? 'border-gray-100 bg-gray-50 opacity-60' :
+            'border-gray-200'
+          }`}>
             <CardContent className="pt-4 space-y-3">
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">Step {action.order}</Badge>
+                    <Badge variant="outline" className="text-xs">Step {action.order ?? i + 1}</Badge>
                     <span className="font-semibold text-gray-900">{CHEMICAL_LABELS[action.chemicalType] || action.chemicalType}</span>
+                    {isLocked && <Lock className="w-3.5 h-3.5 text-gray-400" />}
                   </div>
                   <p className="text-2xl font-bold font-mono text-teal-700 mt-1">
                     {action.dosePrimary} {action.primaryUnit}
                     {action.safetyCapEnforced && <span className="text-sm text-orange-600 font-normal ml-2">(capped)</span>}
                   </p>
                 </div>
-                {applied && <span className="text-green-600 text-2xl">✓</span>}
+                {isApplied && <span className="text-green-600 text-2xl">✓</span>}
               </div>
 
               {action.instructions && (
@@ -187,15 +189,23 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
                 </div>
               )}
 
-              {!applied && (
+              {/* Mark Applied — only available when this is the current step (previous done, this not yet done) */}
+              {!isApplied && !isLocked && (
                 <Button
                   className="w-full"
                   variant="outline"
-                  onClick={() => setAppliedActions(prev => ({ ...prev, [i]: true }))}
+                  onClick={() => setAppliedUpTo(i)}
                 >
                   <FlaskConical className="w-4 h-4 mr-2" />
                   Mark Applied
                 </Button>
+              )}
+
+              {isLocked && (
+                <p className="text-xs text-center text-gray-400 flex items-center justify-center gap-1">
+                  <Lock className="w-3 h-3" />
+                  Complete Step {action.order != null ? action.order - 1 : i} first
+                </p>
               )}
             </CardContent>
           </Card>
@@ -212,7 +222,7 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
       </Button>
 
       {!allApplied && (
-        <p className="text-xs text-center text-gray-400">Mark all steps applied to continue</p>
+        <p className="text-xs text-center text-gray-400">Apply all steps in order to continue</p>
       )}
     </div>
   );

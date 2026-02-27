@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, AlertTriangle, AlertCircle, ChevronRight, Droplet } from 'lucide-react';
+import { CheckCircle, AlertTriangle, AlertCircle, ChevronRight, Droplet, Clock, RefreshCw, ArrowRight } from 'lucide-react';
 
 const SEVERITY_MAP = {
   LOW_FC: 3, LOW_FC_CRITICAL: 5, HIGH_FC: 2, HIGH_FC_CRITICAL: 4,
@@ -49,6 +49,13 @@ export default function StepAnalyze({ visitData, advance, goTo }) {
   const totalScore = events.reduce((s, e) => s + (SEVERITY_MAP[e.eventType] ?? 0), 0);
   const hasIssues = events.length > 0;
   const criticalEvents = events.filter(e => (SEVERITY_MAP[e.eventType] ?? 0) >= 5);
+  const dosePlan = visitData.dosePlan;
+
+  // Determine next action context from dose plan if available
+  const isBlocked = dosePlan?.readiness === 'blocked';
+  const retestRequired = dosePlan?.retestRequired ?? (hasIssues);
+  const retestWaitMinutes = dosePlan?.retestWaitMinutes;
+  const revisitEligible = dosePlan?.revisitEligible;
 
   return (
     <div className="space-y-4">
@@ -57,7 +64,7 @@ export default function StepAnalyze({ visitData, advance, goTo }) {
         <p className="text-gray-500 text-sm mt-1">Review what the readings show</p>
       </div>
 
-      {/* Readings summary — no cost/pricing anywhere */}
+      {/* Readings summary */}
       <Card>
         <CardContent className="pt-4">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Today's Readings</p>
@@ -79,7 +86,7 @@ export default function StepAnalyze({ visitData, advance, goTo }) {
         </CardContent>
       </Card>
 
-      {/* Risk summary */}
+      {/* Risk events */}
       {!hasIssues ? (
         <Card className="border-green-200 bg-green-50">
           <CardContent className="pt-5 flex items-center gap-3">
@@ -100,7 +107,6 @@ export default function StepAnalyze({ visitData, advance, goTo }) {
               </p>
             </div>
           )}
-
           {events.map((evt, i) => {
             const pts = SEVERITY_MAP[evt.eventType] ?? 0;
             const sev = severityLevel(pts);
@@ -128,14 +134,76 @@ export default function StepAnalyze({ visitData, advance, goTo }) {
         </div>
       )}
 
-      {/* Next action */}
+      {/* ── Next Action Decision Block ── */}
+      <Card className="border-2 border-teal-200 bg-teal-50">
+        <CardContent className="pt-4 space-y-3">
+          <p className="text-xs font-bold text-teal-700 uppercase tracking-wider">Next Action</p>
+
+          {!hasIssues && (
+            <div className="flex items-start gap-3">
+              <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">No treatment needed</p>
+                <p className="text-xs text-gray-500 mt-0.5">Pool is balanced — proceed to closeout</p>
+              </div>
+            </div>
+          )}
+
+          {hasIssues && isBlocked && (
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-red-800 text-sm">Treatment blocked</p>
+                {dosePlan?.blockedReasons?.map((r, i) => (
+                  <p key={i} className="text-xs text-red-700 mt-0.5">• {r}</p>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {hasIssues && !isBlocked && (
+            <div className="flex items-start gap-3">
+              <Droplet className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Apply dose plan</p>
+                <p className="text-xs text-gray-500 mt-0.5">Confirm each chemical as you add it in order</p>
+              </div>
+            </div>
+          )}
+
+          {hasIssues && !isBlocked && retestRequired && (
+            <div className="flex items-start gap-3 pt-1 border-t border-teal-100">
+              <Clock className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">
+                  Retest required
+                  {retestWaitMinutes ? ` — wait ${retestWaitMinutes} min` : ''}
+                </p>
+                {revisitEligible ? (
+                  <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+                    <RefreshCw className="w-3 h-3" />
+                    Revisit eligible — schedule follow-up if unable to wait on-site
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Wait on-site, then retest before leaving
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* CTA */}
       {hasIssues ? (
         <Button
           className="w-full bg-teal-600 hover:bg-teal-700 h-14 text-base"
           onClick={() => advance()}
         >
           <Droplet className="w-5 h-5 mr-2" />
-          View Dose Plan →
+          View Dose Plan
+          <ArrowRight className="w-4 h-4 ml-1" />
         </Button>
       ) : (
         <Button
