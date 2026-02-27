@@ -105,6 +105,8 @@ Deno.serve(async (req) => {
     const blockers = [];
     const warnings = [];
     const checks = {};
+    let configRecordId = null;
+    let configUpdatedAt = null;
 
     // ─── Load AdminSettings via list() (avoids filter/RLS issues) ────────────
     let settings = null;
