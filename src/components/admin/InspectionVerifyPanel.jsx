@@ -81,6 +81,7 @@ export default function InspectionVerifyPanel({ quote, onComplete }) {
   });
 
   const [result, setResult] = useState(null);
+  const [showAccept, setShowAccept] = useState(false);
 
   const verifyMutation = useMutation({
     mutationFn: async () => {
@@ -117,6 +118,23 @@ export default function InspectionVerifyPanel({ quote, onComplete }) {
   const changedFields = Object.keys(FIELD_LABELS).filter(k => String(originalInputs[k]) !== String(verified[k]));
 
   if (result) {
+    if (showAccept) {
+      // Import and show acceptance UI
+      const QuoteAcceptanceUI = React.lazy(() => import('./QuoteAcceptanceUI'));
+      return (
+        <React.Suspense fallback={<div>Loading acceptance flow...</div>}>
+          <QuoteAcceptanceUI 
+            quote={{ ...quote, id: result.resultQuoteId, outputMonthlyPrice: result.newMonthly }}
+            onAccepted={() => {
+              setResult(null);
+              setShowAccept(false);
+              if (onComplete) onComplete(result);
+            }}
+          />
+        </React.Suspense>
+      );
+    }
+
     return (
       <div className="space-y-4">
         {result.priceChanged ? (
@@ -146,6 +164,13 @@ export default function InspectionVerifyPanel({ quote, onComplete }) {
             <p className="text-sm text-green-800">${result.originalMonthly?.toFixed(2)}/month — same as original quote.</p>
           </div>
         )}
+        
+        <Button 
+          onClick={() => setShowAccept(true)}
+          className="w-full bg-emerald-600 hover:bg-emerald-700"
+        >
+          Continue to Customer Acceptance →
+        </Button>
       </div>
     );
   }
