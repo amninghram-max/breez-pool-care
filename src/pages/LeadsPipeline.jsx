@@ -267,10 +267,11 @@ function LeadCard({ lead, onClick, onUpdateStage }) {
   );
 }
 
-function LeadDetailModal({ lead, onClose, onUpdate, onSendAcceptance }) {
+function LeadDetailModal({ lead, onClose, onUpdate, onSendAcceptance, onRemoved }) {
   const [lostReason, setLostReason] = React.useState('');
   const [showLostForm, setShowLostForm] = React.useState(false);
   const [showUnstick, setShowUnstick] = React.useState(false);
+  const [showRemove, setShowRemove] = React.useState(false);
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
