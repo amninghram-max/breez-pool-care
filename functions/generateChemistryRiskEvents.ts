@@ -222,30 +222,18 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Idempotency guard: load existing events for this testRecordId
-    // If any already exist, this function was already run — return existing state without creating duplicates.
+    // Idempotency guard: load existing events for this testRecordId.
+    // If any already exist, function was already run — return derived state without creating duplicates.
     const existingEvents = await base44.asServiceRole.entities.ChemistryRiskEvent.filter({ testRecordId: test.id });
     if (existingEvents.length > 0) {
       console.log(`generateChemistryRiskEvents: idempotency guard — ${existingEvents.length} events already exist for testRecord=${testRecordId}, skipping creation`);
-      const existingOutOfRange = test.outOfRange || [...new Set(existingEvents.map(e => {
-        const fieldMap = {
-          LOW_FC: 'freeChlorine', LOW_FC_CRITICAL: 'freeChlorine', HIGH_FC: 'freeChlorine', HIGH_FC_CRITICAL: 'freeChlorine',
-          LOW_PH: 'pH', LOW_PH_CRITICAL: 'pH', HIGH_PH: 'pH', HIGH_PH_CRITICAL: 'pH',
-          LOW_TA: 'totalAlkalinity', HIGH_TA: 'totalAlkalinity',
-          LOW_CYA: 'cyanuricAcid', HIGH_CYA: 'cyanuricAcid',
-          LOW_CH: 'calciumHardness', HIGH_CH: 'calciumHardness',
-          LOW_SALT: 'salt', HIGH_SALT: 'salt',
-          CC_HIGH: 'combinedChlorine', CC_CRITICAL: 'combinedChlorine',
-          GREEN_ALGAE: 'greenAlgae'
-        };
-        return fieldMap[e.eventType];
-      }).filter(Boolean))];
+      const derivedOutOfRange = deriveOutOfRange(existingEvents);
       return Response.json({
         testRecordId,
         poolId: test.poolId,
         eventsCreated: 0,
         idempotent: true,
-        outOfRange: existingOutOfRange,
+        outOfRange: derivedOutOfRange,
         events: existingEvents.map(e => ({
           id: e.id,
           eventType: e.eventType,
@@ -257,19 +245,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create all events (first-time only)
+    // Create all events (first-time only — ChemTestRecord is never written to after creation)
     const createdEvents = [];
     for (const evt of eventsToCreate) {
       const created = await base44.asServiceRole.entities.ChemistryRiskEvent.create(evt);
       createdEvents.push(created);
     }
 
-    // Update ChemTestRecord.outOfRange (derived field — written once, record is otherwise immutable)
-    // NOTE: This is the ONLY permitted write to ChemTestRecord post-creation. The field is backend-derived.
+    // outOfRange is derived from ChemistryRiskEvent records — never persisted on ChemTestRecord
     const uniqueOutOfRange = [...new Set(outOfRange)];
-    await base44.asServiceRole.entities.ChemTestRecord.update(test.id, {
-      outOfRange: uniqueOutOfRange
-    });
 
     console.log(`generateChemistryRiskEvents: ${createdEvents.length} events created for testRecord=${testRecordId}`);
 
