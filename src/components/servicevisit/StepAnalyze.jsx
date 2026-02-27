@@ -43,7 +43,10 @@ function severityLevel(pts) {
   return { label: 'Moderate', color: 'bg-yellow-100 text-yellow-800 border-yellow-200', icon: AlertTriangle, iconColor: 'text-yellow-500' };
 }
 
+import LockBanner from './LockBanner';
+
 export default function StepAnalyze({ visitData, advance, goTo }) {
+  const locked = visitData.firstChemApplied === true;
   const events = visitData.riskEvents || [];
   const readings = visitData.readings || {};
   const totalScore = events.reduce((s, e) => s + (SEVERITY_MAP[e.eventType] ?? 0), 0);
