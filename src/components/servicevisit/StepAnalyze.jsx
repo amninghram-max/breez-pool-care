@@ -46,7 +46,17 @@ function severityLevel(pts) {
 import LockBanner from './LockBanner';
 
 export default function StepAnalyze({ visitData, advance, goTo }) {
-  const locked = visitData.firstChemApplied === true;
+  // Lock derivation: prefer loaded dosePlan actions, fall back to visitData.dosePlan, then flag
+  const { data: liveDosePlan } = useQuery({
+    queryKey: ['dosePlanForLock', visitData.testRecordId],
+    queryFn: () => base44.entities.DosePlan.filter({ testRecordId: visitData.testRecordId }).then(r => r[0] || null),
+    enabled: !!visitData.testRecordId
+  });
+  const locked =
+    liveDosePlan?.actions?.some(a => a.applied) ??
+    visitData.dosePlan?.actions?.some(a => a.applied) ??
+    visitData.firstChemApplied === true;
+
   const events = visitData.riskEvents || [];
   const readings = visitData.readings || {};
   const totalScore = events.reduce((s, e) => s + (SEVERITY_MAP[e.eventType] ?? 0), 0);
