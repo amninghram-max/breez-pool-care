@@ -2,117 +2,28 @@ import React, { useState } from 'react';
 import QuoteWizard from '../components/quote/QuoteWizard';
 import QuoteResult from '../components/quote/QuoteResult';
 
-const LAST_ANSWERS_KEY = 'breez_last_quote_answers';
-
-const DEFAULT_FORM = {
-  poolSize: '', poolType: '', spaPresent: '', enclosure: '', treesOverhead: '',
-  filterType: '', chlorinationMethod: '', chlorinatorType: '', useFrequency: '',
-  petsAccess: false, petSwimFrequency: 'never', poolCondition: '', greenPoolSeverity: '',
-  knownIssues: [], clientFirstName: '', clientLastName: '', clientEmail: '', clientPhone: ''
-};
-
 export default function PreQualification() {
-  const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
   const [quoteResult, setQuoteResult] = useState(null);
-  const [quoteId, setQuoteId] = useState(null);
-  const [expiresAt, setExpiresAt] = useState(null);
-  const [error, setError] = useState(null);
-  const [hasSavedAnswers, setHasSavedAnswers] = useState(false);
+  const [answeredFormData, setAnsweredFormData] = useState(null);
 
-  const [formData, setFormData] = useState(DEFAULT_FORM);
-
-  useEffect(() => {
-    const saved = localStorage.getItem(LAST_ANSWERS_KEY);
-    if (saved) setHasSavedAnswers(true);
-  }, []);
-
-  const toggleMultiSelect = (field, value) => {
-    setFormData(prev => {
-      const arr = prev[field] || [];
-      if (arr.includes(value)) {
-        return { ...prev, [field]: arr.filter(v => v !== value) };
-      }
-      return { ...prev, [field]: [...arr, value] };
-    });
-  };
-
-  const reuseLastAnswers = () => {
-    const saved = localStorage.getItem(LAST_ANSWERS_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      // Keep contact info blank so customer re-enters; restore pool answers only
-      setFormData({ ...parsed, clientFirstName: '', clientLastName: '', clientEmail: '', clientPhone: '' });
-    }
-  };
-
-  const calculateQuoteMutation = useMutation({
-    mutationFn: async () => {
-      setLoading(true);
-      // Save pool answers for future "reuse" (exclude contact info)
-      const { clientFirstName, clientLastName, clientEmail, clientPhone, ...poolAnswers } = formData;
-      localStorage.setItem(LAST_ANSWERS_KEY, JSON.stringify(poolAnswers));
-
-      const response = await base44.functions.invoke('calculateQuote', {
-        questionnaireData: formData
-      });
-      return response.data;
-    },
-    onSuccess: (data) => {
-      setQuoteResult(data.quote);
-      setQuoteId(data.quoteId);
-      setExpiresAt(data.expiresAt);
-      setError(null);
-      setStep(4);
-      setLoading(false);
-    },
-    onError: (err) => {
-      setError(err.message || 'Failed to calculate quote');
-      setLoading(false);
-    }
-  });
-
-  const handleNext = () => {
-    if (step < 3) {
-      setStep(step + 1);
-    }
-  };
-
-  const handlePrev = () => {
-    if (step > 1) {
-      setStep(step - 1);
-    }
-  };
-
-  const handleCalculate = () => {
-    calculateQuoteMutation.mutate();
-  };
-
-  const stepIsValid = () => {
-    if (step === 1) {
-      let baseValid = formData.poolSize && formData.poolType && formData.spaPresent && formData.enclosure;
-      // If unscreened, require trees question
-      if (formData.enclosure === 'unscreened') {
-        return baseValid && formData.treesOverhead;
-      }
-      return baseValid;
-    }
-    if (step === 2) {
-      let baseValid = formData.filterType && formData.chlorinationMethod && formData.useFrequency && formData.poolCondition;
-      // If green algae, require severity
-      if (formData.poolCondition === 'green_algae') {
-        return baseValid && formData.greenPoolSeverity;
-      }
-      return baseValid;
-    }
-    if (step === 3) {
-      return formData.clientFirstName && formData.clientEmail;
-    }
-    return true;
+  const handleComplete = (data, formData) => {
+    setQuoteResult(data);
+    setAnsweredFormData(formData);
   };
 
   if (quoteResult) {
-    return <QuoteDisplay quote={quoteResult} quoteId={quoteId} expiresAt={expiresAt} formData={formData} />;
+    return (
+      <div className="max-w-2xl mx-auto py-8">
+        <QuoteResult
+          quote={quoteResult.quote || quoteResult}
+          quoteId={quoteResult.quoteId}
+          expiresAt={quoteResult.expiresAt}
+          formData={answeredFormData}
+          isDemo={false}
+          onModify={() => setQuoteResult(null)}
+        />
+      </div>
+    );
   }
 
   return (
