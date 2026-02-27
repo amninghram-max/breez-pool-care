@@ -5,8 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Phone, Mail, MessageSquare, Calendar, AlertCircle, Check, Wrench } from 'lucide-react';
+import { Phone, Mail, MessageSquare, Calendar, AlertCircle, Check, Wrench, Plus, FileText } from 'lucide-react';
 import UnstickLeadPanel from '@/components/admin/UnstickLeadPanel';
+import NewLeadModal from '@/components/admin/NewLeadModal';
+import NewQuoteFlow from '@/components/admin/NewQuoteFlow';
+import RemoveLeadPanel from '@/components/admin/RemoveLeadPanel';
 
 export default function LeadsPipeline() {
   const queryClient = useQueryClient();
