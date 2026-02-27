@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
 
     // ─── CHECK 3: Escalation Brackets Integrity ───────────────────────────────
     try {
-      const settingsResult = await base44.asServiceRole.entities.AdminSettings.filter({ settingKey: 'default' });
+      const settingsResult = await base44.asServiceRole.entities.AdminSettings.list('-created_date', 1);
       const settings = settingsResult[0];
       const riskEngine = settings?.riskEngine ? JSON.parse(settings.riskEngine) : null;
       const brackets = riskEngine?.escalation_brackets ?? DEFAULT_ESCALATION_BRACKETS;
