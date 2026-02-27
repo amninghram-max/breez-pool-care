@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
 
     // ─── CHECK 2: Pricing floor enforced ─────────────────────────────────────
     try {
-      const quoteResp = await base44.functions.invoke('calculateQuote', {
+      const quoteResp = await base44.asServiceRole.functions.invoke('calculateQuote', {
         questionnaireData: {
           poolSize: '10_15k',
           poolType: 'in_ground',
