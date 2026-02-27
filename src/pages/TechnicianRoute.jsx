@@ -248,10 +248,12 @@ export default function TechnicianRoute() {
                 {!isCompleted && (
                   <Link to={getStartVisitUrl(event)}>
                     <Button className={`w-full ${
-                      isWaiting ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-teal-600 hover:bg-teal-700'
+                      isWaiting    ? 'bg-yellow-600 hover:bg-yellow-700' :
+                      isInProgress ? 'bg-teal-600 hover:bg-teal-700' :
+                      'bg-teal-600 hover:bg-teal-700'
                     } h-11`}>
                       <ChevronRight className="w-4 h-4 mr-1" />
-                      {isWaiting ? 'Resume Visit' : 'Start Visit'}
+                      {isWaiting || isInProgress ? 'Resume Visit' : 'Start Visit'}
                     </Button>
                   </Link>
                 )}
