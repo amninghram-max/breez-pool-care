@@ -115,6 +115,11 @@ Deno.serve(async (req) => {
       const rows = await base44.asServiceRole.entities.AdminSettings.list('-created_date', 1);
       settings = rows[0] || null;
       usingDefaults = !settings;
+      if (settings) {
+        configRecordId = settings.id || null;
+        configUpdatedAt = settings.created_date || null;
+        console.log(`📋 Config record: id=${configRecordId}, created=${configUpdatedAt}`);
+      }
     } catch (err) {
       blockers.push('Could not read AdminSettings: ' + err.message);
     }
