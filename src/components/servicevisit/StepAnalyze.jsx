@@ -200,24 +200,26 @@ export default function StepAnalyze({ visitData, advance, goTo }) {
         </CardContent>
       </Card>
 
-      {/* CTA */}
-      {hasIssues ? (
-        <Button
-          className="w-full bg-teal-600 hover:bg-teal-700 h-14 text-base"
-          onClick={() => advance()}
-        >
-          <Droplet className="w-5 h-5 mr-2" />
-          View Dose Plan
-          <ArrowRight className="w-4 h-4 ml-1" />
-        </Button>
-      ) : (
-        <Button
-          className="w-full bg-teal-600 hover:bg-teal-700 h-14 text-base"
-          onClick={() => advance({ dosePlan: null, retestRequired: false })}
-        >
-          <ChevronRight className="w-5 h-5 mr-2" />
-          No Treatment Needed → Close
-        </Button>
+      {/* CTA — hidden when step is locked (chemicals already applied) */}
+      {!locked && (
+        hasIssues ? (
+          <Button
+            className="w-full bg-teal-600 hover:bg-teal-700 h-14 text-base"
+            onClick={() => advance()}
+          >
+            <Droplet className="w-5 h-5 mr-2" />
+            View Dose Plan
+            <ArrowRight className="w-4 h-4 ml-1" />
+          </Button>
+        ) : (
+          <Button
+            className="w-full bg-teal-600 hover:bg-teal-700 h-14 text-base"
+            onClick={() => advance({ dosePlan: null, retestRequired: false })}
+          >
+            <ChevronRight className="w-5 h-5 mr-2" />
+            No Treatment Needed → Close
+          </Button>
+        )
       )}
     </div>
   );
