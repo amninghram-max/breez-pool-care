@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     // ─── CHECK 1: calculateQuote smoke test ───────────────────────────────────
     // Calls via user token so auth works inside calculateQuote
     try {
-      const quoteResp = await base44.functions.invoke('calculateQuote', {
+      const quoteResp = await base44.asServiceRole.functions.invoke('calculateQuote', {
         questionnaireData: {
           poolSize: '10_15k',
           poolType: 'in_ground',
