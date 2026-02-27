@@ -1,0 +1,192 @@
+import React, { useState } from 'react';
+import { base44 } from '@/api/base44Client';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { useMutation } from '@tanstack/react-query';
+import { CheckCircle, Droplet, FlaskConical, CalendarCheck, AlertTriangle } from 'lucide-react';
+import { createPageUrl } from '@/utils';
+import { Link } from 'react-router-dom';
+
+const CHEMICAL_LABELS = {
+  LIQUID_CHLORINE: 'Liquid Chlorine', MURIATIC_ACID: 'Muriatic Acid',
+  ALKALINITY_UP: 'Alkalinity Up', CALCIUM_INCREASER: 'Calcium Increaser',
+  STABILIZER_CYA: 'Stabilizer / CYA', SALT: 'Pool Salt'
+};
+
+const FIELD_LABELS = {
+  freeChlorine: 'Free Chlorine', pH: 'pH', totalAlkalinity: 'Total Alkalinity',
+  combinedChlorine: 'Combined Chlorine', cyanuricAcid: 'CYA', calciumHardness: 'Calcium Hardness',
+  salt: 'Salt', waterTemp: 'Water Temp'
+};
+
+const FIELD_UNITS = {
+  freeChlorine: 'ppm', pH: '', totalAlkalinity: 'ppm', combinedChlorine: 'ppm',
+  cyanuricAcid: 'ppm', calciumHardness: 'ppm', salt: 'ppm', waterTemp: '°F'
+};
+
+export default function StepCloseout({ visitData, user }) {
+  const [done, setDone] = useState(false);
+
+  const { readings = {}, riskEvents = [], dosePlan, retestResolved, retestReadings = {} } = visitData;
+  const chemicalsAdded = dosePlan?.actions?.filter(a => a.applied !== false) || [];
+  const retestScheduled = retestResolved === false;
+
+  const closeMutation = useMutation({
+    mutationFn: async () => {
+      // Mark calendar event completed
+      if (visitData.eventId) {
+        await base44.functions.invoke('updateEventStatus', {
+          eventId: visitData.eventId, status: 'completed', sendNotification: true
+        });
+      }
+    },
+    onSuccess: () => setDone(true)
+  });
+
+  if (done) {
+    return (
+      <div className="space-y-6 text-center pt-8">
+        <CheckCircle className="w-20 h-20 text-green-500 mx-auto" />
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Visit Complete</h2>
+          <p className="text-gray-500 mt-2">Service record saved successfully</p>
+        </div>
+        <Link to={createPageUrl('TechnicianHome')}>
+          <Button className="w-full bg-teal-600 hover:bg-teal-700 h-12">
+            Back to Route
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">Visit Summary</h2>
+        <p className="text-gray-500 text-sm mt-1">Customer clarity summary — what we measured, what we added, what to expect</p>
+      </div>
+
+      {/* What we measured */}
+      <Card>
+        <CardContent className="pt-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Droplet className="w-4 h-4 text-teal-600" />
+            <p className="text-sm font-bold text-gray-700 uppercase tracking-wide">What We Measured</p>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {Object.entries(readings).map(([key, val]) => {
+              if (val == null || !FIELD_LABELS[key]) return null;
+              const wasOor = visitData.outOfRange?.includes(key);
+              return (
+                <div key={key} className={`p-2 rounded border ${wasOor ? 'border-orange-200 bg-orange-50' : 'border-gray-100 bg-gray-50'}`}>
+                  <p className="text-xs text-gray-500">{FIELD_LABELS[key]}</p>
+                  <p className="font-mono font-bold text-sm">
+                    {val}{FIELD_UNITS[key] ? ` ${FIELD_UNITS[key]}` : ''}
+                    {wasOor && <span className="text-orange-500 ml-1">⚠</span>}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+          {riskEvents.length === 0 && (
+            <div className="flex items-center gap-2 text-sm text-green-700">
+              <CheckCircle className="w-4 h-4" />
+              All readings within target range
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* What we added */}
+      <Card>
+        <CardContent className="pt-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <FlaskConical className="w-4 h-4 text-teal-600" />
+            <p className="text-sm font-bold text-gray-700 uppercase tracking-wide">What We Added</p>
+          </div>
+          {chemicalsAdded.length > 0 ? (
+            <div className="space-y-2">
+              {chemicalsAdded.map((action, i) => (
+                <div key={i} className="flex items-center justify-between py-1 border-b border-gray-100 last:border-0">
+                  <span className="text-sm text-gray-700">{CHEMICAL_LABELS[action.chemicalType] || action.chemicalType}</span>
+                  <span className="text-sm font-mono font-bold text-teal-700">{action.dosePrimary} {action.primaryUnit}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">No chemicals added — pool was in balance</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Retest results (if applicable) */}
+      {Object.keys(retestReadings).length > 0 && (
+        <Card>
+          <CardContent className="pt-5 space-y-3">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-teal-600" />
+              <p className="text-sm font-bold text-gray-700 uppercase tracking-wide">Post-Treatment Verification</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.entries(retestReadings).map(([key, val]) => {
+                if (val == null || !FIELD_LABELS[key]) return null;
+                return (
+                  <div key={key} className="p-2 rounded border border-green-100 bg-green-50">
+                    <p className="text-xs text-gray-500">{FIELD_LABELS[key]}</p>
+                    <p className="font-mono font-bold text-sm">{val}{FIELD_UNITS[key] ? ` ${FIELD_UNITS[key]}` : ''}</p>
+                  </div>
+                );
+              })}
+            </div>
+            <Badge className={visitData.retestResolved ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}>
+              {visitData.retestResolved ? '✓ Levels verified in range' : '⚠ Follow-up may be needed'}
+            </Badge>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* What to expect */}
+      <Card className="border-blue-100 bg-blue-50">
+        <CardContent className="pt-5 space-y-2">
+          <div className="flex items-center gap-2">
+            <CalendarCheck className="w-4 h-4 text-blue-600" />
+            <p className="text-sm font-bold text-blue-900 uppercase tracking-wide">What to Expect</p>
+          </div>
+          {chemicalsAdded.length > 0 ? (
+            <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+              <li>Allow 4–6 hours before swimming</li>
+              <li>Chemicals will fully circulate within 24 hours</li>
+              <li>Water clarity may temporarily appear hazy — this is normal</li>
+              {retestScheduled && <li>A follow-up visit has been flagged for verification</li>}
+            </ul>
+          ) : (
+            <p className="text-sm text-blue-800">Pool is in great shape — no changes needed. Enjoy!</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {retestScheduled && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="pt-4 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-orange-800">Revisit / Verification Flagged</p>
+              <p className="text-sm text-orange-700 mt-1">Some readings were still out of range after treatment. Your service manager will schedule a follow-up verification.</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Button
+        className="w-full bg-teal-600 hover:bg-teal-700 h-14 text-base"
+        disabled={closeMutation.isPending}
+        onClick={() => closeMutation.mutate()}
+      >
+        <CheckCircle className="w-5 h-5 mr-2" />
+        {closeMutation.isPending ? 'Closing visit…' : 'Close Visit & Finish'}
+      </Button>
+    </div>
+  );
+}
