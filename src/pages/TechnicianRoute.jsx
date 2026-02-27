@@ -25,11 +25,25 @@ function fmt(s) {
   return `${m}:${String(sec).padStart(2, '0')}`;
 }
 
-// Derive display state for a visit from its calendar event + any running timer
+// Read persisted flow for a visit
+function getFlow(eventId) {
+  const stored = localStorage.getItem(`breez_flow_${eventId}`);
+  if (!stored) return null;
+  try { return JSON.parse(stored); } catch { return null; }
+}
+
+// Derive display state deterministically:
+//  completed  → event.status=completed OR flow.step=close
+//  waiting    → timer key exists with remaining > 0
+//  in_progress → flow key exists (any step other than close)
+//  not_started → no flow key
 function getVisitState(event) {
   if (event.status === 'completed') return 'completed';
+  const flow = getFlow(event.id);
+  if (flow?.step === 'close') return 'completed';
   const timer = getWaitTimer(event.id);
   if (timer && timer.remaining > 0) return 'waiting';
+  if (flow) return 'in_progress';
   return 'not_started';
 }
 
