@@ -393,7 +393,11 @@ export default function StepCloseout({ visitData, user }) {
       </Button>
 
       {!canClose && (
-        <p className="text-xs text-center text-orange-500">Add internal notes before closing this visit</p>
+        <p className="text-xs text-center text-orange-500">
+          {hasCriticalPartials && criticalPartialResolution === null
+            ? 'Resolve critical partial chemical before closing'
+            : 'Add internal notes before closing this visit'}
+        </p>
       )}
     </div>
   );
