@@ -56,6 +56,22 @@ function getSurfaceProtectionStatus(readings) {
   return { label: 'Adjustment in Progress', color: 'text-orange-600' };
 }
 
+const CRITICAL_REASON_CODES = ['breakpoint_chlorination', 'shock', 'elevated_sanitation'];
+
+function isCriticalAction(action) {
+  return action.critical === true || CRITICAL_REASON_CODES.includes(action.reasonCode);
+}
+
+function getCriticalPartials(visitData) {
+  const actions = visitData.dosePlan?.actions || [];
+  return actions.filter(a =>
+    a.applied &&
+    a.appliedAmount != null &&
+    a.appliedAmount < a.dosePrimary &&
+    isCriticalAction(a)
+  );
+}
+
 function notesRequired(visitData) {
   const { dosePlan, riskEvents = [], retestResolved } = visitData;
   const actions = dosePlan?.actions || [];
