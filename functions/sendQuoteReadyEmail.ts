@@ -46,14 +46,14 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'clientEmail required' }, { status: 400 });
     }
 
-    // Generate token + expiry (24 hours)
+    // Generate token + expiry (7 days)
     const token = generateScheduleToken();
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
     // Update quote with token and sent flags
     await base44.asServiceRole.entities.Quote.update(quoteId, {
       scheduleToken: token,
-      scheduleTokenExpiresAt: expiresAt,
+      scheduleTokenExpiresAt: expiresAt, // 7 days from now
       quoteEmailSent: true,
       quoteEmailSentAt: new Date().toISOString()
     });
