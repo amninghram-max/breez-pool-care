@@ -1,10 +1,12 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 /**
- * calculateQuote v2.2.0
- * Policy (matches checkReleaseReadiness): AdminSettings MUST exist in DB.
- * If list() returns 0 records → hard fail with 503. No silent defaults in production.
+ * calculateQuote v2.3.0
+ * Policy: AdminSettings MUST exist in DB. Hard fail if missing.
+ * Persists a Quote record for every attempt. Returns customer-safe fields only + quoteId.
  */
+
+const PRICING_ENGINE_VERSION = 'v2_tokens_risk_frequency';
 
 const DEFAULT_ESCALATION_BRACKETS = [
   { min_risk: 0, max_risk: 2, addon_amount: 0 },
