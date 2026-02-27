@@ -63,6 +63,17 @@ export default function StepTest({ visitData, user, advance }) {
   const [showExpanded, setShowExpanded] = useState(true);
   const [showSalt, setShowSalt] = useState(false);
 
+  // Lock derivation: prefer loaded dosePlan actions, fall back to visitData.dosePlan, then flag
+  const { data: liveDosePlan } = useQuery({
+    queryKey: ['dosePlanForLock', visitData.testRecordId],
+    queryFn: () => base44.entities.DosePlan.filter({ testRecordId: visitData.testRecordId }).then(r => r[0] || null),
+    enabled: !!visitData.testRecordId
+  });
+  const locked =
+    liveDosePlan?.actions?.some(a => a.applied) ??
+    visitData.dosePlan?.actions?.some(a => a.applied) ??
+    visitData.firstChemApplied === true;
+
   const { data: pool } = useQuery({
     queryKey: ['pool', visitData.poolId],
     queryFn: () => base44.entities.Pool.filter({ id: visitData.poolId }).then(r => r[0]),
