@@ -536,8 +536,35 @@ function LeadDetailModal({ lead, onClose, onUpdate, onSendAcceptance, onRemoved 
               <p className="text-sm text-red-700">{lead.lostReason}</p>
             </div>
           )}
+
+          {/* Admin: Remove Lead */}
+          <div className="pt-4 border-t">
+            {!showRemove ? (
+              <button
+                onClick={() => setShowRemove(true)}
+                className="text-xs text-gray-400 hover:text-red-600 transition-colors flex items-center gap-1"
+              >
+                <Trash2Icon className="w-3 h-3" />
+                Remove Lead
+              </button>
+            ) : (
+              <RemoveLeadPanel
+                lead={lead}
+                onClose={() => setShowRemove(false)}
+                onRemoved={onRemoved || onClose}
+              />
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function Trash2Icon(props) {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+    </svg>
   );
 }
