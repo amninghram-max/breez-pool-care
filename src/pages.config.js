@@ -58,6 +58,7 @@ import Agreements from './pages/Agreements';
 import Analytics from './pages/Analytics';
 import Billing from './pages/Billing';
 import Calendar from './pages/Calendar';
+import ChemicalAnalytics from './pages/ChemicalAnalytics';
 import ChemistryDashboard from './pages/ChemistryDashboard';
 import ClientHome from './pages/ClientHome';
 import DesignSystem from './pages/DesignSystem';
@@ -65,6 +66,7 @@ import FAQ from './pages/FAQ';
 import HelpSupport from './pages/HelpSupport';
 import Home from './pages/Home';
 import LeadsPipeline from './pages/LeadsPipeline';
+import MarginStressTest from './pages/MarginStressTest';
 import MessageThread from './pages/MessageThread';
 import Messages from './pages/Messages';
 import Onboarding from './pages/Onboarding';
@@ -72,6 +74,7 @@ import PaymentSetup from './pages/PaymentSetup';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PreQualification from './pages/PreQualification';
 import PublicHome from './pages/PublicHome';
+import ReleaseReadiness from './pages/ReleaseReadiness';
 import ServiceReinstatement from './pages/ServiceReinstatement';
 import ServiceVisitEntry from './pages/ServiceVisitEntry';
 import StaffHome from './pages/StaffHome';
@@ -79,9 +82,6 @@ import StaffManagement from './pages/StaffManagement';
 import TechnicianHome from './pages/TechnicianHome';
 import TechnicianRoute from './pages/TechnicianRoute';
 import TestDashboard from './pages/TestDashboard';
-import MarginStressTest from './pages/MarginStressTest';
-import ChemicalAnalytics from './pages/ChemicalAnalytics';
-import ReleaseReadiness from './pages/ReleaseReadiness';
 import __Layout from './Layout.jsx';
 
 
@@ -97,6 +97,7 @@ export const PAGES = {
     "Analytics": Analytics,
     "Billing": Billing,
     "Calendar": Calendar,
+    "ChemicalAnalytics": ChemicalAnalytics,
     "ChemistryDashboard": ChemistryDashboard,
     "ClientHome": ClientHome,
     "DesignSystem": DesignSystem,
@@ -104,6 +105,7 @@ export const PAGES = {
     "HelpSupport": HelpSupport,
     "Home": Home,
     "LeadsPipeline": LeadsPipeline,
+    "MarginStressTest": MarginStressTest,
     "MessageThread": MessageThread,
     "Messages": Messages,
     "Onboarding": Onboarding,
@@ -111,6 +113,7 @@ export const PAGES = {
     "PaymentSuccess": PaymentSuccess,
     "PreQualification": PreQualification,
     "PublicHome": PublicHome,
+    "ReleaseReadiness": ReleaseReadiness,
     "ServiceReinstatement": ServiceReinstatement,
     "ServiceVisitEntry": ServiceVisitEntry,
     "StaffHome": StaffHome,
@@ -118,9 +121,6 @@ export const PAGES = {
     "TechnicianHome": TechnicianHome,
     "TechnicianRoute": TechnicianRoute,
     "TestDashboard": TestDashboard,
-    "MarginStressTest": MarginStressTest,
-    "ChemicalAnalytics": ChemicalAnalytics,
-    "ReleaseReadiness": ReleaseReadiness,
 }
 
 export const pagesConfig = {

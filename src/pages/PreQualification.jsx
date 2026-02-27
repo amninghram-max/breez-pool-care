@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,8 +7,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertCircle, Loader2, Check } from 'lucide-react';
+import { AlertCircle, Loader2, Check, RefreshCw } from 'lucide-react';
 import { createPageUrl } from '@/utils';
+
+const LAST_ANSWERS_KEY = 'breez_last_quote_answers';
+
+const DEFAULT_FORM = {
+  poolSize: '', poolType: '', spaPresent: '', enclosure: '', treesOverhead: '',
+  filterType: '', chlorinationMethod: '', chlorinatorType: '', useFrequency: '',
+  petsAccess: false, petSwimFrequency: 'never', poolCondition: '', greenPoolSeverity: '',
+  knownIssues: [], clientFirstName: '', clientLastName: '', clientEmail: '', clientPhone: ''
+};
 
 export default function PreQualification() {
   const [step, setStep] = useState(1);
