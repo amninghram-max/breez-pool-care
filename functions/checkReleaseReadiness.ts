@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
     // ─── CHECK 2: Pricing Sanity Spot-Check ───────────────────────────────────
     // Inline minimal pricing check: Tier A standard pool must land between $140–$180
     try {
-      const settingsResult = await base44.asServiceRole.entities.AdminSettings.filter({ settingKey: 'default' });
+      const settingsResult = await base44.asServiceRole.entities.AdminSettings.list('-created_date', 1);
       const settings = settingsResult[0];
       const baseTiers = settings?.baseTierPrices ? JSON.parse(settings.baseTierPrices) : null;
       const tierA = baseTiers?.tier_a_10_15k;
