@@ -10,22 +10,22 @@ import { Link } from 'react-router-dom';
 export default function AdminHome() {
   const { data: user } = useQuery({
     queryKey: ['user'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => base44.auth.me()
   });
 
   const { data: leads = [] } = useQuery({
     queryKey: ['leads'],
-    queryFn: () => base44.entities.Lead.list(),
+    queryFn: () => base44.entities.Lead.list()
   });
 
   const { data: events = [] } = useQuery({
     queryKey: ['allEvents'],
-    queryFn: () => base44.entities.CalendarEvent.list('-scheduledDate', 100),
+    queryFn: () => base44.entities.CalendarEvent.list('-scheduledDate', 100)
   });
 
-  const totalRevenue = leads
-    .filter(l => l.monthlyServiceAmount)
-    .reduce((sum, l) => sum + l.monthlyServiceAmount, 0);
+  const totalRevenue = leads.
+  filter((l) => l.monthlyServiceAmount).
+  reduce((sum, l) => sum + l.monthlyServiceAmount, 0);
 
   return (
     <div className="space-y-6">
@@ -85,7 +85,7 @@ export default function AdminHome() {
               <div>
                 <p className="text-sm text-gray-600">Active Routes</p>
                 <p className="text-2xl font-bold text-gray-900 mt-1">
-                  {new Set(events.map(e => e.assignedTechnician)).size}
+                  {new Set(events.map((e) => e.assignedTechnician)).size}
                 </p>
               </div>
               <div className="p-3 bg-purple-100 rounded-lg">
@@ -142,7 +142,7 @@ export default function AdminHome() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link to={createPageUrl('Calendar')}>
-            <Button variant="outline" className="w-full justify-start" size="lg">
+            <Button variant="outline" className="bg-background px-6 text-sm font-medium rounded-md inline-flex items-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input shadow-sm hover:bg-accent hover:text-accent-foreground h-10 w-full justify-start" size="lg">
               Scheduling & Calendar
             </Button>
           </Link>
@@ -178,6 +178,6 @@ export default function AdminHome() {
           </Link>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>);
+
 }
