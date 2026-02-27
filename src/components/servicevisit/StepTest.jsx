@@ -66,7 +66,7 @@ export default function StepTest({ visitData, user, advance }) {
   // Lock derivation: prefer loaded dosePlan actions, fall back to visitData.dosePlan, then flag
   const { data: liveDosePlan } = useQuery({
     queryKey: ['dosePlanForLock', visitData.testRecordId],
-    queryFn: () => base44.entities.DosePlan.filter({ testRecordId: visitData.testRecordId }).then(r => r[0] || null),
+    queryFn: () => base44.entities.DosePlan.filter({ testRecordId: visitData.testRecordId }, '-created_date', 1).then(r => r[0] || null),
     enabled: !!visitData.testRecordId
   });
   const locked =
