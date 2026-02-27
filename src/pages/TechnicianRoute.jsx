@@ -183,6 +183,7 @@ export default function TechnicianRoute() {
           const visitState = getVisitState(event);
           const isCompleted = visitState === 'completed';
           const isWaiting = visitState === 'waiting';
+          const isInProgress = visitState === 'in_progress';
           const isExpanded = selectedEvent?.id === event.id;
 
           return (
