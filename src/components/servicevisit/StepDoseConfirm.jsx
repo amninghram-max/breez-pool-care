@@ -147,12 +147,23 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
 
   const handleConfirmApply = ({ actionIndex, appliedAmount }) => {
     const now = new Date().toISOString();
+    const isFirst = appliedActions.length === 0;
     setAppliedActions(prev => [...prev, { index: actionIndex, appliedAmount, appliedAt: now }]);
     setPendingConfirm(null);
 
-    // Signal to parent flow that first chemical was applied (triggers lock on Arrive/Test/Analyze)
-    if (appliedActions.length === 0) {
-      advance({ firstChemApplied: true });
+    // Signal firstChemApplied to lock Arrive/Test/Analyze — stay on current step
+    if (isFirst) {
+      // Update visitData without advancing step by using goTo with current step
+      // We do this by merging into visitData through a no-advance path
+      goTo && goTo('dose');
+      // Also communicate the flag upward so the flow saves it
+      advance && typeof advance === 'function' && (() => {
+        // We need to update visitData.firstChemApplied without advancing.
+        // Store it in the flow directly — we'll use a custom event pattern.
+        // Since advance() moves the step, we use a workaround: call it with no-op step change
+        // by temporarily storing in sessionStorage for the flow to pick up.
+        sessionStorage.setItem('breez_firstChemApplied', '1');
+      })();
     }
   };
 
