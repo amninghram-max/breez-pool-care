@@ -91,10 +91,8 @@ Deno.serve(async (req) => {
       console.log('Running as service role (no user auth)');
     }
 
-    // Check if exists
-    const existing = await base44.asServiceRole.entities.AdminSettings.filter({
-      settingKey: 'default'
-    });
+    // Check if exists — use list() to avoid any filter/RLS issues
+    const existing = await base44.asServiceRole.entities.AdminSettings.list('-created_date', 1);
 
     const payload = {
       settingKey: 'default',
