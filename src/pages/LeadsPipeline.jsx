@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Phone, Mail, MessageSquare, Calendar, AlertCircle, Check } from 'lucide-react';
+import { Phone, Mail, MessageSquare, Calendar, AlertCircle, Check, Wrench } from 'lucide-react';
+import UnstickLeadPanel from '@/components/admin/UnstickLeadPanel';
 
 export default function LeadsPipeline() {
   const queryClient = useQueryClient();
