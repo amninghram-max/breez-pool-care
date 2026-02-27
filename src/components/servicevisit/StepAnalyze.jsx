@@ -67,6 +67,8 @@ export default function StepAnalyze({ visitData, advance, goTo }) {
         <p className="text-gray-500 text-sm mt-1">Review what the readings show</p>
       </div>
 
+      {locked && <LockBanner />}
+
       {/* Readings summary */}
       <Card>
         <CardContent className="pt-4">
