@@ -1,14 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertCircle, Loader2, Check, RefreshCw } from 'lucide-react';
-import { createPageUrl } from '@/utils';
+import React, { useState } from 'react';
+import QuoteWizard from '../components/quote/QuoteWizard';
+import QuoteResult from '../components/quote/QuoteResult';
 
 const LAST_ANSWERS_KEY = 'breez_last_quote_answers';
 
