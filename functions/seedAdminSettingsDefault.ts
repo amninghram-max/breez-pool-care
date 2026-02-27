@@ -116,9 +116,12 @@ Deno.serve(async (req) => {
       console.log('✅ Created new AdminSettings');
     }
 
-    // VERIFICATION: Read back and validate
-    // Use result directly instead of re-querying (may not be immediately consistent)
-    const record = result;
+    // VERIFICATION: Re-query via list() to confirm persistence in DB
+    const readback = await base44.asServiceRole.entities.AdminSettings.list('-created_date', 1);
+    if (!readback || readback.length === 0) {
+      throw new Error('SEED PERSISTENCE FAILED: record was created/updated but list() returned empty — possible schema or RLS issue');
+    }
+    const record = readback[0];
     
     // Parse and validate nested config
     const riskEngine = JSON.parse(record.riskEngine);
