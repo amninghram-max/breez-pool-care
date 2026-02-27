@@ -15,6 +15,8 @@ export default function LeadsPipeline() {
   const queryClient = useQueryClient();
   const [selectedLead, setSelectedLead] = useState(null);
   const [repairResult, setRepairResult] = useState(null);
+  const [showNewLead, setShowNewLead] = useState(false);
+  const [showNewQuote, setShowNewQuote] = useState(false);
 
   const repairMutation = useMutation({
     mutationFn: () => base44.functions.invoke('repairInspectionScheduledLeads', {}),
