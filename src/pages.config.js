@@ -77,13 +77,16 @@ import PublicHome from './pages/PublicHome';
 import ReleaseReadiness from './pages/ReleaseReadiness';
 import ServiceReinstatement from './pages/ServiceReinstatement';
 import ServiceVisitEntry from './pages/ServiceVisitEntry';
+import ServiceVisitFlow from './pages/ServiceVisitFlow';
 import StaffHome from './pages/StaffHome';
 import StaffManagement from './pages/StaffManagement';
 import TechnicianHome from './pages/TechnicianHome';
 import TechnicianRoute from './pages/TechnicianRoute';
 import TestDashboard from './pages/TestDashboard';
-import ServiceVisitFlow from './pages/ServiceVisitFlow';
 import AdminReviewDashboard from './pages/AdminReviewDashboard';
+import CustomerDashboard from './pages/CustomerDashboard';
+import CustomerServiceHistory from './pages/CustomerServiceHistory';
+import CustomerMessagingPage from './pages/CustomerMessagingPage';
 import __Layout from './Layout.jsx';
 
 
@@ -118,13 +121,16 @@ export const PAGES = {
     "ReleaseReadiness": ReleaseReadiness,
     "ServiceReinstatement": ServiceReinstatement,
     "ServiceVisitEntry": ServiceVisitEntry,
+    "ServiceVisitFlow": ServiceVisitFlow,
     "StaffHome": StaffHome,
     "StaffManagement": StaffManagement,
     "TechnicianHome": TechnicianHome,
     "TechnicianRoute": TechnicianRoute,
     "TestDashboard": TestDashboard,
-    "ServiceVisitFlow": ServiceVisitFlow,
     "AdminReviewDashboard": AdminReviewDashboard,
+    "CustomerDashboard": CustomerDashboard,
+    "CustomerServiceHistory": CustomerServiceHistory,
+    "CustomerMessagingPage": CustomerMessagingPage,
 }
 
 export const pagesConfig = {
