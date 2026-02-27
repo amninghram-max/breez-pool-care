@@ -120,7 +120,7 @@ export default function PreQualification() {
   };
 
   if (quoteResult) {
-    return <QuoteDisplay quote={quoteResult} formData={formData} />;
+    return <QuoteDisplay quote={quoteResult} quoteId={quoteId} expiresAt={expiresAt} formData={formData} />;
   }
 
   return (
