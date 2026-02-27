@@ -23,28 +23,17 @@ export default function PreQualification() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [quoteResult, setQuoteResult] = useState(null);
+  const [quoteId, setQuoteId] = useState(null);
+  const [expiresAt, setExpiresAt] = useState(null);
   const [error, setError] = useState(null);
+  const [hasSavedAnswers, setHasSavedAnswers] = useState(false);
 
-  const [formData, setFormData] = useState({
-    poolSize: '',
-    poolType: '',
-    spaPresent: '',
-    enclosure: '',
-    treesOverhead: '',
-    filterType: '',
-    chlorinationMethod: '',
-    chlorinatorType: '',
-    useFrequency: '',
-    petsAccess: false,
-    petSwimFrequency: 'never',
-    poolCondition: '',
-    greenPoolSeverity: '',
-    knownIssues: [],
-    clientFirstName: '',
-    clientLastName: '',
-    clientEmail: '',
-    clientPhone: ''
-  });
+  const [formData, setFormData] = useState(DEFAULT_FORM);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(LAST_ANSWERS_KEY);
+    if (saved) setHasSavedAnswers(true);
+  }, []);
 
   const toggleMultiSelect = (field, value) => {
     setFormData(prev => {
