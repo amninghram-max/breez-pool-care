@@ -1,14 +1,15 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Home, MessageSquare, DollarSign, HelpCircle } from 'lucide-react';
+import { Home, MessageSquare, DollarSign, HelpCircle, Droplet, History } from 'lucide-react';
 
 export default function CustomerNav() {
   const location = useLocation();
 
   const navItems = [
-    { name: 'Home', path: 'ClientHome', icon: Home },
-    { name: 'Messages', path: 'Messages', icon: MessageSquare },
+    { name: 'My Pool', path: 'CustomerDashboard', icon: Droplet },
+    { name: 'History', path: 'CustomerServiceHistory', icon: History },
+    { name: 'Messages', path: 'CustomerMessagingPage', icon: MessageSquare },
     { name: 'Billing', path: 'Billing', icon: DollarSign },
     { name: 'Help & Support', path: 'HelpSupport', icon: HelpCircle },
   ];
