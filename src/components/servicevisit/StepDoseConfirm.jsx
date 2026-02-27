@@ -77,7 +77,7 @@ function PreApplyModal({ action, actionIndex, onConfirm, onCancel }) {
   );
 }
 
-export default function StepDoseConfirm({ visitData, user, settings, advance }) {
+export default function StepDoseConfirm({ visitData, user, settings, advance, goTo }) {
   const [appliedActions, setAppliedActions] = useState([]); // array of {index, appliedAmount, appliedAt}
   const [pendingConfirm, setPendingConfirm] = useState(null); // action awaiting modal confirmation
 
