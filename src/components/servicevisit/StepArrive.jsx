@@ -10,8 +10,16 @@ import LastVisitSnapshot from './LastVisitSnapshot';
 export default function StepArrive({ visitData, user, advance }) {
   const [confirmed, setConfirmed] = useState(false);
 
-  // firstChemApplied → lock this step
-  const locked = visitData.firstChemApplied === true;
+  // Lock derivation: prefer loaded dosePlan actions, fall back to visitData.dosePlan, then flag
+  const { data: liveDosePlan } = useQuery({
+    queryKey: ['dosePlanForLock', visitData.testRecordId],
+    queryFn: () => base44.entities.DosePlan.filter({ testRecordId: visitData.testRecordId }).then(r => r[0] || null),
+    enabled: !!visitData.testRecordId
+  });
+  const locked =
+    liveDosePlan?.actions?.some(a => a.applied) ??
+    visitData.dosePlan?.actions?.some(a => a.applied) ??
+    visitData.firstChemApplied === true;
 
   const { data: event } = useQuery({
     queryKey: ['calEvent', visitData.eventId],
