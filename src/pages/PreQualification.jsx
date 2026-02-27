@@ -532,6 +532,28 @@ function QuoteDisplay({ quote, quoteId, expiresAt, formData }) {
     window.location.href = createPageUrl('Onboarding');
   };
 
+  if (isExpired) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6 py-8">
+        <Card className="bg-amber-50 border-amber-200">
+          <CardContent className="pt-6 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-amber-900">This quote has expired</p>
+              <p className="text-sm text-amber-800 mt-1">Quotes are valid for 14 days. Please generate a new quote to get updated pricing.</p>
+              <Button
+                className="mt-4 bg-teal-600 hover:bg-teal-700"
+                onClick={() => window.location.reload()}
+              >
+                Generate New Quote
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl mx-auto space-y-6 py-8">
       <div className="space-y-2">
@@ -542,6 +564,9 @@ function QuoteDisplay({ quote, quoteId, expiresAt, formData }) {
           <h1 className="text-3xl font-bold text-gray-900">Your Service Plan</h1>
         </div>
         <p className="text-gray-600">Simple pricing. All chemicals included.</p>
+        {expiryDate && (
+          <p className="text-xs text-gray-400">This quote is valid until {expiryDate}</p>
+        )}
       </div>
 
       {/* Auto-required frequency notice */}
