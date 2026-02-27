@@ -129,6 +129,15 @@ export default function PreQualification() {
       <div className="space-y-2">
         <h1 className="text-3xl font-bold text-gray-900">Get Your Free Quote</h1>
         <p className="text-gray-600">Answer a few quick questions about your pool</p>
+        {hasSavedAnswers && step === 1 && (
+          <button
+            onClick={reuseLastAnswers}
+            className="flex items-center gap-1.5 text-sm text-teal-700 hover:text-teal-900 underline underline-offset-2 mt-1"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Reuse my last pool answers (new quote)
+          </button>
+        )}
       </div>
 
       {error && (
