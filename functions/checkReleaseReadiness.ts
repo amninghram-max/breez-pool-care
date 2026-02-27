@@ -252,7 +252,7 @@ Deno.serve(async (req) => {
     const releaseReady = blockers.length === 0;
 
     if (releaseReady) {
-      console.log('✅ RELEASE READY — all checks passed');
+      console.log(`✅ RELEASE READY — pricingEngine=${PRICING_ENGINE_VERSION}, configId=${configRecordId}`);
     } else {
       console.error('🚨 RELEASE BLOCKED:', JSON.stringify(blockers));
     }
@@ -261,6 +261,9 @@ Deno.serve(async (req) => {
       releaseReady,
       usingDefaults,
       version: VERSION,
+      pricingEngineVersion: PRICING_ENGINE_VERSION,
+      configRecordId,
+      configUpdatedAt,
       timestamp: new Date().toISOString(),
       blockers,
       warnings,
