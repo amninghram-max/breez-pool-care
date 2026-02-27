@@ -94,7 +94,15 @@ export default function StepCloseout({ visitData, user }) {
         });
       }
     },
-    onSuccess: () => setDone(true)
+    onSuccess: () => {
+      // Clean up all persisted flow state for this visit
+      if (visitData.eventId) {
+        localStorage.removeItem(`breez_flow_${visitData.eventId}`);
+        localStorage.removeItem(`breez_timer_${visitData.eventId}`);
+        localStorage.removeItem(`breez_checklist_${visitData.eventId}`);
+      }
+      setDone(true);
+    }
   });
 
   if (done) {
