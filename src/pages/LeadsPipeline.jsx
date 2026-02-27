@@ -229,8 +229,12 @@ export default function LeadsPipeline() {
           onClose={() => setSelectedLead(null)}
           onUpdate={(data) => updateLeadMutation.mutate({ id: selectedLead.id, data })}
           onSendAcceptance={(leadId) => sendAcceptanceMutation.mutate(leadId)}
+          onRemoved={() => setSelectedLead(null)}
         />
       )}
+
+      {showNewLead && <NewLeadModal onClose={() => setShowNewLead(false)} />}
+      {showNewQuote && <NewQuoteFlow onClose={() => setShowNewQuote(false)} />}
     </div>
   );
 }
