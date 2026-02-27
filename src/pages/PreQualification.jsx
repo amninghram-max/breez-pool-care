@@ -738,11 +738,15 @@ function QuoteDisplay({ quote, quoteId, expiresAt, formData }) {
               </div>
 
               <div>
-                <p className="text-sm font-semibold text-amber-900 mb-2">Quote Logic</p>
+                <p className="text-sm font-semibold text-amber-900 mb-2">Audit Trail</p>
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
-                    <span>Version:</span>
-                    <span className="font-bold">{quote.quoteLogicVersionId}</span>
+                    <span>Pricing Engine:</span>
+                    <span className="font-bold font-mono text-xs">{quote.quoteLogicVersionId}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Quote ID:</span>
+                    <span className="font-bold font-mono text-xs">{quoteId || '—'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Final Monthly:</span>
