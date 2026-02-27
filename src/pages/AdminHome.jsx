@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Settings, BarChart3, Users, Shield, DollarSign, Droplet } from 'lucide-react';
+import { Settings, BarChart3, Users, Shield, DollarSign, Droplet, Zap, FileText } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
+import DemoQuoteModal from '../components/quote/DemoQuoteModal';
+import RealQuoteModal from '../components/quote/RealQuoteModal';
 
 export default function AdminHome() {
   const { data: user } = useQuery({
