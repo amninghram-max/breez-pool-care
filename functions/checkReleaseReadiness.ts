@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
     // ─── CHECK 3: Risk escalation brackets active ─────────────────────────────
     // High-risk pool (unscreened + trees + daily + liquid chlorine) should get addon
     try {
-      const quoteResp = await base44.functions.invoke('calculateQuote', {
+      const quoteResp = await base44.asServiceRole.functions.invoke('calculateQuote', {
         questionnaireData: {
           poolSize: '20_30k',
           poolType: 'in_ground',
