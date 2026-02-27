@@ -190,8 +190,9 @@ export default function TechnicianRoute() {
             <Card
               key={event.id}
               className={`border-2 transition-colors ${
-                isCompleted ? 'border-green-200 opacity-70' :
-                isWaiting ? 'border-yellow-400' :
+                isCompleted   ? 'border-green-200 opacity-70' :
+                isWaiting     ? 'border-yellow-400' :
+                isInProgress  ? 'border-teal-400' :
                 'border-gray-200'
               }`}
             >
