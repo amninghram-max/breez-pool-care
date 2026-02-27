@@ -11,6 +11,21 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  * Output: { eventsCreated: number, events: ChemistryRiskEvent[], outOfRange: string[] }
  */
 
+// Derives outOfRange field names from a set of ChemistryRiskEvent records.
+// Pure function — no DB writes.
+function deriveOutOfRange(events) {
+  const fieldMap = {
+    LOW_FC: 'freeChlorine', LOW_FC_CRITICAL: 'freeChlorine', HIGH_FC: 'freeChlorine', HIGH_FC_CRITICAL: 'freeChlorine',
+    LOW_PH: 'pH', LOW_PH_CRITICAL: 'pH', HIGH_PH: 'pH', HIGH_PH_CRITICAL: 'pH',
+    LOW_TA: 'totalAlkalinity', HIGH_TA: 'totalAlkalinity',
+    LOW_CYA: 'cyanuricAcid', HIGH_CYA: 'cyanuricAcid',
+    LOW_CH: 'calciumHardness', HIGH_CH: 'calciumHardness',
+    LOW_SALT: 'salt', HIGH_SALT: 'salt',
+    CC_HIGH: 'combinedChlorine', CC_CRITICAL: 'combinedChlorine'
+  };
+  return [...new Set(events.map(e => fieldMap[e.eventType]).filter(Boolean))];
+}
+
 // Fixed severity taxonomy
 const SEVERITY_MAP = {
   LOW_FC: 3,
