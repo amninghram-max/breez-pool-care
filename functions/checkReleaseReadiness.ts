@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
 
     // ─── CHECK 1: Config Integrity ────────────────────────────────────────────
     try {
-      const settingsResult = await base44.asServiceRole.entities.AdminSettings.filter({ settingKey: 'default' });
+      const settingsResult = await base44.asServiceRole.entities.AdminSettings.list('-created_date', 1);
       const settings = settingsResult[0];
 
       if (!settings) {
