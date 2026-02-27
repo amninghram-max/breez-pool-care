@@ -10,6 +10,15 @@ import DemoQuoteModal from '../components/quote/DemoQuoteModal';
 import RealQuoteModal from '../components/quote/RealQuoteModal';
 
 export default function AdminHome() {
+  const [showDemo, setShowDemo] = useState(false);
+  const [showReal, setShowReal] = useState(false);
+  const [convertAnswers, setConvertAnswers] = useState(null);
+
+  const handleConvertToReal = (formData) => {
+    setConvertAnswers(formData);
+    setShowReal(true);
+  };
+
   const { data: user } = useQuery({
     queryKey: ['user'],
     queryFn: () => base44.auth.me()
