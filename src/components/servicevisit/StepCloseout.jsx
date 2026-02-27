@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useMutation } from '@tanstack/react-query';
-import { CheckCircle, Droplet, FlaskConical, CalendarCheck, AlertTriangle, Shield, Lock } from 'lucide-react';
+import { CheckCircle, Droplet, FlaskConical, CalendarCheck, AlertTriangle, Shield, Lock, CalendarPlus } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
 
