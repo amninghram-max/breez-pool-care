@@ -45,9 +45,22 @@ export default function PreQualification() {
     });
   };
 
+  const reuseLastAnswers = () => {
+    const saved = localStorage.getItem(LAST_ANSWERS_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Keep contact info blank so customer re-enters; restore pool answers only
+      setFormData({ ...parsed, clientFirstName: '', clientLastName: '', clientEmail: '', clientPhone: '' });
+    }
+  };
+
   const calculateQuoteMutation = useMutation({
     mutationFn: async () => {
       setLoading(true);
+      // Save pool answers for future "reuse" (exclude contact info)
+      const { clientFirstName, clientLastName, clientEmail, clientPhone, ...poolAnswers } = formData;
+      localStorage.setItem(LAST_ANSWERS_KEY, JSON.stringify(poolAnswers));
+
       const response = await base44.functions.invoke('calculateQuote', {
         questionnaireData: formData
       });
@@ -55,6 +68,8 @@ export default function PreQualification() {
     },
     onSuccess: (data) => {
       setQuoteResult(data.quote);
+      setQuoteId(data.quoteId);
+      setExpiresAt(data.expiresAt);
       setError(null);
       setStep(4);
       setLoading(false);
