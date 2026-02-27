@@ -1,16 +1,18 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 /**
- * RELEASE READINESS CHECK
- * All checks are fully inline — no sub-function HTTP calls.
- * Uses asServiceRole entity reads + inline pricing math only.
+ * RELEASE READINESS CHECK v1.0.0
+ * Fully inline — zero sub-function invocations.
+ * Policy: AdminSettings MUST exist in DB; missing = deployment blocker.
  */
 
+const VERSION = '1.0.0';
+
 const DEFAULT_ESCALATION_BRACKETS = [
-  { min_risk: 0, max_risk: 2, addon_amount: 0 },
-  { min_risk: 3, max_risk: 5, addon_amount: 15 },
-  { min_risk: 6, max_risk: 8, addon_amount: 30 },
-  { min_risk: 9, max_risk: 11, addon_amount: 45 },
+  { min_risk: 0,  max_risk: 2,   addon_amount: 0  },
+  { min_risk: 3,  max_risk: 5,   addon_amount: 15 },
+  { min_risk: 6,  max_risk: 8,   addon_amount: 30 },
+  { min_risk: 9,  max_risk: 11,  addon_amount: 45 },
   { min_risk: 12, max_risk: 999, addon_amount: 60 }
 ];
 
@@ -19,7 +21,9 @@ function runPricingSpotCheck(settings, scenario) {
     tier_a_10_15k: 140, tier_b_15_20k: 160, tier_c_20_30k: 190, tier_d_30k_plus: 230, absolute_floor: 120
   };
   const tokens = settings?.additiveTokens ? JSON.parse(settings.additiveTokens) : {
-    usage_weekends: 10, usage_daily: 20, unscreened_tier_a: 20, chlorinator_liquid_only: 10, pets_frequent: 10
+    usage_weekends: 10, usage_daily: 20, unscreened_tier_a: 20,
+    unscreened_tier_b: 25, unscreened_tier_c: 30, unscreened_tier_d: 40,
+    trees_overhead: 10, chlorinator_liquid_only: 10, pets_frequent: 10
   };
   const riskEngine = settings?.riskEngine ? JSON.parse(settings.riskEngine) : {
     points: { unscreened: 2, trees_overhead: 1, usage_daily: 2, usage_several_week: 1,
@@ -33,15 +37,15 @@ function runPricingSpotCheck(settings, scenario) {
 
   const { poolSize, enclosure, treesOverhead, useFrequency, chlorinationMethod, petsAccess, petSwimFrequency } = scenario;
 
-  // Tier
-  const tierMap = { '10_15k': ['tier_a', baseTiers.tier_a_10_15k || 140],
-                    'not_sure': ['tier_a', baseTiers.tier_a_10_15k || 140],
-                    '15_20k': ['tier_b', baseTiers.tier_b_15_20k || 160],
-                    '20_30k': ['tier_c', baseTiers.tier_c_20_30k || 190],
-                    '30k_plus': ['tier_d', baseTiers.tier_d_30k_plus || 230] };
+  const tierMap = {
+    '10_15k': ['tier_a', baseTiers.tier_a_10_15k || 140],
+    'not_sure': ['tier_a', baseTiers.tier_a_10_15k || 140],
+    '15_20k':  ['tier_b', baseTiers.tier_b_15_20k || 160],
+    '20_30k':  ['tier_c', baseTiers.tier_c_20_30k || 190],
+    '30k_plus':['tier_d', baseTiers.tier_d_30k_plus || 230]
+  };
   const [sizeTier, baseMonthly] = tierMap[poolSize] || ['tier_a', 140];
 
-  // Tokens
   let additive = 0;
   if (enclosure === 'unscreened') additive += tokens[`unscreened_${sizeTier}`] || 20;
   if (enclosure === 'unscreened' && treesOverhead === 'yes') additive += tokens.trees_overhead || 10;
@@ -51,7 +55,6 @@ function runPricingSpotCheck(settings, scenario) {
   if (chlorinationMethod === 'liquid_chlorine') additive += tokens.chlorinator_liquid_only || 10;
   if (petsAccess && petSwimFrequency === 'frequently') additive += tokens.pets_frequent || 10;
 
-  // Risk
   const pts = riskEngine.points;
   let rawRisk = 0;
   if (enclosure === 'unscreened') rawRisk += pts.unscreened || 2;
@@ -61,10 +64,10 @@ function runPricingSpotCheck(settings, scenario) {
   if (chlorinationMethod === 'liquid_chlorine') rawRisk += pts.chlorinator_liquid_only || 2;
   if (petsAccess && petSwimFrequency === 'frequently') rawRisk += pts.pets_frequent || 1;
 
-  const mult = riskEngine.size_multipliers[sizeTier] || 1.0;
-  const adjustedRisk = rawRisk * mult;
+  const sizeMultiplier = (riskEngine.size_multipliers || {})[sizeTier] || 1.0;
+  const adjustedRisk = rawRisk * sizeMultiplier;
 
-  const brackets = riskEngine.escalation_brackets?.length >= 5
+  const brackets = Array.isArray(riskEngine.escalation_brackets) && riskEngine.escalation_brackets.length >= 5
     ? riskEngine.escalation_brackets : DEFAULT_ESCALATION_BRACKETS;
   const sorted = [...brackets].sort((a, b) => a.min_risk - b.min_risk);
   let riskAddon = 0;
@@ -75,7 +78,6 @@ function runPricingSpotCheck(settings, scenario) {
     }
   }
 
-  // Frequency
   let freqMult = 1.0;
   if (adjustedRisk >= (freqLogic.auto_require_threshold || 9)) {
     freqMult = freqLogic.twice_weekly_multiplier || 1.8;
@@ -97,100 +99,110 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    console.log('🔒 Running release readiness checks (fully inline)...');
+    console.log(`🔒 checkReleaseReadiness v${VERSION} — fully inline`);
 
-    const results = {
-      timestamp: new Date().toISOString(),
-      releaseReady: false,
-      checks: {},
-      blockers: [],
-      warnings: []
-    };
+    const blockers = [];
+    const warnings = [];
+    const checks = {};
 
-    // Load AdminSettings once
+    // ─── Load AdminSettings via list() (avoids filter/RLS issues) ────────────
     let settings = null;
+    let usingDefaults = true;
     try {
       const rows = await base44.asServiceRole.entities.AdminSettings.list('-created_date', 1);
       settings = rows[0] || null;
+      usingDefaults = !settings;
     } catch (err) {
-      results.blockers.push('Could not read AdminSettings: ' + err.message);
+      blockers.push('Could not read AdminSettings: ' + err.message);
     }
 
-    // ─── CHECK 1: AdminSettings exists ───────────────────────────────────────
-    results.checks.adminSettingsPresent = {
-      passed: !!settings,
-      details: settings ? 'AdminSettings record found' : 'AdminSettings missing — seeding required'
-    };
-    if (!settings) {
-      results.warnings.push('AdminSettings missing — pricing running on hardcoded defaults');
-    }
-
-    // ─── CHECK 2: Config integrity (parse all fields) ─────────────────────────
-    try {
-      const riskEngine = settings?.riskEngine ? JSON.parse(settings.riskEngine) : null;
-      const brackets = riskEngine?.escalation_brackets;
-      const bracketsOk = Array.isArray(brackets) && brackets.length >= 5;
-      const baseTiersOk = !!(settings?.baseTierPrices) && JSON.parse(settings.baseTierPrices)?.tier_a_10_15k > 0;
-      const tokensOk = !!(settings?.additiveTokens) && Object.keys(JSON.parse(settings.additiveTokens)).length >= 10;
-      const passed = bracketsOk && baseTiersOk && tokensOk;
-
-      results.checks.configIntegrity = {
-        passed: settings ? passed : true, // No settings = using defaults = warn, not block
-        bracketCount: brackets?.length ?? 'N/A (default)',
-        usingDefaults: !settings,
-        details: !settings
-          ? 'Using hardcoded defaults (AdminSettings not seeded)'
-          : passed
-            ? `Config valid: ${brackets.length} brackets, baseTiers OK, tokens OK`
-            : `Config invalid: brackets=${bracketsOk}, baseTiers=${baseTiersOk}, tokens=${tokensOk}`
+    // ─── CHECK 1: AdminSettings must exist (BLOCKER if missing) ─────────────
+    if (usingDefaults) {
+      checks.adminSettingsPresent = {
+        passed: false,
+        details: 'AdminSettings not found in DB — run seedAdminSettingsDefault first'
       };
-
-      if (settings && !passed) {
-        results.blockers.push('AdminSettings present but config is corrupt');
-      }
-    } catch (err) {
-      results.checks.configIntegrity = { passed: false, details: 'Parse error: ' + err.message };
-      results.blockers.push('Config integrity parse failed: ' + err.message);
+      blockers.push('AdminSettings missing — production requires seeded config');
+    } else {
+      checks.adminSettingsPresent = {
+        passed: true,
+        details: `AdminSettings record found (id: ${settings.id})`
+      };
     }
 
-    // ─── CHECK 3: Pricing floor enforced (lowest-risk Tier A pool) ───────────
+    // ─── CHECK 2: Config integrity (only if settings exist) ──────────────────
+    if (settings) {
+      try {
+        const riskEngine = JSON.parse(settings.riskEngine);
+        const baseTiers  = JSON.parse(settings.baseTierPrices);
+        const tokens     = JSON.parse(settings.additiveTokens);
+
+        const brackets      = riskEngine?.escalation_brackets;
+        const bracketsOk    = Array.isArray(brackets) && brackets.length >= 5;
+        const multipliersOk = riskEngine?.size_multipliers && Object.keys(riskEngine.size_multipliers).length >= 4;
+        const baseTiersOk   = baseTiers?.tier_a_10_15k > 0 && baseTiers?.absolute_floor > 0;
+        const tokensOk      = Object.keys(tokens).length >= 10;
+        const passed        = bracketsOk && multipliersOk && baseTiersOk && tokensOk;
+
+        checks.configIntegrity = {
+          passed,
+          bracketCount:    brackets?.length ?? 0,
+          multipliersCount: Object.keys(riskEngine?.size_multipliers || {}).length,
+          tokensCount:     Object.keys(tokens).length,
+          details: passed
+            ? `Config valid: ${brackets.length} brackets, ${Object.keys(tokens).length} tokens, baseTiers OK`
+            : `Config corrupt: brackets=${bracketsOk}, multipliers=${multipliersOk}, baseTiers=${baseTiersOk}, tokens=${tokensOk}`
+        };
+
+        if (!passed) blockers.push('AdminSettings present but config data is corrupt or incomplete');
+      } catch (err) {
+        checks.configIntegrity = { passed: false, details: 'Parse error: ' + err.message };
+        blockers.push('Config integrity parse failed: ' + err.message);
+      }
+    } else {
+      checks.configIntegrity = { passed: false, details: 'Skipped — AdminSettings missing' };
+    }
+
+    // ─── CHECK 3: Pricing floor (min-risk Tier A) ────────────────────────────
     try {
       const c = runPricingSpotCheck(settings, {
-        poolSize: '10_15k', enclosure: 'fully_screened', useFrequency: 'rarely',
-        chlorinationMethod: 'saltwater', petsAccess: false
+        poolSize: '10_15k', enclosure: 'fully_screened',
+        useFrequency: 'rarely', chlorinationMethod: 'saltwater', petsAccess: false
       });
-      const passed = c.finalPrice >= 120;
-      results.checks.pricingFloor = {
+      const passed = c.finalPrice >= c.floor;
+      checks.pricingFloor = {
         passed,
         finalPrice: c.finalPrice,
         floor: c.floor,
-        details: passed ? `Floor enforced: $${c.finalPrice} >= $${c.floor}` : `VIOLATED: $${c.finalPrice} < $${c.floor}`
+        details: passed
+          ? `Floor enforced: $${c.finalPrice} >= $${c.floor}`
+          : `VIOLATED: $${c.finalPrice} < $${c.floor}`
       };
-      if (!passed) results.blockers.push('Absolute price floor ($120) violated');
+      if (!passed) blockers.push(`Absolute price floor ($${c.floor}) violated — got $${c.finalPrice}`);
     } catch (err) {
-      results.checks.pricingFloor = { passed: false, details: err.message };
-      results.blockers.push('Pricing floor check threw: ' + err.message);
+      checks.pricingFloor = { passed: false, details: err.message };
+      blockers.push('Pricing floor check threw: ' + err.message);
     }
 
-    // ─── CHECK 4: Tier A base price in expected range ($120–$250) ─────────────
+    // ─── CHECK 4: Tier A base price in expected range ─────────────────────────
     try {
       const c = runPricingSpotCheck(settings, {
-        poolSize: '10_15k', enclosure: 'fully_screened', useFrequency: 'weekends',
-        chlorinationMethod: 'saltwater', petsAccess: false
+        poolSize: '10_15k', enclosure: 'fully_screened',
+        useFrequency: 'weekends', chlorinationMethod: 'saltwater', petsAccess: false
       });
       const passed = c.baseMonthly >= 120 && c.baseMonthly <= 250;
-      results.checks.tierAPricing = {
+      checks.tierAPricing = {
         passed,
         baseMonthly: c.baseMonthly,
-        finalMonthlyPrice: c.finalPrice,
+        finalMonthlyPrice: parseFloat(c.finalPrice.toFixed(2)),
         details: passed
           ? `Tier A base = $${c.baseMonthly}, final = $${c.finalPrice.toFixed(2)}`
-          : `Tier A base out of range: $${c.baseMonthly}`
+          : `Tier A base out of range [$120–$250]: $${c.baseMonthly}`
       };
-      if (!passed) results.blockers.push('Tier A base price out of expected range');
+      if (!passed) blockers.push('Tier A base price out of expected range [$120–$250]');
     } catch (err) {
-      results.checks.tierAPricing = { passed: false, details: err.message };
-      results.blockers.push('Tier A pricing check threw: ' + err.message);
+      checks.tierAPricing = { passed: false, details: err.message };
+      blockers.push('Tier A pricing check threw: ' + err.message);
     }
 
     // ─── CHECK 5: Risk escalation fires on high-risk pool ────────────────────
@@ -201,50 +213,60 @@ Deno.serve(async (req) => {
         petsAccess: true, petSwimFrequency: 'frequently'
       });
       const passed = c.riskAddon > 0 && c.adjustedRisk >= 5;
-      results.checks.riskEscalation = {
+      checks.riskEscalation = {
         passed,
         riskAddon: c.riskAddon,
-        adjustedRisk: c.adjustedRisk,
+        adjustedRisk: parseFloat(c.adjustedRisk.toFixed(2)),
         finalMonthlyPrice: parseFloat(c.finalPrice.toFixed(2)),
         details: passed
-          ? `Risk addon = $${c.riskAddon}, adjustedRisk = ${c.adjustedRisk.toFixed(2)} — escalation brackets working`
+          ? `Risk addon = $${c.riskAddon}, adjustedRisk = ${c.adjustedRisk.toFixed(2)} — brackets working`
           : `Risk escalation not firing: addon=${c.riskAddon}, adjustedRisk=${c.adjustedRisk}`
       };
-      if (!passed) results.blockers.push('Risk escalation brackets not firing — margin protection gap');
+      if (!passed) blockers.push('Risk escalation brackets not firing — margin protection gap');
     } catch (err) {
-      results.checks.riskEscalation = { passed: false, details: err.message };
-      results.blockers.push('Risk escalation check threw: ' + err.message);
+      checks.riskEscalation = { passed: false, details: err.message };
+      blockers.push('Risk escalation check threw: ' + err.message);
     }
 
     // ─── CHECK 6: Entity layer accessible ────────────────────────────────────
     try {
       const leads = await base44.asServiceRole.entities.Lead.list('-created_date', 1);
-      results.checks.entityAccess = {
+      checks.entityAccess = {
         passed: true,
-        details: `Entity layer reachable (leads sample: ${leads.length})`
+        details: `Entity layer reachable (Lead count sample: ${leads.length})`
       };
     } catch (err) {
-      results.checks.entityAccess = { passed: false, details: err.message };
-      results.warnings.push('Entity access check failed: ' + err.message);
+      checks.entityAccess = { passed: false, details: err.message };
+      warnings.push('Entity access check failed: ' + err.message);
     }
 
     // ─── Final determination ──────────────────────────────────────────────────
-    results.releaseReady = results.blockers.length === 0;
+    const releaseReady = blockers.length === 0;
 
-    if (results.releaseReady) {
+    if (releaseReady) {
       console.log('✅ RELEASE READY — all checks passed');
     } else {
-      console.error('🚨 RELEASE BLOCKED:', JSON.stringify(results.blockers));
+      console.error('🚨 RELEASE BLOCKED:', JSON.stringify(blockers));
     }
 
-    return Response.json(results);
+    return Response.json({
+      releaseReady,
+      usingDefaults,
+      version: VERSION,
+      timestamp: new Date().toISOString(),
+      blockers,
+      warnings,
+      checks
+    });
 
   } catch (error) {
-    console.error('checkReleaseReadiness fatal error:', error.message);
+    console.error('checkReleaseReadiness fatal:', error.message);
     return Response.json({
       releaseReady: false,
-      error: error.message,
+      usingDefaults: true,
+      version: VERSION,
       blockers: ['Release check execution failed: ' + error.message],
+      warnings: [],
       checks: {}
     }, { status: 500 });
   }
