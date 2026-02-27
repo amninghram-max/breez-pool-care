@@ -201,12 +201,14 @@ export default function TechnicianRoute() {
                   <div className="flex items-start gap-3">
                     {/* Position / state badge */}
                     <div className={`flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0 font-bold ${
-                      isCompleted ? 'bg-green-100 text-green-700' :
-                      isWaiting   ? 'bg-yellow-100 text-yellow-700' :
+                      isCompleted   ? 'bg-green-100 text-green-700' :
+                      isWaiting     ? 'bg-yellow-100 text-yellow-700' :
+                      isInProgress  ? 'bg-teal-100 text-teal-700' :
                       'bg-gray-100 text-gray-700'
                     }`}>
-                      {isCompleted ? <CheckCircle className="w-5 h-5" /> :
-                       isWaiting   ? <Timer className="w-5 h-5" /> :
+                      {isCompleted   ? <CheckCircle className="w-5 h-5" /> :
+                       isWaiting     ? <Timer className="w-5 h-5" /> :
+                       isInProgress  ? <ChevronRight className="w-5 h-5" /> :
                        event.routePosition || idx + 1}
                     </div>
 
