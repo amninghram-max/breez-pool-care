@@ -503,7 +503,7 @@ export default function PreQualification() {
   );
 }
 
-function QuoteDisplay({ quote, formData }) {
+function QuoteDisplay({ quote, quoteId, expiresAt, formData }) {
   const { data: user } = useQuery({
     queryKey: ['user'],
     queryFn: async () => {
@@ -518,15 +518,17 @@ function QuoteDisplay({ quote, formData }) {
   const isStaffOrAdmin = user && ['admin', 'staff'].includes(user.role);
   const [showInternalBreakdown, setShowInternalBreakdown] = React.useState(false);
 
+  // Check expiry
+  const isExpired = expiresAt && new Date(expiresAt) < new Date();
+  const expiryDate = expiresAt ? new Date(expiresAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : null;
+
   const handleContinueToSetup = async () => {
-    // Store quote data for onboarding
     localStorage.setItem('quoteData', JSON.stringify({
       quote,
+      quoteId,
       formData,
       timestamp: new Date().toISOString()
     }));
-
-    // Navigate to onboarding (inspection scheduling)
     window.location.href = createPageUrl('Onboarding');
   };
 
