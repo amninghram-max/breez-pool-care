@@ -44,12 +44,25 @@ export default function ServiceVisitFlow() {
   });
 
   const advance = (data = {}) => {
-    setVisitData(prev => ({ ...prev, ...data }));
+    setVisitData(prev => {
+      const next = { ...prev, ...data };
+      // Persist flow state so navigating away and back resumes correctly
+      if (FLOW_KEY) {
+        const nextStep = STEPS[Math.min(STEPS.indexOf(step) + 1, STEPS.length - 1)];
+        localStorage.setItem(FLOW_KEY, JSON.stringify({ step: nextStep, visitData: next }));
+      }
+      return next;
+    });
     const idx = STEPS.indexOf(step);
     if (idx < STEPS.length - 1) setStep(STEPS[idx + 1]);
   };
 
-  const goTo = (target) => setStep(target);
+  const goTo = (target) => {
+    setStep(target);
+    if (FLOW_KEY) {
+      localStorage.setItem(FLOW_KEY, JSON.stringify({ step: target, visitData }));
+    }
+  };
 
   const stepProps = { visitData, user, settings, advance, goTo };
 
