@@ -7,6 +7,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  */
 
 const VERSION = '1.0.0';
+const PRICING_ENGINE_VERSION = 'v2_tokens_risk_frequency';
 
 const DEFAULT_ESCALATION_BRACKETS = [
   { min_risk: 0,  max_risk: 2,   addon_amount: 0  },
