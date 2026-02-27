@@ -107,6 +107,33 @@ export default function AdminHome() {
         </Card>
       </div>
 
+      {/* Modals */}
+      {showDemo && (
+        <DemoQuoteModal onClose={() => setShowDemo(false)} onConvertToReal={handleConvertToReal} />
+      )}
+      {showReal && (
+        <RealQuoteModal onClose={() => { setShowReal(false); setConvertAnswers(null); }} initialAnswers={convertAnswers} />
+      )}
+
+      {/* Quote Actions */}
+      <Card className="border-teal-200 bg-teal-50">
+        <CardHeader>
+          <CardTitle className="text-teal-900 text-base flex items-center gap-2">
+            <FileText className="w-4 h-4" /> Quote Tools
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-3">
+          <Button onClick={() => setShowReal(true)} className="bg-teal-600 hover:bg-teal-700">
+            <FileText className="w-4 h-4 mr-2" />
+            Start New Quote (Real)
+          </Button>
+          <Button onClick={() => setShowDemo(true)} variant="outline" className="border-amber-400 text-amber-800 hover:bg-amber-50">
+            <Zap className="w-4 h-4 mr-2" />
+            Quick Quote (Demo)
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Admin Controls */}
       <Card className="bg-gradient-to-br from-orange-50 to-red-50 border-orange-200">
         <CardHeader>
