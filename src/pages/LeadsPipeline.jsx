@@ -73,7 +73,7 @@ export default function LeadsPipeline() {
           <h1 className="text-3xl font-bold text-gray-900">Lead Pipeline</h1>
           <p className="text-gray-600 mt-1">Manage customer onboarding and inspections</p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex items-center gap-4">
           <div className="text-center">
             <p className="text-2xl font-bold text-teal-600">{leads.filter(l => l.isEligible).length}</p>
             <p className="text-xs text-gray-600">Eligible</p>
@@ -82,8 +82,28 @@ export default function LeadsPipeline() {
             <p className="text-2xl font-bold text-gray-600">{leads.filter(l => !l.isEligible).length}</p>
             <p className="text-xs text-gray-600">Disqualified</p>
           </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-orange-300 text-orange-700 hover:bg-orange-50"
+            onClick={() => repairMutation.mutate()}
+            disabled={repairMutation.isPending}
+          >
+            <Wrench className="w-4 h-4 mr-2" />
+            {repairMutation.isPending ? 'Scanning...' : 'Repair Stuck Leads'}
+          </Button>
         </div>
       </div>
+
+      {repairResult && (
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 flex items-center justify-between text-sm">
+          <span className="text-orange-800">
+            Repair complete: <strong>{repairResult.checked}</strong> checked, <strong>{repairResult.repaired}</strong> fixed, <strong>{repairResult.intact}</strong> intact.
+            {repairResult.errors > 0 && <span className="text-red-600 ml-2">{repairResult.errors} errors.</span>}
+          </span>
+          <button onClick={() => setRepairResult(null)} className="text-orange-600 hover:text-orange-800 ml-4">✕</button>
+        </div>
+      )}
 
       <Tabs defaultValue="pipeline" className="w-full">
         <TabsList className="grid grid-cols-2 w-full max-w-md">
