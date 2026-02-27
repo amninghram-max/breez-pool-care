@@ -292,6 +292,65 @@ export default function StepCloseout({ visitData, user }) {
         </Card>
       )}
 
+      {/* Critical partial enforcement — must choose a branch to unlock closeout */}
+      {hasCriticalPartials && (
+        <Card className={`border-2 ${criticalPartialResolution ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'}`}>
+          <CardContent className="pt-4 space-y-3">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-red-800 text-sm">Critical Chemical — Partial Apply</p>
+                <ul className="mt-1 space-y-0.5">
+                  {criticalPartials.map((a, i) => (
+                    <li key={i} className="text-xs text-red-700">
+                      {CHEMICAL_LABELS[a.chemicalType] || a.chemicalType}: {a.appliedAmount} of {a.dosePrimary} {a.primaryUnit} applied
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-xs text-red-700 mt-2 font-medium">Select one before closing:</p>
+              </div>
+            </div>
+
+            {criticalPartialResolution === null ? (
+              <div className="flex flex-col gap-2">
+                <Button
+                  className="w-full bg-teal-600 hover:bg-teal-700 h-11"
+                  onClick={() => setCriticalPartialResolution('completed_now')}
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Full dose completed — ready to close
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full border-orange-400 text-orange-700 hover:bg-orange-50 h-11"
+                  onClick={() => setCriticalPartialResolution('follow_up_triggered')}
+                >
+                  <CalendarPlus className="w-4 h-4 mr-2" />
+                  Trigger Follow-up / Revisit Required
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-800">
+                    {criticalPartialResolution === 'completed_now'
+                      ? 'Marked as fully completed'
+                      : 'Follow-up / revisit flagged'}
+                  </span>
+                </div>
+                <button
+                  className="text-xs text-gray-400 underline"
+                  onClick={() => setCriticalPartialResolution(null)}
+                >
+                  Change
+                </button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Internal-only closeout notes */}
       <Card className={`border-2 ${needsNotes ? 'border-orange-300' : 'border-gray-200'}`}>
         <CardContent className="pt-4 pb-4">
