@@ -33,7 +33,10 @@ export default function LeadsPipeline() {
 
   const { data: leads = [] } = useQuery({
     queryKey: ['leads'],
-    queryFn: () => base44.entities.Lead.list('-created_date'),
+    queryFn: async () => {
+      const all = await base44.entities.Lead.list('-created_date');
+      return all.filter(l => !l.isDeleted);
+    }
   });
 
   const updateLeadMutation = useMutation({
