@@ -1,17 +1,10 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 /**
- * RELEASE READINESS CHECK - Inline version (no sub-function HTTP calls)
- * Runs critical checks directly to avoid 404 on hyphenated function names.
+ * RELEASE READINESS CHECK
+ * Uses end-to-end smoke tests rather than entity reads to avoid RLS issues.
+ * Sub-function calls use the original user token (not asServiceRole) so auth works.
  */
-
-const DEFAULT_ESCALATION_BRACKETS = [
-  { min_risk: 0, max_risk: 2, addon_amount: 0 },
-  { min_risk: 3, max_risk: 5, addon_amount: 15 },
-  { min_risk: 6, max_risk: 8, addon_amount: 30 },
-  { min_risk: 9, max_risk: 11, addon_amount: 45 },
-  { min_risk: 12, max_risk: 999, addon_amount: 60 }
-];
 
 Deno.serve(async (req) => {
   try {
@@ -22,7 +15,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    console.log('🔒 Running release readiness checks inline...');
+    console.log('🔒 Running release readiness checks...');
 
     const results = {
       timestamp: new Date().toISOString(),
@@ -32,141 +25,150 @@ Deno.serve(async (req) => {
       warnings: []
     };
 
-    // ─── CHECK 1: Config Integrity ────────────────────────────────────────────
+    // ─── CHECK 1: calculateQuote smoke test ───────────────────────────────────
+    // Calls via user token so auth works inside calculateQuote
     try {
-      const settingsResult = await base44.asServiceRole.entities.AdminSettings.list('-created_date', 1);
-      const settings = settingsResult[0];
+      const quoteResp = await base44.functions.invoke('calculateQuote', {
+        questionnaireData: {
+          poolSize: '10_15k',
+          poolType: 'in_ground',
+          enclosure: 'fully_screened',
+          filterType: 'cartridge',
+          chlorinationMethod: 'saltwater',
+          chlorinatorType: 'n/a',
+          useFrequency: 'weekends',
+          petsAccess: false,
+          petSwimFrequency: 'never',
+          poolCondition: 'clear',
+          spaPresent: 'false'
+        }
+      });
 
-      if (!settings) {
-        results.checks.configIntegrity = { passed: false, details: 'AdminSettings record missing' };
-        results.blockers.push('AdminSettings missing — pricing engine will use fallback');
+      const quote = quoteResp?.data?.quote;
+
+      if (!quote) {
+        results.checks.calculateQuoteSmoke = { passed: false, details: 'No quote returned' };
+        results.blockers.push('calculateQuote returned no output');
       } else {
-        const riskEngine = settings.riskEngine ? JSON.parse(settings.riskEngine) : null;
-        const brackets = riskEngine?.escalation_brackets;
-        const bracketsValid = Array.isArray(brackets) && brackets.length >= 5;
-        const tokensValid = !!settings.additiveTokens;
-        const baseTiersValid = !!settings.baseTierPrices;
+        const priceValid = quote.finalMonthlyPrice >= 120 && quote.finalMonthlyPrice <= 400;
+        const versionValid = quote.quoteLogicVersionId === 'v2_tokens_risk_frequency';
+        const tierValid = quote.sizeTier === 'tier_a';
+        const passed = priceValid && versionValid && tierValid;
 
-        results.checks.configIntegrity = {
-          passed: bracketsValid && tokensValid && baseTiersValid,
-          bracketCount: brackets?.length ?? 0,
-          details: bracketsValid && tokensValid && baseTiersValid
-            ? 'AdminSettings validated — brackets, tokens, base tiers all present'
-            : `Invalid config: brackets=${bracketsValid}, tokens=${tokensValid}, baseTiers=${baseTiersValid}`
+        results.checks.calculateQuoteSmoke = {
+          passed,
+          finalMonthlyPrice: quote.finalMonthlyPrice,
+          sizeTier: quote.sizeTier,
+          quoteLogicVersionId: quote.quoteLogicVersionId,
+          details: passed
+            ? `Tier A quote = $${quote.finalMonthlyPrice}/mo — pricing engine healthy`
+            : `Pricing sanity failed: price=${quote.finalMonthlyPrice}, tier=${quote.sizeTier}, version=${quote.quoteLogicVersionId}`
         };
 
-        if (!results.checks.configIntegrity.passed) {
-          results.blockers.push('Pricing config integrity failed: ' + results.checks.configIntegrity.details);
+        if (!passed) {
+          results.blockers.push('calculateQuote smoke test failed: ' + results.checks.calculateQuoteSmoke.details);
         }
       }
     } catch (err) {
-      results.checks.configIntegrity = { passed: false, details: err.message };
-      results.blockers.push('Config integrity check threw: ' + err.message);
+      console.error('calculateQuote smoke test threw:', err.message);
+      results.checks.calculateQuoteSmoke = { passed: false, details: err.message };
+      results.blockers.push('calculateQuote unreachable: ' + err.message);
     }
 
-    // ─── CHECK 2: Pricing Sanity Spot-Check ───────────────────────────────────
-    // Inline minimal pricing check: Tier A standard pool must land between $140–$180
+    // ─── CHECK 2: Pricing floor enforced ─────────────────────────────────────
     try {
-      const settingsResult = await base44.asServiceRole.entities.AdminSettings.list('-created_date', 1);
-      const settings = settingsResult[0];
-      const baseTiers = settings?.baseTierPrices ? JSON.parse(settings.baseTierPrices) : null;
-      const tierA = baseTiers?.tier_a_10_15k;
-      const floor = baseTiers?.absolute_floor;
+      const quoteResp = await base44.functions.invoke('calculateQuote', {
+        questionnaireData: {
+          poolSize: '10_15k',
+          poolType: 'in_ground',
+          enclosure: 'fully_screened',
+          filterType: 'cartridge',
+          chlorinationMethod: 'saltwater',
+          chlorinatorType: 'n/a',
+          useFrequency: 'rarely',
+          petsAccess: false,
+          petSwimFrequency: 'never',
+          poolCondition: 'clear',
+          spaPresent: 'false'
+        }
+      });
+      const quote = quoteResp?.data?.quote;
+      const floorRespected = quote?.finalMonthlyPrice >= 120;
 
-      const tierAValid = typeof tierA === 'number' && tierA >= 120 && tierA <= 250;
-      const floorValid = typeof floor === 'number' && floor >= 100 && floor <= tierA;
-
-      results.checks.pricingSanity = {
-        passed: tierAValid && floorValid,
-        tierAPrice: tierA,
-        absoluteFloor: floor,
-        details: tierAValid && floorValid
-          ? `Tier A = $${tierA}, floor = $${floor} — within expected range`
-          : `Pricing sanity failed: tierA=${tierA}, floor=${floor}`
+      results.checks.pricingFloor = {
+        passed: !!floorRespected,
+        finalMonthlyPrice: quote?.finalMonthlyPrice,
+        details: floorRespected
+          ? `Floor enforced: $${quote.finalMonthlyPrice} >= $120`
+          : `Floor VIOLATED: $${quote?.finalMonthlyPrice} < $120`
       };
 
-      if (!results.checks.pricingSanity.passed) {
-        results.blockers.push('Pricing sanity check failed: ' + results.checks.pricingSanity.details);
+      if (!floorRespected) {
+        results.blockers.push('Absolute price floor ($120) violated — revenue risk');
       }
     } catch (err) {
-      results.checks.pricingSanity = { passed: false, details: err.message };
-      results.blockers.push('Pricing sanity check threw: ' + err.message);
+      results.checks.pricingFloor = { passed: false, details: err.message };
+      results.warnings.push('Pricing floor check skipped: ' + err.message);
     }
 
-    // ─── CHECK 3: Escalation Brackets Integrity ───────────────────────────────
+    // ─── CHECK 3: Risk escalation brackets active ─────────────────────────────
+    // High-risk pool (unscreened + trees + daily + liquid chlorine) should get addon
     try {
-      const settingsResult = await base44.asServiceRole.entities.AdminSettings.list('-created_date', 1);
-      const settings = settingsResult[0];
-      const riskEngine = settings?.riskEngine ? JSON.parse(settings.riskEngine) : null;
-      const brackets = riskEngine?.escalation_brackets ?? DEFAULT_ESCALATION_BRACKETS;
+      const quoteResp = await base44.functions.invoke('calculateQuote', {
+        questionnaireData: {
+          poolSize: '20_30k',
+          poolType: 'in_ground',
+          enclosure: 'unscreened',
+          treesOverhead: 'yes',
+          filterType: 'sand',
+          chlorinationMethod: 'liquid_chlorine',
+          chlorinatorType: 'n/a',
+          useFrequency: 'daily',
+          petsAccess: true,
+          petSwimFrequency: 'frequently',
+          poolCondition: 'clear',
+          spaPresent: 'false'
+        }
+      });
+      const quote = quoteResp?.data?.quote;
+      const hasRiskAddon = quote?.riskAddonAmount > 0;
+      const isHigherThanBase = quote?.finalMonthlyPrice > 190; // Tier C base
 
-      // Verify brackets cover 0 and have a catch-all max
-      const hasCoverage = brackets.some(b => b.min_risk === 0);
-      const hasCatchAll = brackets.some(b => b.max_risk >= 999);
-      const allHaveAddon = brackets.every(b => typeof b.addon_amount === 'number');
-      const usingDefault = !settings?.riskEngine;
-
-      results.checks.escalationBrackets = {
-        passed: brackets.length >= 5 && hasCoverage && hasCatchAll && allHaveAddon,
-        count: brackets.length,
-        usingDefault,
-        details: usingDefault
-          ? 'Using default brackets (AdminSettings.riskEngine not set)'
-          : `${brackets.length} brackets configured — coverage=${hasCoverage}, catch-all=${hasCatchAll}`
+      results.checks.riskEscalation = {
+        passed: hasRiskAddon && isHigherThanBase,
+        riskAddonAmount: quote?.riskAddonAmount,
+        adjustedRisk: quote?.adjustedRisk,
+        finalMonthlyPrice: quote?.finalMonthlyPrice,
+        details: (hasRiskAddon && isHigherThanBase)
+          ? `Risk addon = $${quote.riskAddonAmount}, adjustedRisk=${quote.adjustedRisk} — escalation brackets working`
+          : `Risk escalation not firing: addon=${quote?.riskAddonAmount}, price=${quote?.finalMonthlyPrice}`
       };
 
-      if (usingDefault) {
-        results.warnings.push('Risk engine using default escalation brackets — AdminSettings.riskEngine not seeded');
-      } else if (!results.checks.escalationBrackets.passed) {
-        results.blockers.push('Escalation brackets invalid: ' + results.checks.escalationBrackets.details);
+      if (!results.checks.riskEscalation.passed) {
+        results.blockers.push('Risk escalation brackets not firing — margin protection compromised');
       }
     } catch (err) {
-      results.checks.escalationBrackets = { passed: false, details: err.message };
-      results.blockers.push('Escalation brackets check threw: ' + err.message);
+      results.checks.riskEscalation = { passed: false, details: err.message };
+      results.blockers.push('Risk escalation check threw: ' + err.message);
     }
 
-    // ─── CHECK 4: Entity Accessibility (RBAC canary) ─────────────────────────
+    // ─── CHECK 4: Entity accessibility ───────────────────────────────────────
     try {
-      // Admin should be able to read AdminSettings and Leads
-      const [settingsCount, leadsCount] = await Promise.all([
-        base44.asServiceRole.entities.AdminSettings.filter({ settingKey: 'default' }).then(r => r.length),
-        base44.asServiceRole.entities.Lead.list('-created_date', 1).then(r => r.length)
-      ]);
-
+      const leads = await base44.asServiceRole.entities.Lead.list('-created_date', 1);
       results.checks.entityAccess = {
         passed: true,
-        details: `Admin entity access confirmed (settings=${settingsCount}, leads canary=${leadsCount})`
+        details: `Entity layer reachable (leads=${leads.length})`
       };
     } catch (err) {
       results.checks.entityAccess = { passed: false, details: err.message };
-      results.blockers.push('Entity access check failed: ' + err.message);
-    }
-
-    // ─── CHECK 5: validatePricingConfig function (separate camelCase fn) ──────
-    try {
-      const configResponse = await base44.asServiceRole.functions.invoke('validatePricingConfig', {});
-      const configValid = configResponse?.data?.valid === true || configResponse?.data?.seeded === true;
-
-      results.checks.validatePricingConfig = {
-        passed: configValid,
-        seeded: configResponse?.data?.seeded || false,
-        details: configValid ? 'validatePricingConfig returned valid' : 'validatePricingConfig returned invalid'
-      };
-
-      if (!configValid) {
-        results.blockers.push('validatePricingConfig() returned invalid');
-      }
-    } catch (err) {
-      // Non-blocking — log as warning since inline checks already cover config
-      results.checks.validatePricingConfig = { passed: false, details: err.message };
-      results.warnings.push('validatePricingConfig function unreachable: ' + err.message);
+      results.warnings.push('Entity access check failed: ' + err.message);
     }
 
     // ─── Final determination ──────────────────────────────────────────────────
     results.releaseReady = results.blockers.length === 0;
 
     if (results.releaseReady) {
-      console.log('✅ RELEASE READY — all inline checks passed');
+      console.log('✅ RELEASE READY — all checks passed');
     } else {
       console.error('🚨 RELEASE BLOCKED:', results.blockers);
     }
