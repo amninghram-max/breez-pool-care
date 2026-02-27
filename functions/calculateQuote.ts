@@ -263,7 +263,24 @@ Deno.serve(async (req) => {
 
     console.log(`✅ Quote persisted: id=${quoteRecord.id}, email=${questionnaireData.clientEmail}, expires=${expiresAt}`);
 
-    // ─── 7) RESPONSE — customer-safe fields only (+ quoteId) ────────────────────
+    // ─── 7) SEND QUOTE READY EMAIL #1 ──────────────────────────────────────────
+    if (questionnaireData.clientEmail && questionnaireData.clientFirstName) {
+      try {
+        await base44.asServiceRole.functions.invoke('sendQuoteReadyEmail', {
+          quoteId: quoteRecord.id,
+          clientEmail: questionnaireData.clientEmail,
+          clientFirstName: questionnaireData.clientFirstName,
+          monthlyPrice: finalMonthlyPrice,
+          frequency: frequencySelectedOrRequired,
+          onceTimeFees: oneTimeFees
+        });
+        console.log(`📧 Quote ready email queued: email=${questionnaireData.clientEmail}`);
+      } catch (emailError) {
+        console.warn('Quote ready email failed (non-blocking):', emailError);
+      }
+    }
+
+    // ─── 8) RESPONSE — customer-safe fields only (+ quoteId) ────────────────────
     return Response.json({
       success: true,
       quoteId: quoteRecord.id,
