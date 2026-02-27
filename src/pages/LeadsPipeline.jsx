@@ -11,6 +11,15 @@ import UnstickLeadPanel from '@/components/admin/UnstickLeadPanel';
 export default function LeadsPipeline() {
   const queryClient = useQueryClient();
   const [selectedLead, setSelectedLead] = useState(null);
+  const [repairResult, setRepairResult] = useState(null);
+
+  const repairMutation = useMutation({
+    mutationFn: () => base44.functions.invoke('repairInspectionScheduledLeads', {}),
+    onSuccess: (res) => {
+      setRepairResult(res.data?.summary);
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+    }
+  });
 
   const { data: user } = useQuery({
     queryKey: ['user'],
