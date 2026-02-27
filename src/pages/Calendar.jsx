@@ -4,16 +4,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Cloud, Navigation, AlertTriangle } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Cloud, Navigation, AlertTriangle, List, Search } from 'lucide-react';
 import DayView from '@/components/scheduling/DayView';
 import WeekView from '@/components/scheduling/WeekView';
 import StormModeTools from '@/components/scheduling/StormModeTools';
+import CalendarListView from '@/components/scheduling/CalendarListView';
 
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState('day'); // 'day', 'week'
+  const [viewMode, setViewMode] = useState('day'); // 'day', 'week', 'list'
   const [selectedTechnician, setSelectedTechnician] = useState('all');
   const [showStormTools, setShowStormTools] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [jumpDate, setJumpDate] = useState('');
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
@@ -84,6 +87,15 @@ export default function Calendar() {
       newDate.setDate(newDate.getDate() + 7);
     }
     setCurrentDate(newDate);
+  };
+
+  const handleJumpDate = (e) => {
+    const val = e.target.value;
+    setJumpDate(val);
+    if (val) {
+      const d = new Date(val + 'T00:00:00');
+      if (!isNaN(d)) setCurrentDate(d);
+    }
   };
 
   const handleToday = () => {
@@ -173,6 +185,35 @@ export default function Calendar() {
               >
                 Week
               </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+              >
+                <List className="w-4 h-4 mr-1" />
+                List
+              </Button>
+            </div>
+
+            {/* Search + Date Jump */}
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-2.5 top-2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search name or address..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="border rounded pl-8 pr-3 py-1.5 text-sm w-48"
+                />
+              </div>
+              <input
+                type="date"
+                value={jumpDate}
+                onChange={handleJumpDate}
+                title="Jump to date"
+                className="border rounded px-3 py-1.5 text-sm"
+              />
             </div>
 
             {/* Technician Filter */}
@@ -203,15 +244,23 @@ export default function Calendar() {
       </Card>
 
       {/* Calendar View */}
-      {viewMode === 'day' ? (
+      {viewMode === 'day' && (
         <DayView 
           date={currentDate} 
           technicianFilter={selectedTechnician}
         />
-      ) : (
+      )}
+      {viewMode === 'week' && (
         <WeekView 
           startDate={currentDate}
           technicianFilter={selectedTechnician}
+        />
+      )}
+      {viewMode === 'list' && (
+        <CalendarListView
+          startDate={currentDate}
+          technicianFilter={selectedTechnician}
+          searchQuery={searchQuery}
         />
       )}
     </div>

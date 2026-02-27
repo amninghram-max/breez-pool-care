@@ -54,6 +54,7 @@ import AdminHome from './pages/AdminHome';
 import AdminMessaging from './pages/AdminMessaging';
 import AdminPricingConfig from './pages/AdminPricingConfig';
 import AdminReinstatements from './pages/AdminReinstatements';
+import AdminReviewDashboard from './pages/AdminReviewDashboard';
 import Agreements from './pages/Agreements';
 import Analytics from './pages/Analytics';
 import Billing from './pages/Billing';
@@ -61,6 +62,9 @@ import Calendar from './pages/Calendar';
 import ChemicalAnalytics from './pages/ChemicalAnalytics';
 import ChemistryDashboard from './pages/ChemistryDashboard';
 import ClientHome from './pages/ClientHome';
+import CustomerDashboard from './pages/CustomerDashboard';
+import CustomerMessagingPage from './pages/CustomerMessagingPage';
+import CustomerServiceHistory from './pages/CustomerServiceHistory';
 import DesignSystem from './pages/DesignSystem';
 import FAQ from './pages/FAQ';
 import HelpSupport from './pages/HelpSupport';
@@ -83,10 +87,6 @@ import StaffManagement from './pages/StaffManagement';
 import TechnicianHome from './pages/TechnicianHome';
 import TechnicianRoute from './pages/TechnicianRoute';
 import TestDashboard from './pages/TestDashboard';
-import AdminReviewDashboard from './pages/AdminReviewDashboard';
-import CustomerDashboard from './pages/CustomerDashboard';
-import CustomerServiceHistory from './pages/CustomerServiceHistory';
-import CustomerMessagingPage from './pages/CustomerMessagingPage';
 import __Layout from './Layout.jsx';
 
 
@@ -98,6 +98,7 @@ export const PAGES = {
     "AdminMessaging": AdminMessaging,
     "AdminPricingConfig": AdminPricingConfig,
     "AdminReinstatements": AdminReinstatements,
+    "AdminReviewDashboard": AdminReviewDashboard,
     "Agreements": Agreements,
     "Analytics": Analytics,
     "Billing": Billing,
@@ -105,6 +106,9 @@ export const PAGES = {
     "ChemicalAnalytics": ChemicalAnalytics,
     "ChemistryDashboard": ChemistryDashboard,
     "ClientHome": ClientHome,
+    "CustomerDashboard": CustomerDashboard,
+    "CustomerMessagingPage": CustomerMessagingPage,
+    "CustomerServiceHistory": CustomerServiceHistory,
     "DesignSystem": DesignSystem,
     "FAQ": FAQ,
     "HelpSupport": HelpSupport,
@@ -127,10 +131,6 @@ export const PAGES = {
     "TechnicianHome": TechnicianHome,
     "TechnicianRoute": TechnicianRoute,
     "TestDashboard": TestDashboard,
-    "AdminReviewDashboard": AdminReviewDashboard,
-    "CustomerDashboard": CustomerDashboard,
-    "CustomerServiceHistory": CustomerServiceHistory,
-    "CustomerMessagingPage": CustomerMessagingPage,
 }
 
 export const pagesConfig = {
