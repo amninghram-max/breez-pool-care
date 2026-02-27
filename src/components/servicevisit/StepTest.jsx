@@ -63,8 +63,6 @@ export default function StepTest({ visitData, user, advance }) {
   const [showExpanded, setShowExpanded] = useState(true);
   const [showSalt, setShowSalt] = useState(false);
 
-  const locked = visitData.firstChemApplied === true;
-
   const { data: pool } = useQuery({
     queryKey: ['pool', visitData.poolId],
     queryFn: () => base44.entities.Pool.filter({ id: visitData.poolId }).then(r => r[0]),
