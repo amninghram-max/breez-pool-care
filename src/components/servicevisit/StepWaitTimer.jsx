@@ -3,10 +3,46 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Clock, ChevronRight, CheckCircle } from 'lucide-react';
 
+const CHECKLIST_ITEMS = [
+  { id: 'brush',   label: 'Brush walls & floor' },
+  { id: 'skim',    label: 'Skim surface debris' },
+  { id: 'baskets', label: 'Empty skimmer & pump baskets' },
+  { id: 'pump',    label: 'Check filter pressure gauge' },
+];
+
+function getTimerKey(eventId) {
+  return `breez_timer_${eventId}`;
+}
+
+function loadTimer(eventId, waitMinutes) {
+  const key = getTimerKey(eventId);
+  const stored = localStorage.getItem(key);
+  if (stored) {
+    const { startTs } = JSON.parse(stored);
+    return startTs;
+  }
+  const startTs = Date.now();
+  localStorage.setItem(key, JSON.stringify({ startTs, waitMinutes }));
+  return startTs;
+}
+
+function loadChecklist(eventId) {
+  const key = `breez_checklist_${eventId}`;
+  const stored = localStorage.getItem(key);
+  return stored ? JSON.parse(stored) : {};
+}
+
+function saveChecklist(eventId, checked) {
+  localStorage.setItem(`breez_checklist_${eventId}`, JSON.stringify(checked));
+}
+
 export default function StepWaitTimer({ visitData, advance }) {
   const waitMinutes = visitData.retestWaitMinutes || 30;
-  const [startTime] = useState(() => Date.now());
-  const [elapsed, setElapsed] = useState(0);
+  const eventId = visitData.eventId || 'unknown';
+
+  const [startTime] = useState(() => loadTimer(eventId, waitMinutes));
+  const [elapsed, setElapsed] = useState(Math.floor((Date.now() - startTime) / 1000));
+  const [checked, setChecked] = useState(() => loadChecklist(eventId));
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -24,6 +60,18 @@ export default function StepWaitTimer({ visitData, advance }) {
     const m = Math.floor(s / 60);
     const sec = s % 60;
     return `${m}:${String(sec).padStart(2, '0')}`;
+  };
+
+  const toggleItem = (id) => {
+    const next = { ...checked, [id]: !checked[id] };
+    setChecked(next);
+    saveChecklist(eventId, next);
+  };
+
+  const handleAdvance = () => {
+    // Clean up timer from localStorage on successful advance
+    localStorage.removeItem(getTimerKey(eventId));
+    advance();
   };
 
   return (
@@ -59,27 +107,37 @@ export default function StepWaitTimer({ visitData, advance }) {
           <div className="text-sm text-gray-500">
             {canAdvance
               ? 'Circulate complete — ready to retest'
-              : `${waitMinutes} minute circulation window · ${fmt(elapsed)} elapsed`}
+              : `${waitMinutes} min window · ${fmt(elapsed)} elapsed`}
           </div>
         </CardContent>
       </Card>
 
-      <Card className="border-blue-100 bg-blue-50">
-        <CardContent className="pt-4">
-          <p className="text-sm font-semibold text-blue-900 mb-2">While you wait:</p>
-          <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-            <li>Brush pool walls and floor</li>
-            <li>Skim surface debris</li>
-            <li>Empty skimmer and pump baskets</li>
-            <li>Check filter pressure gauge</li>
-          </ul>
+      {/* Quick checklist */}
+      <Card>
+        <CardContent className="pt-4 pb-4">
+          <p className="text-sm font-semibold text-gray-700 mb-3">While you wait:</p>
+          <div className="space-y-3">
+            {CHECKLIST_ITEMS.map(item => (
+              <label key={item.id} className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={!!checked[item.id]}
+                  onChange={() => toggleItem(item.id)}
+                  className="w-5 h-5 rounded accent-teal-600"
+                />
+                <span className={`text-sm ${checked[item.id] ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                  {item.label}
+                </span>
+              </label>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
       <Button
         className={`w-full h-14 text-base ${canAdvance ? 'bg-green-600 hover:bg-green-700' : 'bg-teal-600 hover:bg-teal-700'}`}
         disabled={!canAdvance}
-        onClick={() => advance()}
+        onClick={handleAdvance}
       >
         <ChevronRight className="w-5 h-5 mr-2" />
         {canAdvance ? 'Retest Now →' : `Retest available in ${fmt(remaining)}`}

@@ -3,8 +3,10 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useMutation } from '@tanstack/react-query';
-import { CheckCircle, Droplet, FlaskConical, CalendarCheck, AlertTriangle, Shield } from 'lucide-react';
+import { CheckCircle, Droplet, FlaskConical, CalendarCheck, AlertTriangle, Shield, Lock } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
 
@@ -14,7 +16,6 @@ const CHEMICAL_LABELS = {
   STABILIZER_CYA: 'Stabilizer / CYA', SALT: 'Pool Salt'
 };
 
-// Only the fields we show to the customer — no CC, no LSI
 const DISPLAY_FIELDS = ['freeChlorine', 'pH', 'totalAlkalinity', 'calciumHardness', 'cyanuricAcid', 'waterTemp'];
 
 const FIELD_LABELS = {
@@ -55,8 +56,18 @@ function getSurfaceProtectionStatus(readings) {
   return { label: 'Adjustment in Progress', color: 'text-orange-600' };
 }
 
+function notesRequired(visitData) {
+  const { dosePlan, riskEvents = [], retestResolved } = visitData;
+  const actions = dosePlan?.actions || [];
+  const hasPartial = actions.some(a => a.applied && a.appliedAmount != null && a.appliedAmount < a.dosePrimary);
+  const hasCriticalEvent = riskEvents.some(e => e.severityPoints >= 5);
+  const revisitFlagged = dosePlan?.revisitEligible || retestResolved === false;
+  return hasPartial || hasCriticalEvent || revisitFlagged || visitData.customerInteractionFlagged;
+}
+
 export default function StepCloseout({ visitData, user }) {
   const [done, setDone] = useState(false);
+  const [internalNotes, setInternalNotes] = useState('');
 
   const { readings = {}, riskEvents = [], dosePlan, retestResolved, retestReadings = {} } = visitData;
   const chemicalsAdded = dosePlan?.actions?.filter(a => a.applied !== false) || [];
@@ -66,11 +77,20 @@ export default function StepCloseout({ visitData, user }) {
   const waterBalance = getWaterBalanceStatus(readings);
   const surfaceProtection = getSurfaceProtectionStatus(readings);
 
+  const needsNotes = notesRequired(visitData);
+  const canClose = !needsNotes || internalNotes.trim().length > 0;
+
   const closeMutation = useMutation({
     mutationFn: async () => {
       if (visitData.eventId) {
         await base44.functions.invoke('updateEventStatus', {
           eventId: visitData.eventId, status: 'completed', sendNotification: true
+        });
+      }
+      // Persist internal notes on dosePlan if one exists
+      if (visitData.dosePlan?.id && internalNotes.trim()) {
+        await base44.entities.DosePlan.update(visitData.dosePlan.id, {
+          closeoutNotes: internalNotes.trim()
         });
       }
     },
@@ -98,10 +118,10 @@ export default function StepCloseout({ visitData, user }) {
     <div className="space-y-4">
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Visit Summary</h2>
-        <p className="text-gray-500 text-sm mt-1">Customer clarity summary — what we measured, what we added, what to expect</p>
+        <p className="text-gray-500 text-sm mt-1">Review and close out this visit</p>
       </div>
 
-      {/* Customer status overview */}
+      {/* Pool Status */}
       <Card>
         <CardContent className="pt-5 space-y-3">
           <div className="flex items-center gap-2">
@@ -123,7 +143,7 @@ export default function StepCloseout({ visitData, user }) {
         </CardContent>
       </Card>
 
-      {/* What we measured — shows FC/pH/TA/CH/CYA/Temp only, no CC/LSI */}
+      {/* What we measured */}
       <Card>
         <CardContent className="pt-5 space-y-3">
           <div className="flex items-center gap-2">
@@ -155,7 +175,7 @@ export default function StepCloseout({ visitData, user }) {
         </CardContent>
       </Card>
 
-      {/* What we added */}
+      {/* What we added — shows appliedAmount if partial */}
       <Card>
         <CardContent className="pt-5 space-y-3">
           <div className="flex items-center gap-2">
@@ -164,12 +184,18 @@ export default function StepCloseout({ visitData, user }) {
           </div>
           {chemicalsAdded.length > 0 ? (
             <div className="space-y-2">
-              {chemicalsAdded.map((action, i) => (
-                <div key={i} className="flex items-center justify-between py-1 border-b border-gray-100 last:border-0">
-                  <span className="text-sm text-gray-700">{CHEMICAL_LABELS[action.chemicalType] || action.chemicalType}</span>
-                  <span className="text-sm font-mono font-bold text-teal-700">{action.dosePrimary} {action.primaryUnit}</span>
-                </div>
-              ))}
+              {chemicalsAdded.map((action, i) => {
+                const isPartial = action.appliedAmount != null && action.appliedAmount < action.dosePrimary;
+                return (
+                  <div key={i} className="flex items-center justify-between py-1 border-b border-gray-100 last:border-0">
+                    <span className="text-sm text-gray-700">{CHEMICAL_LABELS[action.chemicalType] || action.chemicalType}</span>
+                    <span className={`text-sm font-mono font-bold ${isPartial ? 'text-orange-600' : 'text-teal-700'}`}>
+                      {action.appliedAmount ?? action.dosePrimary} {action.primaryUnit}
+                      {isPartial && ' ⚠'}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <p className="text-sm text-gray-500">No chemicals added — pool was in balance</p>
@@ -177,7 +203,7 @@ export default function StepCloseout({ visitData, user }) {
         </CardContent>
       </Card>
 
-      {/* Retest results (if applicable) */}
+      {/* Retest results */}
       {Object.keys(retestReadings).length > 0 && (
         <Card>
           <CardContent className="pt-5 space-y-3">
@@ -235,7 +261,32 @@ export default function StepCloseout({ visitData, user }) {
         </Card>
       )}
 
-      {/* Disclaimer */}
+      {/* Internal-only closeout notes */}
+      <Card className={`border-2 ${needsNotes ? 'border-orange-300' : 'border-gray-200'}`}>
+        <CardContent className="pt-4 pb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Lock className="w-4 h-4 text-gray-500" />
+            <Label className="text-sm font-semibold text-gray-700">
+              Internal Notes {needsNotes && <span className="text-orange-600">*</span>}
+            </Label>
+            <span className="text-xs text-gray-400 ml-auto">Not shown to customer</span>
+          </div>
+          <Textarea
+            placeholder={needsNotes
+              ? 'Required: describe partial apply, critical reading, or revisit reason…'
+              : 'Optional: add any internal notes for this visit…'}
+            value={internalNotes}
+            onChange={e => setInternalNotes(e.target.value)}
+            rows={3}
+          />
+          {needsNotes && !internalNotes.trim() && (
+            <p className="text-xs text-orange-600 mt-1">
+              Notes required due to: partial apply, critical event, or unresolved retest.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
       <div className="px-1 pb-1">
         <p className="text-xs text-gray-400 leading-relaxed">
           Pool chemistry naturally fluctuates due to weather, sunlight, and normal use. Our job is to monitor those changes and make precise adjustments to keep your water consistently safe, clear, and balanced.
@@ -244,12 +295,16 @@ export default function StepCloseout({ visitData, user }) {
 
       <Button
         className="w-full bg-teal-600 hover:bg-teal-700 h-14 text-base"
-        disabled={closeMutation.isPending}
+        disabled={!canClose || closeMutation.isPending}
         onClick={() => closeMutation.mutate()}
       >
         <CheckCircle className="w-5 h-5 mr-2" />
         {closeMutation.isPending ? 'Closing visit…' : 'Close Visit & Finish'}
       </Button>
+
+      {!canClose && (
+        <p className="text-xs text-center text-orange-500">Add internal notes before closing this visit</p>
+      )}
     </div>
   );
 }

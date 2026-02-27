@@ -4,9 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { MapPin, Key, AlertTriangle, Navigation, CheckCircle } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import LockBanner from './LockBanner';
+import LastVisitSnapshot from './LastVisitSnapshot';
 
 export default function StepArrive({ visitData, user, advance }) {
   const [confirmed, setConfirmed] = useState(false);
+
+  // firstChemApplied → lock this step
+  const locked = visitData.firstChemApplied === true;
 
   const { data: event } = useQuery({
     queryKey: ['calEvent', visitData.eventId],
@@ -54,6 +59,8 @@ export default function StepArrive({ visitData, user, advance }) {
         <h2 className="text-2xl font-bold text-gray-900">Arrive</h2>
         <p className="text-gray-500 text-sm mt-1">Confirm you've arrived at the property</p>
       </div>
+
+      {locked && <LockBanner />}
 
       <Card>
         <CardContent className="pt-5 space-y-4">
@@ -111,27 +118,34 @@ export default function StepArrive({ visitData, user, advance }) {
         </Card>
       )}
 
-      <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border">
-        <input
-          type="checkbox"
-          id="confirmed"
-          checked={confirmed}
-          onChange={e => setConfirmed(e.target.checked)}
-          className="w-5 h-5 rounded accent-teal-600"
-        />
-        <label htmlFor="confirmed" className="text-sm text-gray-700 font-medium cursor-pointer">
-          I have arrived at the property and can access the pool
-        </label>
-      </div>
+      {/* Last visit snapshot */}
+      {visitData.poolId && <LastVisitSnapshot poolId={visitData.poolId} />}
 
-      <Button
-        className="w-full bg-teal-600 hover:bg-teal-700 h-14 text-base"
-        disabled={!confirmed || markArrivedMutation.isPending}
-        onClick={() => markArrivedMutation.mutate()}
-      >
-        <CheckCircle className="w-5 h-5 mr-2" />
-        {markArrivedMutation.isPending ? 'Logging arrival...' : 'Confirm Arrival → Test'}
-      </Button>
+      {!locked && (
+        <>
+          <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border">
+            <input
+              type="checkbox"
+              id="confirmed"
+              checked={confirmed}
+              onChange={e => setConfirmed(e.target.checked)}
+              className="w-5 h-5 rounded accent-teal-600"
+            />
+            <label htmlFor="confirmed" className="text-sm text-gray-700 font-medium cursor-pointer">
+              I have arrived at the property and can access the pool
+            </label>
+          </div>
+
+          <Button
+            className="w-full bg-teal-600 hover:bg-teal-700 h-14 text-base"
+            disabled={!confirmed || markArrivedMutation.isPending}
+            onClick={() => markArrivedMutation.mutate()}
+          >
+            <CheckCircle className="w-5 h-5 mr-2" />
+            {markArrivedMutation.isPending ? 'Logging arrival...' : 'Confirm Arrival → Test'}
+          </Button>
+        </>
+      )}
     </div>
   );
 }
