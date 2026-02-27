@@ -303,11 +303,42 @@ function LeadDetailModal({ lead, onClose, onUpdate, onSendAcceptance }) {
                   <p className="text-gray-600">Requested Time</p>
                   <p className="font-medium capitalize">{lead.requestedInspectionTime}</p>
                 </div>
+                {lead.assignedInspector && (
+                  <div>
+                    <p className="text-gray-600">Assigned Inspector</p>
+                    <p className="font-medium">{lead.assignedInspector}</p>
+                  </div>
+                )}
                 <div>
-                  <p className="text-gray-600">Assigned Inspector</p>
-                  <p className="font-medium">{lead.assignedInspector}</p>
+                  <p className="text-gray-600">Inspection Event ID</p>
+                  <p className="font-mono text-xs text-gray-500">
+                    {lead.inspectionEventId || <span className="text-red-500">None (⚠ stuck?)</span>}
+                  </p>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Admin: Unstick Lead (only for inspection_scheduled) */}
+          {lead.stage === 'inspection_scheduled' && (
+            <div>
+              {!showUnstick ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-orange-300 text-orange-700 hover:bg-orange-50"
+                  onClick={() => setShowUnstick(true)}
+                >
+                  <Wrench className="w-4 h-4 mr-2" />
+                  Unstick Lead (Admin)
+                </Button>
+              ) : (
+                <UnstickLeadPanel
+                  lead={lead}
+                  onClose={() => setShowUnstick(false)}
+                  onUpdated={onClose}
+                />
+              )}
             </div>
           )}
 
