@@ -93,6 +93,24 @@ export default function LeadsPipeline() {
           <Button
             size="sm"
             variant="outline"
+            onClick={() => setShowNewLead(true)}
+            className="border-teal-300 text-teal-700 hover:bg-teal-50"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            New Lead
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowNewQuote(true)}
+            className="border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+          >
+            <FileText className="w-4 h-4 mr-1" />
+            New Quote
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
             className="border-orange-300 text-orange-700 hover:bg-orange-50"
             onClick={() => repairMutation.mutate()}
             disabled={repairMutation.isPending}
