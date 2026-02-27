@@ -23,17 +23,40 @@ Deno.serve(async (req) => {
       disqualificationReason = 'Mineral sanitizer systems (non-salt) are not currently serviced.';
     }
 
-    // Create lead record
+    // Create lead record — do NOT set stage to inspection_scheduled yet
     const lead = await base44.asServiceRole.entities.Lead.create({
       ...leadData,
       isEligible,
       disqualificationReason,
-      stage: isEligible ? 'inspection_scheduled' : 'lost',
+      stage: isEligible ? 'new_lead' : 'lost',
       emailSent: false,
       smsSent: false
     });
 
-    if (isEligible) {
+    let inspectionEventId = null;
+
+    if (isEligible && leadData.requestedInspectionDate) {
+      // PIPELINE INTEGRITY: Create CalendarEvent FIRST
+      // Only after success do we advance stage to inspection_scheduled
+      const inspectionEvent = await base44.asServiceRole.entities.CalendarEvent.create({
+        leadId: lead.id,
+        eventType: 'inspection',
+        scheduledDate: leadData.requestedInspectionDate,
+        timeWindow: leadData.requestedInspectionTime || '',
+        assignedTechnician: leadData.assignedTechnicianId || null,
+        status: 'scheduled',
+        serviceAddress: leadData.serviceAddress || ''
+      });
+
+      inspectionEventId = inspectionEvent.id;
+
+      // Now it is safe to set inspection_scheduled — the CalendarEvent exists
+      await base44.asServiceRole.entities.Lead.update(lead.id, {
+        stage: 'inspection_scheduled',
+        inspectionScheduled: true,
+        inspectionEventId: inspectionEvent.id
+      });
+
       // Send welcome email
       try {
         await base44.asServiceRole.integrations.Core.SendEmail({
@@ -52,7 +75,7 @@ Deno.serve(async (req) => {
             </ul>
 
             <h3>What to Expect:</h3>
-            <p>Your inspection will be handled by ${leadData.assignedInspector}, our pool care specialist. ${leadData.assignedInspector} will:</p>
+            <p>Our pool care specialist will:</p>
             <ul>
               <li>Assess your pool's condition</li>
               <li>Test water chemistry</li>
@@ -62,9 +85,7 @@ Deno.serve(async (req) => {
             </ul>
 
             <p>We'll contact you shortly to confirm your appointment.</p>
-
             <p>Questions? Just reply to this email.</p>
-
             <p>Best regards,<br>The Breez Team</p>
           `
         });
@@ -74,22 +95,24 @@ Deno.serve(async (req) => {
         console.error('Email send failed:', emailError);
       }
 
-      // Send SMS confirmation
+      // SMS
       if (leadData.preferredContact === 'text') {
         try {
-          // Note: SMS integration would be configured here
-          // For now, we'll mark it as sent if text is preferred
           await base44.asServiceRole.entities.Lead.update(lead.id, { smsSent: true });
         } catch (smsError) {
           console.error('SMS send failed:', smsError);
         }
       }
+    } else if (isEligible) {
+      // Eligible but no inspection date provided — stay as new_lead
+      await base44.asServiceRole.entities.Lead.update(lead.id, { stage: 'new_lead' });
     }
 
     return Response.json({
       success: true,
       isEligible,
       leadId: lead.id,
+      inspectionEventId,
       disqualificationReason
     });
   } catch (error) {
