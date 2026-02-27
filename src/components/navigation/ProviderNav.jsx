@@ -16,7 +16,7 @@ export default function ProviderNav({ userRole }) {
     navItems.push(
       { name: 'Home', path: 'TechnicianHome', icon: Home, section: 'main' },
       { name: 'My Route', path: 'TechnicianRoute', icon: MapPin, section: 'main' },
-      { name: 'Service Entry', path: 'ServiceVisitEntry', icon: Droplet, section: 'main' },
+      { name: 'Service Visit', path: 'ServiceVisitFlow', icon: Droplet, section: 'main' },
       { name: 'Messages', path: 'AdminMessaging', icon: MessageSquare, section: 'main' }
     );
   }
