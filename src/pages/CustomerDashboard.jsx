@@ -58,6 +58,10 @@ export default function CustomerDashboard() {
 
   const firstName = user?.full_name?.split(' ')[0] || 'there';
 
+  // Inspection event for the lead (the scheduled inspection CalendarEvent)
+  const inspectionEvent = nextEvent?.eventType === 'inspection' ? nextEvent : null;
+  const serviceEvent = nextEvent?.eventType !== 'inspection' ? nextEvent : null;
+
   return (
     <div className="space-y-5 max-w-xl mx-auto">
       <div>
@@ -65,11 +69,20 @@ export default function CustomerDashboard() {
         <p className="text-sm text-gray-500 mt-0.5">Here's how your pool is looking</p>
       </div>
 
+      {/* ── Pre-activation gate: guide toward inspection ── */}
+      {isPreActivation && (
+        <InspectionStatusCard
+          lead={lead}
+          event={inspectionEvent}
+          onRefresh={() => { refetchEvent(); }}
+        />
+      )}
+
       {/* Advisory banner — only when staff has flagged */}
       <AdvisoryBanner recommendation={freqRec} />
 
-      {/* Pool status snapshot */}
-      <PoolStatusSnapshot lastRecord={lastRecord} />
+      {/* Pool status snapshot — only show once active */}
+      {!isPreActivation && <PoolStatusSnapshot lastRecord={lastRecord} />
 
       {/* Last service + next scheduled */}
       <div className="grid grid-cols-2 gap-3">
