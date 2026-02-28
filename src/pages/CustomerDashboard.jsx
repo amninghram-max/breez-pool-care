@@ -85,6 +85,7 @@ export default function CustomerDashboard() {
       {!isPreActivation && <PoolStatusSnapshot lastRecord={lastRecord} />}
 
       {/* Last service + next scheduled — only when active */}
+
       {!isPreActivation && (
       <div className="grid grid-cols-2 gap-3">
         <Card>
