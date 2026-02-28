@@ -404,3 +404,354 @@ AdminSettings seeding must:
 - Fail loudly if unreadable
 
 Never introduce production defaults to bypass platform failure.
+
+UI + WORKFLOW IMPLEMENTATION
+
+Use docs/AI_BOOTSTRAP_CONTEXT.md as authoritative architecture context.
+Do not modify pricing invariants.
+Do not introduce production defaults.
+Do not bypass AdminSettings loading via AdminSettings.list('-created_date', 1).
+No backend function may call another backend function.
+All pricing and chemistry determinism rules must remain intact.
+
+This build phase is UI + workflow only.
+
+1️⃣ PUBLIC LANDING PAGE
+
+Header:
+Effortless Pool Care. Total Transparency.
+
+Subline:
+Everything your pool needs — accessible anytime.
+
+Primary CTA:
+Get Free Instant Quote
+
+Secondary CTA:
+Schedule Free Inspection
+
+Hero reassurance text:
+Free instant quote. No payment info. No commitment. Just your first name and email.
+
+Trust strip:
+Licensed & Insured
+Digital Service Logs
+Transparent Pricing
+Private & Secure
+Owner Operated
+
+Sections required:
+
+How It Works (3 step flow)
+
+Digital Service Experience
+
+Why Water Balance Matters
+
+Service Area: Melbourne (growing service area)
+
+FAQ
+
+Final CTA
+
+Footer with owner/operator info
+
+No competitor comparison language.
+
+2️⃣ QUOTE FLOW (Extremely Minimal + Frictionless)
+
+One-question-per-screen wizard.
+
+Step 1:
+Pool Size:
+
+Under 10k
+
+10–15k
+
+15–20k
+
+20–30k
+
+Over 30k
+
+Not Sure
+
+If Not Sure:
+Return a price range.
+
+Step 2:
+Screened or Unscreened
+
+Step 3:
+Sanitation type (Salt / Traditional / Not Sure)
+
+Step 4:
+Usage frequency + trees (conditional) + pets
+
+Step 5:
+Condition (Clear / Cloudy / Green / Heavy algae)
+
+Step 6:
+Contact (First name + Email only)
+
+Pricing display:
+Monthly price OR price range
+Asterisk note:
+
+*Final pricing is based on confirmation of pool size, condition, and equipment during inspection to ensure accuracy and consistency.
+
+Immediately display:
+Schedule Free Inspection
+
+Auto-send quote email with identical information.
+
+No phone required at quote stage.
+
+3️⃣ INSPECTION FLOW
+
+Technician submits inspection.
+
+Admin or authorized technician must finalize.
+
+Admin-only fields:
+
+Final Monthly Service Rate
+
+Green-to-Clean (if applicable)
+
+Admin marks:
+
+New Customer
+OR
+
+Keep as Open Lead
+
+If New Customer:
+Send Final Plan Email with:
+Monthly price
+Per-visit average
+One-time recovery if applicable
+Service agreement
+Payment activation link
+
+Customer must:
+Create account
+Submit payment
+Then status becomes Active
+Then added to schedule
+
+No payment → not scheduled.
+
+4️⃣ CUSTOMER DASHBOARD
+
+Homepage sections:
+
+Section 1:
+Pool Status (no color indicators)
+Last Service
+Next Visit Scheduled
+
+Section 2:
+Water Snapshot
+No numbers unless expanded
+Disclaimer:
+
+Water levels can shift due to weather, usage, rainfall, and equipment runtime. These variations are expected and monitored. Any necessary adjustments are handled as part of routine service.
+
+Section 3:
+Service Record
+Photos
+Notes
+Small button:
+Download Full Service Report
+
+Section 4:
+Equipment Overview (view-only)
+Manual access allowed
+
+Section 5:
+Communication panel
+
+Section 6:
+Safety & Incident Reporting
+Report Fecal Incident button
+Trigger top banner:
+POOL STATUS: UNSAFE TO SWIM — DISINFECTION PENDING
+Banner remains until admin clears.
+Then show:
+POOL STATUS: SAFE TO SWIM
+
+Section 7:
+Small link:
+Interested in how your pool functions?
+→ Education page
+
+No exposure of internal thresholds or PSI baselines.
+
+5️⃣ TECHNICIAN DASHBOARD (Separate from Admin)
+
+Focus:
+Route + Visit workflow
+
+Route View:
+Start time
+Estimated finish time
+All services complete by 6 PM
+No hard per-visit cut times
+
+Visit Workflow:
+Arrival confirmation
+Water test entry
+Filter PSI entry
+If PSI ≥ Normal+10:
+Sand → prompt backwash
+Cartridge → inspect + photo + clean if needed
+
+Water level entry:
+Normal / Slightly low / Low / High
+
+If water added:
+Require shutoff plan:
+
+Tech return
+
+Customer shutoff time
+
+Auto shutoff device used
+
+If repeated water additions:
+Flag Excessive Water Loss (internal alert)
+
+Pump section:
+Single-speed:
+Timer schedule structured fields
+
+Variable-speed:
+Program blocks (RPM/GPM, schedule)
+
+Heat systems:
+Solar (enabled/schedule)
+Heat pump/gas/electric (mode, setpoint, schedule)
+
+Change history immutable.
+
+Recurring Messages:
+Per-customer
+Options:
+
+Next visit only
+
+Every visit
+
+X weeks/months
+
+Technician can create/edit own.
+Admin can delete any.
+
+Technician cannot:
+
+Modify pricing
+
+Modify AdminSettings
+
+Finalize inspections unless granted permission
+
+Delete immutable records
+
+6️⃣ ADMIN DASHBOARD
+
+Operational command center.
+
+Sections:
+
+Today Overview
+
+Schedule View
+
+Lead Pipeline
+
+Inspection Finalization Queue
+
+Safety Panel
+
+Payment Status
+
+System Health (AdminSettings loaded status)
+
+Admin can:
+
+Finalize inspections
+
+Activate technician inspection permissions
+
+Clear safety banner
+
+Manage recurring messages
+
+Upload equipment manuals
+
+Override health status
+
+Switch into technician view
+
+7️⃣ CUSTOMER EQUIPMENT PROFILE
+
+Only serviceable equipment types.
+
+Equipment items support:
+
+Label photo
+
+Admin manual upload (PDF)
+
+Manual link (URL)
+
+Quick reference notes
+
+Change history
+
+Pump:
+Single-speed or VS
+Structured schedule fields
+
+Filter:
+Type
+Normal PSI
+Auto backwash threshold display
+
+Heating:
+Solar / Heat Pump / Gas / Electric
+Enabled
+Schedule or setpoint
+
+Water Level:
+Normal range definition
+Water addition logging
+Excessive water loss monitoring
+
+No customer exposure of internal PSI thresholds.
+
+8️⃣ DATA & ARCHITECTURE RULES
+
+Do not:
+
+Duplicate pricing logic in frontend
+
+Duplicate chemistry logic
+
+Create alternate config loaders
+
+Introduce default pricing fallback
+
+Auto-finalize inspections
+
+Auto-mutate billing
+
+All status transitions must be explicit.
+
+All immutable records must remain immutable.
+
+All alerts must be event-based.
+
+End of UI build phase scope.
