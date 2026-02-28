@@ -254,6 +254,11 @@ export default function StaffManagement() {
               <p className="text-sm text-gray-600">
                 View assigned routes, complete service visits, log chemistry readings, respond to assigned messages. Cannot access quotes, pricing, or admin settings.
               </p>
+              <div className="mt-2 flex items-center gap-2 text-sm text-teal-700">
+                <ClipboardCheck className="w-4 h-4" />
+                <span className="font-medium">Inspection Finalizer</span>
+                <span className="text-gray-500">— optional permission to lock rates and send final agreements</span>
+              </div>
             </div>
           </div>
 
