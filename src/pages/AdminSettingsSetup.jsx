@@ -189,7 +189,7 @@ export default function AdminSettingsSetup() {
       return await base44.entities.AdminSettings.create(DEFAULT_CONFIG);
     },
     onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ['adminSettingsAll'] });
+      await queryClient.invalidateQueries({ queryKey: ['adminSettingsAll'] });
       toast.success('AdminSettings created successfully');
       await runReadinessCheck();
     },
