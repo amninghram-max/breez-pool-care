@@ -6,6 +6,7 @@ import { MapPin, Key, AlertTriangle, Navigation, CheckCircle } from 'lucide-reac
 import { useMutation, useQuery } from '@tanstack/react-query';
 import LockBanner from './LockBanner';
 import LastVisitSnapshot from './LastVisitSnapshot';
+import RecurringMessagesBanner from './RecurringMessagesBanner';
 
 export default function StepArrive({ visitData, user, advance }) {
   const [confirmed, setConfirmed] = useState(false);
