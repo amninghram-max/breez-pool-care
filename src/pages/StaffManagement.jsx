@@ -199,24 +199,35 @@ export default function StaffManagement() {
           {staffUsers.length > 0 ? (
             <div className="space-y-3">
               {staffUsers.map((member) => (
-                <div key={member.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center border-2 border-gray-200">
-                      {getRoleIcon(member.role)}
+                <div key={member.id} className="p-4 bg-gray-50 rounded-lg space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center border-2 border-gray-200">
+                        {getRoleIcon(member.role)}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{member.full_name || member.email}</p>
+                        <p className="text-sm text-gray-500">{member.email}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{member.full_name || member.email}</p>
-                      <p className="text-sm text-gray-500">{member.email}</p>
+                    <div className="flex items-center gap-2">
+                      {getRoleBadge(member.role)}
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    {getRoleBadge(member.role)}
-                    {member.isActive !== false ? (
-                      <Badge className="bg-green-100 text-green-800">Active</Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-gray-600">Inactive</Badge>
-                    )}
-                  </div>
+                  {/* Inspection Finalizer permission — only for technician/staff */}
+                  {(member.role === 'technician' || member.role === 'staff') && (
+                    <div className="flex items-center justify-between pl-1 pt-1 border-t border-gray-200">
+                      <div className="flex items-center gap-2">
+                        <ClipboardCheck className="w-4 h-4 text-teal-600" />
+                        <span className="text-sm text-gray-700">Inspection Finalizer</span>
+                        <span className="text-xs text-gray-400">(can lock rates & send agreements)</span>
+                      </div>
+                      <Switch
+                        checked={!!member.canFinalizeInspections}
+                        onCheckedChange={(val) => toggleFinalizerMutation.mutate({ userId: member.id, value: val })}
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
