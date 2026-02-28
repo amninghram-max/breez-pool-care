@@ -245,6 +245,17 @@ export default function AdminSettingsSetup() {
         </Button>
       </div>
 
+      {/* ── QUOTES ENABLED BANNER ───────────────────────────────────────────── */}
+      {readiness?.releaseReady === true && (
+        <div className="rounded-lg border-2 border-green-300 bg-green-50 p-4 flex items-center gap-3">
+          <CheckCircle2 className="w-6 h-6 text-green-600 shrink-0" />
+          <div>
+            <p className="text-green-800 font-bold text-base">Quotes Enabled</p>
+            <p className="text-green-700 text-sm">Pricing engine is configured and all readiness checks passed.</p>
+          </div>
+        </div>
+      )}
+
       {/* ── BLOCKING BANNER ─────────────────────────────────────────────────── */}
       {!settingsExist && (
         <div className="rounded-lg border-2 border-red-300 bg-red-50 p-6">
