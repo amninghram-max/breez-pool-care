@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
-    const env = Deno.env.get('BASE44_DATA_ENV') || 'unknown';
+    const env = 'n/a'; // BASE44_DATA_ENV is not a provisioned secret; env routing is implicit
     const appId = Deno.env.get('BASE44_APP_ID') || 'unknown';
 
     const user = await base44.auth.me();
