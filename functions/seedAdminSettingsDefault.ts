@@ -1,20 +1,22 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 /**
- * IDEMPOTENT AdminSettings Seeder
- * Guarantees escalation_brackets and all nested config exist
- * Can be run multiple times safely (upserts)
+ * AdminSettings Seeder — always creates a new record (append-only, RLS update=false).
+ * Verifies persistence via before/after list counts and created ID.
+ * Entity name: AdminSettings (exact, matches entities/AdminSettings.json)
  */
 
-const DEFAULT_CONFIG = {
-  baseTierPrices: {
+const SEED_CONFIG = {
+  settingKey: 'default',
+  pricingEngineVersion: 'v2_tokens_risk_frequency',
+  baseTierPrices: JSON.stringify({
     tier_a_10_15k: 140,
     tier_b_15_20k: 160,
     tier_c_20_30k: 190,
     tier_d_30k_plus: 230,
     absolute_floor: 120
-  },
-  additiveTokens: {
+  }),
+  additiveTokens: JSON.stringify({
     unscreened_tier_a: 20,
     unscreened_tier_b: 25,
     unscreened_tier_c: 30,
@@ -30,8 +32,8 @@ const DEFAULT_CONFIG = {
     chlorinator_liquid_only: 10,
     pets_occasional: 5,
     pets_frequent: 10
-  },
-  initialFees: {
+  }),
+  initialFees: JSON.stringify({
     slightly_cloudy: 25,
     green_light_small: 60,
     green_light_medium: 100,
@@ -42,8 +44,8 @@ const DEFAULT_CONFIG = {
     green_black_small: 250,
     green_black_medium: 350,
     green_black_large: 450
-  },
-  riskEngine: {
+  }),
+  riskEngine: JSON.stringify({
     points: {
       unscreened: 2,
       trees_overhead: 1,
@@ -68,101 +70,72 @@ const DEFAULT_CONFIG = {
       { min_risk: 9, max_risk: 11, addon_amount: 45 },
       { min_risk: 12, max_risk: 999, addon_amount: 60 }
     ]
-  },
-  frequencyLogic: {
+  }),
+  frequencyLogic: JSON.stringify({
     twice_weekly_multiplier: 1.8,
     auto_require_threshold: 9
-  }
+  }),
+  autopayDiscount: 10
 };
 
 Deno.serve(async (req) => {
+  const headers = { 'Content-Type': 'application/json' };
+
   try {
     const base44 = createClientFromRequest(req);
-    
-    // Try to get user, but allow service role access for CI
-    let user = null;
-    try {
-      user = await base44.auth.me();
-      if (user && user.role !== 'admin') {
-        return Response.json({ error: 'Admin access required' }, { status: 403 });
-      }
-    } catch {
-      // No auth - allow for CI/service role access
-      console.log('Running as service role (no user auth)');
+
+    // Require admin role
+    const user = await base44.auth.me();
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
+    }
+    if (user.role !== 'admin') {
+      return new Response(JSON.stringify({ error: 'Admin access required' }), { status: 403, headers });
     }
 
-    // Check if exists — use list() to avoid any filter/RLS issues
-    const existing = await base44.asServiceRole.entities.AdminSettings.list('-created_date', 1);
+    // Step 1: Count before
+    const before = await base44.asServiceRole.entities.AdminSettings.list('-created_date', 50);
+    const beforeCount = before.length;
+    console.log(`[seed] before count: ${beforeCount}`);
 
-    const payload = {
-      settingKey: 'default',
-      pricingEngineVersion: 'v2_tokens_risk_frequency',
-      baseTierPrices: JSON.stringify(DEFAULT_CONFIG.baseTierPrices),
-      additiveTokens: JSON.stringify(DEFAULT_CONFIG.additiveTokens),
-      initialFees: JSON.stringify(DEFAULT_CONFIG.initialFees),
-      riskEngine: JSON.stringify(DEFAULT_CONFIG.riskEngine),
-      frequencyLogic: JSON.stringify(DEFAULT_CONFIG.frequencyLogic),
-      autopayDiscount: 10
-    };
+    // Step 2: Create (append-only — entity RLS has update:false)
+    const created = await base44.asServiceRole.entities.AdminSettings.create(SEED_CONFIG);
+    console.log(`[seed] create returned:`, JSON.stringify({ id: created?.id }));
 
-    let result;
-    if (existing.length > 0) {
-      // Update existing
-      result = await base44.asServiceRole.entities.AdminSettings.update(existing[0].id, payload);
-      console.log('✅ Updated existing AdminSettings');
-    } else {
-      // Create new
-      result = await base44.asServiceRole.entities.AdminSettings.create(payload);
-      console.log('✅ Created new AdminSettings');
+    // Step 3: Count after
+    const after = await base44.asServiceRole.entities.AdminSettings.list('-created_date', 50);
+    const afterCount = after.length;
+    console.log(`[seed] after count: ${afterCount}`);
+
+    // Step 4: Hard verification
+    if (!created?.id || afterCount <= beforeCount || after[0]?.id !== created.id) {
+      const body = JSON.stringify({
+        error: 'SEED_NOT_PERSISTED',
+        beforeCount,
+        afterCount,
+        createdId: created?.id || null,
+        latestIdAfter: after[0]?.id || null
+      });
+      console.error('[seed] VERIFICATION FAILED:', body);
+      return new Response(body, { status: 500, headers });
     }
 
-    // VERIFICATION: Use the returned record directly (same-request consistency)
-    // list() immediately after write may have a brief propagation delay — we trust the create/update response.
-    const record = result;
-    if (!record || !record.id) {
-      throw new Error('SEED PERSISTENCE FAILED: create/update returned no record with id');
-    }
-    
-    // Parse and validate nested config
-    const riskEngine = JSON.parse(record.riskEngine);
-    const baseTiers = JSON.parse(record.baseTierPrices);
-    const tokens = JSON.parse(record.additiveTokens);
-    const frequencyLogic = JSON.parse(record.frequencyLogic);
-
-    const brackets = riskEngine.escalation_brackets;
-    if (!brackets || brackets.length !== 5) {
-      throw new Error(`SEED VERIFICATION FAILED: escalation_brackets has ${brackets?.length || 0} items, expected 5`);
-    }
-
-    if (!riskEngine.size_multipliers || Object.keys(riskEngine.size_multipliers).length !== 4) {
-      throw new Error('SEED VERIFICATION FAILED: size_multipliers incomplete');
-    }
-
-    if (!baseTiers.tier_a_10_15k || !baseTiers.absolute_floor) {
-      throw new Error('SEED VERIFICATION FAILED: baseTierPrices incomplete');
-    }
-
-    console.log('✅ VERIFICATION PASSED: All nested config intact');
-    console.log(`   - Brackets: ${brackets.length}`);
-    console.log(`   - Multipliers: ${Object.keys(riskEngine.size_multipliers).length}`);
-    console.log(`   - Tokens: ${Object.keys(tokens).length}`);
-
-    return Response.json({
+    // Success
+    const body = JSON.stringify({
       success: true,
-      message: existing.length > 0 ? 'AdminSettings updated and verified' : 'AdminSettings created and verified',
-      verification: {
-        bracketsCount: brackets.length,
-        multipliersCount: Object.keys(riskEngine.size_multipliers).length,
-        tokensCount: Object.keys(tokens).length,
-        baseTiersCount: Object.keys(baseTiers).length
-      }
+      createdId: created.id,
+      beforeCount,
+      afterCount,
+      latestId: after[0].id
     });
+    console.log('[seed] SUCCESS:', body);
+    return new Response(body, { status: 200, headers });
 
   } catch (error) {
-    console.error('❌ SEED FAILED:', error);
-    return Response.json({ 
-      error: error.message, 
-      stack: error.stack 
-    }, { status: 500 });
+    console.error('[seed] EXCEPTION:', error.message, error.stack);
+    return new Response(
+      JSON.stringify({ error: error.message, stack: error.stack }),
+      { status: 500, headers }
+    );
   }
 });
