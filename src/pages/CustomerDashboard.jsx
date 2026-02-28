@@ -81,13 +81,11 @@ export default function CustomerDashboard() {
       {/* Advisory banner — only when staff has flagged */}
       <AdvisoryBanner recommendation={freqRec} />
 
-      {/* Pool status snapshot — only show once active */}
-      {!isPreActivation && <PoolStatusSnapshot lastRecord={lastRecord} />}
-
-      {/* Last service + next scheduled — only when active */}
-
+      {/* Pool status snapshot + last service + next visit — only when active */}
       {!isPreActivation && (
-      <div className="grid grid-cols-2 gap-3">
+        <>
+          <PoolStatusSnapshot lastRecord={lastRecord} />
+          <div className="grid grid-cols-2 gap-3">
         <Card>
           <CardContent className="pt-4 pb-4 space-y-1">
             <p className="text-xs text-gray-400 uppercase tracking-wider">Last Service</p>
