@@ -31,44 +31,45 @@ function runPricingSpotCheck(settings, scenario) {
   const [sizeTier, baseMonthly] = tierMap[poolSize] || ['tier_a', baseTiers.tier_a_10_15k];
 
   let additive = 0;
-  if (enclosure === 'unscreened') additive += tokens[`unscreened_${sizeTier}`] || 20;
-  if (enclosure === 'unscreened' && treesOverhead === 'yes') additive += tokens.trees_overhead || 10;
-  if (useFrequency === 'weekends') additive += tokens.usage_weekends || 10;
-  else if (useFrequency === 'several_week') additive += tokens.usage_several_week || 10;
-  else if (useFrequency === 'daily') additive += tokens.usage_daily || 20;
-  if (chlorinationMethod === 'liquid_chlorine') additive += tokens.chlorinator_liquid_only || 10;
-  if (petsAccess && petSwimFrequency === 'frequently') additive += tokens.pets_frequent || 10;
+  if (enclosure === 'unscreened') additive += tokens[`unscreened_${sizeTier}`];
+  if (enclosure === 'unscreened' && treesOverhead === 'yes') additive += tokens.trees_overhead;
+  if (useFrequency === 'weekends') additive += tokens.usage_weekends;
+  else if (useFrequency === 'several_week') additive += tokens.usage_several_week;
+  else if (useFrequency === 'daily') additive += tokens.usage_daily;
+  if (chlorinationMethod === 'liquid_chlorine') additive += tokens.chlorinator_liquid_only;
+  if (petsAccess && petSwimFrequency === 'frequently') additive += tokens.pets_frequent;
 
   const pts = riskEngine.points;
   let rawRisk = 0;
-  if (enclosure === 'unscreened') rawRisk += pts.unscreened || 2;
-  if (enclosure === 'unscreened' && treesOverhead === 'yes') rawRisk += pts.trees_overhead || 1;
-  if (useFrequency === 'daily') rawRisk += pts.usage_daily || 2;
-  else if (useFrequency === 'several_week') rawRisk += pts.usage_several_week || 1;
-  if (chlorinationMethod === 'liquid_chlorine') rawRisk += pts.chlorinator_liquid_only || 2;
-  if (petsAccess && petSwimFrequency === 'frequently') rawRisk += pts.pets_frequent || 1;
+  if (enclosure === 'unscreened') rawRisk += pts.unscreened;
+  if (enclosure === 'unscreened' && treesOverhead === 'yes') rawRisk += pts.trees_overhead;
+  if (useFrequency === 'daily') rawRisk += pts.usage_daily;
+  else if (useFrequency === 'several_week') rawRisk += pts.usage_several_week;
+  if (chlorinationMethod === 'liquid_chlorine') rawRisk += pts.chlorinator_liquid_only;
+  if (petsAccess && petSwimFrequency === 'frequently') rawRisk += pts.pets_frequent;
 
-  const sizeMultiplier = (riskEngine.size_multipliers || {})[sizeTier] || 1.0;
+  const sizeMultiplier = riskEngine.size_multipliers[sizeTier];
   const adjustedRisk = rawRisk * sizeMultiplier;
 
-  const brackets = Array.isArray(riskEngine.escalation_brackets) && riskEngine.escalation_brackets.length >= 5
-    ? riskEngine.escalation_brackets : DEFAULT_ESCALATION_BRACKETS;
-  const sorted = [...brackets].sort((a, b) => a.min_risk - b.min_risk);
+  if (!Array.isArray(riskEngine.escalation_brackets) || riskEngine.escalation_brackets.length < 5) {
+    throw new Error('AdminSettings riskEngine.escalation_brackets invalid');
+  }
+  const sorted = [...riskEngine.escalation_brackets].sort((a, b) => a.min_risk - b.min_risk);
   let riskAddon = 0;
   for (const b of sorted) {
     if (adjustedRisk >= b.min_risk && (b.max_risk >= 999 || adjustedRisk <= b.max_risk)) {
-      riskAddon = b.addon_amount || 0;
+      riskAddon = b.addon_amount;
       break;
     }
   }
 
   let freqMult = 1.0;
-  if (adjustedRisk >= (freqLogic.auto_require_threshold || 9)) {
-    freqMult = freqLogic.twice_weekly_multiplier || 1.8;
+  if (adjustedRisk >= freqLogic.auto_require_threshold) {
+    freqMult = freqLogic.twice_weekly_multiplier;
   }
 
   let finalPrice = (baseMonthly + additive + riskAddon) * freqMult;
-  const floor = baseTiers.absolute_floor || 120;
+  const floor = baseTiers.absolute_floor;
   if (finalPrice < floor) finalPrice = floor;
 
   return { finalPrice, sizeTier, baseMonthly, additive, riskAddon, adjustedRisk, freqMult, floor };
