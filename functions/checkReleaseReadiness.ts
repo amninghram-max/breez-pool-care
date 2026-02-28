@@ -9,32 +9,15 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 const VERSION = '1.0.0';
 const PRICING_ENGINE_VERSION = 'v2_tokens_risk_frequency';
 
-const DEFAULT_ESCALATION_BRACKETS = [
-  { min_risk: 0,  max_risk: 2,   addon_amount: 0  },
-  { min_risk: 3,  max_risk: 5,   addon_amount: 15 },
-  { min_risk: 6,  max_risk: 8,   addon_amount: 30 },
-  { min_risk: 9,  max_risk: 11,  addon_amount: 45 },
-  { min_risk: 12, max_risk: 999, addon_amount: 60 }
-];
+// NO PRODUCTION DEFAULTS — AdminSettings is the sole source of truth.
+// runPricingSpotCheck requires a valid settings object; callers must guard for null.
 
 function runPricingSpotCheck(settings, scenario) {
-  const baseTiers = settings?.baseTierPrices ? JSON.parse(settings.baseTierPrices) : {
-    tier_a_10_15k: 140, tier_b_15_20k: 160, tier_c_20_30k: 190, tier_d_30k_plus: 230, absolute_floor: 120
-  };
-  const tokens = settings?.additiveTokens ? JSON.parse(settings.additiveTokens) : {
-    usage_weekends: 10, usage_daily: 20, unscreened_tier_a: 20,
-    unscreened_tier_b: 25, unscreened_tier_c: 30, unscreened_tier_d: 40,
-    trees_overhead: 10, chlorinator_liquid_only: 10, pets_frequent: 10
-  };
-  const riskEngine = settings?.riskEngine ? JSON.parse(settings.riskEngine) : {
-    points: { unscreened: 2, trees_overhead: 1, usage_daily: 2, usage_several_week: 1,
-              chlorinator_liquid_only: 2, pets_frequent: 1, pets_occasional: 0.5 },
-    size_multipliers: { tier_a: 1.0, tier_b: 1.1, tier_c: 1.2, tier_d: 1.3 },
-    escalation_brackets: DEFAULT_ESCALATION_BRACKETS
-  };
-  const freqLogic = settings?.frequencyLogic ? JSON.parse(settings.frequencyLogic) : {
-    twice_weekly_multiplier: 1.8, auto_require_threshold: 9
-  };
+  // Parse strictly — no fallbacks; if settings is missing caller should have blocked already
+  const baseTiers = JSON.parse(settings.baseTierPrices);
+  const tokens = JSON.parse(settings.additiveTokens);
+  const riskEngine = JSON.parse(settings.riskEngine);
+  const freqLogic = JSON.parse(settings.frequencyLogic);
 
   const { poolSize, enclosure, treesOverhead, useFrequency, chlorinationMethod, petsAccess, petSwimFrequency } = scenario;
 
