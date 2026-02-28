@@ -185,15 +185,31 @@ export default function AdminSettingsSetup() {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      // Always create — never update (append-only)
-      return await base44.entities.AdminSettings.create(DEFAULT_CONFIG);
+      // Step 1: Call the backend seeder (idempotent, validated)
+      const res = await base44.functions.invoke('seedAdminSettingsDefault', {});
+      if (!res.data?.success) {
+        throw new Error(res.data?.error || 'Seed function returned failure');
+      }
+
+      // Step 2: Confirm the record is actually persisted before continuing
+      const fresh = await base44.entities.AdminSettings.list('-created_date', 1);
+      if (!fresh || fresh.length === 0) {
+        throw new Error('Seeding appeared to succeed but no AdminSettings record found on re-fetch.');
+      }
+
+      return fresh[0];
     },
     onSuccess: async () => {
+      // Step 3: Refresh list query
       await queryClient.invalidateQueries({ queryKey: ['adminSettingsAll'] });
       toast.success('AdminSettings created successfully');
+
+      // Step 4: Only now run readiness check
       await runReadinessCheck();
     },
     onError: (err) => {
+      // Clear any stale readiness from a previous run so we don't show stale results
+      setReadiness(null);
       toast.error('Failed to create AdminSettings: ' + err.message);
     }
   });
