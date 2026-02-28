@@ -285,12 +285,15 @@ export default function AdminSettingsSetup() {
               </div>
               <Button
                 onClick={() => createMutation.mutate()}
-                disabled={createMutation.isPending}
-                className="mt-4 bg-red-600 hover:bg-red-700 text-white gap-2"
+                disabled={createMutation.isPending || settingsExist}
+                className="mt-4 bg-red-600 hover:bg-red-700 text-white gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus className="w-4 h-4" />
                 {createMutation.isPending ? 'Creating…' : 'Create Initial AdminSettings'}
               </Button>
+              {settingsExist && (
+                <p className="text-sm text-red-600 mt-2">AdminSettings already exists. Use <strong>Create New Version</strong> below to add a new config version.</p>
+              )}
             </div>
           </div>
         </div>
