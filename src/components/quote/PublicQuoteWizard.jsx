@@ -87,10 +87,9 @@ function ProgressBar({ current, total }) {
 
 // ── Quote result display ─────────────────────────────────────────────────────
 
-function QuoteResultDisplay({ result, firstName, navigate }) {
+function QuoteResultDisplay({ result, firstName, email, leadId }) {
   const { isRange, quote } = result;
-
-  const scheduleUrl = createPageUrl('PreQualification');
+  const [showScheduler, setShowScheduler] = useState(false);
 
   const priceDisplay = isRange
     ? `$${quote.minMonthly} – $${quote.maxMonthly}`
@@ -101,6 +100,16 @@ function QuoteResultDisplay({ result, firstName, navigate }) {
   const oneTimeDisplay = isRange
     ? (quote.minOneTimeFees > 0 ? `$${quote.minOneTimeFees}–$${quote.maxOneTimeFees}` : null)
     : (quote.oneTimeFees > 0 ? `$${quote.oneTimeFees}` : null);
+
+  if (showScheduler) {
+    return (
+      <PublicScheduler
+        leadId={leadId}
+        clientEmail={email}
+        clientFirstName={firstName}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -142,7 +151,7 @@ function QuoteResultDisplay({ result, firstName, navigate }) {
       {/* CTA */}
       <div className="space-y-3">
         <button
-          onClick={() => navigate(scheduleUrl)}
+          onClick={() => setShowScheduler(true)}
           className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-white text-base font-semibold shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5"
           style={{ backgroundColor: TEAL }}
         >
