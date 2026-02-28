@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Home, MessageSquare, DollarSign, HelpCircle, Droplet, History } from 'lucide-react';
+import { Home, MessageSquare, DollarSign, HelpCircle, Droplet, History, Wrench } from 'lucide-react';
 
 export default function CustomerNav() {
   const location = useLocation();
@@ -9,6 +9,7 @@ export default function CustomerNav() {
   const navItems = [
     { name: 'My Pool', path: 'CustomerDashboard', icon: Droplet },
     { name: 'History', path: 'CustomerServiceHistory', icon: History },
+    { name: 'Equipment', path: 'CustomerEquipment', icon: Wrench },
     { name: 'Messages', path: 'CustomerMessagingPage', icon: MessageSquare },
     { name: 'Billing', path: 'Billing', icon: DollarSign },
     { name: 'Help & Support', path: 'HelpSupport', icon: HelpCircle },
