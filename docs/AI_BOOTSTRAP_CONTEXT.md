@@ -380,3 +380,27 @@ Seasonal offset month → effectiveThreshold higher; recommendation not prematur
 3 consecutive above-threshold visits → FrequencyRecommendation pending_review created
 
 Keep it short. These are your “unit tests on paper.”
+
+## Platform Integrity Requirements
+
+AdminSettings persistence is mandatory.
+
+If AdminSettings.create() returns 200 + id but the record is not immediately readable via:
+AdminSettings.list('-created_date', 1)
+
+→ Treat as ADMIN_SETTINGS_MISSING
+→ Raise PLATFORM_GHOST_WRITE defect
+→ Do NOT assume write success
+
+Service-role writes must:
+- Persist deterministically
+- Be readable immediately via user-scoped read (admin role)
+- Return 403 if blocked (never synthetic success)
+
+AdminSettings seeding must:
+- Use backend service role
+- Verify via user-scoped read
+- Display created record id in UI
+- Fail loudly if unreadable
+
+Never introduce production defaults to bypass platform failure.
