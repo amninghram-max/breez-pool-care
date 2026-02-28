@@ -17,7 +17,7 @@ export default function ProviderNav({ userRole }) {
       { name: 'Home', path: 'TechnicianHome', icon: Home, section: 'main' },
       { name: 'My Route', path: 'TechnicianRoute', icon: MapPin, section: 'main' },
       { name: 'Service Visit', path: 'ServiceVisitFlow', icon: Droplet, section: 'main' },
-      { name: 'Inspections', path: 'InspectionFinalization', icon: ClipboardCheck, section: 'main' },
+      { name: 'Submit Inspection', path: 'InspectionSubmit', icon: ClipboardCheck, section: 'main' },
       { name: 'Messages', path: 'AdminMessaging', icon: MessageSquare, section: 'main' }
     );
   }
