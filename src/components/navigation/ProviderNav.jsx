@@ -31,7 +31,8 @@ export default function ProviderNav({ userRole }) {
       { name: 'Routes', path: 'TechnicianRoute', icon: MapPin, section: 'operations' },
       { name: 'Support Inbox', path: 'AdminMessaging', icon: MessageSquare, section: 'operations' },
       { name: 'Service Entry', path: 'ServiceVisitEntry', icon: Droplet, section: 'operations' },
-      { name: 'Reinstatements', path: 'AdminReinstatements', icon: AlertCircle, section: 'operations' }
+      { name: 'Reinstatements', path: 'AdminReinstatements', icon: AlertCircle, section: 'operations' },
+      { name: 'Inspections', path: 'InspectionFinalization', icon: ClipboardCheck, section: 'operations' }
     );
   }
 
