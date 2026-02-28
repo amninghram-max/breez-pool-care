@@ -265,9 +265,9 @@ export default function PublicQuoteWizard() {
   // ── Render result ──
   if (result) {
     if (result.releaseReady) {
-      return <QuoteResultDisplay result={result} firstName={firstName} navigate={navigate} />;
+      return <QuoteResultDisplay result={result} firstName={firstName} email={email} leadId={result.leadId} />;
     }
-    return <ThankYouDisplay firstName={firstName} navigate={navigate} />;
+    return <ThankYouDisplay firstName={firstName} email={email} leadId={result.leadId} />;
   }
 
   // ── Step renderers ──
