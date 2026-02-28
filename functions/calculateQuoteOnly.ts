@@ -8,15 +8,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 const PRICING_ENGINE_VERSION = 'v2_tokens_risk_frequency';
 
-const DEFAULT_ESCALATION_BRACKETS = [
-  { min_risk: 0, max_risk: 2, addon_amount: 0 },
-  { min_risk: 3, max_risk: 5, addon_amount: 15 },
-  { min_risk: 6, max_risk: 8, addon_amount: 30 },
-  { min_risk: 9, max_risk: 11, addon_amount: 45 },
-  { min_risk: 12, max_risk: 999, addon_amount: 60 }
-];
+// NO DEFAULT ESCALATION BRACKETS — AdminSettings is the sole source of truth.
 
-export function runPricingEngine(questionnaireData, settings) {
+function runPricingEngine(questionnaireData, settings) {
   const baseTiers = JSON.parse(settings.baseTierPrices);
   const tokens = JSON.parse(settings.additiveTokens);
   const initialFees = JSON.parse(settings.initialFees);
