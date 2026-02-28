@@ -22,13 +22,13 @@ function runPricingSpotCheck(settings, scenario) {
   const { poolSize, enclosure, treesOverhead, useFrequency, chlorinationMethod, petsAccess, petSwimFrequency } = scenario;
 
   const tierMap = {
-    '10_15k': ['tier_a', baseTiers.tier_a_10_15k || 140],
-    'not_sure': ['tier_a', baseTiers.tier_a_10_15k || 140],
-    '15_20k':  ['tier_b', baseTiers.tier_b_15_20k || 160],
-    '20_30k':  ['tier_c', baseTiers.tier_c_20_30k || 190],
-    '30k_plus':['tier_d', baseTiers.tier_d_30k_plus || 230]
+    '10_15k': ['tier_a', baseTiers.tier_a_10_15k],
+    'not_sure': ['tier_a', baseTiers.tier_a_10_15k],
+    '15_20k':  ['tier_b', baseTiers.tier_b_15_20k],
+    '20_30k':  ['tier_c', baseTiers.tier_c_20_30k],
+    '30k_plus':['tier_d', baseTiers.tier_d_30k_plus]
   };
-  const [sizeTier, baseMonthly] = tierMap[poolSize] || ['tier_a', 140];
+  const [sizeTier, baseMonthly] = tierMap[poolSize] || ['tier_a', baseTiers.tier_a_10_15k];
 
   let additive = 0;
   if (enclosure === 'unscreened') additive += tokens[`unscreened_${sizeTier}`] || 20;
