@@ -55,6 +55,7 @@ import AdminMessaging from './pages/AdminMessaging';
 import AdminPricingConfig from './pages/AdminPricingConfig';
 import AdminReinstatements from './pages/AdminReinstatements';
 import AdminReviewDashboard from './pages/AdminReviewDashboard';
+import AdminSettingsSetup from './pages/AdminSettingsSetup';
 import Agreements from './pages/Agreements';
 import Analytics from './pages/Analytics';
 import Billing from './pages/Billing';
@@ -87,7 +88,6 @@ import StaffManagement from './pages/StaffManagement';
 import TechnicianHome from './pages/TechnicianHome';
 import TechnicianRoute from './pages/TechnicianRoute';
 import TestDashboard from './pages/TestDashboard';
-import AdminSettingsSetup from './pages/AdminSettingsSetup';
 import __Layout from './Layout.jsx';
 
 
@@ -100,6 +100,7 @@ export const PAGES = {
     "AdminPricingConfig": AdminPricingConfig,
     "AdminReinstatements": AdminReinstatements,
     "AdminReviewDashboard": AdminReviewDashboard,
+    "AdminSettingsSetup": AdminSettingsSetup,
     "Agreements": Agreements,
     "Analytics": Analytics,
     "Billing": Billing,
@@ -132,7 +133,6 @@ export const PAGES = {
     "TechnicianHome": TechnicianHome,
     "TechnicianRoute": TechnicianRoute,
     "TestDashboard": TestDashboard,
-    "AdminSettingsSetup": AdminSettingsSetup,
 }
 
 export const pagesConfig = {
