@@ -8,15 +8,17 @@ import StepDoseConfirm from '../components/servicevisit/StepDoseConfirm';
 import StepWaitTimer from '../components/servicevisit/StepWaitTimer';
 import StepRetest from '../components/servicevisit/StepRetest';
 import StepCloseout from '../components/servicevisit/StepCloseout';
+import StepFilterPsi from '../components/servicevisit/StepFilterPsi';
+import StepWaterLevel from '../components/servicevisit/StepWaterLevel';
 
-const STEPS = ['arrive', 'test', 'analyze', 'dose', 'wait', 'retest', 'close'];
+// Steps: arrive → filter_psi → water_level → test → analyze → dose → wait → retest → close
+const STEPS = ['arrive', 'filter_psi', 'water_level', 'test', 'analyze', 'dose', 'wait', 'retest', 'close'];
 
 export default function ServiceVisitFlow() {
   const urlParams = new URLSearchParams(window.location.search);
   const eventId = urlParams.get('eventId');
   const poolId = urlParams.get('poolId');
 
-  // Restore step from localStorage (timer persistence + resume)
   const FLOW_KEY = eventId ? `breez_flow_${eventId}` : null;
   const savedFlow = FLOW_KEY ? (() => { try { return JSON.parse(localStorage.getItem(FLOW_KEY) || 'null'); } catch { return null; } })() : null;
 
@@ -46,7 +48,6 @@ export default function ServiceVisitFlow() {
   const advance = (data = {}) => {
     setVisitData(prev => {
       const next = { ...prev, ...data };
-      // Persist flow state so navigating away and back resumes correctly
       if (FLOW_KEY) {
         const nextStep = STEPS[Math.min(STEPS.indexOf(step) + 1, STEPS.length - 1)];
         localStorage.setItem(FLOW_KEY, JSON.stringify({ step: nextStep, visitData: next }));
@@ -67,7 +68,8 @@ export default function ServiceVisitFlow() {
   const stepProps = { visitData, user, settings, advance, goTo };
 
   const stepLabels = {
-    arrive: 'Arrive', test: 'Test', analyze: 'Analyze',
+    arrive: 'Arrive', filter_psi: 'Filter', water_level: 'Water',
+    test: 'Test', analyze: 'Analyze',
     dose: 'Dose', wait: 'Wait', retest: 'Retest', close: 'Close'
   };
 
@@ -77,15 +79,14 @@ export default function ServiceVisitFlow() {
     <div className="max-w-lg mx-auto pb-24">
       {/* Progress strip */}
       <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-4 py-3">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 overflow-x-auto pb-0.5">
           {STEPS.map((s, i) => {
             const done = i < currentIdx;
             const active = i === currentIdx;
-            // skip retest if not required
             if (s === 'retest' && !visitData.retestRequired && !active) return null;
             return (
               <React.Fragment key={s}>
-                <div className={`flex items-center gap-1 ${active ? 'opacity-100' : done ? 'opacity-60' : 'opacity-30'}`}>
+                <div className={`flex items-center gap-1 flex-shrink-0 ${active ? 'opacity-100' : done ? 'opacity-60' : 'opacity-30'}`}>
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                     done ? 'bg-teal-500 text-white' : active ? 'bg-teal-600 text-white' : 'bg-gray-200 text-gray-500'
                   }`}>
@@ -95,7 +96,7 @@ export default function ServiceVisitFlow() {
                     {stepLabels[s]}
                   </span>
                 </div>
-                {i < STEPS.length - 1 && <div className="flex-1 h-0.5 bg-gray-200 min-w-[6px]" />}
+                {i < STEPS.length - 1 && <div className="flex-1 h-0.5 bg-gray-200 min-w-[4px]" />}
               </React.Fragment>
             );
           })}
@@ -103,13 +104,15 @@ export default function ServiceVisitFlow() {
       </div>
 
       <div className="p-4">
-        {step === 'arrive'   && <StepArrive   {...stepProps} />}
-        {step === 'test'     && <StepTest     {...stepProps} />}
-        {step === 'analyze'  && <StepAnalyze  {...stepProps} />}
-        {step === 'dose'     && <StepDoseConfirm {...stepProps} />}
-        {step === 'wait'     && <StepWaitTimer {...stepProps} />}
-        {step === 'retest'   && <StepRetest   {...stepProps} />}
-        {step === 'close'    && <StepCloseout {...stepProps} />}
+        {step === 'arrive'      && <StepArrive      {...stepProps} />}
+        {step === 'filter_psi'  && <StepFilterPsi   {...stepProps} />}
+        {step === 'water_level' && <StepWaterLevel   {...stepProps} />}
+        {step === 'test'        && <StepTest         {...stepProps} />}
+        {step === 'analyze'     && <StepAnalyze      {...stepProps} />}
+        {step === 'dose'        && <StepDoseConfirm  {...stepProps} />}
+        {step === 'wait'        && <StepWaitTimer    {...stepProps} />}
+        {step === 'retest'      && <StepRetest       {...stepProps} />}
+        {step === 'close'       && <StepCloseout     {...stepProps} />}
       </div>
     </div>
   );
