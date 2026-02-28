@@ -130,13 +130,14 @@ Deno.serve(async (req) => {
     const riskPoints     = riskEngine.points;
     const sizeMultipliers = riskEngine.size_multipliers;
 
-    let escalationBrackets = Array.isArray(riskEngine.escalation_brackets) && riskEngine.escalation_brackets.length >= 5
-      ? riskEngine.escalation_brackets
-      : DEFAULT_ESCALATION_BRACKETS;
-
-    if (escalationBrackets === DEFAULT_ESCALATION_BRACKETS) {
-      console.error('🚨 escalation_brackets invalid in stored settings — using hardcoded fallback');
+    if (!Array.isArray(riskEngine.escalation_brackets) || riskEngine.escalation_brackets.length < 5) {
+      console.error('🚨 escalation_brackets invalid in stored AdminSettings — refusing to price');
+      return Response.json({
+        error: 'AdminSettings riskEngine.escalation_brackets missing or invalid. Re-seed config.',
+        code: 'ADMIN_SETTINGS_CORRUPT'
+      }, { status: 503 });
     }
+    const escalationBrackets = riskEngine.escalation_brackets;
 
     let rawRisk = 0;
     if (questionnaireData.enclosure === 'unscreened') rawRisk += riskPoints.unscreened || 2;
