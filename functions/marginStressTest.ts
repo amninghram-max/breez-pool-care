@@ -43,21 +43,23 @@ Deno.serve(async (req) => {
 
     const { targetMargin = TARGET_MARGIN_DEFAULT, poolCount = 500 } = await req.json();
 
-    console.log(`🧪 Running margin stress-test with ${poolCount} synthetic pools...`);
+    // Load AdminSettings — single source of truth
+    const rows = await base44.asServiceRole.entities.AdminSettings.list('-created_date', 1);
+    const settings = rows[0] || null;
+    if (!settings) {
+      return Response.json({ error: 'AdminSettings not found', code: 'ADMIN_SETTINGS_MISSING' }, { status: 503 });
+    }
+
+    console.log(`🧪 Running margin stress-test with ${poolCount} synthetic pools, configId=${settings.id}...`);
 
     // Generate synthetic pools
     const syntheticPools = generateSyntheticPools(poolCount);
 
-    // Calculate pricing and margins for each pool
+    // Calculate pricing and margins for each pool (inline — no sub-function calls)
     const results = [];
     for (const pool of syntheticPools) {
       try {
-        // Get quote from pricing engine
-        const response = await base44.asServiceRole.functions.invoke('calculateQuote', {
-          questionnaireData: pool
-        });
-
-        const quote = response.data?.quote;
+        const quote = runPricingEngine(pool, settings);
         if (!quote) continue;
 
         // Estimate costs
