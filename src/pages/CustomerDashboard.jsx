@@ -82,7 +82,7 @@ export default function CustomerDashboard() {
       <AdvisoryBanner recommendation={freqRec} />
 
       {/* Pool status snapshot — only show once active */}
-      {!isPreActivation && <PoolStatusSnapshot lastRecord={lastRecord} />
+      {!isPreActivation && <PoolStatusSnapshot lastRecord={lastRecord} />}
 
       {/* Last service + next scheduled — only when active */}
       {!isPreActivation && (
