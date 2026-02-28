@@ -131,13 +131,8 @@ Deno.serve(async (req) => {
         if (!quote) continue;
 
         // Estimate costs
-        const chemicalCost = estimateChemicalCost(
-          quote.sizeTier,
-          quote.adjustedRisk
-        );
-        
+        const chemicalCost = estimateChemicalCost(quote.sizeTier, quote.adjustedRisk);
         const laborCost = COST_MODELS.labor[quote.frequencySelectedOrRequired][quote.sizeTier];
-
         const totalCost = chemicalCost + laborCost;
         const revenue = quote.finalMonthlyPrice;
         const margin = revenue - totalCost;
