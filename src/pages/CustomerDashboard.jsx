@@ -38,11 +38,14 @@ export default function CustomerDashboard() {
     enabled: !!pool,
   });
 
-  const { data: nextEvent } = useQuery({
+  const { data: nextEvent, refetch: refetchEvent } = useQuery({
     queryKey: ['nextServiceEvent', lead?.id],
     queryFn: () => base44.entities.CalendarEvent.filter({ leadId: lead.id, status: 'scheduled' }, 'scheduledDate', 1).then(r => r[0]),
     enabled: !!lead,
   });
+
+  // Determine if we're in the "pre-active" phase: quote generated but not yet a full service customer
+  const isPreActivation = lead && !lead.activationPaymentStatus || lead?.activationPaymentStatus === 'pending';
 
   const { data: freqRec } = useQuery({
     queryKey: ['customerFreqRec', lead?.id],
