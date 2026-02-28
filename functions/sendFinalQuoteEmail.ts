@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
     }
 
     // Link to Agreements page with inspection record ref
-    const appBase = Deno.env.get('APP_URL') || 'https://app.breezpoolcare.com';
+    const appBase = Deno.env.get('APP_URL') || 'https://app.base44.com/app/breezpoolcare';
     const agreementLink = `${appBase}/agreements?inspectionId=${inspectionRecordId}`;
 
     const greenFeeSection = greenFee > 0
