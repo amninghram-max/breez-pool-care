@@ -84,7 +84,8 @@ export default function CustomerDashboard() {
       {/* Pool status snapshot — only show once active */}
       {!isPreActivation && <PoolStatusSnapshot lastRecord={lastRecord} />
 
-      {/* Last service + next scheduled */}
+      {/* Last service + next scheduled — only when active */}
+      {!isPreActivation && (
       <div className="grid grid-cols-2 gap-3">
         <Card>
           <CardContent className="pt-4 pb-4 space-y-1">
@@ -101,13 +102,13 @@ export default function CustomerDashboard() {
         <Card>
           <CardContent className="pt-4 pb-4 space-y-1">
             <p className="text-xs text-gray-400 uppercase tracking-wider">Next Visit</p>
-            {nextEvent?.scheduledDate ? (
+            {serviceEvent?.scheduledDate ? (
               <div>
                 <p className="font-semibold text-sm text-gray-800">
-                  {format(new Date(nextEvent.scheduledDate), 'MMM d')}
+                  {format(new Date(serviceEvent.scheduledDate), 'MMM d')}
                 </p>
-                {nextEvent.timeWindow && (
-                  <p className="text-xs text-gray-400">{nextEvent.timeWindow}</p>
+                {serviceEvent.timeWindow && (
+                  <p className="text-xs text-gray-400">{serviceEvent.timeWindow}</p>
                 )}
               </div>
             ) : (
@@ -116,6 +117,7 @@ export default function CustomerDashboard() {
           </CardContent>
         </Card>
       </div>
+      )}
 
       {/* CTA buttons */}
       <div className="grid grid-cols-2 gap-3">
