@@ -98,8 +98,9 @@ Deno.serve(async (req) => {
     const beforeCount = before.length;
     console.log(`[seed] before count: ${beforeCount}`);
 
-    // Step 2: Create (append-only — entity RLS has update:false)
-    const created = await base44.asServiceRole.entities.AdminSettings.create(SEED_CONFIG);
+    // Step 2: Create using USER-SCOPED client (RLS create rule requires role=admin, satisfied by user token)
+    // asServiceRole bypasses auth but platform DB layer still enforces RLS — use user-scoped create
+    const created = await base44.entities.AdminSettings.create(SEED_CONFIG);
     console.log(`[seed] create returned:`, JSON.stringify({ id: created?.id }));
 
     // Step 3: Verify — the create response itself IS the source of truth.
