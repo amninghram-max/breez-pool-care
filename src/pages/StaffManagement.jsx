@@ -30,6 +30,17 @@ export default function StaffManagement() {
     },
   });
 
+  const toggleFinalizerMutation = useMutation({
+    mutationFn: async ({ userId, value }) => {
+      return await base44.entities.User.update(userId, { canFinalizeInspections: value });
+    },
+    onSuccess: () => {
+      toast.success('Permission updated');
+      queryClient.invalidateQueries({ queryKey: ['staffUsers'] });
+    },
+    onError: (err) => toast.error('Failed to update: ' + err.message),
+  });
+
   const inviteMutation = useMutation({
     mutationFn: async ({ email, role }) => {
       return await base44.users.inviteUser(email, role);
