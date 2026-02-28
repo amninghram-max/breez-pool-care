@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Plus, RefreshCw, Settings, Lock, ChevronDown, ChevronRight } from 'lucide-react';
+import { AlertTriangle, Plus, RefreshCw, Settings, Lock, ChevronDown, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import ReadinessCheckPanel from '../components/admin/ReadinessCheckPanel';
 
