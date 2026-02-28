@@ -1,109 +1,63 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 /**
- * STARTUP CONFIG VALIDATION
- * Validates AdminSettings integrity on server start or first pricing request
- * Auto-seeds if invalid, logs recovery event
+ * validatePricingConfig
+ * Validates AdminSettings integrity. DOES NOT auto-seed or call other functions.
+ * Returns valid=true if settings exist and parse correctly; valid=false with details otherwise.
+ * AdminSettings is the sole source of truth — no fallbacks, no silent recovery.
  */
-
-let validationComplete = false;
-
-export async function validateAndSeedIfNeeded(base44) {
-  if (validationComplete) return { valid: true, seeded: false };
-
-  console.log('🔍 Validating AdminSettings integrity...');
-
-  try {
-    const settings = await base44.asServiceRole.entities.AdminSettings.filter({
-      settingKey: 'default'
-    });
-
-    if (!settings || settings.length === 0) {
-      console.warn('⚠️ AdminSettings not found - auto-seeding...');
-      await autoSeed(base44);
-      return { valid: true, seeded: true };
-    }
-
-    const config = settings[0];
-
-    // Parse nested config
-    let riskEngine, escalationBrackets, sizeMultipliers, tokens;
-    try {
-      riskEngine = JSON.parse(config.riskEngine);
-      escalationBrackets = riskEngine?.escalation_brackets || [];
-      sizeMultipliers = riskEngine?.size_multipliers || {};
-      tokens = JSON.parse(config.additiveTokens || '{}');
-    } catch (e) {
-      console.error('❌ Failed to parse AdminSettings JSON - auto-seeding...');
-      await autoSeed(base44);
-      return { valid: true, seeded: true };
-    }
-
-    // Validate critical config elements
-    const bracketsValid = escalationBrackets.length === 5;
-    const multipliersValid = Object.keys(sizeMultipliers).length === 4;
-    const tokensValid = Object.keys(tokens).length >= 10;
-
-    if (!bracketsValid || !multipliersValid || !tokensValid) {
-      console.error(`❌ AdminSettings integrity check FAILED:
-        - Brackets: ${bracketsValid ? '✅' : '❌'} (${escalationBrackets.length}/5)
-        - Multipliers: ${multipliersValid ? '✅' : '❌'} (${Object.keys(sizeMultipliers).length}/4)
-        - Tokens: ${tokensValid ? '✅' : '❌'} (${Object.keys(tokens).length} keys)
-      `);
-      
-      console.warn('⚠️ Auto-seeding AdminSettings...');
-      await autoSeed(base44);
-      return { valid: true, seeded: true };
-    }
-
-    console.log('✅ AdminSettings integrity check PASSED');
-    validationComplete = true;
-    return { valid: true, seeded: false };
-
-  } catch (error) {
-    console.error('❌ Config validation error:', error);
-    // Don't auto-seed on errors, let function fail
-    return { valid: false, seeded: false, error: error.message };
-  }
-}
-
-async function autoSeed(base44) {
-  try {
-    const response = await base44.asServiceRole.functions.invoke('seedAdminSettingsDefault', {});
-    
-    if (response.data?.success) {
-      console.log('✅ AdminSettings auto-seeded successfully');
-      
-      // Log integrity recovery event
-      try {
-        await base44.asServiceRole.entities.AnalyticsEvent.create({
-          eventType: 'ConfigIntegrityRecovery',
-          source: 'system',
-          metadata: {
-            action: 'auto_seeded',
-            verification: response.data.verification,
-            timestamp: new Date().toISOString()
-          }
-        });
-      } catch (e) {
-        console.error('Failed to log recovery event:', e);
-      }
-      
-      validationComplete = true;
-    } else {
-      throw new Error('Seeding failed: ' + JSON.stringify(response.data));
-    }
-  } catch (error) {
-    console.error('❌ Auto-seed failed:', error);
-    throw error;
-  }
-}
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const result = await validateAndSeedIfNeeded(base44);
-    return Response.json(result);
+    const user = await base44.auth.me();
+
+    if (user?.role !== 'admin') {
+      return Response.json({ error: 'Admin access required' }, { status: 403 });
+    }
+
+    const rows = await base44.asServiceRole.entities.AdminSettings.list('-created_date', 1);
+    const settings = rows[0] || null;
+
+    if (!settings) {
+      return Response.json({
+        valid: false,
+        seeded: false,
+        error: 'AdminSettings not found in DB — seed required before pricing'
+      });
+    }
+
+    // Parse and validate all required fields
+    let riskEngine, escalationBrackets, sizeMultipliers, tokens;
+    try {
+      riskEngine = JSON.parse(settings.riskEngine);
+      escalationBrackets = riskEngine?.escalation_brackets || [];
+      sizeMultipliers = riskEngine?.size_multipliers || {};
+      tokens = JSON.parse(settings.additiveTokens || '{}');
+      JSON.parse(settings.baseTierPrices);
+      JSON.parse(settings.frequencyLogic);
+      JSON.parse(settings.initialFees);
+    } catch (e) {
+      return Response.json({
+        valid: false,
+        seeded: false,
+        error: 'AdminSettings JSON parse failed: ' + e.message
+      });
+    }
+
+    const bracketsValid = Array.isArray(escalationBrackets) && escalationBrackets.length === 5;
+    const multipliersValid = Object.keys(sizeMultipliers).length === 4;
+    const tokensValid = Object.keys(tokens).length >= 10;
+
+    if (!bracketsValid || !multipliersValid || !tokensValid) {
+      return Response.json({
+        valid: false,
+        seeded: false,
+        error: `Config integrity check failed: brackets=${bracketsValid}(${escalationBrackets.length}/5), multipliers=${multipliersValid}(${Object.keys(sizeMultipliers).length}/4), tokens=${tokensValid}(${Object.keys(tokens).length})`
+      });
+    }
+
+    return Response.json({ valid: true, seeded: false, configRecordId: settings.id });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
