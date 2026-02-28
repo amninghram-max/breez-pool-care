@@ -8,6 +8,74 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 const TARGET_MARGIN_DEFAULT = 50; // 50% target margin
 
+// Inline pricing engine — no sub-function calls allowed.
+// AdminSettings is the sole source of truth; caller must pass a valid settings object.
+function runPricingEngine(q, settings) {
+  const baseTiers = JSON.parse(settings.baseTierPrices);
+  const tokens = JSON.parse(settings.additiveTokens);
+  const riskEngine = JSON.parse(settings.riskEngine);
+  const frequencyLogic = JSON.parse(settings.frequencyLogic);
+
+  let sizeTier = 'tier_a';
+  let baseMonthly = baseTiers.tier_a_10_15k;
+  if (q.poolSize === '15_20k') { sizeTier = 'tier_b'; baseMonthly = baseTiers.tier_b_15_20k; }
+  else if (q.poolSize === '20_30k') { sizeTier = 'tier_c'; baseMonthly = baseTiers.tier_c_20_30k; }
+  else if (q.poolSize === '30k_plus') { sizeTier = 'tier_d'; baseMonthly = baseTiers.tier_d_30k_plus; }
+
+  let additive = 0;
+  if (q.enclosure === 'unscreened') additive += tokens[`unscreened_${sizeTier}`] || 0;
+  if (q.enclosure === 'unscreened' && q.treesOverhead === 'yes') additive += tokens.trees_overhead || 0;
+  if (q.useFrequency === 'weekends') additive += tokens.usage_weekends || 0;
+  else if (q.useFrequency === 'several_week') additive += tokens.usage_several_week || 0;
+  else if (q.useFrequency === 'daily') additive += tokens.usage_daily || 0;
+  const chlorMethod = q.chlorinationMethod;
+  const chlorType = q.chlorinatorType;
+  if (chlorMethod === 'tablets' && (chlorType === 'floating' || chlorType === 'skimmer')) additive += tokens[`chlorinator_floater_${sizeTier}`] || 0;
+  if (chlorMethod === 'liquid_chlorine') additive += tokens.chlorinator_liquid_only || 0;
+  if (q.petsAccess && q.petSwimFrequency === 'occasionally') additive += tokens.pets_occasional || 0;
+  if (q.petsAccess && q.petSwimFrequency === 'frequently') additive += tokens.pets_frequent || 0;
+
+  const pts = riskEngine.points;
+  let rawRisk = 0;
+  if (q.enclosure === 'unscreened') rawRisk += pts.unscreened || 0;
+  if (q.enclosure === 'unscreened' && q.treesOverhead === 'yes') rawRisk += pts.trees_overhead || 0;
+  if (q.useFrequency === 'daily') rawRisk += pts.usage_daily || 0;
+  else if (q.useFrequency === 'several_week') rawRisk += pts.usage_several_week || 0;
+  if (chlorMethod === 'tablets' && (chlorType === 'floating' || chlorType === 'skimmer')) rawRisk += pts.chlorinator_floater_skimmer || 0;
+  if (chlorMethod === 'liquid_chlorine') rawRisk += pts.chlorinator_liquid_only || 0;
+  if (q.petsAccess && q.petSwimFrequency === 'frequently') rawRisk += pts.pets_frequent || 0;
+  else if (q.petsAccess && q.petSwimFrequency === 'occasionally') rawRisk += pts.pets_occasional || 0;
+  if (q.poolCondition === 'green_algae') rawRisk += pts.condition_green || 0;
+
+  const sizeMultiplier = riskEngine.size_multipliers[sizeTier] || 1.0;
+  const adjustedRisk = rawRisk * sizeMultiplier;
+
+  if (!Array.isArray(riskEngine.escalation_brackets) || riskEngine.escalation_brackets.length < 5) {
+    throw new Error('AdminSettings riskEngine.escalation_brackets invalid');
+  }
+  const sorted = [...riskEngine.escalation_brackets].sort((a, b) => a.min_risk - b.min_risk);
+  let riskAddon = 0;
+  for (const b of sorted) {
+    if (adjustedRisk >= b.min_risk && (b.max_risk >= 999 || adjustedRisk <= b.max_risk)) {
+      riskAddon = b.addon_amount;
+      break;
+    }
+  }
+
+  let freqMult = 1.0;
+  let frequencySelectedOrRequired = 'weekly';
+  if (adjustedRisk >= frequencyLogic.auto_require_threshold) {
+    freqMult = frequencyLogic.twice_weekly_multiplier;
+    frequencySelectedOrRequired = 'twice_weekly';
+  }
+
+  let finalMonthlyPrice = (baseMonthly + additive + riskAddon) * freqMult;
+  const floor = baseTiers.absolute_floor;
+  if (finalMonthlyPrice < floor) finalMonthlyPrice = floor;
+
+  return { sizeTier, finalMonthlyPrice, adjustedRisk, frequencySelectedOrRequired };
+}
+
 // Cost estimation models (monthly)
 const COST_MODELS = {
   chemicals: {
