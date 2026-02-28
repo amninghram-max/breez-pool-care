@@ -63,7 +63,6 @@ import Calendar from './pages/Calendar';
 import ChemicalAnalytics from './pages/ChemicalAnalytics';
 import ChemistryDashboard from './pages/ChemistryDashboard';
 import ClientHome from './pages/ClientHome';
-import CustomerDashboard from './pages/CustomerDashboard';
 import CustomerMessagingPage from './pages/CustomerMessagingPage';
 import CustomerServiceHistory from './pages/CustomerServiceHistory';
 import DesignSystem from './pages/DesignSystem';
@@ -110,7 +109,6 @@ export const PAGES = {
     "ChemicalAnalytics": ChemicalAnalytics,
     "ChemistryDashboard": ChemistryDashboard,
     "ClientHome": ClientHome,
-    "CustomerDashboard": CustomerDashboard,
     "CustomerMessagingPage": CustomerMessagingPage,
     "CustomerServiceHistory": CustomerServiceHistory,
     "DesignSystem": DesignSystem,
