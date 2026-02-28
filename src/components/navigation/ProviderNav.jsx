@@ -52,7 +52,8 @@ export default function ProviderNav({ userRole }) {
       { name: 'Chemistry', path: 'ChemistryDashboard', icon: Droplet, section: 'admin' },
       { name: 'Margin Testing', path: 'MarginStressTest', icon: Activity, section: 'admin' },
       { name: 'Chemical Analytics', path: 'ChemicalAnalytics', icon: Droplet, section: 'admin' },
-      { name: 'Release Readiness', path: 'ReleaseReadiness', icon: Shield, section: 'admin' }
+      { name: 'Release Readiness', path: 'ReleaseReadiness', icon: Shield, section: 'admin' },
+      { name: 'Config Setup', path: 'AdminSettingsSetup', icon: Settings, section: 'admin' }
     );
   }
 
