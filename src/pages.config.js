@@ -89,6 +89,7 @@ import TechnicianHome from './pages/TechnicianHome';
 import TechnicianRoute from './pages/TechnicianRoute';
 import TestDashboard from './pages/TestDashboard';
 import InspectionFinalization from './pages/InspectionFinalization';
+import InspectionSubmit from './pages/InspectionSubmit';
 import __Layout from './Layout.jsx';
 
 
@@ -135,6 +136,7 @@ export const PAGES = {
     "TechnicianRoute": TechnicianRoute,
     "TestDashboard": TestDashboard,
     "InspectionFinalization": InspectionFinalization,
+    "InspectionSubmit": InspectionSubmit,
 }
 
 export const pagesConfig = {
