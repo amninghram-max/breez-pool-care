@@ -86,8 +86,10 @@ function runPricingEngine(q, settings) {
 
   const riskPoints = riskEngine.points;
   const sizeMultipliers = riskEngine.size_multipliers;
-  const escalationBrackets = Array.isArray(riskEngine.escalation_brackets) && riskEngine.escalation_brackets.length >= 5
-    ? riskEngine.escalation_brackets : DEFAULT_ESCALATION_BRACKETS;
+  if (!Array.isArray(riskEngine.escalation_brackets) || riskEngine.escalation_brackets.length < 5) {
+    throw new Error('AdminSettings riskEngine.escalation_brackets missing or invalid');
+  }
+  const escalationBrackets = riskEngine.escalation_brackets;
 
   let rawRisk = 0;
   if (q.enclosure === 'unscreened') rawRisk += riskPoints.unscreened || 2;
