@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Home, Calendar, Users, MapPin, MessageSquare, Droplet, AlertCircle, Settings, BarChart3, Shield, Activity } from 'lucide-react';
+import { Home, Calendar, Users, MapPin, MessageSquare, Droplet, AlertCircle, Settings, BarChart3, Shield, Activity, ClipboardCheck } from 'lucide-react';
 
 export default function ProviderNav({ userRole }) {
   const location = useLocation();
