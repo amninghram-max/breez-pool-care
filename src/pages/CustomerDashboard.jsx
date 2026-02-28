@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import PoolStatusSnapshot from '../components/customer/PoolStatusSnapshot';
 import AdvisoryBanner from '../components/customer/AdvisoryBanner';
+import InspectionStatusCard from '../components/customer/InspectionStatusCard';
 
 export default function CustomerDashboard() {
   const { data: user } = useQuery({
