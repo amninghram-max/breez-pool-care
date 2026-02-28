@@ -1,128 +1,98 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-
-const SEED_CONFIG = {
-  settingKey: 'debug_probe',
-  pricingEngineVersion: 'v2_debug_probe',
-  baseTierPrices: JSON.stringify({ tier_a_10_15k: 140 }),
-  additiveTokens: JSON.stringify({ test_token: 1 }),
-  initialFees: JSON.stringify({ test_fee: 1 }),
-  riskEngine: JSON.stringify({
-    points: { test: 1 },
-    size_multipliers: { tier_a: 1.0 },
-    escalation_brackets: [{ min_risk: 0, max_risk: 2, addon_amount: 0 }]
-  }),
-  frequencyLogic: JSON.stringify({ twice_weekly_multiplier: 1.8 }),
-  autopayDiscount: 0
-};
+import { createClientFromRequest } from "npm:@base44/sdk";
 
 Deno.serve(async (req) => {
-  const headers = { 'Content-Type': 'application/json' };
-  const log = [];
+  const base44 = createClientFromRequest(req);
 
+  const results = {
+    caller: {},
+    userScope: {},
+    serviceRoleScope: {}
+  };
+
+  // --- who am I? (helps prove admin context) ---
   try {
-    const base44 = createClientFromRequest(req);
-
-    const env = 'n/a'; // BASE44_DATA_ENV is not a provisioned secret; env routing is implicit
-    const appId = Deno.env.get('BASE44_APP_ID') || 'unknown';
-
-    const user = await base44.auth.me();
-    if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
-    if (user.role !== 'admin') return new Response(JSON.stringify({ error: 'Admin required' }), { status: 403, headers });
-
-    const meta = { env, appId, callerEmail: user.email, callerRole: user.role };
-
-    // 1. User-scoped list (before)
-    let userListBefore = null, userListBeforeErr = null;
-    try {
-      userListBefore = await base44.entities.AdminSettings.list('-created_date', 10);
-      log.push(`user_list_before: ${userListBefore.length} records`);
-    } catch (e) { userListBeforeErr = e.message; log.push(`user_list_before_err: ${e.message}`); }
-
-    // 2. Service-role list (before)
-    let srListBefore = null, srListBeforeErr = null;
-    try {
-      srListBefore = await base44.asServiceRole.entities.AdminSettings.list('-created_date', 10);
-      log.push(`sr_list_before: ${srListBefore.length} records`);
-    } catch (e) { srListBeforeErr = e.message; log.push(`sr_list_before_err: ${e.message}`); }
-
-    // 3. User-scoped create
-    let created = null, createErr = null;
-    try {
-      created = await base44.entities.AdminSettings.create(SEED_CONFIG);
-      log.push(`user_create: id=${created?.id || 'NO_ID'}`);
-    } catch (e) { createErr = e.message; log.push(`user_create_err: ${e.message}`); }
-
-    if (!created?.id) {
-      return new Response(JSON.stringify({ ...meta, log, error: 'CREATE_FAILED', createErr }), { status: 500, headers });
-    }
-
-    const createdId = created.id;
-
-    // 4. Service-role get(id)
-    let srGet = null, srGetErr = null;
-    try {
-      srGet = await base44.asServiceRole.entities.AdminSettings.get(createdId);
-      log.push(`sr_get(${createdId}): found`);
-    } catch (e) { srGetErr = e.message; log.push(`sr_get_err: ${e.message}`); }
-
-    // 5. User-scoped get(id)
-    let userGet = null, userGetErr = null;
-    try {
-      userGet = await base44.entities.AdminSettings.get(createdId);
-      log.push(`user_get(${createdId}): found`);
-    } catch (e) { userGetErr = e.message; log.push(`user_get_err: ${e.message}`); }
-
-    // 6. Service-role list (after)
-    let srListAfter = null, srListAfterErr = null;
-    try {
-      srListAfter = await base44.asServiceRole.entities.AdminSettings.list('-created_date', 10);
-      log.push(`sr_list_after: ${srListAfter.length} records`);
-    } catch (e) { srListAfterErr = e.message; log.push(`sr_list_after_err: ${e.message}`); }
-
-    // 7. User-scoped list (after)
-    let userListAfter = null, userListAfterErr = null;
-    try {
-      userListAfter = await base44.entities.AdminSettings.list('-created_date', 10);
-      log.push(`user_list_after: ${userListAfter.length} records`);
-    } catch (e) { userListAfterErr = e.message; log.push(`user_list_after_err: ${e.message}`); }
-
-    // GHOST_WRITE: create returned id but both gets 404d
-    const srGetMissing = !srGet && srGetErr;
-    const userGetMissing = !userGet && userGetErr;
-    const listCountAfter = srListAfter?.length ?? 0;
-    const listCountBefore = srListBefore?.length ?? 0;
-    const notInList = listCountAfter <= listCountBefore;
-
-    if (srGetMissing && userGetMissing && notInList) {
-      return new Response(JSON.stringify({
-        ...meta,
-        log,
-        error: 'GHOST_WRITE',
-        message: 'create() returned id but get(id) returned 404 for both user-scoped and service-role, and list count did not increase',
-        createdId,
-        srGetErr,
-        userGetErr,
-        srListBefore: listCountBefore,
-        srListAfter: listCountAfter
-      }), { status: 500, headers });
-    }
-
-    return new Response(JSON.stringify({
-      ...meta,
-      log,
-      success: true,
-      createdId,
-      srGetFound: !!srGet,
-      userGetFound: !!userGet,
-      srListBefore: listCountBefore,
-      srListAfter: listCountAfter,
-      userListBefore: userListBefore?.length ?? null,
-      userListAfter: userListAfter?.length ?? null,
-      srGetErr: srGetErr || null,
-      userGetErr: userGetErr || null
-    }), { status: 200, headers });
-
-  } catch (error) {
-    return new Response(JSON.stringify({ log, error: error.message, stack: error.stack }), { status: 500, headers });
+    const me = await base44.auth.me();
+    results.caller = { email: me?.email ?? null, role: me?.role ?? null };
+  } catch {
+    results.caller = { email: null, role: null };
   }
+
+  // --- IMPORTANT: schema-safe payload ---
+  const minimalAdminSettings = {
+    settingKey: "default",
+    version: Date.now(),
+    pricingEngineVersion: "debug_env_probe_" + Date.now(),
+    baseTierPrices: JSON.stringify({
+      tierA: 140, tierB: 160, tierC: 190, tierD: 230
+    }),
+    additiveTokens: JSON.stringify({ debug: true }),
+    initialFees: JSON.stringify({}),
+    riskEngine: JSON.stringify({
+      brackets: [
+        { min: 0, max: 2, addon: 0 },
+        { min: 3, max: 5, addon: 15 },
+        { min: 6, max: 8, addon: 30 },
+        { min: 9, max: 11, addon: 45 },
+        { min: 12, max: 999, addon: 60 }
+      ],
+      sizeMultipliers: { tierB: 1.1, tierC: 1.2, tierD: 1.3 },
+      twiceWeeklyAtAdjustedRiskGte: 9,
+      twiceWeeklyMultiplier: 1.8
+    }),
+    frequencyLogic: JSON.stringify({}),
+    seasonalPeriods: JSON.stringify([]),
+    autopayDiscount: 0
+  };
+
+  // Helper: list latest deterministically
+  const listLatestUser = async () =>
+    await base44.entities.AdminSettings.list("-created_date", 1).catch(() => []);
+  const listLatestSR = async () =>
+    await base44.asServiceRole.entities.AdminSettings.list("-created_date", 1).catch(() => []);
+
+  // --- TEST 1: User-scoped create ---
+  try {
+    const beforeU = await listLatestUser();
+    const created = await base44.entities.AdminSettings.create(minimalAdminSettings);
+
+    const getU = await base44.entities.AdminSettings.get(created.id).catch(() => null);
+    const afterU = await listLatestUser();
+
+    results.userScope = {
+      beforeLatestId: beforeU?.[0]?.id ?? null,
+      createReturnedId: created?.id ?? null,
+      getByIdPersisted: !!getU,
+      afterLatestId: afterU?.[0]?.id ?? null,
+      afterIncludesCreated: afterU?.[0]?.id === created?.id
+    };
+  } catch (e) {
+    results.userScope = { error: String(e?.message ?? e) };
+  }
+
+  // --- TEST 2: Service-role create ---
+  try {
+    const beforeSR = await listLatestSR();
+    const created = await base44.asServiceRole.entities.AdminSettings.create(minimalAdminSettings);
+
+    const getBySR = await base44.asServiceRole.entities.AdminSettings.get(created.id).catch(() => null);
+    const getByUser = await base44.entities.AdminSettings.get(created.id).catch(() => null);
+
+    const afterSR = await listLatestSR();
+    const afterUser = await listLatestUser();
+
+    results.serviceRoleScope = {
+      beforeLatestId_SR: beforeSR?.[0]?.id ?? null,
+      createReturnedId: created?.id ?? null,
+      getByIdViaSR_persisted: !!getBySR,
+      getByIdViaUser_persisted: !!getByUser,
+      afterLatestId_SR: afterSR?.[0]?.id ?? null,
+      afterLatestId_User: afterUser?.[0]?.id ?? null,
+      afterSR_includesCreated: afterSR?.[0]?.id === created?.id,
+      afterUser_includesCreated: afterUser?.[0]?.id === created?.id
+    };
+  } catch (e) {
+    results.serviceRoleScope = { error: String(e?.message ?? e) };
+  }
+
+  return Response.json(results);
 });
