@@ -202,41 +202,41 @@ export default function AdminPricingConfig() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
 
-        {/* Summary Cards */}
+        {/* Summary Cards - Truth Audit: Only Real Persisted Fields */}
         <div className="grid grid-cols-5 gap-4">
-          <Card className="bg-white">
+          <Card className="bg-white cursor-pointer hover:shadow-md transition-shadow" onClick={() => document.getElementById('base-pricing-section')?.scrollIntoView({ behavior: 'smooth' })}>
             <CardContent className="pt-6">
-              <p className="text-xs text-gray-600 font-medium">Base Monthly Price</p>
+              <p className="text-xs text-gray-600 font-medium">Base Monthly (Avg)</p>
               <p className="text-2xl font-bold text-teal-600 mt-2">{formatCurrency(avgBasePrice)}</p>
-              <p className="text-xs text-gray-500 mt-1">Average (A-D)</p>
+              <p className="text-xs text-gray-500 mt-1">Tiers A–D</p>
             </CardContent>
           </Card>
-          <Card className="bg-white">
+          <Card className="bg-white cursor-pointer hover:shadow-md transition-shadow" onClick={() => document.getElementById('autopay-section')?.scrollIntoView({ behavior: 'smooth' })}>
             <CardContent className="pt-6">
               <p className="text-xs text-gray-600 font-medium">AutoPay Discount</p>
-              <p className="text-2xl font-bold text-blue-600 mt-2">{formatCurrency(localSettings.autopayDiscount || 10)}</p>
-              <p className="text-xs text-gray-500 mt-1">Monthly</p>
+              <p className="text-2xl font-bold text-blue-600 mt-2">{formatCurrency(autopayValue)}</p>
+              <p className="text-xs text-gray-500 mt-1">Per Month</p>
             </CardContent>
           </Card>
-          <Card className="bg-white">
+          <Card className="bg-white cursor-pointer hover:shadow-md transition-shadow" onClick={() => document.getElementById('risk-section')?.scrollIntoView({ behavior: 'smooth' })}>
             <CardContent className="pt-6">
-              <p className="text-xs text-gray-600 font-medium">Risk Adjustments</p>
+              <p className="text-xs text-gray-600 font-medium">Risk Scoring</p>
               <p className="text-2xl font-bold text-purple-600 mt-2">{riskEnabled}</p>
-              <p className="text-xs text-gray-500 mt-1">Status</p>
+              <p className="text-xs text-gray-500 mt-1">Active</p>
             </CardContent>
           </Card>
-          <Card className="bg-white">
+          <Card className="bg-white cursor-pointer hover:shadow-md transition-shadow" onClick={() => document.getElementById('frequency-section')?.scrollIntoView({ behavior: 'smooth' })}>
             <CardContent className="pt-6">
-              <p className="text-xs text-gray-600 font-medium">Frequency Multiplier</p>
-              <p className="text-2xl font-bold text-orange-600 mt-2">{(localSettings.frequencyLogic?.twice_weekly_multiplier || 1.8).toFixed(2)}x</p>
-              <p className="text-xs text-gray-500 mt-1">2x/Week</p>
+              <p className="text-xs text-gray-600 font-medium">2x/Week Multiplier</p>
+              <p className="text-2xl font-bold text-orange-600 mt-2">{frequencyMultiplier.toFixed(2)}×</p>
+              <p className="text-xs text-gray-500 mt-1">Frequency</p>
             </CardContent>
           </Card>
-          <Card className="bg-white">
+          <Card className="bg-white cursor-pointer hover:shadow-md transition-shadow" onClick={() => document.getElementById('base-pricing-section')?.scrollIntoView({ behavior: 'smooth' })}>
             <CardContent className="pt-6">
-              <p className="text-xs text-gray-600 font-medium">Minimum Monthly</p>
-              <p className="text-2xl font-bold text-green-600 mt-2">{formatCurrency(localSettings.baseTierPrices?.absolute_floor || 120)}</p>
-              <p className="text-xs text-gray-500 mt-1">Floor</p>
+              <p className="text-xs text-gray-600 font-medium">Price Floor</p>
+              <p className="text-2xl font-bold text-green-600 mt-2">{formatCurrency(minFloor)}</p>
+              <p className="text-xs text-gray-500 mt-1">Minimum</p>
             </CardContent>
           </Card>
         </div>
