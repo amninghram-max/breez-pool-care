@@ -62,8 +62,7 @@ Deno.serve(async (req) => {
     // ─────────────────────────────────────────────
     // B) ACTIVATED CUSTOMER
     // ─────────────────────────────────────────────
-    let activatedLeads = await db.entities.Lead.filter({ email: TEST_CUSTOMER1_EMAIL });
-    let activatedLead = activatedLeads?.[0] || null;
+    let activatedLead = await findByEmail(db, 'Lead', TEST_CUSTOMER1_EMAIL);
     let activatedLeadCreated = false;
 
     if (!activatedLead) {
