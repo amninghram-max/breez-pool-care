@@ -626,10 +626,10 @@ function LeadDetailModal({ lead, onClose, onUpdate, onSendAcceptance, onRemoved 
           )}
 
           {/* Lost Reason Display */}
-          {lead.stage === 'lost' && lead.lostReason && (
+          {lead.stage === 'lost' && lead.notes && lead.notes.includes('[LOST REASON]') && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <h4 className="font-semibold text-red-900 mb-1 text-sm">Lost Reason</h4>
-              <p className="text-sm text-red-700">{lead.lostReason}</p>
+              <p className="text-sm text-red-700">{lead.notes.split('[LOST REASON]')[1]?.trim()}</p>
             </div>
           )}
 
