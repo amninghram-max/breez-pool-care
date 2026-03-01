@@ -125,9 +125,8 @@ Customer must NOT see internal version or config fields.
 ------------------------------------------------------------------
 RELEASE READINESS REQUIREMENTS
 ------------------------------------------------------------------
-configHash
-Must verify:
 
+Must verify:
 - AdminSettings present
 - Risk bracket count = 5
 - Multipliers exist
@@ -139,12 +138,16 @@ Must verify:
 Return structure must include:
   releaseReady
   usingDefaults
-  usingDefaults must be false in production. If defaults would be used, set releaseReady=false and add blocker DEFAULTS_NOT_ALLOWED.
   blockers[]
   warnings[]
   pricingEngineVersion
   configRecordId
   configUpdatedAt
+  configHash
+  timestamp
+
+Rule:
+- usingDefaults must be false in production. If defaults would be used, set releaseReady=false and add blocker DEFAULTS_NOT_ALLOWED.
 
 ------------------------------------------------------------------
 ARCHITECTURAL CONSTRAINTS
