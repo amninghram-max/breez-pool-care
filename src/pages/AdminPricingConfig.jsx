@@ -114,19 +114,16 @@ export default function AdminPricingConfig() {
     queryKey: ['adminSettings'],
     queryFn: async () => {
       if (typeof window !== 'undefined') {
-        console.info('[AdminPricingConfig] settings query started');
-        console.info('[AdminPricingConfig] user role:', user?.role);
+        console.info('[AdminPricingConfig][debug] env:', window.location.host + window.location.pathname);
+        console.info('[AdminPricingConfig][debug] user:', user?.email, 'role:', user?.role);
       }
-      const result = await base44.entities.AdminSettings.filter({ settingKey: 'default' });
+      // Deterministic: get latest record by created_date descending, limit 1
+      const list = await base44.entities.AdminSettings.list('-created_date', 1);
+      const first = (Array.isArray(list) ? list[0] : list?.[0]) ?? null;
       if (typeof window !== 'undefined') {
-        console.info('[AdminPricingConfig] settings query resolved - count:', result?.length || 0);
-        if (result?.length > 0) {
-          console.info('[AdminPricingConfig] first record ID:', result[0]?.id, 'settingKey:', result[0]?.settingKey);
-        } else {
-          console.warn('[AdminPricingConfig] no records returned - RLS may be blocking read access');
-        }
+        console.info('[AdminPricingConfig][debug] list count:', Array.isArray(list) ? list.length : 0, 'firstId:', first?.id || null);
       }
-      return result[0] || null;
+      return first;
     },
     enabled: !!user
   });
