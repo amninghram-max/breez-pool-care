@@ -234,6 +234,9 @@ export default function LeadsPipeline() {
 
 function LeadRow({ lead, stage, onAdvance, onStageChange, onEdit, onUpdate, queryClient }) {
   const [validationError, setValidationError] = React.useState(null);
+  const [showSendQuoteModal, setShowSendQuoteModal] = React.useState(false);
+  const [showSendInspectionModal, setShowSendInspectionModal] = React.useState(false);
+  
   const isLost = lead.stage === 'lost';
   const canAdvance = !isLost && lead.stage !== 'inspection_scheduled' && STAGES.findIndex(s => s.key === lead.stage) < STAGES.length - 1;
   
@@ -245,6 +248,21 @@ function LeadRow({ lead, stage, onAdvance, onStageChange, onEdit, onUpdate, quer
   const daysAgo = Math.floor((Date.now() - lastUpdate) / (1000 * 60 * 60 * 24));
   const timeStr = daysAgo === 0 ? 'Today' : `${daysAgo}d ago`;
 
+  // Extract last email sent timestamp from notes
+  const getLastEmailSent = () => {
+    if (!lead.notes) return null;
+    const quoteMatch = lead.notes.match(/\[QUOTE_EMAIL_SENT\]\s([\dT\-:.Z]+)/);
+    const inspectionMatch = lead.notes.match(/\[INSPECTION_LINK_SENT\]\s([\dT\-:.Z]+)/);
+    const latest = [quoteMatch?.[1], inspectionMatch?.[1]].filter(Boolean).sort().pop();
+    if (latest) {
+      const date = new Date(latest);
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    return null;
+  };
+
+  const lastEmailSent = getLastEmailSent();
+
   const handleStageAction = (newStage, data) => {
     const updateData = { stage: newStage, ...data };
     onUpdate({ id: lead.id, data: updateData });
@@ -253,6 +271,14 @@ function LeadRow({ lead, stage, onAdvance, onStageChange, onEdit, onUpdate, quer
 
   const handleValidationError = (msg) => {
     setValidationError(msg);
+  };
+
+  const handleSendQuoteSuccess = () => {
+    queryClient?.invalidateQueries({ queryKey: ['leads'] });
+  };
+
+  const handleSendInspectionSuccess = () => {
+    queryClient?.invalidateQueries({ queryKey: ['leads'] });
   };
 
   return (
