@@ -576,18 +576,30 @@ function LeadDetailModal({ lead, onClose, onUpdate, onSendAcceptance, onRemoved 
                   Mark as Lost
                 </Button>
               ) : (
-                <div className="space-y-2">
-                  <textarea
+                <div className="space-y-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-xs font-semibold text-red-900">Reason for marking lost:</p>
+                  <select
                     value={lostReason}
                     onChange={(e) => setLostReason(e.target.value)}
-                    placeholder="Reason for marking as lost..."
-                    className="w-full p-2 border rounded text-sm"
-                    rows="2"
-                  />
+                    className="w-full p-2 border border-red-300 rounded text-sm"
+                  >
+                    <option value="">Select a reason...</option>
+                    <option value="Denied Service">Denied Service</option>
+                    <option value="Canceled">Canceled</option>
+                    <option value="Other">Other (provide details below)</option>
+                  </select>
+                  {lostReason === 'Other' && (
+                    <textarea
+                      placeholder="Provide additional details..."
+                      onChange={(e) => setLostReason(`Other: ${e.target.value}`)}
+                      className="w-full p-2 border rounded text-sm"
+                      rows="2"
+                    />
+                  )}
                   <div className="flex gap-2">
                     <Button 
                       onClick={() => {
-                        onUpdate({ stage: 'lost', lostReason });
+                        onUpdate({ stage: 'lost', notes: (lead.notes || '') + `\n[LOST REASON] ${lostReason}` });
                         setShowLostForm(false);
                         onClose();
                       }}
