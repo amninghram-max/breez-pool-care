@@ -593,6 +593,11 @@ function LeadDetailModal({ lead, onClose, onUpdate, onSendAcceptance, onRemoved 
             </div>
           )}
 
+          {/* Admin: Link Customer Account */}
+          <div className="pt-4 border-t">
+            <LinkUserToLeadPanel lead={lead} />
+          </div>
+
           {/* Admin: Remove Lead */}
           <div className="pt-4 border-t">
             {!showRemove ? (
