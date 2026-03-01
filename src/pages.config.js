@@ -47,100 +47,14 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import AIChat from './pages/AIChat';
-import AccessSetup from './pages/AccessSetup';
-import Admin from './pages/Admin';
-import AdminHome from './pages/AdminHome';
-import AdminMessaging from './pages/AdminMessaging';
-import AdminPricingConfig from './pages/AdminPricingConfig';
-import AdminReinstatements from './pages/AdminReinstatements';
-import AdminReviewDashboard from './pages/AdminReviewDashboard';
-import AdminSettingsSetup from './pages/AdminSettingsSetup';
-import Agreements from './pages/Agreements';
-import Analytics from './pages/Analytics';
-import Billing from './pages/Billing';
-import Calendar from './pages/Calendar';
-import ChemicalAnalytics from './pages/ChemicalAnalytics';
-import ChemistryDashboard from './pages/ChemistryDashboard';
-import ClientHome from './pages/ClientHome';
-import CustomerMessagingPage from './pages/CustomerMessagingPage';
-import CustomerServiceHistory from './pages/CustomerServiceHistory';
-import DesignSystem from './pages/DesignSystem';
-import FAQ from './pages/FAQ';
-import HelpSupport from './pages/HelpSupport';
-import Home from './pages/Home';
-import LeadsPipeline from './pages/LeadsPipeline';
-import MarginStressTest from './pages/MarginStressTest';
-import MessageThread from './pages/MessageThread';
-import Messages from './pages/Messages';
-import Onboarding from './pages/Onboarding';
-import PaymentSetup from './pages/PaymentSetup';
-import PaymentSuccess from './pages/PaymentSuccess';
-import PreQualification from './pages/PreQualification';
-import PublicHome from './pages/PublicHome';
-import ReleaseReadiness from './pages/ReleaseReadiness';
-import ServiceReinstatement from './pages/ServiceReinstatement';
-import ServiceVisitEntry from './pages/ServiceVisitEntry';
-import ServiceVisitFlow from './pages/ServiceVisitFlow';
-import StaffHome from './pages/StaffHome';
-import StaffManagement from './pages/StaffManagement';
-import TechnicianHome from './pages/TechnicianHome';
-import TechnicianRoute from './pages/TechnicianRoute';
-import TestDashboard from './pages/TestDashboard';
-import InspectionFinalization from './pages/InspectionFinalization';
-import InspectionSubmit from './pages/InspectionSubmit';
-import CustomerEquipment from './pages/CustomerEquipment';
-import __Layout from './Layout.jsx';
+import EquipmentProfile from './pages/EquipmentProfile';
 
 
 export const PAGES = {
-    "AIChat": AIChat,
-    "AccessSetup": AccessSetup,
-    "Admin": Admin,
-    "AdminHome": AdminHome,
-    "AdminMessaging": AdminMessaging,
-    "AdminPricingConfig": AdminPricingConfig,
-    "AdminReinstatements": AdminReinstatements,
-    "AdminReviewDashboard": AdminReviewDashboard,
-    "AdminSettingsSetup": AdminSettingsSetup,
-    "Agreements": Agreements,
-    "Analytics": Analytics,
-    "Billing": Billing,
-    "Calendar": Calendar,
-    "ChemicalAnalytics": ChemicalAnalytics,
-    "ChemistryDashboard": ChemistryDashboard,
-    "ClientHome": ClientHome,
-    "CustomerMessagingPage": CustomerMessagingPage,
-    "CustomerServiceHistory": CustomerServiceHistory,
-    "DesignSystem": DesignSystem,
-    "FAQ": FAQ,
-    "HelpSupport": HelpSupport,
-    "Home": Home,
-    "LeadsPipeline": LeadsPipeline,
-    "MarginStressTest": MarginStressTest,
-    "MessageThread": MessageThread,
-    "Messages": Messages,
-    "Onboarding": Onboarding,
-    "PaymentSetup": PaymentSetup,
-    "PaymentSuccess": PaymentSuccess,
-    "PreQualification": PreQualification,
-    "PublicHome": PublicHome,
-    "ReleaseReadiness": ReleaseReadiness,
-    "ServiceReinstatement": ServiceReinstatement,
-    "ServiceVisitEntry": ServiceVisitEntry,
-    "ServiceVisitFlow": ServiceVisitFlow,
-    "StaffHome": StaffHome,
-    "StaffManagement": StaffManagement,
-    "TechnicianHome": TechnicianHome,
-    "TechnicianRoute": TechnicianRoute,
-    "TestDashboard": TestDashboard,
-    "InspectionFinalization": InspectionFinalization,
-    "InspectionSubmit": InspectionSubmit,
-    "CustomerEquipment": CustomerEquipment,
+    "EquipmentProfile": EquipmentProfile,
 }
 
 export const pagesConfig = {
-    mainPage: "Home",
+    mainPage: "EquipmentProfile",
     Pages: PAGES,
-    Layout: __Layout,
 };
