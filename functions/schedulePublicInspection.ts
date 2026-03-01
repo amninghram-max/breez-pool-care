@@ -113,6 +113,11 @@ Mon–Sat: 8am–6pm`;
         subject: `Inspection Confirmed — ${dateFormatted} · Breez Pool Care`,
         body: emailBody,
       });
+      // Mark confirmation sent
+      await base44.asServiceRole.entities.Lead.update(lead.id, {
+        inspectionConfirmationSent: true,
+        confirmationSentAt: new Date().toISOString(),
+      });
     } catch (e) {
       console.warn('Confirmation email failed (non-blocking):', e.message);
     }
