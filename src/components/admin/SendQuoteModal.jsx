@@ -14,6 +14,31 @@ const hasQuestionnaireData = (lead) => {
   return requiredFields.every(f => lead?.[f]);
 };
 
+// Extract error message from SDK throws, handling JSON parse failures
+const extractErrorMessage = (err, fallback = 'Failed to send quote link email') => {
+  // Priority 1: err.response.data (SDK attaches on non-2xx)
+  if (err?.response?.data) {
+    return typeof err.response.data === 'object' 
+      ? JSON.stringify(err.response.data) 
+      : String(err.response.data);
+  }
+  
+  // Priority 2: err.data (SDK may attach directly)
+  if (err?.data) {
+    return typeof err.data === 'object' 
+      ? JSON.stringify(err.data) 
+      : String(err.data);
+  }
+  
+  // Priority 3: err.message (likely "Unexpected end of JSON input" or other SDK error)
+  if (err?.message) {
+    return err.message;
+  }
+  
+  // Fallback
+  return fallback;
+};
+
 export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
   const [email, setEmail] = useState(lead?.email || '');
   const [loading, setLoading] = useState(false);
