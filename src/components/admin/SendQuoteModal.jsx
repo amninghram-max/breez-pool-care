@@ -43,12 +43,11 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
         await base44.entities.Lead.update(lead.id, { email });
       }
 
-      // Send quote link (no pricing, just link to wizard)
-      const res = await base44.functions.invoke('sendQuoteEmail', {
+      // Send quote link via dedicated function (no quote required)
+      const res = await base44.functions.invoke('sendQuoteLinkEmail', {
         leadId: lead.id,
         firstName: lead.firstName,
-        email,
-        linkOnly: true  // Signal to send link-only email, no pricing
+        email
       });
 
       if (!res.data?.success) {
@@ -60,7 +59,7 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
 
       // Log timestamp in notes
       const timestamp = new Date().toISOString();
-      const newNotes = (lead.notes || '') + `\n[QUOTE_EMAIL_SENT] ${timestamp}`;
+      const newNotes = (lead.notes || '') + `\n[QUOTE_LINK_SENT] ${timestamp}`;
       
       // Update lead to QUOTED stage
       await base44.entities.Lead.update(lead.id, {
