@@ -146,6 +146,26 @@ export default function LinkUserToLeadPanel({ lead }) {
                 <Link2 className="w-4 h-4 mr-2" />
                 {linking ? 'Linking…' : 'Link Account'}
               </Button>
+              <div className="pt-1 space-y-1">
+                <Button
+                  size="sm"
+                  onClick={handleSendActivationEmail}
+                  variant="outline"
+                  className="w-full border-teal-400 text-teal-700 hover:bg-teal-50"
+                >
+                  <Mail className="w-3.5 h-3.5 mr-2" />
+                  Send Activation Link
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleCopyLink}
+                  variant="outline"
+                  className="w-full border-gray-300 text-gray-600 hover:bg-gray-50"
+                >
+                  <Copy className="w-3.5 h-3.5 mr-2" />
+                  Copy Activation Link
+                </Button>
+              </div>
             </div>
           )}
 
