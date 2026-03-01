@@ -1034,6 +1034,7 @@ export default function AdminPricingConfig() {
             {/* Initial Fees */}
             <div className="border-t pt-4">
               <h4 className="font-semibold text-gray-800 mb-3">One-Time Fees</h4>
+              <p className="text-sm text-muted-foreground mb-4">One-time charge for startup work including inspection, balancing, and debris removal.</p>
               <div>
                 <Label>Slightly Cloudy</Label>
                 <Input
@@ -1045,6 +1046,7 @@ export default function AdminPricingConfig() {
               </div>
 
               <p className="text-sm text-gray-700 font-semibold mt-6 mb-3">Green-to-Clean Pricing</p>
+              <p className="text-sm text-muted-foreground mb-4">One-time pricing for restoring severely neglected or algae-filled pools.</p>
               <div className="space-y-6">
               <div>
                 <p className="text-sm font-semibold text-gray-700 mb-3">Light Algae</p>
