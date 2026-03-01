@@ -71,39 +71,37 @@ function CustomerPicker() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-2">
+        <div className="border border-gray-200 rounded-lg divide-y divide-gray-200 overflow-hidden">
           {filteredLeads.length === 0 ? (
-            <p className="text-gray-500 text-center py-6">No customers match "{searchQuery}".</p>
+            <p className="text-gray-500 text-center py-4 text-sm">No customers match "{searchQuery}".</p>
           ) : (
-            <div className="space-y-2">
-              {filteredLeads.map(lead => (
+            <>
+              {filteredLeads.slice(0, 30).map(lead => (
                 <button
                   key={lead.id}
                   type="button"
                   onClick={() => {
                     window.location.href = `/CustomerTimeline?leadId=${lead.id}`;
                   }}
-                  className="w-full text-left p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors cursor-pointer"
+                  className="w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors cursor-pointer flex items-center justify-between text-sm"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900">
-                        {lead.firstName} {lead.lastName || ''}
-                      </h3>
-                      {lead.serviceAddress && (
-                        <p className="text-sm text-gray-600 mt-1">{lead.serviceAddress}</p>
-                      )}
-                      {(lead.email || lead.mobilePhone) && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          {lead.email} {lead.email && lead.mobilePhone ? '•' : ''} {lead.mobilePhone}
-                        </p>
-                      )}
-                    </div>
-                    <ChevronLeft className="w-5 h-5 text-gray-400 rotate-180 flex-shrink-0 ml-2" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 truncate">
+                      {lead.firstName} {lead.lastName || ''}
+                    </p>
+                    {lead.serviceAddress && (
+                      <p className="text-xs text-gray-600 truncate">{lead.serviceAddress}</p>
+                    )}
                   </div>
+                  <ChevronLeft className="w-4 h-4 text-gray-400 rotate-180 flex-shrink-0 ml-2" />
                 </button>
               ))}
-            </div>
+              {filteredLeads.length > 30 && (
+                <div className="px-4 py-2 bg-gray-50 text-xs text-gray-600 text-center">
+                  Showing 30 of {filteredLeads.length} matches
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
