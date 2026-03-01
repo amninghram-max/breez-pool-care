@@ -178,17 +178,17 @@ Deno.serve(async (req) => {
       const leadData = {
         firstName: clientFirstName,
         email: clientEmail,
-        poolType: questionnaireData.poolType || 'not_sure',
-        screenedArea: questionnaireData.enclosure === 'unscreened' ? 'unscreened' : 'fully_screened',
-        treesOverhead: questionnaireData.treesOverhead || 'not_sure',
-        usageFrequency: questionnaireData.useFrequency || 'rarely',
-        sanitizerType: questionnaireData.chlorinationMethod === 'saltwater' ? 'saltwater' : questionnaireData.chlorinationMethod === 'traditional' ? 'tablets' : 'not_sure',
+        poolType: questionnaireData.poolType || undefined,
+        screenedArea: questionnaireData.enclosure === 'unscreened' ? 'unscreened' : (questionnaireData.enclosure === 'fully_screened' ? 'fully_screened' : undefined),
+        treesOverhead: questionnaireData.treesOverhead || undefined,
+        usageFrequency: questionnaireData.useFrequency || undefined,
+        sanitizerType: questionnaireData.chlorinationMethod === 'saltwater' ? 'saltwater' : (questionnaireData.chlorinationMethod === 'traditional' ? 'tablets' : undefined),
         poolCondition: (() => {
           const c = questionnaireData.poolCondition;
           if (c === 'clear') return 'clear';
           if (c === 'slightly_cloudy') return 'slightly_cloudy';
           if (c === 'green' || c === 'dark_algae') return 'green';
-          return 'not_sure';
+          return undefined;
         })(),
         hasPets: questionnaireData.petsAccess || false,
         petsSwimInPool: questionnaireData.petsAccess || false,
