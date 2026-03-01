@@ -10,7 +10,10 @@ import { CheckCircle2, CreditCard, DollarSign, Zap, AlertCircle } from 'lucide-r
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { loadStripe } from '@stripe/stripe-js';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+// Guard: only initialize Stripe if publishable key is available
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY 
+  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
+  : null;
 
 export default function PaymentSetup() {
   const navigate = useNavigate();
