@@ -85,9 +85,7 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
       onClose();
     } catch (err) {
       console.error('Send quote link error:', err);
-      const errorMsg = err.response?.data 
-        ? (typeof err.response.data === 'object' ? JSON.stringify(err.response.data) : err.response.data)
-        : err.message || 'Failed to send quote link';
+      const errorMsg = extractErrorMessage(err, 'Failed to send quote link email');
       setError(errorMsg);
       toast.error(errorMsg);
     } finally {
