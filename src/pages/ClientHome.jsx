@@ -75,8 +75,13 @@ export default function ClientHome() {
 
   const openInvoice = invoices.find(inv => inv.status === 'open' || inv.status === 'past_due');
 
+  const queryClient = useQueryClient();
+
   return (
     <div className="space-y-6">
+      {/* Unsafe to Swim Banner */}
+      {openIncident && <FecalIncidentBanner incident={openIncident} />}
+
       {/* Welcome Header */}
       <div className="space-y-2">
         <h1 className="text-3xl font-semibold text-gray-900">Welcome back, {user?.full_name?.split(' ')[0]}</h1>
