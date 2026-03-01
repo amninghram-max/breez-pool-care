@@ -177,14 +177,9 @@ export default function EquipmentProfiles() {
                     )}
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
-                    <Link to={createPageUrl('CustomerTimeline') + `?leadId=${leadId}`}>
-                      <Button size="sm" variant="outline">
-                        Timeline
-                      </Button>
-                    </Link>
                     <Link to={createPageUrl('EquipmentProfileAdmin') + `?leadId=${leadId}`}>
                       <Button size="sm" className="bg-teal-600 hover:bg-teal-700">
-                        Manage
+                        Open Equipment
                       </Button>
                     </Link>
                   </div>
