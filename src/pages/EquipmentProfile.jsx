@@ -158,12 +158,26 @@ export default function EquipmentProfile() {
     }
   }, [user, userLoading, navigate]);
 
-  // Route guard: Redirect if authenticated but not linked (unlinked customer)
+  // Route guard: Redirect based on role/linkedLeadId
   React.useEffect(() => {
-    if (user && !user.linkedLeadId && !['admin', 'staff', 'technician'].includes(user.role)) {
+    if (!user || userLoading) return;
+    
+    const isProvider = ['admin', 'staff', 'technician'].includes(user.role);
+    
+    if (isProvider) {
+      // Providers should use their role-specific admin pages
+      const homePageMap = {
+        admin: 'AdminHome',
+        staff: 'StaffHome',
+        technician: 'TechnicianHome'
+      };
+      const homePage = homePageMap[user.role] || 'Home';
+      navigate(createPageUrl(homePage), { replace: true });
+    } else if (!user.linkedLeadId) {
+      // Unlinked customers go to ClientHome
       navigate(createPageUrl('ClientHome'), { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, userLoading, navigate]);
 
   // Show loading while checking auth
   if (userLoading) {
@@ -174,10 +188,10 @@ export default function EquipmentProfile() {
     );
   }
 
-  // Guard: only linked customers or providers should see this
+  // Guard: only linked customers (non-providers) should see this page
   const isProvider = user && ['admin', 'staff', 'technician'].includes(user.role);
   const isLinkedCustomer = user && user.linkedLeadId && !isProvider;
-  if (!isLinkedCustomer && !isProvider) {
+  if (!isLinkedCustomer) {
     return null; // guards above will navigate
   }
 
