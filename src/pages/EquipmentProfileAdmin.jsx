@@ -49,7 +49,7 @@ export default function EquipmentProfileAdmin() {
   // Role guard
   if (user && !['admin', 'staff', 'technician'].includes(user.role)) {
     return (
-      <Card className="max-w-2xl mx-auto mt-6 border-red-200 bg-red-50">
+      <Card className="border-red-200 bg-red-50">
         <CardContent className="pt-6">
           <p className="text-red-800">Access Denied: Only admin, staff, and technician roles can manage equipment.</p>
         </CardContent>
@@ -93,7 +93,7 @@ export default function EquipmentProfileAdmin() {
 
   if (!leadId) {
     return (
-      <Card className="max-w-2xl mx-auto mt-6 border-amber-200 bg-amber-50">
+      <Card className="border-amber-200 bg-amber-50">
         <CardContent className="pt-6">
           <p className="text-amber-800">No customer selected. Please select a customer to manage equipment.</p>
         </CardContent>
@@ -102,26 +102,24 @@ export default function EquipmentProfileAdmin() {
   }
 
   if (leadLoading || equipmentLoading) {
-    return <div className="p-6 text-gray-500">Loading customer equipment...</div>;
+    return <div className="text-gray-500">Loading customer equipment...</div>;
   }
 
   if (leadError || equipmentError) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <Alert className="border-red-200 bg-red-50">
-          <AlertCircle className="h-4 w-4 text-red-600" />
-          <AlertDescription className="text-red-800">
-            {leadError && <div>Lead query error: {leadError.message}</div>}
-            {equipmentError && <div>Equipment query error: {equipmentError.message}</div>}
-          </AlertDescription>
-        </Alert>
-      </div>
+      <Alert className="border-red-200 bg-red-50">
+        <AlertCircle className="h-4 w-4 text-red-600" />
+        <AlertDescription className="text-red-800">
+          {leadError && <div>Lead query error: {leadError.message}</div>}
+          {equipmentError && <div>Equipment query error: {equipmentError.message}</div>}
+        </AlertDescription>
+      </Alert>
     );
   }
 
   if (!lead) {
     return (
-      <Card className="max-w-2xl mx-auto mt-6 border-red-200 bg-red-50">
+      <Card className="border-red-200 bg-red-50">
         <CardContent className="pt-6">
           <p className="text-red-800">Customer not found.</p>
         </CardContent>
@@ -130,7 +128,7 @@ export default function EquipmentProfileAdmin() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6">
       {/* Header with back button */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

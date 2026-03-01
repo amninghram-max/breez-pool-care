@@ -177,12 +177,12 @@ export default function CustomerTimeline() {
 
 
   if (leadLoading) {
-    return <div className="p-6 text-gray-500">Loading timeline...</div>;
+    return <div className="text-gray-500">Loading timeline...</div>;
   }
 
   if (!lead) {
     return (
-      <Card className="max-w-2xl mx-auto mt-6 border-red-200 bg-red-50">
+      <Card className="border-red-200 bg-red-50">
         <CardContent className="pt-6">
           <p className="text-red-800">Customer not found.</p>
         </CardContent>
@@ -191,7 +191,7 @@ export default function CustomerTimeline() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
