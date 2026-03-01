@@ -187,7 +187,7 @@ export default function AdminPricingConfig() {
               <RotateCcw className="w-4 h-4 mr-1" />
               Reset
             </Button>
-            <Button
+             <Button
               onClick={handleSave}
               disabled={!unsaved || saveSettingsMutation.isPending}
               className="bg-teal-600 hover:bg-teal-700"
@@ -200,7 +200,7 @@ export default function AdminPricingConfig() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8" id="autopay-section">
 
         {/* Summary Cards - Truth Audit: Only Real Persisted Fields */}
         <div className="grid grid-cols-5 gap-4">
