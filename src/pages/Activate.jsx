@@ -92,16 +92,24 @@ export default function Activate() {
   }
 
   // ── Inline auth handlers ────────────────────────────────────────────────────
+  const passwordsMatch = password && confirmPassword && password === confirmPassword;
+  const passwordMismatch = confirmPassword.length > 0 && password !== confirmPassword;
+
   const handleSignup = async (e) => {
     e.preventDefault();
+    if (!passwordsMatch) {
+      setAuthError('Passwords do not match.');
+      return;
+    }
     setAuthError('');
     setAuthLoading(true);
     try {
       await base44.auth.register({ email, password });
-      // OTP verification required after register
       setOtpStep(true);
     } catch (err) {
       setAuthError(err.message || 'Registration failed. Please try again.');
+      setPassword('');
+      setConfirmPassword('');
     } finally {
       setAuthLoading(false);
     }
