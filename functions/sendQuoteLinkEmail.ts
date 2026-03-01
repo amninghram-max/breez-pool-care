@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
 
     console.log('📧 sendQuoteLinkEmail:', { leadId, email, quoteLink });
 
-    // Send HTML email with branded CTA button
+    // Send HTML email with branded CTA button via Resend (supports external emails)
     const htmlBody = `
 <!DOCTYPE html>
 <html>
@@ -78,13 +78,26 @@ Deno.serve(async (req) => {
 </html>
     `;
 
-    const emailRes = await base44.asServiceRole.integrations.Core.SendEmail({
-      to: email,
-      subject: 'Get Your Breez Pool Service Quote',
-      body: htmlBody
-    });
+    try {
+      // Use Resend integration for external email addresses (supports non-users)
+      const emailRes = await base44.asServiceRole.integrations.Resend.send({
+        from: 'noreply@breezpoolcare.com',
+        to: email,
+        subject: 'Get Your Breez Pool Service Quote',
+        html: htmlBody
+      });
 
-    console.log('✅ Quote link email sent:', emailRes);
+      console.log('✅ Quote link email sent via Resend:', emailRes);
+    } catch (resendError) {
+      console.warn('⚠️ Resend integration unavailable, falling back to Core.SendEmail:', resendError.message);
+      // Fallback to Core.SendEmail (for registered users only)
+      const fallbackRes = await base44.asServiceRole.integrations.Core.SendEmail({
+        to: email,
+        subject: 'Get Your Breez Pool Service Quote',
+        body: htmlBody
+      });
+      console.log('✅ Quote link email sent via fallback:', fallbackRes);
+    }
 
     // Update lead email and log timestamp (service role, no stage change)
     try {
