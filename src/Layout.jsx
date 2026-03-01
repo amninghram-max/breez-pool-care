@@ -19,8 +19,8 @@ export default function Layout({ children, currentPageName }) {
     },
   });
 
-  const userRole = user?.role || 'customer';
-  const isCustomer = userRole === 'customer';
+  const userRole = user?.role || '';
+  const isCustomer = !!user?.linkedLeadId;
 
   const handleLogout = async () => {
     await base44.auth.logout('/');
