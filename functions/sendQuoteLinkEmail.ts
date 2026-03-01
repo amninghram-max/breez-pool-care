@@ -78,12 +78,32 @@ Deno.serve(async (req) => {
 </html>
     `;
 
-    // Send via Resend (supports external addresses)
-    const emailRes = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      prompt: `Send an email via Resend API. Email details:\n- From: noreply@breezpoolcare.com\n- To: ${email}\n- Subject: Get Your Breez Pool Service Quote\n- HTML Body: ${htmlBody}`
+    // Send via Resend API (supports external addresses)
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    if (!resendApiKey) {
+      throw new Error('RESEND_API_KEY not configured');
+    }
+
+    const emailRes = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: 'noreply@breezpoolcare.com',
+        to: email,
+        subject: 'Get Your Breez Pool Service Quote',
+        html: htmlBody
+      })
     });
 
-    console.log('✅ Quote link email sent via Resend:', emailRes);
+    const emailData = await emailRes.json();
+    if (!emailRes.ok) {
+      throw new Error(`Resend API error: ${emailData.message || emailRes.statusText}`);
+    }
+
+    console.log('✅ Quote link email sent via Resend:', emailData);
 
     // Update lead email and log timestamp (service role, no stage change)
     try {
