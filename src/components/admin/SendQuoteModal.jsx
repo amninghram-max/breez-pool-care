@@ -26,6 +26,15 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
       return;
     }
 
+    // Check if lead has required quote inputs
+    const requiredQuoteFields = ['poolSize', 'poolType', 'enclosure', 'filterType', 'chlorinationMethod', 'useFrequency', 'poolCondition'];
+    const missingQuoteFields = requiredQuoteFields.filter(f => !lead[f]);
+
+    if (missingQuoteFields.length > 0) {
+      setError(`Lead is missing required information: ${missingQuoteFields.join(', ')}. Please complete the quote flow first.`);
+      return;
+    }
+
     setLoading(true);
     try {
       // Update lead email if changed
@@ -33,13 +42,43 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
         await base44.entities.Lead.update(lead.id, { email });
       }
 
-      // Generate quote for this lead
+      // Generate quote for this lead using lead pool data
       const quoteRes = await base44.functions.invoke('calculateQuote', {
-        leadId: lead.id
+        questionnaireData: {
+          poolSize: lead.poolSize,
+          poolType: lead.poolType,
+          spaPresent: lead.spaPresent,
+          enclosure: lead.screenedArea,
+          treesOverhead: lead.treesOverhead,
+          filterType: lead.filterType,
+          chlorinationMethod: lead.sanitizerType,
+          chlorinatorType: lead.tabletFeederType,
+          useFrequency: lead.usageFrequency,
+          petsAccess: lead.hasPets,
+          petSwimFrequency: lead.petSwimFrequency,
+          poolCondition: lead.poolCondition,
+          clientEmail: email,
+          clientFirstName: lead.firstName,
+          clientPhone: lead.mobilePhone
+        }
       });
 
+      if (quoteRes.status !== 200) {
+        const errorData = quoteRes.data;
+        const errorMsg = errorData.missingFields 
+          ? `Missing pool information: ${errorData.missingFields.join(', ')}. Complete lead details first.`
+          : errorData.message || errorData.error || 'Failed to generate quote';
+        setError(errorMsg);
+        console.error('Quote generation error:', errorData);
+        toast.error(errorMsg);
+        return;
+      }
+
       if (!quoteRes.data?.quote) {
-        throw new Error(quoteRes.data?.error || 'Failed to generate quote');
+        setError('Quote generation returned no data');
+        console.error('Quote generation returned empty:', quoteRes.data);
+        toast.error('Quote generation failed');
+        return;
       }
 
       const quote = quoteRes.data.quote;
@@ -52,7 +91,10 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
       });
 
       if (!emailRes.data?.success) {
-        throw new Error(emailRes.data?.error || 'Failed to send quote');
+        const emailErr = emailRes.data?.error || 'Failed to send quote email';
+        setError(emailErr);
+        toast.error(emailErr);
+        return;
       }
 
       // Log timestamp in notes
@@ -71,8 +113,11 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
       onClose();
     } catch (err) {
       console.error('Send quote error:', err);
-      setError(err.message || 'Failed to send quote');
-      toast.error(err.message);
+      const errorMsg = err.response?.data 
+        ? JSON.stringify(err.response.data)
+        : err.message || 'Failed to send quote';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
