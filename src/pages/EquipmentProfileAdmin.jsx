@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, ChevronLeft } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Plus, ChevronLeft, AlertCircle } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
 
@@ -34,16 +35,39 @@ export default function EquipmentProfileAdmin() {
     isActive: true
   });
 
-  const { data: lead, isLoading: leadLoading } = useQuery({
-    queryKey: ['leadDetail', leadId],
-    queryFn: () => leadId ? base44.entities.Lead.list() : null,
-    select: (leads) => leads?.find(l => l.id === leadId)
+  const { data: user } = useQuery({
+    queryKey: ['userForEquipmentAdmin'],
+    queryFn: async () => {
+      try {
+        return await base44.auth.me();
+      } catch {
+        return null;
+      }
+    }
   });
 
-  const { data: equipment = [], isLoading: equipmentLoading, refetch } = useQuery({
+  // Role guard
+  if (user && !['admin', 'staff', 'technician'].includes(user.role)) {
+    return (
+      <Card className="max-w-2xl mx-auto mt-6 border-red-200 bg-red-50">
+        <CardContent className="pt-6">
+          <p className="text-red-800">Access Denied: Only admin, staff, and technician roles can manage equipment.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const { data: lead, isLoading: leadLoading, error: leadError } = useQuery({
+    queryKey: ['leadDetail', leadId],
+    queryFn: () => leadId ? base44.entities.Lead.list() : null,
+    select: (leads) => leads?.find(l => l.id === leadId),
+    enabled: !!leadId && !!user && ['admin', 'staff', 'technician'].includes(user?.role)
+  });
+
+  const { data: equipment = [], isLoading: equipmentLoading, error: equipmentError, refetch } = useQuery({
     queryKey: ['equipmentForLead', leadId],
-    queryFn: () => leadId ? base44.entities.PoolEquipment.filter({ leadId }) : [],
-    enabled: !!leadId
+    queryFn: () => leadId ? base44.entities.PoolEquipment.filter({ leadId, isActive: true }) : [],
+    enabled: !!leadId && !!user && ['admin', 'staff', 'technician'].includes(user?.role)
   });
 
   const handleAddEquipment = async () => {
@@ -71,7 +95,7 @@ export default function EquipmentProfileAdmin() {
     return (
       <Card className="max-w-2xl mx-auto mt-6 border-amber-200 bg-amber-50">
         <CardContent className="pt-6">
-          <p className="text-amber-800">No customer selected. Please select a customer from the Equipment Profiles list.</p>
+          <p className="text-amber-800">No customer selected. Please select a customer to manage equipment.</p>
         </CardContent>
       </Card>
     );
@@ -79,6 +103,20 @@ export default function EquipmentProfileAdmin() {
 
   if (leadLoading || equipmentLoading) {
     return <div className="p-6 text-gray-500">Loading customer equipment...</div>;
+  }
+
+  if (leadError || equipmentError) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <Alert className="border-red-200 bg-red-50">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-800">
+            {leadError && <div>Lead query error: {leadError.message}</div>}
+            {equipmentError && <div>Equipment query error: {equipmentError.message}</div>}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
   }
 
   if (!lead) {
@@ -96,7 +134,7 @@ export default function EquipmentProfileAdmin() {
       {/* Header with back button */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link to={createPageUrl('EquipmentProfiles')}>
+          <Link to={createPageUrl('CustomerTimeline') + `?leadId=${leadId}`}>
             <Button variant="outline" size="icon">
               <ChevronLeft className="w-4 h-4" />
             </Button>
