@@ -273,6 +273,33 @@ function LeadDetailModal({ lead, onClose, onUpdate, onSendAcceptance, onRemoved 
   const [showLostForm, setShowLostForm] = React.useState(false);
   const [showUnstick, setShowUnstick] = React.useState(false);
   const [showRemove, setShowRemove] = React.useState(false);
+  const [resendingConfirmation, setResendingConfirmation] = React.useState(false);
+
+  const handleResendConfirmation = async () => {
+    setResendingConfirmation(true);
+    try {
+      const res = await base44.functions.invoke('sendInspectionConfirmation', {
+        leadId: lead.id,
+        firstName: lead.firstName,
+        email: lead.email,
+        mobilePhone: lead.mobilePhone,
+        inspectionDate: lead.requestedInspectionDate,
+        inspectionTime: lead.requestedInspectionTime,
+        serviceAddress: lead.serviceAddress,
+        preferredContact: lead.preferredContact,
+        force: true,
+      });
+      if (res.data?.success) {
+        toast.success('Confirmation email resent');
+      } else {
+        toast.error(res.data?.error || 'Failed to resend');
+      }
+    } catch (e) {
+      toast.error('Failed to resend confirmation');
+    } finally {
+      setResendingConfirmation(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
