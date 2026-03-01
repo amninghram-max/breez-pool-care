@@ -158,7 +158,7 @@ export default function LinkUserToLeadPanel({ lead }) {
                 <div className="text-xs text-teal-700 bg-teal-50 border border-teal-200 rounded-md px-3 py-2 space-y-1">
                   <p className="font-medium">Invite sent ✓</p>
                   <p>The customer will be linked when they create their account using the activation link.</p>
-                  <p className="font-mono text-xs break-all text-teal-600 mt-1">{activationLink}</p>
+                  <p className="font-mono text-xs break-all text-teal-600 mt-1">{activationUrl}</p>
                 </div>
               ) : (
                 <>
