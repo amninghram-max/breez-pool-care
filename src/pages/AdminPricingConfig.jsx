@@ -302,8 +302,8 @@ export default function AdminPricingConfig() {
           </CardContent>
         </Card>
 
-        {/* Additive Tokens Section */}
-        <Card className="bg-white">
+        {/* Additive Tokens Section - with section ID for navigation */}
+        <Card className="bg-white" id="additive-tokens-section">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Zap className="w-5 h-5 text-amber-600" />
