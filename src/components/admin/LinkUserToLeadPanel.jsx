@@ -174,7 +174,7 @@ export default function LinkUserToLeadPanel({ lead }) {
                   <p className="text-xs text-gray-500">
                     We'll send an invite email. Their account will be linked automatically when they sign up via:
                   </p>
-                  <p className="font-mono text-xs break-all text-indigo-600">{activationLink}</p>
+                  <p className="font-mono text-xs break-all text-indigo-600">{activationUrl}</p>
                 </>
               )}
             </div>
