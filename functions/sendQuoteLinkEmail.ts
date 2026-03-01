@@ -183,7 +183,13 @@ Deno.serve(async (req) => {
     if (!emailRes.ok) {
       const errorMsg = emailData.message || emailRes.statusText || `HTTP ${emailRes.status}`;
       console.error('❌ Resend API error:', errorMsg, { status: emailRes.status, resendResponse: emailData });
-      throw new Error(`Resend API error: ${errorMsg}`);
+      return Response.json({
+        success: false,
+        error: 'Resend failed',
+        status: emailRes.status,
+        body: resendText,
+        build: BUILD
+      }, { status: 200 });
     }
 
     console.log('✅ Quote link email sent via Resend:', { id: emailData.id, to: email });
