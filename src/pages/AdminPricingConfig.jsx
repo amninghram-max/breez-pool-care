@@ -218,10 +218,12 @@ export default function AdminPricingConfig() {
   const riskEnabled = localSettings.riskEngine?.points ? 'Enabled' : 'Disabled';
   const frequencyMultiplier = localSettings.frequencyLogic?.twice_weekly_multiplier || 1.8;
   const minFloor = localSettings.baseTierPrices?.absolute_floor || 120;
+  const targetMargin = localSettings.targetGrossMargin || 0;
   
   // Compute badge statuses
   const pricingStatus = getPricingConfigStatus(localSettings.baseTierPrices);
   const autopayStatus = getAutopayStatus(autopayValue);
+  const marginStatus = getTargetMarginStatus(targetMargin);
   const riskStatus = getRiskScoringStatus(localSettings.riskEngine);
   const frequencyStatus = getFrequencyStatus(frequencyMultiplier);
 
