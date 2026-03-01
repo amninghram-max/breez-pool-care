@@ -140,6 +140,7 @@ export default function ProviderNav({ userRole }) {
     ]},
     { key: 'system', items: [
       { name: 'Pricing & Settings',    path: 'Admin',                icon: Settings },
+      { name: 'Pricing Dashboard',     path: 'AdminPricingConfig',   icon: Settings },
       { name: 'Config Setup',          path: 'AdminSettingsSetup',   icon: Settings },
       { name: 'Release Readiness',     path: 'ReleaseReadiness',     icon: Shield },
     ]},
