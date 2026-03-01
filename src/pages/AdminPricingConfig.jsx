@@ -808,12 +808,13 @@ export default function AdminPricingConfig() {
                   </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+              </div>
+              </CardContent>
+              </Card>
 
-        {/* Reset Confirmation Dialog */}
-        <AlertDialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
+              {/* Reset Confirmation Dialog */}
+              <AlertDialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
           <AlertDialogContent>
             <AlertDialogTitle>Revert to Last Saved?</AlertDialogTitle>
             <AlertDialogDescription>
