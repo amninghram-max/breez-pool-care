@@ -50,33 +50,22 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
         await base44.entities.Lead.update(lead.id, { email });
       }
 
-      // Build payload
+      // Send quote link via direct fetch
       const payload = { leadId: lead.id, firstName: lead.firstName, email };
-      console.log('📧 Invoking sendQuoteLinkEmail', payload);
-
-      // [SMOKE TEST] Raw HTTP call to bypass SDK wrapper (captures actual response)
-      const rawUrl = `/api/functions/sendQuoteLinkEmail`;
-      const rawRes = await fetch(rawUrl, {
+      
+      const r = await fetch('/api/functions/sendQuoteLinkEmail', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      const rawText = await rawRes.text();
-      const rawContentType = rawRes.headers.get('content-type') || 'none';
-      console.log('🔍 RAW sendQuoteLinkEmail response:', {
-        status: rawRes.status,
-        contentType: rawContentType,
-        bodyPreview: rawText.slice(0, 300),
-        fullBody: rawText
-      });
 
-      // Also try SDK path for comparison
-      const res = await base44.functions.invoke('sendQuoteLinkEmail', payload);
+      const text = await r.text();
+      const data = text ? JSON.parse(text) : null;
 
-      if (!res.data?.success) {
-        const errMsg = typeof res.data?.error === 'object' 
-          ? JSON.stringify(res.data.error)
-          : res.data?.error || 'Failed to send quote link';
+      if (!data?.success) {
+        const errMsg = typeof data?.error === 'object' 
+          ? JSON.stringify(data.error)
+          : data?.error || 'Failed to send quote link email';
         throw new Error(errMsg);
       }
 
