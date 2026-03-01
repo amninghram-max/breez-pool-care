@@ -122,7 +122,6 @@ export default function ProviderNav({ userRole }) {
   const sections = [
     { key: 'command_center', items: [
       { name: 'Admin Home',  path: 'AdminHome', icon: Shield },
-      { name: 'Staff Home',  path: 'StaffHome', icon: Home },
     ]},
     { key: 'operations', items: [
       { name: 'Calendar',              path: 'Calendar',             icon: Calendar },
@@ -131,21 +130,25 @@ export default function ProviderNav({ userRole }) {
     ]},
     { key: 'customers', items: [
       { name: 'Leads Pipeline',        path: 'LeadsPipeline',        icon: Users },
-      { name: 'Equipment Profiles',    path: 'EquipmentProfiles',    icon: Activity },
       { name: 'Customer Timeline',     path: 'CustomerTimeline',     icon: Activity },
+      { name: 'Equipment Profiles',    path: 'EquipmentProfiles',    icon: Activity },
+    ]},
+    { key: 'chemistry', items: [
+      { name: 'Chemistry Review',      path: 'AdminReviewDashboard', icon: Droplet },
+      { name: 'Chemistry Dashboard',   path: 'ChemistryDashboard',   icon: Droplet },
+      { name: 'Chemical Analytics',    path: 'ChemicalAnalytics',    icon: Droplet },
     ]},
     { key: 'pricing', items: [
       { name: 'Pricing Dashboard',     path: 'AdminPricingConfig',   icon: Settings },
       { name: 'Config Setup',          path: 'AdminSettingsSetup',   icon: Settings },
       { name: 'Release Readiness',     path: 'ReleaseReadiness',     icon: Shield },
+      { name: 'Margin Testing',        path: 'MarginStressTest',     icon: Activity },
     ]},
-    { key: 'team_analytics', items: [
+    { key: 'team', items: [
       { name: 'Staff Management',      path: 'StaffManagement',      icon: Users },
       { name: 'Analytics',             path: 'Analytics',            icon: BarChart3 },
-      { name: 'Chemistry Review',      path: 'AdminReviewDashboard', icon: AlertCircle },
-      { name: 'Chemistry Dashboard',   path: 'ChemistryDashboard',   icon: Droplet },
-      { name: 'Chemical Analytics',    path: 'ChemicalAnalytics',    icon: Droplet },
-      { name: 'Margin Testing',        path: 'MarginStressTest',     icon: Activity },
+    ]},
+    { key: 'support', items: [
       { name: 'Support Inbox',         path: 'AdminMessaging',       icon: MessageSquare },
     ]},
   ];
