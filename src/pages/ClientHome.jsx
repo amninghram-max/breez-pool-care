@@ -272,6 +272,35 @@ export default function ClientHome() {
           )}
         </CardContent>
       </Card>
+      {/* Education link */}
+      <div className="flex items-center justify-between px-4 py-3 bg-blue-50 rounded-xl border border-blue-100">
+        <div className="flex items-center gap-3">
+          <BookOpen className="w-4 h-4 text-blue-500 flex-shrink-0" />
+          <p className="text-sm text-blue-800">Interested in how your pool functions?</p>
+        </div>
+        <Link to={createPageUrl('FAQ')}>
+          <Button size="sm" variant="ghost" className="text-xs text-blue-700 hover:bg-blue-100 h-7">
+            Learn More
+          </Button>
+        </Link>
+      </div>
+
+      {/* Fecal Incident Report Modal */}
+      <Dialog open={showIncidentForm} onOpenChange={setShowIncidentForm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Report a Fecal Incident</DialogTitle>
+          </DialogHeader>
+          <FecalIncidentForm
+            leadId={lead?.id}
+            onSubmitted={() => {
+              setShowIncidentForm(false);
+              queryClient.invalidateQueries({ queryKey: ['openFecalIncident', lead?.id] });
+            }}
+            onCancel={() => setShowIncidentForm(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
