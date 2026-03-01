@@ -10,8 +10,35 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Save, DollarSign, TrendingUp, Zap, RotateCcw, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+// Helper: detect unsaved changes
+const hasUnsavedChanges = (local, persisted) => {
+  if (!local || !persisted) return false;
+  return JSON.stringify(local) !== JSON.stringify(persisted);
+};
+
+// Helper: format currency
+const formatCurrency = (val) => {
+  const num = parseFloat(val);
+  return isNaN(num) ? '$0.00' : `$${num.toFixed(2)}`;
+};
+
+// Helper: format percentage
+const formatPercent = (val) => {
+  const num = parseFloat(val);
+  return isNaN(num) ? '0%' : `${(num * 100).toFixed(1)}%`;
+};
+
+// Helper: format timestamp
+const formatTimestamp = (dateString) => {
+  if (!dateString) return 'Never';
+  const date = new Date(dateString);
+  return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
+
 export default function AdminPricingConfig() {
   const queryClient = useQueryClient();
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showNavigateConfirm, setShowNavigateConfirm] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -28,8 +55,9 @@ export default function AdminPricingConfig() {
   const settings = settingsQuery.data;
 
   const [localSettings, setLocalSettings] = useState(null);
+  const unsaved = hasUnsavedChanges(localSettings, settings);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (settings && !localSettings) {
       setLocalSettings(settings);
     }
