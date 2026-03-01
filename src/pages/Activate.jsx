@@ -24,6 +24,7 @@ export default function Activate() {
   // OTP verification
   const [otpStep, setOtpStep] = useState(false);
   const [otpCode, setOtpCode] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const queryClient = useQueryClient();
 
