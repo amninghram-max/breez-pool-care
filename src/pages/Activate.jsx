@@ -10,12 +10,8 @@ const PROTECTED_ROLES = ['admin', 'staff', 'technician'];
 
 export default function Activate() {
   const navigate = useNavigate();
-  // Support both hash routing (/#/Activate?leadId=...) and direct query params
-  const hashSearch = window.location.hash.includes('?')
-    ? window.location.hash.substring(window.location.hash.indexOf('?'))
-    : '';
-  const urlParams = new URLSearchParams(hashSearch || window.location.search);
-  const leadId = urlParams.get('leadId');
+  // Path routing only — /Activate?leadId=...
+  const leadId = new URLSearchParams(window.location.search).get('leadId');
 
   const [status, setStatus] = useState('idle'); // idle | linking | success | error
   const [errorMsg, setErrorMsg] = useState('');
