@@ -30,24 +30,20 @@ Deno.serve(async (req) => {
     const result = {};
 
     // ─────────────────────────────────────────────
-    // A) TECHNICIAN — lookup only, cannot create user
+    // A) TECHNICIAN — lookup only, cannot create/update User entity from functions
+    // User entity has special built-in security. Must be configured manually via Dashboard.
     // ─────────────────────────────────────────────
     const allUsers = await db.entities.User.list();
     const techUser = allUsers.find(u => u.email === TEST_TECH_EMAIL);
 
     if (techUser) {
-      await db.entities.User.update(techUser.id, {
-        role: 'technician',
-        canFinalizeInspections: true,
-        full_name: 'Test Technician',
-      });
       result.technicianUserId = techUser.id;
       result.technicianCreated = false;
-      result.technicianNote = 'Found and updated existing user.';
+      result.technicianNote = `User found (id: ${techUser.id}). Manually set role=technician and canFinalizeInspections=true via Dashboard > Users if not already done.`;
     } else {
       result.technicianUserId = null;
       result.technicianCreated = false;
-      result.technicianNote = `User not found. Invite ${TEST_TECH_EMAIL} via Dashboard, then re-run this seed.`;
+      result.technicianNote = `User not found. Invite ${TEST_TECH_EMAIL} via Dashboard, set role=technician and canFinalizeInspections=true, then re-run this seed.`;
     }
 
     // ─────────────────────────────────────────────
