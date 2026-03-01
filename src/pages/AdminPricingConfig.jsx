@@ -242,7 +242,7 @@ export default function AdminPricingConfig() {
         </div>
 
         {/* Base Pricing Section */}
-        <Card className="bg-white">
+        <Card className="bg-white" id="base-pricing-section">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <DollarSign className="w-5 h-5 text-teal-600" />
