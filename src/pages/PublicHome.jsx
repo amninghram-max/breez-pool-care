@@ -400,9 +400,9 @@ export default function PublicHome() {
                   <Phone className="w-4 h-4" style={{ color: TEAL }} />
                   (321) 524-3838
                 </a>
-                <a href="mailto:matt@breezpoolcare.com" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors text-sm">
+                <a href="mailto:info@breezpoolcare.com" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors text-sm">
                   <Mail className="w-4 h-4" style={{ color: TEAL }} />
-                  matt@breezpoolcare.com
+                  info@breezpoolcare.com
                 </a>
                 <div className="flex items-center gap-2 text-gray-300 text-sm">
                   <Clock className="w-4 h-4" style={{ color: TEAL }} />
