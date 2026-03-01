@@ -274,15 +274,7 @@ export default function CustomerTimeline() {
     return events;
   }, [serviceVisits, inspections, chemTests, equipmentChanges, messages, leadId]);
 
-  if (!leadId) {
-    return (
-      <Card className="max-w-2xl mx-auto mt-6 border-amber-200 bg-amber-50">
-        <CardContent className="pt-6">
-          <p className="text-amber-800">No customer selected. Please select a customer to view their timeline.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+
 
   if (leadLoading) {
     return <div className="p-6 text-gray-500">Loading timeline...</div>;
