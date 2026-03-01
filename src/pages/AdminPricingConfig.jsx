@@ -609,6 +609,7 @@ export default function AdminPricingConfig() {
                   onChange={(e) => updateField('baseTierPrices.tier_d_30k_plus', e.target.value)}
                   className="mt-2"
                 />
+                <p className="text-sm text-muted-foreground mt-1">Monthly starting price for pools in this size range.</p>
               </div>
             </div>
             <div className="border-t pt-4">
@@ -619,7 +620,7 @@ export default function AdminPricingConfig() {
                 onChange={(e) => updateField('baseTierPrices.absolute_floor', e.target.value)}
                 className="mt-2"
               />
-              <p className="text-xs text-gray-500 mt-1">Minimum price regardless of calculations</p>
+              <p className="text-sm text-muted-foreground mt-1">The lowest monthly price allowed. Adjustments cannot reduce pricing below this amount.</p>
             </div>
           </CardContent>
         </Card>
