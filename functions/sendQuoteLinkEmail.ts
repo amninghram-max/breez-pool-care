@@ -89,8 +89,9 @@ Deno.serve(async (req) => {
       console.error('❌ RESEND_API_KEY env var not set');
       return Response.json({
         success: false,
-        error: 'RESEND_API_KEY environment variable not configured'
-      }, { status: 500 });
+        error: 'RESEND_API_KEY environment variable not configured',
+        build: BUILD
+      }, { status: 200 });
     }
     
     const quoteLink = `${appOrigin}/PreQualification?leadId=${encodeURIComponent(leadId)}`;
