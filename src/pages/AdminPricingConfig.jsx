@@ -940,33 +940,11 @@ export default function AdminPricingConfig() {
                   <p className="text-xs text-gray-500 mt-1">Adjusted risk ≥ this → twice/week</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>AutoPay Discount</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Label>Monthly Discount Amount</Label>
-              <Input
-                type="number"
-                value={localSettings.autopayDiscount || 10}
-                onChange={(e) => updateField('autopayDiscount', e.target.value)}
-                className="mt-2"
-              />
-              <p className="text-xs text-gray-500 mt-1">Applied after all other calculations</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Initial Fees */}
-        <TabsContent value="fees" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Water Condition Fees</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+            {/* Initial Fees */}
+            <div className="border-t pt-4">
+              <h4 className="font-semibold text-gray-800 mb-3">One-Time Fees</h4>
               <div>
                 <Label>Slightly Cloudy</Label>
                 <Input
@@ -976,14 +954,9 @@ export default function AdminPricingConfig() {
                   className="mt-2"
                 />
               </div>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Green-to-Clean Pricing</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
+              <p className="text-sm text-gray-700 font-semibold mt-6 mb-3">Green-to-Clean Pricing</p>
+              <div className="space-y-6">
               <div>
                 <p className="text-sm font-semibold text-gray-700 mb-3">Light Algae</p>
                 <div className="grid grid-cols-3 gap-4">
