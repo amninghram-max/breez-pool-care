@@ -67,6 +67,13 @@ export default function LeadsPipeline() {
     }
   });
 
+  const sendAcceptanceMutation = useMutation({
+    mutationFn: (leadId) => base44.functions.invoke('sendAcceptanceLink', { leadId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+    }
+  });
+
   if (user?.role !== 'admin') {
     return (
       <div className="p-8 text-center">
@@ -75,13 +82,6 @@ export default function LeadsPipeline() {
       </div>
     );
   }
-
-  const sendAcceptanceMutation = useMutation({
-    mutationFn: (leadId) => base44.functions.invoke('sendAcceptanceLink', { leadId }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
-    }
-  });
 
   const handleStageChange = (leadId, newStage, oldStage) => {
     updateLeadMutation.mutate({ id: leadId, data: { stage: newStage } }, {
