@@ -27,6 +27,7 @@ const MELBOURNE_FL_ADDRESS = {
 };
 
 Deno.serve(async (req) => {
+  const result = {};
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -39,8 +40,6 @@ Deno.serve(async (req) => {
     const now = new Date().toISOString();
     const todayPlus3 = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     const todayMinus7 = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-
-    const result = {};
 
     // ─────────────────────────────────────────────
     // A) TECHNICIAN — lookup only, cannot create/update User entity from functions
