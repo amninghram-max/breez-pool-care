@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Save, DollarSign, TrendingUp, Zap, RotateCcw, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Save, DollarSign, TrendingUp, Zap, RotateCcw, AlertCircle, CheckCircle2, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Helper: detect unsaved changes
