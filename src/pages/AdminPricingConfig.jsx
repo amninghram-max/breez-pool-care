@@ -480,7 +480,7 @@ export default function AdminPricingConfig() {
         </Card>
 
         {/* Risk Adjustments Section */}
-        <Card className="bg-white">
+        <Card className="bg-white" id="risk-section">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-purple-600" />
