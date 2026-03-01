@@ -39,6 +39,33 @@ const formatTimestamp = (dateString) => {
   return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
+// Helper: determine badge variant and label based on pricing health
+const getPricingMarginStatus = (avgPrice) => {
+  // Recommended range: $120-$350 (healthy margin for pool care)
+  if (avgPrice >= 120 && avgPrice <= 350) {
+    return { variant: 'default', label: 'Healthy Range', className: 'bg-green-100 text-green-800 border-green-300' };
+  } else if (avgPrice < 120) {
+    return { variant: 'destructive', label: 'Below Range', className: 'bg-red-100 text-red-800 border-red-300' };
+  } else {
+    return { variant: 'secondary', label: 'Above Range', className: 'bg-amber-100 text-amber-800 border-amber-300' };
+  }
+};
+
+// Helper: determine risk scoring badge
+const getRiskScoringStatus = (riskEngine) => {
+  const enabled = riskEngine?.points && Object.keys(riskEngine.points).length > 0;
+  return enabled
+    ? { variant: 'default', label: 'Enabled', className: 'bg-green-100 text-green-800 border-green-300' }
+    : { variant: 'secondary', label: 'Disabled', className: 'bg-gray-100 text-gray-700 border-gray-300' };
+};
+
+// Helper: determine frequency multiplier badge
+const getFrequencyStatus = (multiplier) => {
+  return multiplier > 1
+    ? { variant: 'default', label: 'Active', className: 'bg-green-100 text-green-800 border-green-300' }
+    : { variant: 'secondary', label: 'Standard', className: 'bg-gray-100 text-gray-700 border-gray-300' };
+};
+
 export default function AdminPricingConfig() {
   const queryClient = useQueryClient();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
