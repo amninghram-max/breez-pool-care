@@ -35,18 +35,43 @@ export default function AdminPricingConfig() {
 
   const saveSettingsMutation = useMutation({
     mutationFn: async () => {
+      // Build payload and stringify JSON fields
+      const fieldsToStringify = ['baseTierPrices', 'additiveTokens', 'riskEngine', 'initialFees', 'frequencyLogic', 'chemistryTargets', 'seasonalPeriods'];
+      const payload = { ...localSettings };
+
+      try {
+        fieldsToStringify.forEach(field => {
+          if (field in payload) {
+            const value = payload[field];
+            // If already a string, leave unchanged
+            if (typeof value === 'string') {
+              // Already stringified
+            } else if (value === null || value === undefined) {
+              // Pass through as-is
+            } else if (typeof value === 'object') {
+              // Stringify objects/arrays
+              payload[field] = JSON.stringify(value);
+            }
+          }
+        });
+      } catch (err) {
+        throw new Error(`Failed to serialize pricing data: ${err.message}`);
+      }
+
       if (settings?.id) {
-        await base44.entities.AdminSettings.update(settings.id, localSettings);
+        await base44.entities.AdminSettings.update(settings.id, payload);
       } else {
-        await base44.entities.AdminSettings.create(localSettings);
+        await base44.entities.AdminSettings.create(payload);
       }
     },
     onSuccess: () => {
+      // Re-fetch the latest settings to ensure UI reflects persisted data
       queryClient.invalidateQueries({ queryKey: ['adminSettings'] });
-      toast.success('Pricing configuration saved');
+      toast.success('Pricing configuration saved and persisted');
     },
     onError: (error) => {
       toast.error('Failed to save: ' + error.message);
+      // Do NOT reset localSettings on error
     }
   });
 
