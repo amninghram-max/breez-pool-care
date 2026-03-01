@@ -96,19 +96,24 @@ export default function VisitHistoryCard({ record, dosePlan, retestRecord }) {
         </button>
 
         {expanded && (
-          <div className="grid grid-cols-3 gap-2 pt-1">
-            {DISPLAY_FIELDS.map(f => {
-              const val = record[f.key];
-              if (val == null) return null;
-              return (
-                <div key={f.key} className="bg-gray-50 rounded p-2 text-center">
-                  <p className="text-xs text-gray-400">{f.label}</p>
-                  <p className="font-mono font-bold text-xs text-gray-800">
-                    {val}{f.unit ? ` ${f.unit}` : ''}
-                  </p>
-                </div>
-              );
-            })}
+          <div className="space-y-3 pt-1">
+            <div className="grid grid-cols-3 gap-2">
+              {DISPLAY_FIELDS.map(f => {
+                const val = record[f.key];
+                if (val == null) return null;
+                return (
+                  <div key={f.key} className="bg-gray-50 rounded p-2 text-center">
+                    <p className="text-xs text-gray-400">{f.label}</p>
+                    <p className="font-mono font-bold text-xs text-gray-800">
+                      {val}{f.unit ? ` ${f.unit}` : ''}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-xs text-gray-400 leading-relaxed italic border-t border-gray-100 pt-3">
+              Minor fluctuations are normal and can be influenced by weather, rainfall, usage, and equipment runtime. We monitor trends and make adjustments as part of routine service.
+            </p>
           </div>
         )}
       </CardContent>

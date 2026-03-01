@@ -37,7 +37,7 @@ export default function CustomerEquipment() {
   return (
     <div className="space-y-5 max-w-xl mx-auto">
       <div className="flex items-center gap-3">
-        <Link to={createPageUrl('CustomerDashboard')}>
+        <Link to={createPageUrl('ClientHome')}>
           <Button variant="ghost" size="icon" className="h-8 w-8">
             <ChevronLeft className="w-4 h-4" />
           </Button>

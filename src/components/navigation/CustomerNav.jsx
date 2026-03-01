@@ -7,7 +7,7 @@ export default function CustomerNav() {
   const location = useLocation();
 
   const navItems = [
-    { name: 'My Pool', path: 'CustomerDashboard', icon: Droplet },
+    { name: 'My Pool', path: 'ClientHome', icon: Droplet },
     { name: 'History', path: 'CustomerServiceHistory', icon: History },
     { name: 'Equipment', path: 'CustomerEquipment', icon: Wrench },
     { name: 'Messages', path: 'CustomerMessagingPage', icon: MessageSquare },

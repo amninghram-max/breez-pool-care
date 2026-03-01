@@ -90,7 +90,7 @@ export default function CustomerMessagingPage() {
     <div className="flex flex-col h-[calc(100vh-80px)] max-w-xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
-        <Link to={createPageUrl('CustomerDashboard')}>
+        <Link to={createPageUrl('ClientHome')}>
           <Button variant="ghost" size="icon" className="h-8 w-8">
             <ChevronLeft className="w-4 h-4" />
           </Button>
