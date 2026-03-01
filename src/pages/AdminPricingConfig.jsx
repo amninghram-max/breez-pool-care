@@ -115,13 +115,20 @@ export default function AdminPricingConfig() {
     queryFn: async () => {
       if (typeof window !== 'undefined') {
         console.info('[AdminPricingConfig] settings query started');
+        console.info('[AdminPricingConfig] user role:', user?.role);
       }
       const result = await base44.entities.AdminSettings.filter({ settingKey: 'default' });
       if (typeof window !== 'undefined') {
-        console.info('[AdminPricingConfig] settings query resolved', result[0]?.id);
+        console.info('[AdminPricingConfig] settings query resolved - count:', result?.length || 0);
+        if (result?.length > 0) {
+          console.info('[AdminPricingConfig] first record ID:', result[0]?.id, 'settingKey:', result[0]?.settingKey);
+        } else {
+          console.warn('[AdminPricingConfig] no records returned - RLS may be blocking read access');
+        }
       }
       return result[0] || null;
-    }
+    },
+    enabled: !!user
   });
 
   const settings = settingsQuery.data;
