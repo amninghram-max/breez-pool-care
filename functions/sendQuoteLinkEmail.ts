@@ -8,10 +8,12 @@ import { getAppOrigin } from "./_getAppOrigin.js";
  * Method: POST
  * Content-Type: application/json
  * 
- * Returns 400 if:
+ * Returns HTTP 200 with success:false for validation errors:
  * - Body is missing or empty
  * - Body is not valid JSON
  * - Required fields are missing/invalid
+ * 
+ * Returns HTTP 500 only for true server failures (Resend errors, env issues, etc.)
  */
 
 Deno.serve(async (req) => {
