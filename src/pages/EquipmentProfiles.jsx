@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Wrench } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Wrench, Search } from 'lucide-react';
+import { createPageUrl } from '@/utils';
+import { Link } from 'react-router-dom';
 
 const TYPE_LABELS = {
   pump: 'Pump',
@@ -16,6 +20,8 @@ const TYPE_LABELS = {
 };
 
 export default function EquipmentProfiles() {
+  const [searchQuery, setSearchQuery] = useState('');
+
   const { data: equipment = [], isLoading } = useQuery({
     queryKey: ['equipmentProfiles'],
     queryFn: () => base44.entities.PoolEquipment.filter({ isActive: true }, 'equipmentType')
@@ -34,6 +40,21 @@ export default function EquipmentProfiles() {
     acc[eq.leadId].push(eq);
     return acc;
   }, {});
+
+  // Filter leads by search query
+  const filteredLeadIds = useMemo(() => {
+    if (!searchQuery.trim()) return Object.keys(byLead);
+    const q = searchQuery.toLowerCase();
+    return Object.keys(byLead).filter(leadId => {
+      const lead = leadMap[leadId];
+      if (!lead) return false;
+      const fullName = `${lead.firstName || ''} ${lead.lastName || ''}`.toLowerCase();
+      const email = (lead.email || '').toLowerCase();
+      const phone = (lead.mobilePhone || '').toLowerCase();
+      const address = (lead.serviceAddress || '').toLowerCase();
+      return fullName.includes(q) || email.includes(q) || phone.includes(q) || address.includes(q);
+    });
+  }, [searchQuery, byLead, leadMap]);
 
   if (isLoading) {
     return <div className="p-6 text-gray-500">Loading equipment profiles...</div>;
