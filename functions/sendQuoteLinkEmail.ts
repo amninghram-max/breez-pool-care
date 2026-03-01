@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
         success: false,
         error: 'Missing or invalid required fields',
         missingFields
-      }, { status: 400 });
+      }, { status: 200 });
     }
 
     // Resolve app origin using helper
