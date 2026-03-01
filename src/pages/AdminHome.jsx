@@ -90,16 +90,18 @@ export default function AdminHome() {
             <Eye className="w-4 h-4 mr-1.5" />
             View as Technician
           </Button>
-          <Button onClick={() => setShowReal(true)} size="sm" className="bg-teal-600 hover:bg-teal-700">
-            <FileText className="w-4 h-4 mr-1.5" />
-            New Quote
-          </Button>
           <Button onClick={() => setShowDemo(true)} size="sm" variant="outline" className="border-amber-400 text-amber-800 hover:bg-amber-50">
             <Zap className="w-4 h-4 mr-1.5" />
             Demo Quote
           </Button>
         </div>
       </div>
+
+      {/* Top Actions Bar */}
+      <TopActionsBar onNewQuote={() => setShowReal(true)} />
+
+      {/* Next Up — priority blockers */}
+      <NextUpCard />
 
       {/* 1. Today Overview Metrics */}
       <TodayOverview
