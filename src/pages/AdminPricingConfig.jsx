@@ -285,8 +285,17 @@ export default function AdminPricingConfig() {
       let current = updated;
       
       for (let i = 0; i < keys.length - 1; i++) {
-        if (!current[keys[i]]) current[keys[i]] = {};
-        current = current[keys[i]];
+        const key = keys[i];
+        // If the field is a string (JSON), parse it first
+        if (typeof current[key] === 'string') {
+          try {
+            current[key] = JSON.parse(current[key]);
+          } catch (e) {
+            current[key] = {};
+          }
+        }
+        if (!current[key]) current[key] = {};
+        current = current[key];
       }
       
       current[keys[keys.length - 1]] = parseFloat(value) || 0;
