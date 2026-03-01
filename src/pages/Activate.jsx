@@ -6,8 +6,6 @@ import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, CheckCircle, Loader2, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-const PROTECTED_ROLES = ['admin', 'staff', 'technician'];
-
 export default function Activate() {
   const navigate = useNavigate();
   // Path routing only — /Activate?leadId=...
