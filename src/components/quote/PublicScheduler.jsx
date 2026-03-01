@@ -68,7 +68,10 @@ export default function PublicScheduler({ leadId, clientEmail, clientFirstName, 
 
   if (confirmed) {
     const slotLabels = { morning: '8:00 AM – 11:00 AM', midday: '11:00 AM – 2:00 PM', afternoon: '2:00 PM – 5:00 PM' };
-    const dateObj = new Date(confirmed.scheduledDate + 'T00:00:00');
+    // Parse YYYY-MM-DD deterministically using UTC to avoid timezone shifts
+    const [year, month, day] = confirmed.scheduledDate.split('-').map(Number);
+    const dateObj = new Date(Date.UTC(year, month - 1, day));
+    const formattedDate = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(dateObj);
     return (
       <div className="space-y-5 text-center">
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-full" style={{ backgroundColor: '#e8f8f9' }}>
@@ -83,7 +86,7 @@ export default function PublicScheduler({ leadId, clientEmail, clientFirstName, 
             <Calendar className="w-5 h-5 shrink-0" style={{ color: TEAL }} />
             <div>
               <div className="text-xs text-gray-400 uppercase tracking-wide">Date</div>
-              <div className="font-semibold text-gray-900">{dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</div>
+              <div className="font-semibold text-gray-900">{formattedDate}</div>
             </div>
           </div>
           <div className="flex items-center gap-3">
