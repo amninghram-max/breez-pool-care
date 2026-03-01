@@ -132,6 +132,34 @@ export default function Calendar() {
         </Button>
       </div>
 
+      {/* Optimize Route Result Banner */}
+      {optimizeResult && (
+        <div className={`rounded-xl border px-4 py-3 flex items-start justify-between gap-4 ${
+          optimizeResult.warningAfter6pm
+            ? 'bg-amber-50 border-amber-300'
+            : 'bg-teal-50 border-teal-300'
+        }`}>
+          <div className="space-y-1 text-sm">
+            <p className={`font-semibold ${optimizeResult.warningAfter6pm ? 'text-amber-800' : 'text-teal-800'}`}>
+              {optimizeResult.warningAfter6pm ? '⚠️ Route optimized — late finish warning' : '✓ Route optimized successfully'}
+            </p>
+            {optimizeResult.warningAfter6pm && (
+              <p className="text-amber-700 text-xs">Estimated finish time is past 6:00 PM. Consider reducing stops or adjusting start times.</p>
+            )}
+            {(optimizeResult.beforeEstimate || optimizeResult.afterEstimate) && (
+              <div className="flex items-center gap-4 text-xs text-gray-600 mt-1">
+                {optimizeResult.beforeEstimate && <span>Before: <strong>{optimizeResult.beforeEstimate}</strong></span>}
+                {optimizeResult.afterEstimate && <span>After: <strong>{optimizeResult.afterEstimate}</strong></span>}
+              </div>
+            )}
+            {optimizeResult.stopsReordered != null && (
+              <p className="text-xs text-gray-500">{optimizeResult.stopsReordered} stop{optimizeResult.stopsReordered !== 1 ? 's' : ''} reordered</p>
+            )}
+          </div>
+          <button onClick={() => setOptimizeResult(null)} className="text-gray-400 hover:text-gray-600 text-xs mt-0.5">✕</button>
+        </div>
+      )}
+
       {/* Storm Tools */}
       {showStormTools && (
         <StormModeTools 
