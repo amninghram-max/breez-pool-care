@@ -151,11 +151,14 @@ export default function AdminPricingConfig() {
     return <div className="flex items-center justify-center py-12"><p>Loading...</p></div>;
   }
 
-  // Compute summary values
+  // Summary card data (truth audit: only real persisted fields)
   const baseTierA = localSettings.baseTierPrices?.tier_a_10_15k || 140;
   const baseTierD = localSettings.baseTierPrices?.tier_d_30k_plus || 230;
-  const avgBasePrice = ((baseTierA + baseTierD) / 2).toFixed(2);
+  const avgBasePrice = (baseTierA + baseTierD) / 2;
+  const autopayValue = localSettings.autopayDiscount || 10;
   const riskEnabled = localSettings.riskEngine?.points ? 'Enabled' : 'Disabled';
+  const frequencyMultiplier = localSettings.frequencyLogic?.twice_weekly_multiplier || 1.8;
+  const minFloor = localSettings.baseTierPrices?.absolute_floor || 120;
 
   return (
     <div className="min-h-screen bg-gray-50">
