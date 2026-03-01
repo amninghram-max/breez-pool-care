@@ -75,16 +75,25 @@ function CustomerPicker() {
           {filteredLeads.length === 0 ? (
             <p className="text-gray-500 text-center py-6">No customers match "{searchQuery}".</p>
           ) : (
-            <div className="space-y-2">
+            <div 
+              className="space-y-2"
+              onClickCapture={() => console.log('[DEV] Capture fired on list container')}
+            >
               {filteredLeads.map(lead => (
                 <button
                   key={lead.id}
                   type="button"
                   onClick={() => {
-                    console.log("Timeline select leadId", lead.id);
+                    console.log('[DEV] Button onClick fired', lead.id);
+                    console.log('[DEV] Attempting navigate to /CustomerTimeline?leadId=', lead.id);
                     navigate(`/CustomerTimeline?leadId=${lead.id}`);
+                    // Fallback: hard redirect to test if navigate is broken
+                    setTimeout(() => {
+                      console.log('[DEV] If you see this, navigate may not have worked. Trying hard redirect...');
+                      window.location.href = `/CustomerTimeline?leadId=${lead.id}`;
+                    }, 100);
                   }}
-                  className="w-full text-left p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                  className="w-full text-left p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors cursor-pointer pointer-events-auto relative z-10 outline outline-2 outline-red-500"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
