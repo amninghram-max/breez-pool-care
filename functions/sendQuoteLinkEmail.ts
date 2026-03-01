@@ -26,6 +26,7 @@ Deno.serve(async (req) => {
     const raw = await req.text();
     const bodyLength = raw?.length ?? 0;
 
+    console.log("SQLE build", BUILD, { method, contentType, bodyLength });
     console.log('📨 sendQuoteLinkEmail request:', { method, contentType, bodyLength, bodyPreview: raw.slice(0, 80) });
 
     if (bodyLength === 0) {
