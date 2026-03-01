@@ -1,21 +1,56 @@
 import { getAppOrigin } from "./_getAppOrigin.js";
 
+/**
+ * sendQuoteLinkEmail
+ * 
+ * Expected payload: { leadId: string, firstName: string, email: string }
+ * 
+ * Method: POST
+ * Content-Type: application/json
+ * 
+ * Returns 400 if:
+ * - Body is missing or empty
+ * - Body is not valid JSON
+ * - Required fields are missing/invalid
+ */
+
 Deno.serve(async (req) => {
   try {
-    const payload = await req.json();
-    const { leadId, firstName, email } = payload;
-
-    // Validate required fields
-    const missingFields = [];
-    if (!leadId) missingFields.push('leadId');
-    if (!firstName) missingFields.push('firstName');
-    if (!email) missingFields.push('email');
-
-    if (missingFields.length > 0) {
-      console.warn('❌ sendQuoteLinkEmail: Missing required fields:', missingFields);
+    // Safe body parsing: read as text first
+    const raw = await req.text();
+    
+    if (!raw || raw.trim() === '') {
       return Response.json({
         success: false,
-        error: 'Missing required fields',
+        error: 'Missing JSON body',
+        expected: { leadId: 'string', firstName: 'string', email: 'string' }
+      }, { status: 400 });
+    }
+
+    let payload;
+    try {
+      payload = JSON.parse(raw);
+    } catch (parseError) {
+      return Response.json({
+        success: false,
+        error: 'Invalid JSON body',
+        message: String(parseError?.message ?? parseError)
+      }, { status: 400 });
+    }
+
+    const { leadId, firstName, email } = payload;
+
+    // Validate required fields: non-empty strings
+    const missingFields = [];
+    if (!leadId || typeof leadId !== 'string' || leadId.trim() === '') missingFields.push('leadId');
+    if (!firstName || typeof firstName !== 'string' || firstName.trim() === '') missingFields.push('firstName');
+    if (!email || typeof email !== 'string' || email.trim() === '') missingFields.push('email');
+
+    if (missingFields.length > 0) {
+      console.warn('❌ sendQuoteLinkEmail: Missing or invalid required fields:', missingFields);
+      return Response.json({
+        success: false,
+        error: 'Missing or invalid required fields',
         missingFields
       }, { status: 400 });
     }
