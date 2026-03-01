@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
     });
 
     const appOrigin = getAppOrigin(req);
-    const scheduleLink = `${appOrigin}/schedule-inspection?token=${encodeURIComponent(token)}`;
+    const scheduleLink = `${appOrigin}/ScheduleInspection?token=${encodeURIComponent(token)}`;
 
     const subject = 'Your Breez Quote Is Ready!';
     const body = `
