@@ -32,12 +32,24 @@ export default function SystemHealthPanel() {
 
   const { data: chemTargets = [] } = useQuery({
     queryKey: ['chemTargetsHealth'],
-    queryFn: () => base44.entities.ChemistryTargets.list('-created_date', 1)
+    queryFn: async () => {
+      const result = await base44.entities.ChemistryTargets.list('-created_date', 1);
+      if (typeof window !== 'undefined' && window.__DEV__) {
+        console.log('[SystemHealth] ChemistryTargets query:', { count: result?.length, ids: result?.map(r => r.id) });
+      }
+      return result || [];
+    }
   });
 
   const { data: productProfiles = [] } = useQuery({
     queryKey: ['productProfilesHealth'],
-    queryFn: () => base44.entities.ProductProfile.filter({ isActive: true })
+    queryFn: async () => {
+      const result = await base44.entities.ProductProfile.filter({ isActive: true });
+      if (typeof window !== 'undefined' && window.__DEV__) {
+        console.log('[SystemHealth] ProductProfile filter isActive=true:', { count: result?.length, ids: result?.map(r => r.id) });
+      }
+      return result || [];
+    }
   });
 
   const settings = adminSettings[0];
