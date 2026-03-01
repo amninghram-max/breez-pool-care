@@ -133,13 +133,25 @@ export default function Activate() {
     return <LoadingScreen message="Linking your pool profile…" />;
   }
 
+  // ── Role blocked ─────────────────────────────────────────────────────────────
+  if (status === 'role_blocked') {
+    return (
+      <ErrorCard
+        title="Please use a customer account"
+        message="This activation link is for customers only. Staff and admin accounts cannot be linked via this page."
+      />
+    );
+  }
+
   // ── Success ─────────────────────────────────────────────────────────────────
   if (status === 'success') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-md p-8 space-y-4 text-center">
           <CheckCircle className="w-12 h-12 text-teal-500 mx-auto" />
-          <h2 className="text-xl font-semibold text-gray-900">You're all set!</h2>
+          <h2 className="text-xl font-semibold text-gray-900">
+            {leadFirstName ? `You're all set, ${leadFirstName}!` : "You're all set!"}
+          </h2>
           <p className="text-gray-600 text-sm">Taking you to your dashboard…</p>
         </div>
       </div>
