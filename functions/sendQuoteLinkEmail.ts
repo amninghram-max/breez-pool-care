@@ -1,5 +1,7 @@
 import { getAppOrigin } from "./_getAppOrigin.js";
 
+const BUILD = "SQLE-2026-03-01-A";
+
 /**
  * sendQuoteLinkEmail
  * 
