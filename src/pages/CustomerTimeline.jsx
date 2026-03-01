@@ -72,7 +72,11 @@ function CustomerPicker() {
               {filteredLeads.map(lead => (
                 <button
                   key={lead.id}
-                  onClick={() => navigate(createPageUrl('CustomerTimeline') + `?leadId=${lead.id}`)}
+                  type="button"
+                  onClick={() => {
+                    console.log('Timeline select leadId', lead.id);
+                    navigate(createPageUrl('CustomerTimeline') + `?leadId=${lead.id}`);
+                  }}
                   className="w-full text-left p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors"
                 >
                   <div className="flex items-start justify-between">
