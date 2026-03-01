@@ -1,23 +1,32 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Settings, BarChart3, Users, Shield, DollarSign, Droplet, Zap, FileText } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Settings, BarChart3, Users, Shield, FileText, Zap, Eye } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
+import { format } from 'date-fns';
+
 import DemoQuoteModal from '../components/quote/DemoQuoteModal';
 import RealQuoteModal from '../components/quote/RealQuoteModal';
+import TodayOverview from '../components/admin/dashboard/TodayOverview';
+import TodaySchedulePanel from '../components/admin/dashboard/TodaySchedulePanel';
+import LeadPipelinePanel from '../components/admin/dashboard/LeadPipelinePanel';
+import InspectionQueuePanel from '../components/admin/dashboard/InspectionQueuePanel';
+import SafetyPanel from '../components/admin/dashboard/SafetyPanel';
+import PaymentStatusPanel from '../components/admin/dashboard/PaymentStatusPanel';
+import SystemHealthPanel from '../components/admin/dashboard/SystemHealthPanel';
+import TechnicianPermissionsPanel from '../components/admin/dashboard/TechnicianPermissionsPanel';
+import EquipmentManualPanel from '../components/admin/dashboard/EquipmentManualPanel';
+import RecurringMessagesAdminPanel from '../components/admin/dashboard/RecurringMessagesAdminPanel';
+import TechnicianHome from './TechnicianHome';
 
 export default function AdminHome() {
   const [showDemo, setShowDemo] = useState(false);
   const [showReal, setShowReal] = useState(false);
   const [convertAnswers, setConvertAnswers] = useState(null);
-
-  const handleConvertToReal = (formData) => {
-    setConvertAnswers(formData);
-    setShowReal(true);
-  };
+  const [viewAsTech, setViewAsTech] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -26,196 +35,133 @@ export default function AdminHome() {
 
   const { data: leads = [] } = useQuery({
     queryKey: ['leads'],
-    queryFn: () => base44.entities.Lead.list()
+    queryFn: () => base44.entities.Lead.list('-created_date', 500)
   });
 
   const { data: events = [] } = useQuery({
     queryKey: ['allEvents'],
-    queryFn: () => base44.entities.CalendarEvent.list('-scheduledDate', 100)
+    queryFn: () => base44.entities.CalendarEvent.list('-scheduledDate', 200)
   });
 
-  const totalRevenue = leads.
-  filter((l) => l.monthlyServiceAmount).
-  reduce((sum, l) => sum + l.monthlyServiceAmount, 0);
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const todayEvents = events.filter(e => e.scheduledDate === today);
+  const inspectionsToday = todayEvents.filter(e => e.eventType === 'inspection').length;
+  const openLeads = leads.filter(l =>
+    ['new_lead', 'contacted', 'inspection_scheduled', 'inspection_confirmed', 'quote_sent'].includes(l.stage)
+  ).length;
+
+  // "View as Technician" mode — renders TechnicianHome in a sandboxed view
+  if (viewAsTech) {
+    return (
+      <div>
+        <div className="sticky top-0 z-40 bg-amber-50 border-b border-amber-300 px-4 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Badge className="bg-amber-200 text-amber-900">Viewing as Technician</Badge>
+            <span className="text-sm text-amber-800">This is how technicians see their dashboard.</span>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => setViewAsTech(false)}>
+            ← Back to Admin
+          </Button>
+        </div>
+        <div className="p-4">
+          <TechnicianHome />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-semibold text-gray-900">Admin Control Panel</h1>
-        <p className="text-gray-600">System configuration and analytics</p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{format(new Date(), 'EEEE, MMMM d, yyyy')}</p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setViewAsTech(true)}
+            className="border-amber-300 text-amber-800 hover:bg-amber-50"
+          >
+            <Eye className="w-4 h-4 mr-1.5" />
+            View as Technician
+          </Button>
+          <Button onClick={() => setShowReal(true)} size="sm" className="bg-teal-600 hover:bg-teal-700">
+            <FileText className="w-4 h-4 mr-1.5" />
+            New Quote
+          </Button>
+          <Button onClick={() => setShowDemo(true)} size="sm" variant="outline" className="border-amber-400 text-amber-800 hover:bg-amber-50">
+            <Zap className="w-4 h-4 mr-1.5" />
+            Demo Quote
+          </Button>
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Clients</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{leads.length}</p>
-              </div>
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <Users className="w-5 h-5 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* 1. Today Overview Metrics */}
+      <TodayOverview
+        todayEvents={todayEvents}
+        leads={leads}
+        inspectionsToday={inspectionsToday}
+      />
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">MRR</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">${totalRevenue.toFixed(0)}</p>
-              </div>
-              <div className="p-3 bg-green-100 rounded-lg">
-                <DollarSign className="w-5 h-5 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* 2. Schedule + Lead Pipeline — side by side on large screens */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TodaySchedulePanel events={events} />
+        <LeadPipelinePanel leads={leads} />
+      </div>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Jobs</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{events.length}</p>
-              </div>
-              <div className="p-3 bg-teal-100 rounded-lg">
-                <Droplet className="w-5 h-5 text-teal-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* 3. Inspection Queue + Safety — side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <InspectionQueuePanel />
+        <SafetyPanel />
+      </div>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Active Routes</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">
-                  {new Set(events.map((e) => e.assignedTechnician)).size}
-                </p>
-              </div>
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <BarChart3 className="w-5 h-5 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* 4. Payment Status + System Health */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <PaymentStatusPanel leads={leads} />
+        <SystemHealthPanel />
+      </div>
+
+      {/* 5. Admin Actions Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <TechnicianPermissionsPanel />
+        <EquipmentManualPanel />
+        <RecurringMessagesAdminPanel />
+      </div>
+
+      {/* 6. Quick nav to other admin tools */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {[
+          { label: 'Pricing & Settings', path: 'Admin', icon: Settings, color: 'bg-orange-600 hover:bg-orange-700' },
+          { label: 'Staff Management', path: 'StaffManagement', icon: Users, color: 'bg-blue-600 hover:bg-blue-700' },
+          { label: 'Analytics', path: 'Analytics', icon: BarChart3, color: 'bg-purple-600 hover:bg-purple-700' },
+          { label: 'Chemistry Review', path: 'AdminReviewDashboard', icon: Shield, color: 'bg-red-600 hover:bg-red-700' },
+          { label: 'Reinstatements', path: 'AdminReinstatements', icon: Shield, color: 'bg-gray-600 hover:bg-gray-700' },
+        ].map(({ label, path, icon: Icon, color }) => (
+          <Link key={path} to={createPageUrl(path)}>
+            <Button className={`w-full text-white text-xs h-auto py-3 flex-col gap-1.5 ${color}`}>
+              <Icon className="w-5 h-5" />
+              <span className="leading-tight text-center">{label}</span>
+            </Button>
+          </Link>
+        ))}
       </div>
 
       {/* Modals */}
       {showDemo && (
-        <DemoQuoteModal onClose={() => setShowDemo(false)} onConvertToReal={handleConvertToReal} />
+        <DemoQuoteModal
+          onClose={() => setShowDemo(false)}
+          onConvertToReal={(fd) => { setConvertAnswers(fd); setShowReal(true); setShowDemo(false); }}
+        />
       )}
       {showReal && (
-        <RealQuoteModal onClose={() => { setShowReal(false); setConvertAnswers(null); }} initialAnswers={convertAnswers} />
+        <RealQuoteModal
+          onClose={() => { setShowReal(false); setConvertAnswers(null); }}
+          initialAnswers={convertAnswers}
+        />
       )}
-
-      {/* Quote Actions */}
-      <Card className="border-teal-200 bg-teal-50">
-        <CardHeader>
-          <CardTitle className="text-teal-900 text-base flex items-center gap-2">
-            <FileText className="w-4 h-4" /> Quote Tools
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-3">
-          <Button onClick={() => setShowReal(true)} className="bg-teal-600 hover:bg-teal-700">
-            <FileText className="w-4 h-4 mr-2" />
-            Start New Quote (Real)
-          </Button>
-          <Button onClick={() => setShowDemo(true)} variant="outline" className="border-amber-400 text-amber-800 hover:bg-amber-50">
-            <Zap className="w-4 h-4 mr-2" />
-            Quick Quote (Demo)
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Admin Controls */}
-      <Card className="bg-gradient-to-br from-orange-50 to-red-50 border-orange-200">
-        <CardHeader>
-          <CardTitle className="text-orange-900 flex items-center gap-2">
-            <Shield className="w-5 h-5" />
-            Admin Controls
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Link to={createPageUrl('Admin')}>
-            <Button className="w-full bg-orange-600 hover:bg-orange-700" size="lg">
-              <Settings className="w-5 h-5 mr-2" />
-              Pricing & Settings
-            </Button>
-          </Link>
-
-          <Link to={createPageUrl('StaffManagement')}>
-            <Button className="w-full bg-blue-600 hover:bg-blue-700" size="lg">
-              <Users className="w-5 h-5 mr-2" />
-              Staff Management
-            </Button>
-          </Link>
-
-          <Link to={createPageUrl('Analytics')}>
-            <Button className="w-full bg-purple-600 hover:bg-purple-700" size="lg">
-              <BarChart3 className="w-5 h-5 mr-2" />
-              Analytics Dashboard
-            </Button>
-          </Link>
-
-          <Link to={createPageUrl('AdminReviewDashboard')}>
-            <Button className="w-full bg-red-600 hover:bg-red-700" size="lg">
-              <Droplet className="w-5 h-5 mr-2" />
-              Chemistry Review
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
-
-      {/* All Staff Features */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Operations</CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link to={createPageUrl('Calendar')}>
-            <Button variant="outline" className="bg-background px-6 text-sm font-medium rounded-md inline-flex items-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input shadow-sm hover:bg-accent hover:text-accent-foreground h-10 w-full justify-start" size="lg">
-              Scheduling & Calendar
-            </Button>
-          </Link>
-
-          <Link to={createPageUrl('LeadsPipeline')}>
-            <Button variant="outline" className="w-full justify-start" size="lg">
-              Lead Pipeline
-            </Button>
-          </Link>
-
-          <Link to={createPageUrl('AdminMessaging')}>
-            <Button variant="outline" className="w-full justify-start" size="lg">
-              Support Inbox
-            </Button>
-          </Link>
-
-          <Link to={createPageUrl('TechnicianRoute')}>
-            <Button variant="outline" className="w-full justify-start" size="lg">
-              Route Management
-            </Button>
-          </Link>
-
-          <Link to={createPageUrl('ServiceVisitEntry')}>
-            <Button variant="outline" className="w-full justify-start" size="lg">
-              Service Entry
-            </Button>
-          </Link>
-
-          <Link to={createPageUrl('AdminReinstatements')}>
-            <Button variant="outline" className="w-full justify-start" size="lg">
-              Reinstatements
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
-    </div>);
-
+    </div>
+  );
 }
