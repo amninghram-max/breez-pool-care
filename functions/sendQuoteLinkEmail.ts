@@ -78,26 +78,33 @@ Deno.serve(async (req) => {
 </html>
     `;
 
-    try {
-      // Use Resend integration for external email addresses (supports non-users)
-      const emailRes = await base44.asServiceRole.integrations.Resend.send({
-        from: 'noreply@breezpoolcare.com',
+    // Use Resend API for transactional email (supports external addresses)
+    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+    if (!RESEND_API_KEY) {
+      throw new Error('RESEND_API_KEY environment variable not set');
+    }
+
+    const resendResponse = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: 'Breez Pool Care <info@breezpoolcare.com>',
         to: email,
         subject: 'Get Your Breez Pool Service Quote',
         html: htmlBody
-      });
+      })
+    });
 
-      console.log('✅ Quote link email sent via Resend:', emailRes);
-    } catch (resendError) {
-      console.warn('⚠️ Resend integration unavailable, falling back to Core.SendEmail:', resendError.message);
-      // Fallback to Core.SendEmail (for registered users only)
-      const fallbackRes = await base44.asServiceRole.integrations.Core.SendEmail({
-        to: email,
-        subject: 'Get Your Breez Pool Service Quote',
-        body: htmlBody
-      });
-      console.log('✅ Quote link email sent via fallback:', fallbackRes);
+    if (!resendResponse.ok) {
+      const resendError = await resendResponse.json();
+      throw new Error(`Resend API error: ${JSON.stringify(resendError)}`);
     }
+
+    const resendResult = await resendResponse.json();
+    console.log('✅ Quote link email sent via Resend:', resendResult);
 
     // Update lead email and log timestamp (service role, no stage change)
     try {
