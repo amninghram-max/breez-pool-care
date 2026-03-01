@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Wrench, Search } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Wrench, Search, AlertCircle } from 'lucide-react';
 import { createPageUrl } from '@/utils';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const TYPE_LABELS = {
   pump: 'Pump',
