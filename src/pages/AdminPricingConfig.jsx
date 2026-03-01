@@ -727,7 +727,7 @@ export default function AdminPricingConfig() {
             {/* Chlorination */}
             <div className="border-t pt-4">
               <h4 className="font-semibold text-gray-800 mb-3">Chlorination</h4>
-              <p className="text-sm text-gray-600 mb-4">Floater/Skimmer add-ons by tier</p>
+              <p className="text-sm text-muted-foreground mb-4">Adjustments based on sanitizing system type (tablet, salt, etc.), which affects maintenance complexity.</p>
               <div className="grid grid-cols-4 gap-4">
                 <div>
                   <Label>Tier A</Label>
