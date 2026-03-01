@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Link2, Search, UserPlus, User, Mail } from 'lucide-react';
+import { Link2, Search, UserPlus, User, Mail, Copy, Check } from 'lucide-react';
 
 const APP_BASE = 'https://breezpoolcare.com';
 
