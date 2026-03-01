@@ -155,10 +155,24 @@ export default function AdminPricingConfig() {
 
   // Sync settings to local (dependency: settings only)
   useEffect(() => {
-    if (settings && !localSettings) {
-      setLocalSettings(settings);
+    if (!settingsQuery.isLoading && !localSettings) {
+      if (settings) {
+        setLocalSettings(settings);
+      } else {
+        // No settings exist yet - initialize with empty/default config
+        setLocalSettings({
+          settingKey: 'default',
+          baseTierPrices: {},
+          additiveTokens: {},
+          riskEngine: { points: {}, size_multipliers: {}, escalation_brackets: [] },
+          initialFees: {},
+          frequencyLogic: {},
+          chemistryTargets: {},
+          seasonalPeriods: {}
+        });
+      }
     }
-  }, [settings]);
+  }, [settingsQuery.isLoading, settings, localSettings]);
 
   const saveSettingsMutation = useMutation({
     mutationFn: async () => {
