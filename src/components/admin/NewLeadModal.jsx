@@ -24,7 +24,8 @@ export default function NewLeadModal({ onClose }) {
     <div key={key}>
       <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
       {opts ? (
-        <select value={form[key]} onChange={e => set(key, e.target.value)} className="w-full border rounded px-3 py-2 text-sm">
+        <select value={form[key] || ''} onChange={e => set(key, e.target.value || '')} className="w-full border rounded px-3 py-2 text-sm">
+          <option value="">Select…</option>
           {opts.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
       ) : (
