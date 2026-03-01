@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import Stripe from 'npm:stripe@17.5.0';
+import { getAppOrigin } from './_getAppOrigin.js';
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'), {
   apiVersion: '2024-12-18.acacia',
@@ -61,6 +62,7 @@ Deno.serve(async (req) => {
     }
 
     // Create Checkout Session
+    const appOrigin = getAppOrigin(req);
     const session = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
       mode: 'payment',
@@ -89,8 +91,8 @@ Deno.serve(async (req) => {
           quantity: 1
         }] : [])
       ],
-      success_url: `${req.headers.get('origin')}/PaymentSuccess?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get('origin')}/PaymentSetup`,
+      success_url: `${appOrigin}/PaymentSuccess?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${appOrigin}/PaymentSetup`,
       metadata: {
         base44_app_id: Deno.env.get('BASE44_APP_ID'),
         lead_id: lead.id,
