@@ -197,8 +197,9 @@ Deno.serve(async (req) => {
     return Response.json({
       success: true,
       link: quoteLink,
-      resendId: emailData.id
-    });
+      resendId: emailData.id,
+      build: BUILD
+    }, { status: 200 });
   } catch (error) {
     console.error('❌ sendQuoteLinkEmail error:', error);
     return Response.json({
