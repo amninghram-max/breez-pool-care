@@ -5,6 +5,19 @@ const TEST_CUSTOMER1_EMAIL = 'test.customer1@breezpoolcare.com';
 const TEST_CUSTOMER2_EMAIL = 'test.customer2@breezpoolcare.com';
 const TEST_CUSTOMER3_EMAIL = 'test.customer3@breezpoolcare.com';
 
+// Helper: filter using list + JS filter (avoids asServiceRole filter issues)
+async function findByEmail(db, entityName, email) {
+  const all = await db.entities[entityName].list();
+  return all.find(r => r.email === email) || null;
+}
+
+async function findByLeadId(db, entityName, leadId, extraCheck) {
+  const all = await db.entities[entityName].list();
+  const matches = all.filter(r => r.leadId === leadId || r.propertyId === leadId);
+  if (extraCheck) return matches.find(extraCheck) || null;
+  return matches[0] || null;
+}
+
 const MELBOURNE_FL_ADDRESS = {
   streetAddress: '450 N Harbor City Blvd',
   city: 'Melbourne',
