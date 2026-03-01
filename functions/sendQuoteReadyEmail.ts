@@ -10,6 +10,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  * Sets quoteEmailSent=true and quoteEmailSentAt after successful send
  */
 
+import { getAppOrigin } from './_getAppOrigin.js';
+
 function generateScheduleToken() {
   // Use cryptographically secure random bytes
   const bytes = new Uint8Array(32);
@@ -58,7 +60,8 @@ Deno.serve(async (req) => {
       quoteEmailSentAt: new Date().toISOString()
     });
 
-    const scheduleLink = `${Deno.env.get('APP_URL') || 'https://breez.app'}/schedule-inspection?token=${token}`;
+    const appOrigin = getAppOrigin(req);
+    const scheduleLink = `${appOrigin}/schedule-inspection?token=${encodeURIComponent(token)}`;
 
     const subject = 'Your Breez Quote Is Ready!';
     const body = `
