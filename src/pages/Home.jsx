@@ -27,42 +27,11 @@ export default function Home() {
     navigate(createPageUrl(homePage), { replace: true });
   }, [user, userLoading, navigate]);
 
-  const { data: leads = [] } = useQuery({
-    queryKey: ['leads'],
-    queryFn: () => base44.entities.Lead.list(),
-  });
+  // While checking auth, show nothing; once resolved render public landing if not authed
+  if (userLoading) return null;
+  if (!user) return <PublicHome />;
 
-  const { data: questionnaires = [] } = useQuery({
-    queryKey: ['questionnaires'],
-    queryFn: () => base44.entities.PoolQuestionnaire.list(),
-  });
-
-  const isAdmin = user?.role === 'admin';
-
-  const handleGenerateSampleQuote = async () => {
-    if (!leads.length) {
-      alert('Please create a lead first');
-      return;
-    }
-
-    setIsLoadingQuote(true);
-    try {
-      const response = await base44.functions.invoke('generateQuote', {
-        leadId: leads[0].id
-      });
-
-      if (response.data.success) {
-        // Refresh questionnaires
-        window.location.reload();
-      }
-    } catch (error) {
-      console.error('Error generating quote:', error);
-      alert('Failed to generate quote');
-    } finally {
-      setIsLoadingQuote(false);
-    }
-  };
-
+  // Authenticated — show spinner while redirecting to role home
   return (
     <div className="space-y-8">
       {/* Header */}
