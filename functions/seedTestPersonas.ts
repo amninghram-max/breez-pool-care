@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
     // User entity has special built-in security. Must be configured manually via Dashboard.
     // ─────────────────────────────────────────────
     const allUsers = await db.entities.User.list();
-    const techUser = allUsers.find(u => u.email === TEST_TECH_EMAIL);
+    const techUser = allUsers.find(u => u.email === TEST_TECH_EMAIL) || null;
 
     if (techUser) {
       result.technicianUserId = techUser.id;
