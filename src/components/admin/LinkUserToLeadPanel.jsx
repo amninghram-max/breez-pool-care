@@ -158,10 +158,23 @@ export default function LinkUserToLeadPanel({ lead }) {
               </div>
 
               {inviteSent ? (
-                <div className="text-xs text-teal-700 bg-teal-50 border border-teal-200 rounded-md px-3 py-2 space-y-1">
-                  <p className="font-medium">Invite sent ✓</p>
-                  <p>The customer will be linked when they create their account using the activation link.</p>
-                  <p className="font-mono text-xs break-all text-teal-600 mt-1">{activationUrl}</p>
+                <div className="bg-teal-50 border border-teal-200 rounded-md px-3 py-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-teal-600" />
+                    <p className="text-xs font-semibold text-teal-800">Invite sent via Base44</p>
+                  </div>
+                  <p className="text-xs text-gray-600">Share the activation link with the customer so they land on the right page after signing up:</p>
+                  <p className="font-mono text-xs break-all text-teal-700 bg-white border border-teal-200 rounded p-2">{activationUrl}</p>
+                  <Button
+                    size="sm"
+                    onClick={handleCopyLink}
+                    variant="outline"
+                    className="w-full border-teal-400 text-teal-700 hover:bg-teal-50"
+                  >
+                    <Copy className="w-3.5 h-3.5 mr-2" />
+                    Copy Activation Link
+                  </Button>
+                  <p className="text-xs text-gray-500">After the customer creates their account, you can send them the activation link again.</p>
                 </div>
               ) : (
                 <>
@@ -172,10 +185,10 @@ export default function LinkUserToLeadPanel({ lead }) {
                     className="bg-teal-600 hover:bg-teal-700 text-white w-full"
                   >
                     <Mail className="w-4 h-4 mr-2" />
-                    {inviting ? 'Sending…' : 'Invite Customer'}
+                    {inviting ? 'Sending…' : 'Invite Customer (Activation Link)'}
                   </Button>
                   <p className="text-xs text-gray-500">
-                    We'll send an invite email. Their account will be linked automatically when they sign up via:
+                    Sends a Base44 invite. Share the activation link with the customer after they sign up:
                   </p>
                   <p className="font-mono text-xs break-all text-indigo-600">{activationUrl}</p>
                 </>
