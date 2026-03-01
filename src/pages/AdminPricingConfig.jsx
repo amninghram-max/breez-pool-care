@@ -16,16 +16,20 @@ const hasUnsavedChanges = (local, persisted) => {
   return JSON.stringify(local) !== JSON.stringify(persisted);
 };
 
-// Helper: format currency
+// Helper: format currency with commas
 const formatCurrency = (val) => {
   const num = parseFloat(val);
-  return isNaN(num) ? '$0.00' : `$${num.toFixed(2)}`;
+  if (isNaN(num)) return '$0.00';
+  return `$${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
-// Helper: format percentage
+// Helper: format percentage (clean, no trailing zeros)
 const formatPercent = (val) => {
   const num = parseFloat(val);
-  return isNaN(num) ? '0%' : `${(num * 100).toFixed(1)}%`;
+  if (isNaN(num)) return '0%';
+  const pct = num * 100;
+  // Remove unnecessary decimals
+  return pct === Math.round(pct) ? `${Math.round(pct)}%` : `${pct.toFixed(2)}%`.replace(/\.?0+%$/, '%');
 };
 
 // Helper: format timestamp
