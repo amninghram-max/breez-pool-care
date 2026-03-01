@@ -8,7 +8,14 @@ import { base44 } from '@/api/base44Client';
 
 const getErrMsg = (err) => {
   const data = err?.response?.data ?? err?.data;
-  if (data) return typeof data === 'object' ? JSON.stringify(data) : String(data);
+  if (data) {
+    try {
+      return typeof data === 'object' ? JSON.stringify(data) : String(data);
+    } catch (stringifyErr) {
+      console.error('getErrMsg: JSON.stringify failed', stringifyErr);
+      return String(data);
+    }
+  }
   if (err?.message) return err.message;
   return 'Failed to send quote link email';
 };
@@ -59,8 +66,12 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
         body: JSON.stringify(payload),
       });
 
+      console.log("SEND_QUOTE_LINK_FETCH", { status: r.status, ct: r.headers.get("content-type") });
+
       const status = r.status;
       const text = await r.text();
+      
+      console.log("SEND_QUOTE_LINK_BODYLEN", { len: text.length, preview: text.slice(0, 120) });
       
       let data = null;
       try {
