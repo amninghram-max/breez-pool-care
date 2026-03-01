@@ -30,14 +30,13 @@ Deno.serve(async (req) => {
       return Response.json({ ok: false, error: 'invalid_or_expired' });
     }
 
-    // Build update payload — only update the authenticated user, never accept userId from client
-    const updatePayload = { linkedLeadId: leadId };
-
-    // Only set role to 'customer' if not already a protected role
-    const isProtected = PROTECTED_ROLES.includes(user.role);
-    if (!isProtected) {
-      updatePayload.role = 'customer';
+    // Block privileged roles — defense-in-depth, never link or change role
+    if (PROTECTED_ROLES.includes(user.role)) {
+      return Response.json({ ok: false, error: 'role_not_allowed' }, { status: 403 });
     }
+
+    // Build update payload — only update the authenticated user, never accept userId from client
+    const updatePayload = { linkedLeadId: leadId, role: 'customer' };
 
     await base44.asServiceRole.entities.User.update(user.id, updatePayload);
 
