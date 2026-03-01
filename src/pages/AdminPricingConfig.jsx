@@ -602,15 +602,18 @@ export default function AdminPricingConfig() {
               </div>
             </div>
             <div className="border-t pt-4">
-              <Label>Minimum Monthly Floor</Label>
-              <Input
-                type="number"
-                value={localSettings.baseTierPrices?.absolute_floor || 120}
-                onChange={(e) => updateField('baseTierPrices.absolute_floor', e.target.value)}
-                className="mt-2"
-              />
-              <p className="text-xs text-gray-500 mt-1">Minimum price regardless of calculations</p>
-            </div>
+               <Label className="flex items-center gap-2">
+                 Minimum Monthly Floor
+                 <Info className="w-4 h-4 text-gray-400" title="The minimum price the system will allow for monthly service. Adjustments cannot push the price below this amount." />
+               </Label>
+               <Input
+                 type="number"
+                 value={localSettings.baseTierPrices?.absolute_floor || 120}
+                 onChange={(e) => updateField('baseTierPrices.absolute_floor', e.target.value)}
+                 className="mt-2"
+               />
+               <p className="text-xs text-gray-500 mt-1">Minimum price—adjustments cannot go below this</p>
+             </div>
           </CardContent>
         </Card>
 
