@@ -4,20 +4,23 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ChevronLeft, Send, MessageSquare } from 'lucide-react';
+import { ChevronLeft, Send, MessageSquare, Loader2 } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
+import { useCustomerPageGuard } from '@/components/auth/useCustomerPageGuard';
 
 export default function CustomerMessagingPage() {
   const [messageText, setMessageText] = useState('');
   const bottomRef = useRef(null);
   const queryClient = useQueryClient();
 
-  const { data: user } = useQuery({
+  const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['user'],
     queryFn: () => base44.auth.me(),
   });
+
+  useCustomerPageGuard(user, userLoading);
 
   const { data: lead } = useQuery({
     queryKey: ['customerLead'],
