@@ -92,11 +92,11 @@ export default function Layout({ children, currentPageName }) {
       {/* Main layout with role-specific navigation */}
       <div className="flex">
         {/* Render appropriate navigation based on role */}
-        {isCustomer ? (
-          <CustomerNav />
-        ) : (
+        {isProvider ? (
           <ProviderNav userRole={userRole} />
-        )}
+        ) : isLinkedCustomer ? (
+          <CustomerNav />
+        ) : null}
 
         {/* Main content */}
         <main className="flex-1 overflow-auto">
