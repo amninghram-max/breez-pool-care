@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
         error: 'Missing JSON body',
         diagnostics: { method, contentType, bodyLength },
         expected: { leadId: 'string', firstName: 'string', email: 'string' }
-      }, { status: 400 });
+      }, { status: 200 });
     }
 
     let payload;
