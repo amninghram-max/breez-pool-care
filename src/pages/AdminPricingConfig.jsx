@@ -899,14 +899,23 @@ export default function AdminPricingConfig() {
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Frequency Override</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+        {/* Frequency & Costs Section */}
+        <Card className="bg-white">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-blue-600" />
+              Frequency & Costs
+            </CardTitle>
+            <p className="text-sm text-gray-600 mt-1">Service frequency and one-time fees</p>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Frequency */}
+            <div>
+              <h4 className="font-semibold text-gray-800 mb-3">Service Frequency</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Twice/Week Multiplier</Label>
