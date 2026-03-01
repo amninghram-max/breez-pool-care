@@ -204,8 +204,9 @@ Deno.serve(async (req) => {
     console.error('❌ sendQuoteLinkEmail error:', error);
     return Response.json({
       success: false,
-      error: 'Failed to send quote link email',
-      message: error.message
-    }, { status: 500 });
+      error: 'sendQuoteLinkEmail crashed',
+      message: String(error?.stack ?? error?.message ?? error),
+      build: BUILD
+    }, { status: 200 });
   }
 });
