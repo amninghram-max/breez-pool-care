@@ -122,6 +122,11 @@ export default function Layout({ children, currentPageName }) {
       if (userIsLoading) {
         if (typeof window !== 'undefined') {
           console.info('[Layout] 8-second timeout - still loading');
+          // Log any asset fetch errors that might have occurred
+          const serverUrlParam = new URLSearchParams(window.location.search).get('server_url');
+          if (serverUrlParam) {
+            console.warn('[Layout] server_url param detected - this can cause asset 404s:', serverUrlParam);
+          }
         }
         setLayoutTimedOut(true);
       }
