@@ -139,6 +139,7 @@ Deno.serve(async (req) => {
         email,
         emailSent: true,
         leadUpdated: false,
+        link: quoteLink,
         warning: `Email sent but could not log timestamp: ${updateError.message}`
       });
     }
