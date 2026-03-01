@@ -819,6 +819,7 @@ export default function AdminPricingConfig() {
             {/* Risk Points */}
             <div>
               <h4 className="font-semibold text-gray-800 mb-3">Raw Risk Points</h4>
+              <p className="text-sm text-muted-foreground mb-4">Individual difficulty factors that contribute to total service complexity score.</p>
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label>Unscreened</Label>
