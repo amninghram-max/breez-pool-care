@@ -5,10 +5,6 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
-    if (user?.role !== 'admin') {
-      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
-    }
-
     const { userId, leadId, validateOnly } = await req.json();
 
     // ── Validate-only mode (called from Activate page to check if leadId is valid) ──
@@ -25,7 +21,7 @@ Deno.serve(async (req) => {
     }
 
     // ── Admin-only linking mode ──────────────────────────────────────────────
-    if (user?.role !== 'admin') {
+    if (!user || user?.role !== 'admin') {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
