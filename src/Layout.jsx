@@ -1,11 +1,73 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { LogOut } from 'lucide-react';
+import { LogOut, AlertCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import CustomerNav from '../components/navigation/CustomerNav';
 import ProviderNav from '../components/navigation/ProviderNav';
+
+// ErrorBoundary for catching page render errors
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    if (typeof window !== 'undefined') {
+      console.error('[Layout ErrorBoundary]', error, errorInfo);
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <Card className="border-red-200 bg-red-50 max-w-2xl mx-auto mt-8">
+          <CardHeader>
+            <CardTitle className="text-red-900">Page Error</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm">
+            <div className="bg-white p-4 rounded border border-red-200">
+              <p className="font-semibold text-gray-800 mb-2">Error Details</p>
+              <p className="text-red-700 whitespace-pre-wrap font-mono">
+                {this.state.error?.message}
+              </p>
+              {this.state.error?.stack && (
+                <p className="text-gray-600 text-xs mt-3 whitespace-pre-wrap max-h-48 overflow-auto">
+                  {this.state.error.stack}
+                </p>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => window.location.href = createPageUrl('AdminHome')}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Go Home
+              </Button>
+              <Button
+                onClick={() => window.location.reload()}
+                variant="outline"
+              >
+                Reload Page
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 export default function Layout({ children, currentPageName }) {
   const { data: user } = useQuery({
