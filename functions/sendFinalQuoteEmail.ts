@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAppOrigin } from './_getAppOrigin.js';
 
 /**
  * sendFinalQuoteEmail
@@ -40,9 +41,9 @@ Deno.serve(async (req) => {
     }
 
     // Links
-    const appBase = Deno.env.get('APP_URL') || 'https://app.base44.com/app/breezpoolcare';
-    const agreementLink = `${appBase}/#/Agreements?inspectionId=${inspectionRecordId}`;
-    const activationLink = `${appBase}/#/Activate?leadId=${leadId}`;
+    const appOrigin = getAppOrigin(req);
+    const agreementLink = `${appOrigin}/Agreements?inspectionId=${encodeURIComponent(inspectionRecordId)}`;
+    const activationLink = `${appOrigin}/Activate?leadId=${encodeURIComponent(leadId)}`;
 
     const greenFeeSection = greenFee > 0
       ? `\n• Green-to-Clean Recovery (first month, one-time): $${greenFee.toFixed(2)}`
