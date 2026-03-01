@@ -36,6 +36,19 @@ Deno.serve(async (req) => {
 
     console.log('✅ Quote link email sent:', emailRes);
 
+    // Update lead email and log timestamp (service role, no stage change)
+    const timestamp = new Date().toISOString();
+    const updatePayload = {};
+    if (email) updatePayload.email = email;
+    
+    // Append log entry to notes
+    const existingNotes = (await base44.asServiceRole.entities.Lead.list())
+      .find(l => l.id === leadId)?.notes || '';
+    updatePayload.notes = (existingNotes + `\n[QUOTE_LINK_SENT] ${timestamp}`).trim();
+
+    await base44.asServiceRole.entities.Lead.update(leadId, updatePayload);
+    console.log('✅ Lead updated (email + timestamp logged)', { leadId });
+
     return Response.json({
       success: true,
       message: 'Quote link email sent',

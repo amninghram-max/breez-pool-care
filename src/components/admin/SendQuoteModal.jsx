@@ -55,16 +55,6 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
         throw new Error(errMsg);
       }
 
-      // Log timestamp in notes
-      const timestamp = new Date().toISOString();
-      const newNotes = (lead.notes || '') + `\n[QUOTE_LINK_SENT] ${timestamp}`;
-      
-      // Update lead to QUOTED stage
-      await base44.entities.Lead.update(lead.id, {
-        stage: 'quoted',
-        notes: newNotes
-      });
-
       toast.success('Quote link sent');
       onSuccess?.();
       onClose();
