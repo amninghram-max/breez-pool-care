@@ -1053,13 +1053,14 @@ export default function AdminPricingConfig() {
                 <Info className="w-4 h-4 text-gray-400" title="One-time charges applied during the first service visit to cover startup work such as inspection, water balancing, and debris removal." />
               </h4>
               <div>
-                <Label>Slightly Cloudy</Label>
+                <Label>Initial Service Fee (Slightly Cloudy)</Label>
                 <Input
                   type="number"
                   value={localSettings.initialFees?.slightly_cloudy || 25}
                   onChange={(e) => updateField('initialFees.slightly_cloudy', e.target.value)}
                   className="mt-2"
                 />
+                <p className="text-xs text-gray-500 mt-1">Charge for slightly cloudy water conditions on first visit</p>
               </div>
 
               <p className="text-sm text-gray-700 font-semibold mt-6 mb-3">Green-to-Clean Pricing</p>
