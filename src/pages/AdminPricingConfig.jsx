@@ -196,16 +196,284 @@ export default function AdminPricingConfig() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
 
-      <Tabs defaultValue="tiers" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="tiers">Base Tiers</TabsTrigger>
-          <TabsTrigger value="tokens">Additive Tokens</TabsTrigger>
-          <TabsTrigger value="risk">Risk Engine</TabsTrigger>
-          <TabsTrigger value="fees">Initial Fees</TabsTrigger>
-        </TabsList>
+        {/* Summary Cards */}
+        <div className="grid grid-cols-5 gap-4">
+          <Card className="bg-white">
+            <CardContent className="pt-6">
+              <p className="text-xs text-gray-600 font-medium">Base Monthly Price</p>
+              <p className="text-2xl font-bold text-teal-600 mt-2">{formatCurrency(avgBasePrice)}</p>
+              <p className="text-xs text-gray-500 mt-1">Average (A-D)</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-white">
+            <CardContent className="pt-6">
+              <p className="text-xs text-gray-600 font-medium">AutoPay Discount</p>
+              <p className="text-2xl font-bold text-blue-600 mt-2">{formatCurrency(localSettings.autopayDiscount || 10)}</p>
+              <p className="text-xs text-gray-500 mt-1">Monthly</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-white">
+            <CardContent className="pt-6">
+              <p className="text-xs text-gray-600 font-medium">Risk Adjustments</p>
+              <p className="text-2xl font-bold text-purple-600 mt-2">{riskEnabled}</p>
+              <p className="text-xs text-gray-500 mt-1">Status</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-white">
+            <CardContent className="pt-6">
+              <p className="text-xs text-gray-600 font-medium">Frequency Multiplier</p>
+              <p className="text-2xl font-bold text-orange-600 mt-2">{(localSettings.frequencyLogic?.twice_weekly_multiplier || 1.8).toFixed(2)}x</p>
+              <p className="text-xs text-gray-500 mt-1">2x/Week</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-white">
+            <CardContent className="pt-6">
+              <p className="text-xs text-gray-600 font-medium">Minimum Monthly</p>
+              <p className="text-2xl font-bold text-green-600 mt-2">{formatCurrency(localSettings.baseTierPrices?.absolute_floor || 120)}</p>
+              <p className="text-xs text-gray-500 mt-1">Floor</p>
+            </CardContent>
+          </Card>
+        </div>
 
-        {/* Base Tier Prices */}
-        <TabsContent value="tiers" className="space-y-4">
+        {/* Base Pricing Section */}
+        <Card className="bg-white">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-teal-600" />
+              Base Pricing Tiers
+            </CardTitle>
+            <p className="text-sm text-gray-600 mt-1">Monthly base prices by pool size</p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Tier A (10k-15k gallons)</Label>
+                <Input
+                  type="number"
+                  value={localSettings.baseTierPrices?.tier_a_10_15k || 140}
+                  onChange={(e) => updateField('baseTierPrices.tier_a_10_15k', e.target.value)}
+                  className="mt-2"
+                />
+              </div>
+              <div>
+                <Label>Tier B (15k-20k gallons)</Label>
+                <Input
+                  type="number"
+                  value={localSettings.baseTierPrices?.tier_b_15_20k || 160}
+                  onChange={(e) => updateField('baseTierPrices.tier_b_15_20k', e.target.value)}
+                  className="mt-2"
+                />
+              </div>
+              <div>
+                <Label>Tier C (20k-30k gallons)</Label>
+                <Input
+                  type="number"
+                  value={localSettings.baseTierPrices?.tier_c_20_30k || 190}
+                  onChange={(e) => updateField('baseTierPrices.tier_c_20_30k', e.target.value)}
+                  className="mt-2"
+                />
+              </div>
+              <div>
+                <Label>Tier D (30k+ gallons)</Label>
+                <Input
+                  type="number"
+                  value={localSettings.baseTierPrices?.tier_d_30k_plus || 230}
+                  onChange={(e) => updateField('baseTierPrices.tier_d_30k_plus', e.target.value)}
+                  className="mt-2"
+                />
+              </div>
+            </div>
+            <div className="border-t pt-4">
+              <Label>Minimum Monthly Floor</Label>
+              <Input
+                type="number"
+                value={localSettings.baseTierPrices?.absolute_floor || 120}
+                onChange={(e) => updateField('baseTierPrices.absolute_floor', e.target.value)}
+                className="mt-2"
+              />
+              <p className="text-xs text-gray-500 mt-1">Minimum price regardless of calculations</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Additive Tokens Section */}
+        <Card className="bg-white">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Zap className="w-5 h-5 text-amber-600" />
+              Additive Pricing Tokens
+            </CardTitle>
+            <p className="text-sm text-gray-600 mt-1">Monthly add-ons for various conditions</p>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Environmental */}
+            <div>
+              <h4 className="font-semibold text-gray-800 mb-3">Environmental</h4>
+              <p className="text-sm text-gray-600 mb-4">Unscreened pool add-ons by tier</p>
+              <div className="grid grid-cols-4 gap-4">
+                <div>
+                  <Label>Tier A</Label>
+                  <Input
+                    type="number"
+                    value={localSettings.additiveTokens?.unscreened_tier_a || 20}
+                    onChange={(e) => updateField('additiveTokens.unscreened_tier_a', e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label>Tier B</Label>
+                  <Input
+                    type="number"
+                    value={localSettings.additiveTokens?.unscreened_tier_b || 25}
+                    onChange={(e) => updateField('additiveTokens.unscreened_tier_b', e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label>Tier C</Label>
+                  <Input
+                    type="number"
+                    value={localSettings.additiveTokens?.unscreened_tier_c || 30}
+                    onChange={(e) => updateField('additiveTokens.unscreened_tier_c', e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label>Tier D</Label>
+                  <Input
+                    type="number"
+                    value={localSettings.additiveTokens?.unscreened_tier_d || 40}
+                    onChange={(e) => updateField('additiveTokens.unscreened_tier_d', e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
+              </div>
+              <div className="border-t pt-4 mt-4">
+                <Label>Trees Overhead (unscreened only)</Label>
+                <Input
+                  type="number"
+                  value={localSettings.additiveTokens?.trees_overhead || 10}
+                  onChange={(e) => updateField('additiveTokens.trees_overhead', e.target.value)}
+                  className="mt-2"
+                />
+              </div>
+            </div>
+
+            {/* Usage */}
+            <div className="border-t pt-4">
+              <h4 className="font-semibold text-gray-800 mb-3">Usage Frequency</h4>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label>Weekends</Label>
+                  <Input
+                    type="number"
+                    value={localSettings.additiveTokens?.usage_weekends || 10}
+                    onChange={(e) => updateField('additiveTokens.usage_weekends', e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label>Several/Week</Label>
+                  <Input
+                    type="number"
+                    value={localSettings.additiveTokens?.usage_several_week || 10}
+                    onChange={(e) => updateField('additiveTokens.usage_several_week', e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label>Daily</Label>
+                  <Input
+                    type="number"
+                    value={localSettings.additiveTokens?.usage_daily || 20}
+                    onChange={(e) => updateField('additiveTokens.usage_daily', e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Chlorination */}
+            <div className="border-t pt-4">
+              <h4 className="font-semibold text-gray-800 mb-3">Chlorination</h4>
+              <p className="text-sm text-gray-600 mb-4">Floater/Skimmer add-ons by tier</p>
+              <div className="grid grid-cols-4 gap-4">
+                <div>
+                  <Label>Tier A</Label>
+                  <Input
+                    type="number"
+                    value={localSettings.additiveTokens?.chlorinator_floater_tier_a || 5}
+                    onChange={(e) => updateField('additiveTokens.chlorinator_floater_tier_a', e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label>Tier B</Label>
+                  <Input
+                    type="number"
+                    value={localSettings.additiveTokens?.chlorinator_floater_tier_b || 10}
+                    onChange={(e) => updateField('additiveTokens.chlorinator_floater_tier_b', e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label>Tier C</Label>
+                  <Input
+                    type="number"
+                    value={localSettings.additiveTokens?.chlorinator_floater_tier_c || 15}
+                    onChange={(e) => updateField('additiveTokens.chlorinator_floater_tier_c', e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label>Tier D</Label>
+                  <Input
+                    type="number"
+                    value={localSettings.additiveTokens?.chlorinator_floater_tier_d || 20}
+                    onChange={(e) => updateField('additiveTokens.chlorinator_floater_tier_d', e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
+              </div>
+              <div className="border-t pt-4 mt-4">
+                <Label>Liquid Chlorine Only</Label>
+                <Input
+                  type="number"
+                  value={localSettings.additiveTokens?.chlorinator_liquid_only || 10}
+                  onChange={(e) => updateField('additiveTokens.chlorinator_liquid_only', e.target.value)}
+                  className="mt-2"
+                />
+              </div>
+            </div>
+
+            {/* Pets */}
+            <div className="border-t pt-4">
+              <h4 className="font-semibold text-gray-800 mb-3">Pets</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Occasional</Label>
+                  <Input
+                    type="number"
+                    value={localSettings.additiveTokens?.pets_occasional || 5}
+                    onChange={(e) => updateField('additiveTokens.pets_occasional', e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label>Frequent</Label>
+                  <Input
+                    type="number"
+                    value={localSettings.additiveTokens?.pets_frequent || 10}
+                    onChange={(e) => updateField('additiveTokens.pets_frequent', e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Risk Adjustments Section */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
