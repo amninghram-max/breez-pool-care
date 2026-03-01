@@ -168,9 +168,13 @@ export default function AdminPricingConfig() {
 
   // Handler: Create default AdminSettings record
   const handleCreateDefaults = async () => {
-    setIsCreatingDefaults(true);
+    if (typeof window !== 'undefined') {
+      console.info('[AdminPricingConfig] createDefaultConfig clicked');
+    }
+    setCreatingDefault(true);
+    setCreateError(null);
     try {
-      const defaultPayload = {
+      const defaults = {
         settingKey: 'default',
         baseTierPrices: JSON.stringify({}),
         additiveTokens: JSON.stringify({}),
@@ -180,16 +184,29 @@ export default function AdminPricingConfig() {
         chemistryTargets: JSON.stringify({}),
         seasonalPeriods: JSON.stringify({})
       };
-      await base44.entities.AdminSettings.create(defaultPayload);
+      if (typeof window !== 'undefined') {
+        console.info('[AdminPricingConfig] creating AdminSettings with defaults:', defaults);
+      }
+      const result = await base44.entities.AdminSettings.create(defaults);
+      if (typeof window !== 'undefined') {
+        console.info('[AdminPricingConfig] create result:', result);
+      }
       await settingsQuery.refetch();
+      const refetched = settingsQuery.data;
+      if (!refetched) {
+        setCreateError('Record created but refetch returned null/undefined. Check RLS permissions for reading AdminSettings.');
+        return;
+      }
       toast.success('Default pricing configuration created');
     } catch (error) {
-      toast.error('Failed to create defaults: ' + error.message);
+      const errorMsg = error?.message || 'Unknown error';
+      setCreateError(errorMsg);
       if (typeof window !== 'undefined') {
         console.error('[AdminPricingConfig] create defaults error:', error);
       }
+      toast.error('Failed to create defaults: ' + errorMsg);
     } finally {
-      setIsCreatingDefaults(false);
+      setCreatingDefault(false);
     }
   };
 
