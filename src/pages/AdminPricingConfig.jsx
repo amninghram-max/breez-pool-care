@@ -17,13 +17,14 @@ export default function AdminPricingConfig() {
     queryFn: () => base44.auth.me()
   });
 
-  const { data: settings } = useQuery({
+  const settingsQuery = useQuery({
     queryKey: ['adminSettings'],
     queryFn: async () => {
       const result = await base44.entities.AdminSettings.filter({ settingKey: 'default' });
       return result[0] || null;
     }
   });
+  const settings = settingsQuery.data;
 
   const [localSettings, setLocalSettings] = useState(null);
 
