@@ -1,19 +1,22 @@
 import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import { useCustomerPageGuard } from '@/components/auth/useCustomerPageGuard';
 import EquipmentCard from '../components/customer/EquipmentCard';
 
 const EQUIPMENT_ORDER = ['pump', 'filter', 'heater', 'solar_heater', 'salt_cell', 'automation', 'other'];
 
 export default function CustomerEquipment() {
-  const { data: user } = useQuery({
+  const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['user'],
     queryFn: () => base44.auth.me(),
   });
+
+  useCustomerPageGuard(user, userLoading);
 
   const { data: lead } = useQuery({
     queryKey: ['customerLead'],
