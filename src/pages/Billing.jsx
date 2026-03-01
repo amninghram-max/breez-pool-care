@@ -4,19 +4,22 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CreditCard, AlertCircle, CheckCircle, Calendar } from 'lucide-react';
+import { CreditCard, AlertCircle, CheckCircle, Calendar, Loader2 } from 'lucide-react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
+import { useCustomerPageGuard } from '@/components/auth/useCustomerPageGuard';
 import PaymentMethodManager from '@/components/billing/PaymentMethodManager';
 import InvoiceList from '@/components/billing/InvoiceList';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51QYourKeyHere');
 
 export default function Billing() {
-  const { data: user } = useQuery({
+  const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['user'],
     queryFn: () => base44.auth.me()
   });
+
+  useCustomerPageGuard(user, userLoading);
 
   const { data: lead } = useQuery({
     queryKey: ['currentLead', user?.email],
