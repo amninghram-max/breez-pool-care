@@ -1048,7 +1048,10 @@ export default function AdminPricingConfig() {
 
             {/* Initial Fees */}
             <div className="border-t pt-4">
-              <h4 className="font-semibold text-gray-800 mb-3">One-Time Fees</h4>
+              <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                One-Time Fees
+                <Info className="w-4 h-4 text-gray-400" title="One-time charges applied during the first service visit to cover startup work such as inspection, water balancing, and debris removal." />
+              </h4>
               <div>
                 <Label>Slightly Cloudy</Label>
                 <Input
