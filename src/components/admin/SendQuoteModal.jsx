@@ -59,14 +59,18 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
         body: JSON.stringify(payload),
       });
 
+      const status = r.status;
       const text = await r.text();
-      const data = text ? JSON.parse(text) : null;
+      
+      let data = null;
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch {}
 
       if (!data?.success) {
-        const errMsg = typeof data?.error === 'object' 
-          ? JSON.stringify(data.error)
-          : data?.error || 'Failed to send quote link email';
-        throw new Error(errMsg);
+        console.error('sendQuoteLinkEmail failure', { status, textPreview: text.slice(0, 300), data });
+        const msg = data?.error || data?.message || (text ? text.slice(0, 300) : 'Empty response');
+        throw new Error(`sendQuoteLinkEmail failed (status ${status}): ${msg}`);
       }
 
       toast.success('Quote link sent');
