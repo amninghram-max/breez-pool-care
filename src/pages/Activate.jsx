@@ -33,6 +33,12 @@ export default function Activate() {
 
     const doLink = async () => {
       setStatus('linking');
+      // Try to fetch lead first name for personalization
+      try {
+        const lead = await base44.entities.Lead.get(leadId);
+        if (lead?.firstName) setLeadFirstName(lead.firstName);
+      } catch { /* RLS may block — silent */ }
+
       try {
         const res = await base44.functions.invoke('linkUserToLead', { leadId });
 
