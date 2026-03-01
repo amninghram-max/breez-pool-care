@@ -23,12 +23,7 @@ CORE INVARIANTS (DO NOT MODIFY WITHOUT EXPLICIT APPROVAL)
 PRICING ENGINE MODEL
 ------------------------------------------------------------------
 
-MonthlyPrice =
-    BaseTier
-  + AdditiveTokens
-  + RiskAddon
-  × FrequencyMultiplier
-
+MonthlyPrice = (BaseTier + AdditiveTokens + RiskAddon) × FrequencyMultiplier
 ------------------------------------------------------------------
 SIZE TIERS (Base Monthly)
 ------------------------------------------------------------------
@@ -52,12 +47,12 @@ Trees (only if unscreened): +10
 
 Usage:
   Rarely: 0
-  Weekends / Several per week: +10
+  Weekends (1–2x/week) or Several per week (3–4x/week): +10
   Daily: +20
 
 Chlorination:
   Inline / Salt: 0
-  Floater / Skimmer: +5 per tier step
+  Floater / Skimmer: +5 × TierIndex (A=0, B=1, C=2, D=3)
   Liquid only: +10
 
 Pets:
@@ -130,7 +125,7 @@ Customer must NOT see internal version or config fields.
 ------------------------------------------------------------------
 RELEASE READINESS REQUIREMENTS
 ------------------------------------------------------------------
-
+configHash
 Must verify:
 
 - AdminSettings present
@@ -144,6 +139,7 @@ Must verify:
 Return structure must include:
   releaseReady
   usingDefaults
+  usingDefaults must be false in production. If defaults would be used, set releaseReady=false and add blocker DEFAULTS_NOT_ALLOWED.
   blockers[]
   warnings[]
   pricingEngineVersion
@@ -407,6 +403,8 @@ Never introduce production defaults to bypass platform failure.
 
 UI + WORKFLOW IMPLEMENTATION
 
+(UI + Workflow Implementation Phase) Must comply with invariants above and must not modify them.
+
 Use docs/AI_BOOTSTRAP_CONTEXT.md as authoritative architecture context.
 Do not modify pricing invariants.
 Do not introduce production defaults.
@@ -507,6 +505,8 @@ Schedule Free Inspection
 Auto-send quote email with identical information.
 
 No phone required at quote stage.
+
+Quote expiry is an ops/UI policy only and must not affect pricing determinism or historical quote immutability.
 
 3️⃣ INSPECTION FLOW
 
