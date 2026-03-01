@@ -132,6 +132,7 @@ export default function ProviderNav({ userRole }) {
     { key: 'customers', items: [
       { name: 'Leads Pipeline',        path: 'LeadsPipeline',        icon: Users },
       { name: 'Equipment Profiles',    path: 'EquipmentProfiles',    icon: Activity },
+      { name: 'Customer Timeline',     path: 'CustomerTimeline',     icon: Activity },
     ]},
     { key: 'pricing', items: [
       { name: 'Pricing Dashboard',     path: 'AdminPricingConfig',   icon: Settings },
