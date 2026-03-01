@@ -225,45 +225,75 @@ export default function LeadsPipeline() {
   );
 }
 
-function LeadCard({ lead, onClick, onUpdateStage }) {
+function LeadRow({ lead, stage, onAdvance, onStageChange, onEdit }) {
+  const isLost = lead.stage === 'lost';
+  const canAdvance = !isLost && STAGES.findIndex(s => s.key === lead.stage) < STAGES.length - 1;
+  
+  // Extract first line of address
+  const addressLine = lead.serviceAddress?.split(',')[0] || 'No address';
+  
+  // Format last update
+  const lastUpdate = new Date(lead.updated_date || lead.created_date);
+  const daysAgo = Math.floor((Date.now() - lastUpdate) / (1000 * 60 * 60 * 24));
+  const timeStr = daysAgo === 0 ? 'Today' : `${daysAgo}d ago`;
+
   return (
-    <Card className="cursor-pointer hover:shadow-md transition-shadow">
-      <CardContent className="p-4 space-y-3">
-        <div className="flex items-start justify-between" onClick={onClick} className="cursor-pointer">
-          <div>
-            <p className="font-semibold text-sm">{lead.firstName} {lead.lastName}</p>
-            <p className="text-xs text-gray-600">{lead.serviceAddress}</p>
+    <div className="px-4 py-3 flex items-center justify-between gap-3 hover:bg-gray-50 text-sm">
+      {/* Lead Info */}
+      <div className="flex-1 min-w-0 cursor-pointer" onClick={onEdit}>
+        <div className="flex items-start gap-2">
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-gray-900">{lead.firstName} {lead.lastName}</p>
+            <p className="text-xs text-gray-600 truncate">{addressLine}</p>
           </div>
-          {!lead.isEligible && (
-            <AlertCircle className="w-4 h-4 text-red-600" />
-          )}
+          {!lead.isEligible && <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-1" />}
         </div>
-        <div className="flex gap-2 text-xs text-gray-600">
-          <Phone className="w-3 h-3" />
-          <span>{lead.preferredContact}</span>
-        </div>
-        {lead.requestedInspectionDate && (
-          <div className="flex gap-2 text-xs text-gray-600">
-            <Calendar className="w-3 h-3" />
-            <span>{lead.requestedInspectionDate}</span>
-          </div>
-        )}
-        {lead.stage === 'converted' && (
-          <div className="flex gap-2 pt-2 border-t border-gray-100">
-            <Link to={createPageUrl('CustomerTimeline') + `?leadId=${lead.id}`} className="flex-1">
-              <Button size="sm" variant="outline" className="w-full text-xs">
-                View Timeline
-              </Button>
-            </Link>
-            <Link to={createPageUrl('EquipmentProfileAdmin') + `?leadId=${lead.id}`} className="flex-1">
-              <Button size="sm" variant="outline" className="w-full text-xs">
-                Manage Equipment
-              </Button>
-            </Link>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Metadata */}
+      <div className="text-xs text-gray-500">{timeStr}</div>
+
+      {/* Primary Action: Advance */}
+      <Button
+        size="sm"
+        variant={canAdvance ? 'default' : 'ghost'}
+        className="gap-1"
+        onClick={onAdvance}
+        disabled={!canAdvance}
+        title={canAdvance ? `Move to ${STAGES[STAGES.findIndex(s => s.key === lead.stage) + 1]?.label}` : 'Cannot advance'}
+      >
+        <ArrowRight className="w-3 h-3" />
+        Advance
+      </Button>
+
+      {/* Stage Dropdown */}
+      <Select value={lead.stage} onValueChange={onStageChange}>
+        <SelectTrigger className="w-32 h-8 text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {STAGES.map(s => (
+            <SelectItem key={s.key} value={s.key}>
+              {s.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {/* Actions */}
+      <div className="flex gap-1">
+        <Link to={createPageUrl('CustomerTimeline') + `?leadId=${lead.id}`}>
+          <Button size="icon" variant="outline" className="h-8 w-8" title="View Timeline">
+            <Eye className="w-3 h-3" />
+          </Button>
+        </Link>
+        <Link to={createPageUrl('EquipmentProfileAdmin') + `?leadId=${lead.id}`}>
+          <Button size="icon" variant="outline" className="h-8 w-8" title="Manage Equipment">
+            <Settings className="w-3 h-3" />
+          </Button>
+        </Link>
+      </div>
+    </div>
   );
 }
 
