@@ -229,6 +229,63 @@ export default function AdminPricingConfig() {
     });
   };
 
+  // Diagnostic panel for timeout or errors
+  if (timedOut || settingsQuery.isError || userAuthError) {
+    return (
+      <Card className="border-red-200 bg-red-50 max-w-2xl mx-auto mt-8">
+        <CardHeader>
+          <CardTitle className="text-red-900">Loading Diagnostics</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 text-sm">
+          <div className="bg-white p-4 rounded border border-red-200">
+            <p className="font-semibold text-gray-800 mb-2">Auth Status</p>
+            <div className="text-gray-700 space-y-1 ml-4">
+              <p>User present: {user ? 'Yes' : 'No'}</p>
+              <p>User role: {user?.role || 'N/A'}</p>
+              <p>User linkedLeadId: {user?.linkedLeadId || 'N/A'}</p>
+              <p>Auth loading: {userIsLoading}</p>
+              <p>Auth error: {userAuthError || 'None'}</p>
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded border border-red-200">
+            <p className="font-semibold text-gray-800 mb-2">AdminSettings Query</p>
+            <div className="text-gray-700 space-y-1 ml-4">
+              <p>isLoading: {settingsQuery.isLoading}</p>
+              <p>isFetching: {settingsQuery.isFetching}</p>
+              <p>isError: {settingsQuery.isError}</p>
+              <p>Settings exists: {settings ? 'Yes' : 'No'}</p>
+              {settings && <p>Settings ID: {settings.id}</p>}
+              {settingsQuery.isError && (
+                <p className="text-red-700 mt-2 whitespace-pre-wrap">
+                  {settingsQuery.error?.message || 'Unknown error'}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <Button
+              onClick={() => {
+                setTimedOut(false);
+                settingsQuery.refetch();
+              }}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Retry
+            </Button>
+            <Button
+              onClick={() => window.location.href = createPageUrl('AdminHome')}
+              variant="outline"
+            >
+              Go Home
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (user?.role !== 'admin') {
     return (
       <Card className="border-red-200 bg-red-50">
