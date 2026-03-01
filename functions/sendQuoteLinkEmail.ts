@@ -95,12 +95,7 @@ Deno.serve(async (req) => {
 </html>
     `;
 
-    // Send via Resend API (supports external addresses)
-    const resendApiKey = Deno.env.get('RESEND_API_KEY');
-    if (!resendApiKey) {
-      throw new Error('RESEND_API_KEY not configured');
-    }
-
+    // Send email ONLY via Resend API (no Core.SendEmail, supports external addresses)
     const emailRes = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -108,19 +103,22 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: 'noreply@breezpoolcare.com',
+        from: 'Breez Pool Care <info@breezpoolcare.com>',
         to: email,
         subject: 'Get Your Breez Pool Service Quote',
-        html: htmlBody
+        html: htmlBody,
+        text: `Hi ${firstName},\n\nThank you for your interest in Breez Pool Care! Click here to get your quote:\n${quoteLink}`
       })
     });
 
     const emailData = await emailRes.json();
     if (!emailRes.ok) {
-      throw new Error(`Resend API error: ${emailData.message || emailRes.statusText}`);
+      const errorMsg = emailData.message || emailRes.statusText;
+      console.error('❌ Resend API error:', errorMsg);
+      throw new Error(`Resend API error: ${errorMsg}`);
     }
 
-    console.log('✅ Quote link email sent via Resend:', emailData);
+    console.log('✅ Quote link email sent via Resend:', { id: emailData.id, to: email });
 
     // Update lead email and log timestamp (service role, no stage change)
     try {
