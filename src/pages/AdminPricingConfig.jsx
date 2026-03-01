@@ -344,9 +344,47 @@ export default function AdminPricingConfig() {
     return null; // Layout handles the timeout watchdog
   }
 
+  // Empty-state: AdminSettings does not exist
+  if (!localSettings && !settingsQuery.isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-2xl mx-auto">
+          <Card className="border-amber-200 bg-amber-50">
+            <CardHeader>
+              <CardTitle className="text-amber-900 flex items-center gap-2">
+                <AlertCircle className="w-5 h-5" />
+                No Pricing Configuration Found
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-amber-800">
+                The system does not yet have an AdminSettings record. You need to create a default configuration to proceed.
+              </p>
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={handleCreateDefaults}
+                  disabled={isCreatingDefaults}
+                  className="bg-amber-600 hover:bg-amber-700"
+                >
+                  {isCreatingDefaults ? 'Creating...' : 'Create Default Configuration'}
+                </Button>
+                <Button
+                  onClick={() => window.location.href = createPageUrl('AdminHome')}
+                  variant="outline"
+                >
+                  Go to Admin Home
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   // Guard: localSettings not yet initialized
-  if (!localSettings) {
-    return null; // Should not reach here (effect above handles it)
+  if (!localSettings || settingsQuery.isLoading) {
+    return null; // Layout handles the timeout watchdog
   }
 
   // Summary card data (truth audit: only real persisted fields)
