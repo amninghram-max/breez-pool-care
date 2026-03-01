@@ -137,21 +137,19 @@ Deno.serve(async (req) => {
 
       return Response.json({
         success: true,
-        message: 'Quote link email sent',
+        link: quoteLink,
+        resendId: emailData.id,
         email,
-        emailSent: true,
-        leadUpdated: true,
-        link: quoteLink
+        leadUpdated: true
       });
     } catch (updateError) {
       console.warn('⚠️ Email sent but lead update failed:', updateError.message);
       return Response.json({
         success: true,
-        message: 'Quote link email sent',
-        email,
-        emailSent: true,
-        leadUpdated: false,
         link: quoteLink,
+        resendId: emailData.id,
+        email,
+        leadUpdated: false,
         warning: `Email sent but could not log timestamp: ${updateError.message}`
       });
     }
