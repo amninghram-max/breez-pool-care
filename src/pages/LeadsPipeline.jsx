@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Phone, Mail, MessageSquare, Calendar, AlertCircle, Check, Wrench, Plus, FileText, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import UnstickLeadPanel from '@/components/admin/UnstickLeadPanel';
 import NewLeadModal from '@/components/admin/NewLeadModal';
 import NewQuoteFlow from '@/components/admin/NewQuoteFlow';
@@ -243,9 +245,9 @@ export default function LeadsPipeline() {
 
 function LeadCard({ lead, onClick, onUpdateStage }) {
   return (
-    <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={onClick}>
-      <CardContent className="p-4 space-y-2">
-        <div className="flex items-start justify-between">
+    <Card className="cursor-pointer hover:shadow-md transition-shadow">
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-start justify-between" onClick={onClick} className="cursor-pointer">
           <div>
             <p className="font-semibold text-sm">{lead.firstName} {lead.lastName}</p>
             <p className="text-xs text-gray-600">{lead.serviceAddress}</p>
@@ -262,6 +264,20 @@ function LeadCard({ lead, onClick, onUpdateStage }) {
           <div className="flex gap-2 text-xs text-gray-600">
             <Calendar className="w-3 h-3" />
             <span>{lead.requestedInspectionDate}</span>
+          </div>
+        )}
+        {lead.stage === 'converted' && (
+          <div className="flex gap-2 pt-2 border-t border-gray-100">
+            <Link to={createPageUrl('CustomerTimeline') + `?leadId=${lead.id}`} className="flex-1">
+              <Button size="sm" variant="outline" className="w-full text-xs">
+                View Timeline
+              </Button>
+            </Link>
+            <Link to={createPageUrl('EquipmentProfiles')} className="flex-1">
+              <Button size="sm" variant="outline" className="w-full text-xs">
+                Manage Equipment
+              </Button>
+            </Link>
           </div>
         )}
       </CardContent>
