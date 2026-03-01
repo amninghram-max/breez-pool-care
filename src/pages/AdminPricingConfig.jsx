@@ -207,7 +207,8 @@ export default function AdminPricingConfig() {
   const minFloor = localSettings.baseTierPrices?.absolute_floor || 120;
   
   // Compute badge statuses
-  const marginStatus = getPricingMarginStatus(avgBasePrice);
+  const pricingStatus = getPricingConfigStatus(localSettings.baseTierPrices);
+  const autopayStatus = getAutopayStatus(autopayValue);
   const riskStatus = getRiskScoringStatus(localSettings.riskEngine);
   const frequencyStatus = getFrequencyStatus(frequencyMultiplier);
 
