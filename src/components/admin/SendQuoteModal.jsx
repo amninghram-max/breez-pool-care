@@ -72,11 +72,14 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
       const text = await r.text();
       
       console.log("SEND_QUOTE_LINK_BODYLEN", { len: text.length, preview: text.slice(0, 120) });
+      console.log("SEND_QUOTE_LINK_RAW", { status, ct: r.headers.get("content-type"), len: text.length, preview: text.slice(0, 120) });
       
       let data = null;
       try {
         data = text ? JSON.parse(text) : null;
       } catch {}
+      
+      console.log("SEND_QUOTE_LINK_PARSED", data);
 
       if (!data?.success) {
         console.error('sendQuoteLinkEmail failure', { status, textPreview: text.slice(0, 300), data });
@@ -84,10 +87,12 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
         throw new Error(`sendQuoteLinkEmail failed (status ${status}): ${msg}`);
       }
 
+      console.log("SEND_QUOTE_LINK_SUCCESS_PATH");
       toast.success('Quote link sent');
       onSuccess?.();
       onClose();
     } catch (err) {
+      console.log("SEND_QUOTE_LINK_CATCH", err);
       console.error('Send quote link error:', err);
       const errorMsg = getErrMsg(err);
       setError(errorMsg);
