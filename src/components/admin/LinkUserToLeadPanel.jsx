@@ -53,42 +53,45 @@ export default function LinkUserToLeadPanel({ lead }) {
   const handleInvite = async () => {
     setInviting(true);
     try {
-      // DEBUG
-      console.log('DEBUG lead.id:', lead.id);
-      console.log('DEBUG lead._id:', lead._id);
-      console.log('DEBUG lead.leadId:', lead.leadId);
-      console.log('DEBUG activationUrl:', activationUrl);
-      toast.info(`DEBUG: Sending URL: ${activationUrl}`);
-
-      const customerName = lead.firstName || 'there';
-      const emailBody = `<!DOCTYPE html>
-<html>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; color: #333;">
-  <p style="font-size: 16px;">Hi ${customerName},</p>
-  <p style="font-size: 16px;">You've been invited to activate your Breez Pool Care customer account.</p>
-  <p style="font-size: 16px;">Click the button below to create your account or log in — your pool profile will be linked automatically:</p>
-  <p style="margin: 24px 0;">
-    <a href="${activationUrl}" style="display: inline-block; background: #1B9B9F; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">Access app</a>
-  </p>
-  <p style="font-size: 14px; color: #666;">Or copy and paste this link:</p>
-  <p style="font-size: 14px; color: #1B9B9F; word-break: break-all;">${activationUrl}</p>
-  <p style="font-size: 14px; color: #666; margin-top: 24px;">If you have any trouble, call us at (321) 524-3838.</p>
-  <p style="font-size: 14px; color: #666;">— The Breez Pool Care Team</p>
-</body>
-</html>`;
-
-      await base44.integrations.Core.SendEmail({
-        to: trimmedEmail,
-        subject: 'Activate your Breez Pool Care account',
-        body: emailBody,
-      });
+      await base44.users.inviteUser(trimmedEmail, 'user');
       setInviteSent(true);
-      toast.success('Invite sent!');
+      toast.success('Invite sent via Base44');
     } catch (e) {
       toast.error(e.message || 'Failed to send invite');
     } finally {
       setInviting(false);
     }
+  };
+
+  const handleSendActivationEmail = async () => {
+    try {
+      const customerName = lead.firstName || 'there';
+      const emailBody = `<!DOCTYPE html>
+<html>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; color: #333;">
+  <p style="font-size: 16px;">Hi ${customerName},</p>
+  <p style="font-size: 16px;">Here is your Breez Pool Care activation link:</p>
+  <p style="margin: 24px 0;">
+    <a href="${activationUrl}" style="display: inline-block; background: #1B9B9F; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">Activate Account</a>
+  </p>
+  <p style="font-size: 14px; color: #666;">Or copy and paste: <span style="color: #1B9B9F;">${activationUrl}</span></p>
+  <p style="font-size: 14px; color: #666; margin-top: 24px;">— The Breez Pool Care Team</p>
+</body>
+</html>`;
+      await base44.integrations.Core.SendEmail({
+        to: matchedUser.email,
+        subject: 'Your Breez Pool Care activation link',
+        body: emailBody,
+      });
+      toast.success('Activation link sent!');
+    } catch (e) {
+      toast.error(e.message || 'Failed to send email');
+    }
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(activationUrl);
+    toast.success('Copied!');
   };
 
   return (
