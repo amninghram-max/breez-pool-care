@@ -260,9 +260,9 @@ export default function AdminPricingConfig() {
           <Card className="bg-white cursor-pointer hover:shadow-md transition-shadow" onClick={() => document.getElementById('base-pricing-section')?.scrollIntoView({ behavior: 'smooth' })}>
             <CardContent className="pt-6">
               <div className="flex items-start justify-between mb-2">
-                <p className="text-xs text-gray-600 font-medium">Base Monthly (Avg)</p>
-                <Badge className={`text-xs ${marginStatus.className}`}>
-                  {marginStatus.label}
+                <p className="text-xs text-gray-600 font-medium">Base Pricing</p>
+                <Badge className={`text-xs ${pricingStatus.className}`}>
+                  {pricingStatus.label}
                 </Badge>
               </div>
               <p className="text-2xl font-bold text-teal-600 mt-2">{formatCurrency(avgBasePrice)}</p>
@@ -275,8 +275,8 @@ export default function AdminPricingConfig() {
             <CardContent className="pt-6">
               <div className="flex items-start justify-between mb-2">
                 <p className="text-xs text-gray-600 font-medium">AutoPay Discount</p>
-                <Badge className="text-xs bg-blue-100 text-blue-800 border-blue-300">
-                  Configured
+                <Badge className={`text-xs ${autopayStatus.className}`}>
+                  {autopayStatus.label}
                 </Badge>
               </div>
               <p className="text-2xl font-bold text-blue-600 mt-2">{formatCurrency(autopayValue)}</p>
