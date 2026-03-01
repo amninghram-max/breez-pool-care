@@ -1019,7 +1019,10 @@ export default function AdminPricingConfig() {
               <h4 className="font-semibold text-gray-800 mb-3">Service Frequency Multipliers</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Twice/Week Multiplier</Label>
+                  <Label className="flex items-center gap-2">
+                    Twice/Week Multiplier
+                    <Info className="w-4 h-4 text-gray-400" title="Multiplies the monthly service price when the pool requires twice-weekly visits. Pools with high debris load or heavy usage may require more frequent service." />
+                  </Label>
                   <Input
                     type="number"
                     step="0.1"
