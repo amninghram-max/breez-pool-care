@@ -136,7 +136,9 @@ export default function EquipmentProfiles() {
     <div className="max-w-4xl mx-auto space-y-6 p-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Equipment Profiles</h1>
-        <p className="text-sm text-gray-600 mt-1">{equipment.length} active equipment item(s) across {Object.keys(byLead).length} customer(s)</p>
+        <p className="text-sm text-gray-600 mt-1">
+          {equipment.length} equipment record(s) across {Object.keys(byLead).length} customer(s)
+        </p>
       </div>
 
       {/* Search Bar */}
