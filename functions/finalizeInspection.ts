@@ -73,11 +73,24 @@ Deno.serve(async (req) => {
     }
 
     if (outcome === 'new_customer') {
-      // Update lead: store locked pricing, advance stage to quote_sent
-      await base44.asServiceRole.entities.Lead.update(record.leadId, {
+      // Update lead with verified inspection inputs, store locked pricing, advance stage to quote_sent
+      const inspectionData = await base44.asServiceRole.entities.InspectionRecord.get(inspectionRecordId);
+      const leadUpdateData = {
         stage: 'quote_sent',
         monthlyServiceAmount: cleanedRate,
-      });
+      };
+      
+      // Overwrite pool questions with verified inspection inputs
+      if (inspectionData?.verifiedPoolType) leadUpdateData.poolType = inspectionData.verifiedPoolType;
+      if (inspectionData?.verifiedPoolSurface) leadUpdateData.poolSurface = inspectionData.verifiedPoolSurface;
+      if (inspectionData?.verifiedFilterType) leadUpdateData.filterType = inspectionData.verifiedFilterType;
+      if (inspectionData?.verifiedSanitizerType) leadUpdateData.sanitizerType = inspectionData.verifiedSanitizerType;
+      if (inspectionData?.verifiedScreenedArea) leadUpdateData.screenedArea = inspectionData.verifiedScreenedArea;
+      if (inspectionData?.verifiedTreesOverhead) leadUpdateData.treesOverhead = inspectionData.verifiedTreesOverhead;
+      if (inspectionData?.verifiedUsageFrequency) leadUpdateData.usageFrequency = inspectionData.verifiedUsageFrequency;
+      if (inspectionData?.verifiedPoolCondition) leadUpdateData.poolCondition = inspectionData.verifiedPoolCondition;
+      
+      await base44.asServiceRole.entities.Lead.update(record.leadId, leadUpdateData);
 
       // Send final quote email with agreement link
       await base44.asServiceRole.functions.invoke('sendFinalQuoteEmail', {
