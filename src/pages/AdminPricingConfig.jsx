@@ -159,21 +159,37 @@ export default function AdminPricingConfig() {
     if (!settingsQuery.isLoading && !localSettings) {
       if (settings) {
         setLocalSettings(settings);
-      } else {
-        // No settings exist yet - initialize with empty/default config
-        setLocalSettings({
-          settingKey: 'default',
-          baseTierPrices: {},
-          additiveTokens: {},
-          riskEngine: { points: {}, size_multipliers: {}, escalation_brackets: [] },
-          initialFees: {},
-          frequencyLogic: {},
-          chemistryTargets: {},
-          seasonalPeriods: {}
-        });
       }
+      // If settings is null, keep localSettings null to show empty state
     }
   }, [settingsQuery.isLoading, settings, localSettings]);
+
+  // Handler: Create default AdminSettings record
+  const handleCreateDefaults = async () => {
+    setIsCreatingDefaults(true);
+    try {
+      const defaultPayload = {
+        settingKey: 'default',
+        baseTierPrices: JSON.stringify({}),
+        additiveTokens: JSON.stringify({}),
+        riskEngine: JSON.stringify({ points: {}, size_multipliers: {}, escalation_brackets: [] }),
+        initialFees: JSON.stringify({}),
+        frequencyLogic: JSON.stringify({}),
+        chemistryTargets: JSON.stringify({}),
+        seasonalPeriods: JSON.stringify({})
+      };
+      await base44.entities.AdminSettings.create(defaultPayload);
+      await settingsQuery.refetch();
+      toast.success('Default pricing configuration created');
+    } catch (error) {
+      toast.error('Failed to create defaults: ' + error.message);
+      if (typeof window !== 'undefined') {
+        console.error('[AdminPricingConfig] create defaults error:', error);
+      }
+    } finally {
+      setIsCreatingDefaults(false);
+    }
+  };
 
   const saveSettingsMutation = useMutation({
     mutationFn: async () => {
