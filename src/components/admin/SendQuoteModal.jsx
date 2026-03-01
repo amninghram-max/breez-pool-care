@@ -13,37 +13,19 @@ const getErrMsg = (err) => {
   return 'Failed to send quote link email';
 };
 
+const getErrMsg = (err) => {
+  const data = err?.response?.data ?? err?.data;
+  if (data) return typeof data === 'object' ? JSON.stringify(data) : String(data);
+  if (err?.message) return err.message;
+  return 'Failed to send quote link email';
+};
+
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 // Check if lead has questionnaireData (pool details filled in)
 const hasQuestionnaireData = (lead) => {
   const requiredFields = ['poolSize', 'poolType', 'enclosure', 'filterType', 'chlorinationMethod', 'useFrequency', 'poolCondition'];
   return requiredFields.every(f => lead?.[f]);
-};
-
-// Extract error message from SDK throws, handling JSON parse failures
-const extractErrorMessage = (err, fallback = 'Failed to send quote link email') => {
-  // Priority 1: err.response.data (SDK attaches on non-2xx)
-  if (err?.response?.data) {
-    return typeof err.response.data === 'object' 
-      ? JSON.stringify(err.response.data) 
-      : String(err.response.data);
-  }
-  
-  // Priority 2: err.data (SDK may attach directly)
-  if (err?.data) {
-    return typeof err.data === 'object' 
-      ? JSON.stringify(err.data) 
-      : String(err.data);
-  }
-  
-  // Priority 3: err.message (likely "Unexpected end of JSON input" or other SDK error)
-  if (err?.message) {
-    return err.message;
-  }
-  
-  // Fallback
-  return fallback;
 };
 
 export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
