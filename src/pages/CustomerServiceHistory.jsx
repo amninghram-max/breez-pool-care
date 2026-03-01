@@ -53,6 +53,14 @@ export default function CustomerServiceHistory() {
   const dosePlanByTestRecord = Object.fromEntries(dosePlans.map(d => [d.testRecordId, d]));
   const retestByOriginalTest = Object.fromEntries(retestRecords.map(r => [r.originalTestId, r]));
 
+  if (userLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5 max-w-xl mx-auto">
       <div className="flex items-center gap-3">
