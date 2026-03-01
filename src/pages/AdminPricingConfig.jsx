@@ -1008,14 +1008,14 @@ export default function AdminPricingConfig() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Twice/Week Multiplier</Label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    value={frequencyMultiplier}
-                    onChange={(e) => updateField('frequencyLogic.twice_weekly_multiplier', e.target.value)}
-                    className="mt-2"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Applied to final monthly total (e.g., 1.8× = 80% more)</p>
+                   <Input
+                     type="number"
+                     step="0.1"
+                     value={frequencyMultiplier}
+                     onChange={(e) => updateField('frequencyLogic.twice_weekly_multiplier', e.target.value)}
+                     className="mt-2"
+                   />
+                   <p className="text-sm text-muted-foreground mt-1">Multiplies the monthly price when the pool requires twice-weekly visits.</p>
                 </div>
                 <div>
                   <Label>Auto-Require Threshold</Label>
