@@ -758,3 +758,109 @@ All immutable records must remain immutable.
 All alerts must be event-based.
 
 End of UI build phase scope.
+
+UI WORKFLOW ARCHITECTURE – CUSTOMER HUB MODEL (2026-03 Stabilization)
+
+Purpose:
+Prevent navigation loops, dead-end overview pages, and performance regressions.
+This section governs routing and workflow structure only.
+It MUST NOT modify pricing, chemistry, or schema invariants above.
+
+CORE WORKFLOW PRINCIPLE
+
+All provider workflows must be CUSTOMER-SCOPED.
+Every operational action must originate from a specific leadId.
+
+No unscoped management pages may serve as primary entry points.
+
+CUSTOMER HUB
+
+CustomerTimeline is the provider workflow hub.
+
+Route:
+CustomerTimeline?leadId=<id>
+
+Behavior:
+If no leadId → show searchable customer picker (converted leads only).
+If leadId present → render customer hub view.
+
+Timeline must not load full historical feeds by default.
+Initial load should display:
+
+- Last 4 visits (newest first)
+- Expandable visit summaries
+- “View older visit” dropdown (lazy-loaded)
+
+Heavy historical aggregation is prohibited on initial render.
+
+EQUIPMENT MANAGEMENT RULE
+
+Equipment management must always be customer-scoped.
+
+Valid route:
+EquipmentProfileAdmin?leadId=<id>
+
+Invalid pattern:
+EquipmentProfiles (unscoped overview) as primary management entry.
+
+All “Manage Equipment” links must pass leadId.
+No circular navigation between overview pages and leads.
+
+PICKER PERFORMANCE RULES
+
+Customer picker must:
+
+- Use compact list rows (no heavy cards)
+- Debounce search (150–250ms)
+- Render max 30 results
+- Disable heavy timeline queries until leadId exists
+- Use enabled: !!leadId gating for all visit-related queries
+
+No full-entity aggregation while in picker mode.
+
+QUERY PERFORMANCE CONSTRAINTS
+
+Timeline queries must:
+
+- Execute in parallel
+- Be limited (max 25–50 records per entity)
+- Use staleTime to prevent refetch on rapid navigation
+- Memoize normalization and sorting
+
+No sequential await chains.
+No rebuilding normalized arrays on every render.
+
+NAVIGATION INTEGRITY RULES
+
+All navigation buttons must:
+
+- Be real <button type="button"> or <Link>
+- Pass explicit leadId
+- Not rely on silent redirects
+- Not bounce to dashboard unintentionally
+
+Click handlers must never be blocked by overlays or pointer-events.
+
+PROVIDER NAV STRUCTURE (LOCKED GROUPING)
+
+Operations
+Customers
+Chemistry
+Pricing
+Team
+Support
+
+Do not reintroduce role-based home duplication.
+Role-based landing is handled by redirect, not nav links.
+
+NO LOOP GUARANTEE
+
+The following must never happen:
+
+Leads → Equipment → Leads
+Timeline → Equipment → Overview → Leads
+Picker → dead-end
+
+All flows must terminate in a customer-scoped page.
+
+END WORKFLOW STABILIZATION RULES
