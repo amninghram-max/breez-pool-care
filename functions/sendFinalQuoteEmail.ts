@@ -62,9 +62,14 @@ Average per visit: approximately $${perVisit.toFixed(2)}${greenFeeSection}
 First month total: $${firstMonthTotal.toFixed(2)}
 ─────────────────────────────
 
-To get started, please review and accept your service agreement, then complete your initial payment:
+To get started, please create your customer account and review your service agreement:
 
-<a href="${agreementLink}" style="display:inline-block;background:#1B9B9F;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:bold;margin:20px 0;">Review & Accept Agreement →</a>
+<a href="${activationLink}" style="display:inline-block;background:#1B9B9F;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:bold;margin:20px 0;">Create My Account & Get Started →</a>
+
+This link will create your account and automatically link your pool profile. You'll then be able to review and sign your service agreement and complete your initial payment.
+
+If the button doesn't work, copy and paste this link into your browser:
+${activationLink}
 
 Once your agreement is accepted and payment is processed, we'll place you on the schedule and your service will begin.
 
