@@ -864,3 +864,59 @@ Picker → dead-end
 All flows must terminate in a customer-scoped page.
 
 END WORKFLOW STABILIZATION RULES
+
+## AI Interaction Protocol (Base44 Execution Discipline)
+
+To maintain architectural integrity, cost control, and deterministic behavior, all Base44 interactions must follow a strict two-mode workflow:
+
+### Modes
+
+1. Discussion Mode (Default)
+- Used for planning, architecture decisions, audits, debugging analysis, and validation.
+- No code changes are allowed.
+- Used to:
+  - Confirm understanding of constraints.
+  - Identify affected files.
+  - Validate routing, payload shapes, and prop interfaces.
+  - Detect invariant violations before implementation.
+- Preferred whenever possible to reduce cost and prevent unintended code mutations.
+
+2. Implementation Mode (Explicit)
+- Used only after Discussion Mode confirms the exact required changes.
+- Must include:
+  - Explicit constraints reminder.
+  - Explicit scope control (which files may be edited).
+  - Clear deliverables.
+- No speculative refactoring.
+- No expanding scope beyond what was explicitly approved.
+
+### Switching Rules
+
+- Never enter Implementation Mode without first validating architecture in Discussion Mode (unless change is trivial and isolated).
+- If unexpected issues are discovered mid-implementation, halt and return to Discussion Mode.
+- Avoid bulk edits across multiple files unless explicitly audited first.
+- All route changes must be confirmed against actual existing pages before modifying links.
+- Shared utilities must be preferred over duplicated inline logic whenever platform constraints allow.
+
+### Safety Principles
+
+- No production defaults.
+- No hidden fallbacks.
+- Deterministic behavior only.
+- No backend function may call another backend function.
+- AdminSettings must always load via AdminSettings.list('-created_date', 1).
+- Pricing and chemistry logic must remain versioned and immutable.
+
+### Scope Discipline
+
+When updating multiple files:
+1. Update one file.
+2. Confirm behavior.
+3. Expand to additional files only after confirmation.
+
+This protocol prevents:
+- Silent route mismatches
+- Env-variable fragility
+- Prop/payload mismatch bugs
+- Undetected invariant violations
+- Scope creep in implementation mode
