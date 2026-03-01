@@ -23,9 +23,15 @@ function CustomerPicker() {
   // Filter to converted customers only
   const convertedLeads = leads.filter(l => l.stage === 'converted');
 
+  // Debounce search input
+  React.useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 200);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const filteredLeads = useMemo(() => {
-    if (!searchQuery.trim()) return convertedLeads;
-    const q = searchQuery.toLowerCase();
+    if (!debouncedSearch.trim()) return convertedLeads;
+    const q = debouncedSearch.toLowerCase();
     return convertedLeads.filter(l => {
       const fullName = `${l.firstName || ''} ${l.lastName || ''}`.toLowerCase();
       const email = (l.email || '').toLowerCase();
@@ -33,7 +39,7 @@ function CustomerPicker() {
       const address = (l.serviceAddress || '').toLowerCase();
       return fullName.includes(q) || email.includes(q) || phone.includes(q) || address.includes(q);
     });
-  }, [searchQuery, convertedLeads]);
+  }, [debouncedSearch, convertedLeads]);
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 p-6">
