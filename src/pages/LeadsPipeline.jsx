@@ -398,11 +398,38 @@ function LeadDetailModal({ lead, onClose, onUpdate, onSendAcceptance, onRemoved 
                   </div>
                 )}
                 <div>
+                  <p className="text-gray-600">Confirmation Email</p>
+                  <div className="flex items-center gap-2">
+                    {lead.inspectionConfirmationSent ? (
+                      <Badge className="bg-green-100 text-green-800 text-xs">Sent</Badge>
+                    ) : (
+                      <Badge className="bg-gray-100 text-gray-600 text-xs">Not Sent</Badge>
+                    )}
+                    {lead.confirmationSentAt && (
+                      <span className="text-xs text-gray-400">
+                        {new Date(lead.confirmationSentAt).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div>
                   <p className="text-gray-600">Inspection Event ID</p>
                   <p className="font-mono text-xs text-gray-500">
                     {lead.inspectionEventId || <span className="text-red-500">None (⚠ stuck?)</span>}
                   </p>
                 </div>
+              </div>
+              <div className="mt-3">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-2 text-teal-700 border-teal-300 hover:bg-teal-50"
+                  onClick={handleResendConfirmation}
+                  disabled={resendingConfirmation}
+                >
+                  <RefreshCw className={`w-3 h-3 ${resendingConfirmation ? 'animate-spin' : ''}`} />
+                  {lead.inspectionConfirmationSent ? 'Resend Confirmation Email' : 'Send Confirmation Email'}
+                </Button>
               </div>
             </div>
           )}
