@@ -624,7 +624,10 @@ export default function AdminPricingConfig() {
               <Zap className="w-5 h-5 text-amber-600" />
               Additive Pricing Tokens
             </CardTitle>
-            <p className="text-sm text-gray-600 mt-1">Monthly add-ons for various conditions</p>
+            <p className="text-sm text-gray-600 mt-1">
+              Tokens add small price adjustments for environmental or usage factors that increase service complexity.
+              Each adjustment compounds on the base price.
+            </p>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Environmental */}
