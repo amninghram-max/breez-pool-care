@@ -243,8 +243,32 @@ export default function Activate() {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              {isSignup && (
+                <div className="space-y-1">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Confirm password"
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    required
+                    className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 ${
+                      passwordMismatch ? 'border-red-400' : confirmPassword && passwordsMatch ? 'border-green-400' : 'border-gray-300'
+                    }`}
+                  />
+                  {passwordMismatch && (
+                    <p className="text-red-500 text-xs">Passwords do not match</p>
+                  )}
+                  {passwordsMatch && (
+                    <p className="text-green-600 text-xs">✓ Passwords match</p>
+                  )}
+                </div>
+              )}
               {authError && <p className="text-red-500 text-xs">{authError}</p>}
-              <Button type="submit" disabled={authLoading} className="w-full bg-teal-600 hover:bg-teal-700 text-white">
+              <Button
+                type="submit"
+                disabled={authLoading || (isSignup && !passwordsMatch)}
+                className="w-full bg-teal-600 hover:bg-teal-700 text-white disabled:opacity-50"
+              >
                 {authLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : isSignup ? 'Create account' : 'Sign in'}
               </Button>
             </form>
