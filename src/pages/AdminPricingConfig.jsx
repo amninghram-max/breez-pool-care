@@ -340,6 +340,20 @@ export default function AdminPricingConfig() {
               <p className="text-xs text-gray-500 mt-1">Floor minimum</p>
             </CardContent>
           </Card>
+
+          {/* Target Gross Margin Card */}
+          <Card className="bg-white cursor-pointer hover:shadow-md transition-shadow">
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between mb-2">
+                <p className="text-xs text-gray-600 font-medium">Target Margin</p>
+                <Badge className={`text-xs ${marginStatus.className}`}>
+                  {marginStatus.label}
+                </Badge>
+              </div>
+              <p className="text-2xl font-bold text-indigo-600 mt-2">{formatPercent(targetMargin)}</p>
+              <p className="text-xs text-gray-500 mt-1">45–70% range</p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Base Pricing Section */}
