@@ -1066,7 +1066,10 @@ export default function AdminPricingConfig() {
               <p className="text-sm text-gray-700 font-semibold mt-6 mb-3">Green-to-Clean Pricing</p>
               <div className="space-y-6">
               <div>
-                <p className="text-sm font-semibold text-gray-700 mb-3">Light Algae</p>
+                <p className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                 Light Algae
+                 <Info className="w-3 h-3 text-gray-400" title="Green-to-Clean services require multiple visits, additional chemicals, and extended cleaning time." />
+               </p>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label>Small (Tier A)</Label>
