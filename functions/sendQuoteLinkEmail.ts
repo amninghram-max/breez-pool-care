@@ -128,7 +128,8 @@ Deno.serve(async (req) => {
         message: 'Quote link email sent',
         email,
         emailSent: true,
-        leadUpdated: true
+        leadUpdated: true,
+        link: quoteLink
       });
     } catch (updateError) {
       console.warn('⚠️ Email sent but lead update failed:', updateError.message);
