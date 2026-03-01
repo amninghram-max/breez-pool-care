@@ -154,10 +154,10 @@ export default function ProviderNav({ userRole }) {
   ];
 
   const topMobileItems = [
-    { name: 'Home',      path: 'AdminHome',    icon: Shield },
-    { name: 'Calendar',  path: 'Calendar',     icon: Calendar },
-    { name: 'Leads',     path: 'LeadsPipeline',icon: Users },
-    { name: 'Inbox',     path: 'AdminMessaging',icon: MessageSquare },
+    { name: 'Home',      path: 'AdminHome',       icon: Shield },
+    { name: 'Calendar',  path: 'Calendar',        icon: Calendar },
+    { name: 'Timeline',  path: 'CustomerTimeline',icon: Activity },
+    { name: 'Inbox',     path: 'AdminMessaging',  icon: MessageSquare },
   ];
 
   return (
