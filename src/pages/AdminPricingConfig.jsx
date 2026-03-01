@@ -1016,7 +1016,7 @@ export default function AdminPricingConfig() {
           <CardContent className="space-y-6">
             {/* Frequency */}
             <div>
-              <h4 className="font-semibold text-gray-800 mb-3">Service Frequency</h4>
+              <h4 className="font-semibold text-gray-800 mb-3">Service Frequency Multipliers</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Twice/Week Multiplier</Label>
