@@ -162,7 +162,25 @@ export default function AdminPricingConfig() {
   useEffect(() => {
     if (!settingsQuery.isLoading && !localSettings) {
       if (settings) {
-        setLocalSettings(settings);
+        // Parse JSON string fields into objects
+        const fieldsToDeserialize = ['baseTierPrices', 'additiveTokens', 'riskEngine', 'initialFees', 'frequencyLogic', 'chemistryTargets', 'seasonalPeriods'];
+        const deserialized = { ...settings };
+        
+        fieldsToDeserialize.forEach(field => {
+          if (field in deserialized) {
+            const value = deserialized[field];
+            // If it's a string, parse it; if it's already an object, keep it
+            if (typeof value === 'string') {
+              try {
+                deserialized[field] = JSON.parse(value);
+              } catch (e) {
+                // If parse fails, leave as is
+              }
+            }
+          }
+        });
+        
+        setLocalSettings(deserialized);
       }
       // If settings is null, keep localSettings null to show empty state
     }
