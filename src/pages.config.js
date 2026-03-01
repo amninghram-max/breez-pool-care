@@ -67,6 +67,7 @@ import CustomerEquipment from './pages/CustomerEquipment';
 import CustomerMessagingPage from './pages/CustomerMessagingPage';
 import CustomerServiceHistory from './pages/CustomerServiceHistory';
 import DesignSystem from './pages/DesignSystem';
+import EquipmentProfile from './pages/EquipmentProfile';
 import FAQ from './pages/FAQ';
 import HelpSupport from './pages/HelpSupport';
 import Home from './pages/Home';
@@ -90,7 +91,6 @@ import StaffManagement from './pages/StaffManagement';
 import TechnicianHome from './pages/TechnicianHome';
 import TechnicianRoute from './pages/TechnicianRoute';
 import TestDashboard from './pages/TestDashboard';
-import EquipmentProfile from './pages/EquipmentProfile';
 import __Layout from './Layout.jsx';
 
 
@@ -115,6 +115,7 @@ export const PAGES = {
     "CustomerMessagingPage": CustomerMessagingPage,
     "CustomerServiceHistory": CustomerServiceHistory,
     "DesignSystem": DesignSystem,
+    "EquipmentProfile": EquipmentProfile,
     "FAQ": FAQ,
     "HelpSupport": HelpSupport,
     "Home": Home,
@@ -138,7 +139,6 @@ export const PAGES = {
     "TechnicianHome": TechnicianHome,
     "TechnicianRoute": TechnicianRoute,
     "TestDashboard": TestDashboard,
-    "EquipmentProfile": EquipmentProfile,
 }
 
 export const pagesConfig = {

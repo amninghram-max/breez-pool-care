@@ -10,6 +10,8 @@ import { format } from 'date-fns';
 
 import DemoQuoteModal from '../components/quote/DemoQuoteModal';
 import RealQuoteModal from '../components/quote/RealQuoteModal';
+import TopActionsBar from '../components/admin/dashboard/TopActionsBar';
+import NextUpCard from '../components/admin/dashboard/NextUpCard';
 import TodayOverview from '../components/admin/dashboard/TodayOverview';
 import TodaySchedulePanel from '../components/admin/dashboard/TodaySchedulePanel';
 import LeadPipelinePanel from '../components/admin/dashboard/LeadPipelinePanel';
