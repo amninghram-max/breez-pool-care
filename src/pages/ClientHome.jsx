@@ -4,10 +4,14 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Droplet, DollarSign, MessageSquare, Phone, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { Calendar, Droplet, DollarSign, MessageSquare, Phone, Clock, CheckCircle, AlertCircle, ShieldAlert, BookOpen } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
+import FecalIncidentBanner from '../components/customer/FecalIncidentBanner';
+import FecalIncidentForm from '../components/customer/FecalIncidentForm';
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export default function ClientHome() {
   const { data: user } = useQuery({
