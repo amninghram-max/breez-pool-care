@@ -210,6 +210,31 @@ export default function ClientHome() {
         </a>
       </div>
 
+      {/* Safety & Incident Reporting */}
+      <Card className="border-gray-200">
+        <CardContent className="pt-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-gray-100 rounded-lg">
+                <ShieldAlert className="w-5 h-5 text-gray-600" />
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">Safety & Incident Reporting</p>
+                <p className="text-xs text-gray-500">Report a fecal incident for prompt disinfection</p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs border-gray-300 text-gray-700 hover:bg-gray-50"
+              onClick={() => setShowIncidentForm(true)}
+            >
+              Report Incident
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Service History */}
       <Card>
         <CardHeader>
