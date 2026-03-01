@@ -80,52 +80,88 @@ export default function EquipmentProfiles() {
     <div className="max-w-4xl mx-auto space-y-6 p-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Equipment Profiles</h1>
-        <p className="text-sm text-gray-600 mt-1">{equipment.length} active equipment item(s)</p>
+        <p className="text-sm text-gray-600 mt-1">{equipment.length} active equipment item(s) across {Object.keys(byLead).length} customer(s)</p>
       </div>
 
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+        <Input
+          placeholder="Search customers by name, email, phone, or address…"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      {filteredLeadIds.length === 0 && searchQuery && (
+        <Card className="bg-amber-50 border-amber-200">
+          <CardContent className="pt-6">
+            <p className="text-amber-800">No customers match "{searchQuery}".</p>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {Object.entries(byLead).map(([leadId, items]) => {
+        {filteredLeadIds.map(leadId => {
           const lead = leadMap[leadId];
+          const items = byLead[leadId];
           return (
             <Card key={leadId}>
               <CardHeader>
-                <CardTitle className="text-base">
-                  {lead ? `${lead.firstName} ${lead.lastName || ''}`.trim() : leadId}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {items.map(eq => (
-                  <div key={eq.id} className="border-b pb-3 last:border-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium text-gray-900">
-                        {TYPE_LABELS[eq.equipmentType] || eq.equipmentType}
-                      </span>
-                      {eq.isActive && <Badge variant="outline" className="bg-green-50">Active</Badge>}
-                    </div>
-                    {eq.brand && (
-                      <p className="text-sm text-gray-600">
-                        {eq.brand} {eq.model || ''}
-                      </p>
-                    )}
-                    {eq.serialNumber && (
-                      <p className="text-xs text-gray-500">SN: {eq.serialNumber}</p>
-                    )}
-                    {(eq.manualPdfUrl || eq.manufacturerWebsiteUrl) && (
-                      <div className="flex gap-2 mt-2">
-                        {eq.manualPdfUrl && (
-                          <a href={eq.manualPdfUrl} target="_blank" rel="noreferrer" className="text-xs text-teal-600 hover:underline">
-                            Manual
-                          </a>
-                        )}
-                        {eq.manufacturerWebsiteUrl && (
-                          <a href={eq.manufacturerWebsiteUrl} target="_blank" rel="noreferrer" className="text-xs text-teal-600 hover:underline">
-                            Website
-                          </a>
-                        )}
-                      </div>
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <CardTitle className="text-base">
+                      {lead ? `${lead.firstName} ${lead.lastName || ''}`.trim() : leadId}
+                    </CardTitle>
+                    {lead?.serviceAddress && (
+                      <p className="text-xs text-gray-500 mt-1">{lead.serviceAddress}</p>
                     )}
                   </div>
-                ))}
+                  <Link to={createPageUrl('EquipmentProfileAdmin') + `?leadId=${leadId}`}>
+                    <Button size="sm" className="bg-teal-600 hover:bg-teal-700">
+                      Manage
+                    </Button>
+                  </Link>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {items.length === 0 ? (
+                  <p className="text-sm text-gray-500">No equipment on file.</p>
+                ) : (
+                  items.map(eq => (
+                    <div key={eq.id} className="border-b pb-3 last:border-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-medium text-gray-900">
+                          {TYPE_LABELS[eq.equipmentType] || eq.equipmentType}
+                        </span>
+                        {eq.isActive && <Badge variant="outline" className="bg-green-50">Active</Badge>}
+                      </div>
+                      {eq.brand && (
+                        <p className="text-sm text-gray-600">
+                          {eq.brand} {eq.model || ''}
+                        </p>
+                      )}
+                      {eq.serialNumber && (
+                        <p className="text-xs text-gray-500">SN: {eq.serialNumber}</p>
+                      )}
+                      {(eq.manualPdfUrl || eq.manufacturerWebsiteUrl) && (
+                        <div className="flex gap-2 mt-2">
+                          {eq.manualPdfUrl && (
+                            <a href={eq.manualPdfUrl} target="_blank" rel="noreferrer" className="text-xs text-teal-600 hover:underline">
+                              Manual
+                            </a>
+                          )}
+                          {eq.manufacturerWebsiteUrl && (
+                            <a href={eq.manufacturerWebsiteUrl} target="_blank" rel="noreferrer" className="text-xs text-teal-600 hover:underline">
+                              Website
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
               </CardContent>
             </Card>
           );
