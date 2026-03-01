@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Link2, Search, UserPlus, User, Mail } from 'lucide-react';
 
-const APP_BASE = 'https://app.base44.com/app/breezpoolcare';
+const APP_BASE = 'https://breezpoolcare.com';
 
 export default function LinkUserToLeadPanel({ lead }) {
   const [emailSearch, setEmailSearch] = useState('');
