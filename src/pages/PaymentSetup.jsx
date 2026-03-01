@@ -67,6 +67,11 @@ export default function PaymentSetup() {
 
   const handlePayment = async () => {
     try {
+      if (!stripePromise) {
+        setError('Stripe is not configured. Please contact support.');
+        return;
+      }
+
       setProcessing(true);
       setError(null);
 
