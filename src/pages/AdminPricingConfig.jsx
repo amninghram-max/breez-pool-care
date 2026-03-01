@@ -813,6 +813,7 @@ export default function AdminPricingConfig() {
               Risk Adjustments
             </CardTitle>
             <p className="text-sm text-gray-600 mt-1">Risk scoring and escalation brackets</p>
+            <p className="text-sm text-muted-foreground mt-2">Point-based scoring system that increases pricing for pools requiring more time, chemicals, or maintenance.</p>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Risk Points */}
