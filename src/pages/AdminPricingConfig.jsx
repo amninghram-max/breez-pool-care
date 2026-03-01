@@ -270,7 +270,7 @@ export default function AdminPricingConfig() {
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8" id="autopay-section">
 
         {/* Summary Cards with Visual State Indicators */}
-        <div className="grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-6 gap-4">
           {/* Base Pricing Card */}
           <Card className="bg-white cursor-pointer hover:shadow-md transition-shadow" onClick={() => document.getElementById('base-pricing-section')?.scrollIntoView({ behavior: 'smooth' })}>
             <CardContent className="pt-6">
