@@ -35,10 +35,8 @@ Deno.serve(async (req) => {
       return Response.json({ ok: false, error: 'role_not_allowed' }, { status: 403 });
     }
 
-    // Build update payload — only update the authenticated user, never accept userId from client
-    const updatePayload = { linkedLeadId: leadId, role: 'customer' };
-
-    await base44.asServiceRole.entities.User.update(user.id, updatePayload);
+    // Only update linkedLeadId — never touch role (platform restriction)
+    await base44.asServiceRole.entities.User.update(user.id, { linkedLeadId: leadId });
 
     return Response.json({ ok: true });
   } catch (error) {
