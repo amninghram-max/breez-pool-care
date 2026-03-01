@@ -53,7 +53,24 @@ export default function LinkUserToLeadPanel({ lead }) {
   const handleInvite = async () => {
     setInviting(true);
     try {
-      await base44.users.inviteUser(trimmedEmail, 'user');
+      const customerName = lead.firstName || 'there';
+      const emailBody = `Hi ${customerName},
+
+You've been invited to activate your Breez Pool Care customer account.
+
+Click the link below to create your account or log in — your pool profile will be linked automatically:
+
+${activationLink}
+
+If you have any trouble, call us at (321) 524-3838.
+
+— The Breez Pool Care Team`;
+
+      await base44.integrations.Core.SendEmail({
+        to: trimmedEmail,
+        subject: 'Activate your Breez Pool Care account',
+        body: emailBody,
+      });
       setInviteSent(true);
       toast.success('Invite sent!');
     } catch (e) {
