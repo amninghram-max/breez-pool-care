@@ -1,17 +1,122 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, Plus, FileCheck, Droplet, Wrench, MessageSquare, Calendar } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ChevronLeft, Plus, FileCheck, Droplet, Wrench, MessageSquare, Calendar, Search } from 'lucide-react';
 import { createPageUrl } from '@/utils';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
+
+function CustomerPicker() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+
+  const { data: leads = [] } = useQuery({
+    queryKey: ['leadsForPicker'],
+    queryFn: () => base44.entities.Lead.list('-created_date', 200)
+  });
+
+  // Filter to converted customers only
+  const convertedLeads = leads.filter(l => l.stage === 'converted');
+
+  const filteredLeads = useMemo(() => {
+    if (!searchQuery.trim()) return convertedLeads;
+    const q = searchQuery.toLowerCase();
+    return convertedLeads.filter(l => {
+      const fullName = `${l.firstName || ''} ${l.lastName || ''}`.toLowerCase();
+      const email = (l.email || '').toLowerCase();
+      const phone = (l.mobilePhone || '').toLowerCase();
+      const address = (l.serviceAddress || '').toLowerCase();
+      return fullName.includes(q) || email.includes(q) || phone.includes(q) || address.includes(q);
+    });
+  }, [searchQuery, convertedLeads]);
+
+  return (
+    <div className="max-w-2xl mx-auto space-y-6 p-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Customer Timeline</h1>
+        <p className="text-sm text-gray-600 mt-1">Select a customer to view their activity timeline</p>
+      </div>
+
+      {/* Search Input */}
+      <div className="relative">
+        <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+        <Input
+          placeholder="Search by name, email, phone, or address…"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+          autoFocus
+        />
+      </div>
+
+      {/* Customer List */}
+      {convertedLeads.length === 0 ? (
+        <Card className="bg-amber-50 border-amber-200">
+          <CardContent className="pt-6">
+            <p className="text-amber-800 mb-3">No converted customers found.</p>
+            <Link to={createPageUrl('LeadsPipeline')}>
+              <Button variant="outline">Go to Leads Pipeline</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {filteredLeads.length === 0 ? (
+            <p className="text-gray-500 text-center py-6">No customers match "{searchQuery}".</p>
+          ) : (
+            <div className="space-y-2">
+              {filteredLeads.map(lead => (
+                <button
+                  key={lead.id}
+                  onClick={() => navigate(createPageUrl('CustomerTimeline') + `?leadId=${lead.id}`)}
+                  className="w-full text-left p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900">
+                        {lead.firstName} {lead.lastName || ''}
+                      </h3>
+                      {lead.serviceAddress && (
+                        <p className="text-sm text-gray-600 mt-1">{lead.serviceAddress}</p>
+                      )}
+                      {(lead.email || lead.mobilePhone) && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          {lead.email} {lead.email && lead.mobilePhone ? '•' : ''} {lead.mobilePhone}
+                        </p>
+                      )}
+                    </div>
+                    <ChevronLeft className="w-5 h-5 text-gray-400 rotate-180 flex-shrink-0 ml-2" />
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Help Link */}
+      <div className="pt-4 border-t border-gray-200 text-center">
+        <p className="text-sm text-gray-600 mb-3">Looking for a non-converted lead?</p>
+        <Link to={createPageUrl('LeadsPipeline')}>
+          <Button variant="outline" className="w-full">Go to Leads Pipeline</Button>
+        </Link>
+      </div>
+    </div>
+  );
+}
 
 export default function CustomerTimeline() {
   const params = new URLSearchParams(window.location.search);
   const leadId = params.get('leadId');
+
+  // If no leadId, show customer picker
+  if (!leadId) {
+    return <CustomerPicker />;
+  }
 
   const { data: lead, isLoading: leadLoading } = useQuery({
     queryKey: ['leadDetail', leadId],
