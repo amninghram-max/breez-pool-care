@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, Send, Paperclip, Phone } from 'lucide-react';
+import { ArrowLeft, Send, Paperclip, Phone, Loader2 } from 'lucide-react';
+import { useCustomerPageGuard } from '@/components/auth/useCustomerPageGuard';
 
 export default function MessageThread() {
   const location = useLocation();
@@ -27,10 +28,12 @@ export default function MessageThread() {
   const [category, setCategory] = useState('general');
   const [initialMessage, setInitialMessage] = useState(location.state?.initialMessage || '');
 
-  const { data: user } = useQuery({
+  const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['user'],
     queryFn: () => base44.auth.me()
   });
+
+  useCustomerPageGuard(user, userLoading);
 
   const { data: lead } = useQuery({
     queryKey: ['currentLead', user?.email],
