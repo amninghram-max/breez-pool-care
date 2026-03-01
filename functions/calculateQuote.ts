@@ -19,6 +19,22 @@ Deno.serve(async (req) => {
     const payload = await req.json();
     const { questionnaireData } = payload;
 
+    // Validate required fields early
+    const requiredFields = [
+      'poolSize', 'poolType', 'enclosure', 'filterType', 
+      'chlorinationMethod', 'useFrequency', 'poolCondition'
+    ];
+    const missingFields = requiredFields.filter(f => !questionnaireData?.[f]);
+
+    if (missingFields.length > 0) {
+      console.warn(`⚠️ Missing required quote inputs: ${missingFields.join(', ')}`);
+      return Response.json({
+        error: 'Missing required quote inputs',
+        code: 'MISSING_QUOTE_INPUTS',
+        missingFields
+      }, { status: 400 });
+    }
+
     // ─── Load AdminSettings via list() — same as checkReleaseReadiness ─────────
     const rows = await base44.asServiceRole.entities.AdminSettings.list('-created_date', 1);
     const settings = rows[0] || null;
