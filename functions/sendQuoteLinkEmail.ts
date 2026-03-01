@@ -85,7 +85,8 @@ Deno.serve(async (req) => {
         error: 'RESEND_API_KEY environment variable not configured'
       }, { status: 500 });
     }
-    const quoteLink = `${publicAppUrl}/PreQualification?leadId=${leadId}`;
+    
+    const quoteLink = `${appOrigin}/PreQualification?leadId=${encodeURIComponent(leadId)}`;
 
     console.log('📧 sendQuoteLinkEmail:', { leadId, email, quoteLink, resendFrom: 'info@breezpoolcare.com' });
 
