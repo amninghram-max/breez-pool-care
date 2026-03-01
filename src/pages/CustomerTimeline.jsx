@@ -75,10 +75,7 @@ function CustomerPicker() {
           {filteredLeads.length === 0 ? (
             <p className="text-gray-500 text-center py-6">No customers match "{searchQuery}".</p>
           ) : (
-            <div 
-              className="space-y-2"
-              onClickCapture={() => console.log('[DEV] Capture fired on list container')}
-            >
+            <div className="space-y-2">
               {filteredLeads.map(lead => (
                 <button
                   key={lead.id}
