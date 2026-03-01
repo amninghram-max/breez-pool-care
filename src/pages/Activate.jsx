@@ -33,28 +33,14 @@ export default function Activate() {
     const doLink = async () => {
       setStatus('linking');
       try {
-        // Validate lead exists using authenticated user permissions
-        let lead = null;
-        try {
-          lead = await base44.entities.Lead.get(leadId);
-        } catch {
-          lead = null;
-        }
+        const res = await base44.functions.invoke('linkUserToLead', { leadId });
 
-        if (!lead) {
+        if (!res.data?.ok) {
           setErrorMsg('This activation link is invalid or has expired. Please contact support.');
           setStatus('error');
           return;
         }
 
-        // Build updateMe payload — never downgrade protected roles
-        const updatePayload = { linkedLeadId: leadId };
-        const isProtected = PROTECTED_ROLES.includes(user.role);
-        if (!isProtected) {
-          updatePayload.role = 'customer';
-        }
-
-        await base44.auth.updateMe(updatePayload);
         setStatus('success');
 
         // Brief pause so user sees success, then navigate
