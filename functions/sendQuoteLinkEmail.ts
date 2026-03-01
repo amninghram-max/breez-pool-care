@@ -18,18 +18,36 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Validate env vars first
-    const publicAppUrl = Deno.env.get('PUBLIC_APP_URL');
-    const resendApiKey = Deno.env.get('RESEND_API_KEY');
-    
+    // Resolve PUBLIC_APP_URL: env var first, then request headers, then error
+    let publicAppUrl = Deno.env.get('PUBLIC_APP_URL');
     if (!publicAppUrl) {
-      console.error('❌ PUBLIC_APP_URL env var not set');
+      const origin = req.headers.get('origin');
+      if (origin && !origin.includes('deno.dev')) {
+        publicAppUrl = origin;
+        console.log('ℹ️ Using origin header for PUBLIC_APP_URL:', publicAppUrl);
+      } else {
+        const referer = req.headers.get('referer');
+        if (referer && !referer.includes('deno.dev')) {
+          try {
+            const refererUrl = new URL(referer);
+            publicAppUrl = `${refererUrl.protocol}//${refererUrl.host}`;
+            console.log('ℹ️ Derived PUBLIC_APP_URL from referer:', publicAppUrl);
+          } catch (e) {
+            console.error('❌ Invalid referer header:', referer);
+          }
+        }
+      }
+    }
+
+    if (!publicAppUrl) {
+      console.error('❌ PUBLIC_APP_URL not available (env, origin, or referer)');
       return Response.json({
         success: false,
-        error: 'PUBLIC_APP_URL environment variable not configured'
+        error: 'Could not determine application URL'
       }, { status: 500 });
     }
-    
+
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
     if (!resendApiKey) {
       console.error('❌ RESEND_API_KEY env var not set');
       return Response.json({
