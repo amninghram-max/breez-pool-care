@@ -142,8 +142,7 @@ Deno.serve(async (req) => {
     result.activatedEventCreated = eventCreated;
 
     // Past ServiceVisit
-    let visits = await db.entities.ServiceVisit.filter({ propertyId: activatedLead.id });
-    let visit = visits?.[0] || null;
+    let visit = await findByLeadId(db, 'ServiceVisit', activatedLead.id);
     let visitCreated = false;
 
     if (!visit) {
