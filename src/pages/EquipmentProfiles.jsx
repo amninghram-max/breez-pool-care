@@ -110,7 +110,7 @@ export default function EquipmentProfiles() {
             <Card key={leadId}>
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
-                  <div>
+                  <div className="flex-1">
                     <CardTitle className="text-base">
                       {lead ? `${lead.firstName} ${lead.lastName || ''}`.trim() : leadId}
                     </CardTitle>
@@ -118,11 +118,18 @@ export default function EquipmentProfiles() {
                       <p className="text-xs text-gray-500 mt-1">{lead.serviceAddress}</p>
                     )}
                   </div>
-                  <Link to={createPageUrl('EquipmentProfileAdmin') + `?leadId=${leadId}`}>
-                    <Button size="sm" className="bg-teal-600 hover:bg-teal-700">
-                      Manage
-                    </Button>
-                  </Link>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <Link to={createPageUrl('CustomerTimeline') + `?leadId=${leadId}`}>
+                      <Button size="sm" variant="outline">
+                        Timeline
+                      </Button>
+                    </Link>
+                    <Link to={createPageUrl('EquipmentProfileAdmin') + `?leadId=${leadId}`}>
+                      <Button size="sm" className="bg-teal-600 hover:bg-teal-700">
+                        Manage
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
