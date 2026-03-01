@@ -11,6 +11,7 @@ import UnstickLeadPanel from '@/components/admin/UnstickLeadPanel';
 import NewLeadModal from '@/components/admin/NewLeadModal';
 import NewQuoteFlow from '@/components/admin/NewQuoteFlow';
 import RemoveLeadPanel from '@/components/admin/RemoveLeadPanel';
+import LinkUserToLeadPanel from '@/components/admin/LinkUserToLeadPanel';
 
 export default function LeadsPipeline() {
   const queryClient = useQueryClient();
