@@ -78,6 +78,13 @@ const getFrequencyStatus = (multiplier) => {
     : { variant: 'secondary', label: 'Standard', className: 'bg-gray-100 text-gray-700 border-gray-300' };
 };
 
+// Helper: determine autopay discount badge
+const getAutopayStatus = (discount) => {
+  return discount > 0
+    ? { variant: 'default', label: 'Configured', className: 'bg-blue-100 text-blue-800 border-blue-300' }
+    : { variant: 'secondary', label: 'None', className: 'bg-gray-100 text-gray-700 border-gray-300' };
+};
+
 export default function AdminPricingConfig() {
   const queryClient = useQueryClient();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
