@@ -780,6 +780,7 @@ export default function AdminPricingConfig() {
             {/* Pets */}
             <div className="border-t pt-4">
               <h4 className="font-semibold text-gray-800 mb-3">Pets</h4>
+              <p className="text-sm text-muted-foreground mb-4">Adjustments for pools frequently used by pets or with higher contamination risk.</p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Occasional</Label>
