@@ -236,6 +236,13 @@ function LeadRow({ lead, stage, onAdvance, onStageChange, onEdit, onUpdate, quer
   const [validationError, setValidationError] = React.useState(null);
   const [showSendQuoteModal, setShowSendQuoteModal] = React.useState(false);
   const [showSendInspectionModal, setShowSendInspectionModal] = React.useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  
+  const { data: user } = React.useQuery({
+    queryKey: ['user'],
+    queryFn: () => base44.auth.me()
+  });
   
   const isLost = lead.stage === 'lost';
   const canAdvance = !isLost && lead.stage !== 'inspection_scheduled' && STAGES.findIndex(s => s.key === lead.stage) < STAGES.length - 1;
