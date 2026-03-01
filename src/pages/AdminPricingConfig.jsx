@@ -113,16 +113,22 @@ export default function AdminPricingConfig() {
   });
 
   const settingsQuery = useQuery({
-    queryKey: ['adminSettings'],
+    queryKey: ['adminSettings', 'latest'],
     queryFn: async () => {
       if (typeof window !== 'undefined') {
         console.info('[AdminPricingConfig] settings query started');
       }
-      const result = await base44.entities.AdminSettings.filter({ settingKey: 'default' });
+      const res = await base44.entities.AdminSettings.list('-created_date', 1);
       if (typeof window !== 'undefined') {
-        console.info('[AdminPricingConfig] settings query resolved', result[0]?.id);
+        console.info('[AdminPricingConfig] AdminSettings list raw:', res);
       }
-      return result[0] || null;
+      // Normalize response shape (may be array, {items:[]}, {data:[]}, etc)
+      const items = Array.isArray(res) ? res : (res?.items ?? res?.data ?? []);
+      const first = items[0] ?? null;
+      if (typeof window !== 'undefined') {
+        console.info('[AdminPricingConfig] AdminSettings normalized first:', first);
+      }
+      return first;
     }
   });
 
