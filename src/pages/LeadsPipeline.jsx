@@ -239,7 +239,7 @@ function LeadRow({ lead, stage, onAdvance, onStageChange, onEdit, onUpdate, quer
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
   
-  const { data: user } = React.useQuery({
+  const { data: user } = useQuery({
     queryKey: ['user'],
     queryFn: () => base44.auth.me()
   });
