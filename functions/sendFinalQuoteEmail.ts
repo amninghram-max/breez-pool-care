@@ -39,9 +39,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Lead has no email' }, { status: 400 });
     }
 
-    // Link to Agreements page with inspection record ref
+    // Links
     const appBase = Deno.env.get('APP_URL') || 'https://app.base44.com/app/breezpoolcare';
     const agreementLink = `${appBase}/agreements?inspectionId=${inspectionRecordId}`;
+    const activationLink = `${appBase}/activate?leadId=${leadId}`;
 
     const greenFeeSection = greenFee > 0
       ? `\n• Green-to-Clean Recovery (first month, one-time): $${greenFee.toFixed(2)}`
