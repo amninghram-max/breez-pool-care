@@ -6,13 +6,16 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Plus, Clock } from 'lucide-react';
+import { MessageSquare, Plus, Clock, Loader2 } from 'lucide-react';
+import { useCustomerPageGuard } from '@/components/auth/useCustomerPageGuard';
 
 export default function Messages() {
-  const { data: user } = useQuery({
+  const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['user'],
     queryFn: () => base44.auth.me()
   });
+
+  useCustomerPageGuard(user, userLoading);
 
   const { data: lead } = useQuery({
     queryKey: ['currentLead', user?.email],
