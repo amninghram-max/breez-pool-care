@@ -65,9 +65,12 @@ export default function AdminPricingConfig() {
         await base44.entities.AdminSettings.create(payload);
       }
     },
-    onSuccess: () => {
-      // Re-fetch the latest settings to ensure UI reflects persisted data
-      queryClient.invalidateQueries({ queryKey: ['adminSettings'] });
+    onSuccess: async () => {
+      // Refetch fresh settings from DB and sync localSettings
+      const { data: freshSettings } = await settingsQuery.refetch();
+      if (freshSettings) {
+        setLocalSettings(freshSettings);
+      }
       toast.success('Pricing configuration saved and persisted');
     },
     onError: (error) => {
