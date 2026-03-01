@@ -30,26 +30,34 @@ Deno.serve(async (req) => {
     console.log('📨 sendQuoteLinkEmail request:', { method, contentType, bodyLength, bodyPreview: raw.slice(0, 80) });
 
     if (bodyLength === 0) {
-      return Response.json({
+      const obj = {
         success: false,
         error: 'Missing JSON body',
         diagnostics: { method, contentType, bodyLength },
         expected: { leadId: 'string', firstName: 'string', email: 'string' },
         build: BUILD
-      }, { status: 200 });
+      };
+      return new Response(JSON.stringify(obj), {
+        status: 200,
+        headers: { "content-type": "application/json; charset=utf-8" }
+      });
     }
 
     let payload;
     try {
       payload = JSON.parse(raw);
     } catch (parseError) {
-      return Response.json({
+      const obj = {
         success: false,
         error: 'Invalid JSON body',
         diagnostics: { method, contentType, bodyLength, rawPreview: raw.slice(0, 120) },
         message: String(parseError?.message ?? parseError),
         build: BUILD
-      }, { status: 200 });
+      };
+      return new Response(JSON.stringify(obj), {
+        status: 200,
+        headers: { "content-type": "application/json; charset=utf-8" }
+      });
     }
 
     const { leadId, firstName, email } = payload;
@@ -62,12 +70,16 @@ Deno.serve(async (req) => {
 
     if (missingFields.length > 0) {
       console.warn('❌ sendQuoteLinkEmail: Missing or invalid required fields:', missingFields);
-      return Response.json({
+      const obj = {
         success: false,
         error: 'Missing or invalid required fields',
         missingFields,
         build: BUILD
-      }, { status: 200 });
+      };
+      return new Response(JSON.stringify(obj), {
+        status: 200,
+        headers: { "content-type": "application/json; charset=utf-8" }
+      });
     }
 
     // Resolve app origin using helper
@@ -76,22 +88,30 @@ Deno.serve(async (req) => {
       appOrigin = getAppOrigin(req);
     } catch (error) {
       console.error('❌ Failed to determine app origin:', error.message);
-      return Response.json({
+      const obj = {
         success: false,
         error: 'Could not determine application URL',
         details: error.message,
         build: BUILD
-      }, { status: 200 });
+      };
+      return new Response(JSON.stringify(obj), {
+        status: 200,
+        headers: { "content-type": "application/json; charset=utf-8" }
+      });
     }
 
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     if (!resendApiKey) {
       console.error('❌ RESEND_API_KEY env var not set');
-      return Response.json({
+      const obj = {
         success: false,
         error: 'RESEND_API_KEY environment variable not configured',
         build: BUILD
-      }, { status: 200 });
+      };
+      return new Response(JSON.stringify(obj), {
+        status: 200,
+        headers: { "content-type": "application/json; charset=utf-8" }
+      });
     }
     
     const quoteLink = `${appOrigin}/PreQualification?leadId=${encodeURIComponent(leadId)}`;
@@ -183,30 +203,42 @@ Deno.serve(async (req) => {
     if (!emailRes.ok) {
       const errorMsg = emailData.message || emailRes.statusText || `HTTP ${emailRes.status}`;
       console.error('❌ Resend API error:', errorMsg, { status: emailRes.status, resendResponse: emailData });
-      return Response.json({
+      const obj = {
         success: false,
         error: 'Resend failed',
         status: emailRes.status,
         body: resendText,
         build: BUILD
-      }, { status: 200 });
+      };
+      return new Response(JSON.stringify(obj), {
+        status: 200,
+        headers: { "content-type": "application/json; charset=utf-8" }
+      });
     }
 
     console.log('✅ Quote link email sent via Resend:', { id: emailData.id, to: email });
 
-    return Response.json({
+    const obj = {
       success: true,
       link: quoteLink,
       resendId: emailData.id,
       build: BUILD
-    }, { status: 200 });
+    };
+    return new Response(JSON.stringify(obj), {
+      status: 200,
+      headers: { "content-type": "application/json; charset=utf-8" }
+    });
   } catch (error) {
     console.error('❌ sendQuoteLinkEmail error:', error);
-    return Response.json({
+    const obj = {
       success: false,
       error: 'sendQuoteLinkEmail crashed',
       message: String(error?.stack ?? error?.message ?? error),
       build: BUILD
-    }, { status: 200 });
+    };
+    return new Response(JSON.stringify(obj), {
+      status: 200,
+      headers: { "content-type": "application/json; charset=utf-8" }
+    });
   }
 });
