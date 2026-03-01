@@ -1138,7 +1138,10 @@ export default function AdminPricingConfig() {
               </div>
 
               <div>
-                <p className="text-sm font-semibold text-gray-700 mb-3">Black Swamp</p>
+                <p className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                 Black Swamp (Severe)
+                 <Info className="w-3 h-3 text-gray-400" title="Heavily contaminated pools requiring extensive treatment over multiple days." />
+               </p>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label>Small</Label>
