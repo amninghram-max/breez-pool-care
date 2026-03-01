@@ -68,20 +68,31 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Quote has no frequency' }, { status: 400 });
     }
 
-    // Idempotency check: if events already exist for this lead, return existing
+    // Idempotency check: only block if there is at least one ACTIVE service event
+    // Active = status in ['scheduled','en_route','arrived','in_progress'] AND scheduledDate >= today
     const existingEvents = await base44.asServiceRole.entities.CalendarEvent.filter({
       leadId,
       eventType: 'service'
-    }, '-created_date', 10);
+    }, '-created_date', 50);
 
-    if (existingEvents && existingEvents.length > 0) {
-      console.log(`⏭️ Service events already exist for leadId=${leadId}, returning existing`);
+    const ACTIVE_STATUSES = new Set(['scheduled', 'en_route', 'arrived', 'in_progress']);
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    const activeEvents = (existingEvents || []).filter(e =>
+      ACTIVE_STATUSES.has(e.status) && e.scheduledDate >= todayStr
+    );
+
+    if (activeEvents.length > 0) {
+      const first = activeEvents[0];
+      console.log(`⏭️ Active service event already exists for leadId=${leadId}, eventId=${first.id}`);
       return Response.json({
         success: true,
         leadId,
         alreadyScheduled: true,
-        eventCount: existingEvents.length,
-        upcomingDates: existingEvents.map(e => e.scheduledDate).slice(0, 4)
+        activeEventId: first.id,
+        activeEventDate: first.scheduledDate,
+        activeEventTime: first.startTime || null,
+        activeEventCount: activeEvents.length,
       });
     }
 
