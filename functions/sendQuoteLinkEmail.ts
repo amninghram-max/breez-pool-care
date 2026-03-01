@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         from: 'Breez Pool Care <info@breezpoolcare.com>',
-        to: email,
+        to: [email],
         subject: 'Get Your Breez Pool Service Quote',
         html: htmlBody,
         text: `Hi ${firstName},\n\nThank you for your interest in Breez Pool Care! Click here to get your quote:\n${quoteLink}`
