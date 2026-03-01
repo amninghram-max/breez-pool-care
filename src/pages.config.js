@@ -92,6 +92,7 @@ import StaffManagement from './pages/StaffManagement';
 import TechnicianHome from './pages/TechnicianHome';
 import TechnicianRoute from './pages/TechnicianRoute';
 import TestDashboard from './pages/TestDashboard';
+import EquipmentProfiles from './pages/EquipmentProfiles';
 import __Layout from './Layout.jsx';
 
 
@@ -141,6 +142,7 @@ export const PAGES = {
     "TechnicianHome": TechnicianHome,
     "TechnicianRoute": TechnicianRoute,
     "TestDashboard": TestDashboard,
+    "EquipmentProfiles": EquipmentProfiles,
 }
 
 export const pagesConfig = {
