@@ -7,38 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ChevronLeft, Plus, FileCheck, Droplet, Wrench, MessageSquare, Calendar, Search } from 'lucide-react';
 import { createPageUrl } from '@/utils';
-import { useNavigate } from "react-router-dom";
-
-const navigate = useNavigate();
-
-function goToLead(leadId) {
-  console.log("Timeline select leadId:", leadId);
-  navigate(`/CustomerTimeline?leadId=${leadId}`);
-}
-
-return (
-  <div className="max-w-3xl mx-auto p-6 space-y-4">
-    {/* search input ... */}
-
-    <div className="space-y-2">
-      {filteredLeads.map((lead) => (
-        <button
-          key={lead.id}
-          type="button"
-          className="w-full text-left rounded-xl border bg-white p-4 hover:bg-gray-50 active:bg-gray-100 cursor-pointer"
-          onClick={() => goToLead(lead.id)}
-        >
-          <div className="font-semibold text-gray-900">
-            {lead.firstName} {lead.lastName}
-          </div>
-          <div className="text-sm text-gray-500">
-            {lead.serviceAddress || lead.email || lead.phone || lead.id}
-          </div>
-        </button>
-      ))}
-    </div>
-  </div>
-);
+import { Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 
 function CustomerPicker() {
