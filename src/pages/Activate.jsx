@@ -37,6 +37,10 @@ export default function Activate() {
         const res = await base44.functions.invoke('linkUserToLead', { leadId });
 
         if (!res.data?.ok) {
+          if (res.data?.error === 'role_not_allowed') {
+            setStatus('role_blocked');
+            return;
+          }
           setErrorMsg('This activation link is invalid or has expired. Please contact support.');
           setStatus('error');
           return;
