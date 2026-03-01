@@ -169,8 +169,7 @@ Deno.serve(async (req) => {
     // ─────────────────────────────────────────────
     // C) PENDING CUSTOMER
     // ─────────────────────────────────────────────
-    let pendingLeads = await db.entities.Lead.filter({ email: TEST_CUSTOMER2_EMAIL });
-    let pendingLead = pendingLeads?.[0] || null;
+    let pendingLead = await findByEmail(db, 'Lead', TEST_CUSTOMER2_EMAIL);
     let pendingLeadCreated = false;
 
     if (!pendingLead) {
