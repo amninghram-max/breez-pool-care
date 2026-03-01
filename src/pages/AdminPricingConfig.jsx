@@ -379,13 +379,19 @@ export default function AdminPricingConfig() {
               <p className="text-amber-800">
                 The system does not yet have an AdminSettings record. You need to create a default configuration to proceed.
               </p>
+              {createError && (
+                <div className="p-4 bg-red-100 border border-red-300 rounded-lg">
+                  <p className="text-red-800 text-sm font-semibold mb-1">Creation Failed</p>
+                  <p className="text-red-700 text-sm whitespace-pre-wrap">{createError}</p>
+                </div>
+              )}
               <div className="flex gap-3 pt-4">
                 <Button
                   onClick={handleCreateDefaults}
-                  disabled={isCreatingDefaults}
+                  disabled={creatingDefault}
                   className="bg-amber-600 hover:bg-amber-700"
                 >
-                  {isCreatingDefaults ? 'Creating...' : 'Create Default Configuration'}
+                  {creatingDefault ? 'Creating...' : 'Create Default Configuration'}
                 </Button>
                 <Button
                   onClick={() => window.location.href = createPageUrl('AdminHome')}
