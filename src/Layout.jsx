@@ -20,11 +20,21 @@ export default function Layout({ children, currentPageName }) {
   });
 
   const userRole = user?.role || '';
-  const isCustomer = !!user?.linkedLeadId;
+  const isProvider = ['admin', 'staff', 'technician'].includes(userRole);
+  const isLinkedCustomer = !!user?.linkedLeadId && !isProvider;
 
   const handleLogout = async () => {
     await base44.auth.logout('/');
   };
+
+  // Minimal layout for Activate page - no header/sidebar chrome
+  if (currentPageName === 'Activate') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
