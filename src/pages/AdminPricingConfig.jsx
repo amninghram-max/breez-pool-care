@@ -127,6 +127,7 @@ export default function AdminPricingConfig() {
   const settings = settingsQuery.data;
 
   const [localSettings, setLocalSettings] = useState(null);
+  const [isCreatingDefaults, setIsCreatingDefaults] = useState(false);
   const unsaved = hasUnsavedChanges(localSettings, settings);
 
   // Timeout watchdog: if still loading after 8 seconds, show diagnostic
