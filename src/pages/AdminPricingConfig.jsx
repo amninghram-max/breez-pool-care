@@ -681,11 +681,11 @@ export default function AdminPricingConfig() {
                   <Input
                     type="number"
                     step="0.1"
-                    value={localSettings.frequencyLogic?.twice_weekly_multiplier || 1.8}
+                    value={frequencyMultiplier}
                     onChange={(e) => updateField('frequencyLogic.twice_weekly_multiplier', e.target.value)}
                     className="mt-2"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Applied to final monthly total</p>
+                  <p className="text-xs text-gray-500 mt-1">Applied to final monthly total (e.g., 1.8× = 80% more)</p>
                 </div>
                 <div>
                   <Label>Auto-Require Threshold</Label>
