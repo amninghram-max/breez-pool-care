@@ -59,6 +59,34 @@ export default function ClientHome() {
     enabled: !!lead,
   });
 
+  // Account not linked yet
+  if (user && !user.linkedLeadId) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-5 px-4">
+        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+          <AlertCircle className="w-8 h-8 text-gray-400" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold text-gray-900">Account setup in progress</h2>
+          <p className="text-gray-600 max-w-sm">
+            Your account isn't linked to a pool profile yet. If you just signed up, this can take a moment. If it persists, contact support.
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Link to={createPageUrl('Messages')}>
+            <Button variant="outline">Message Support</Button>
+          </Link>
+          <a href="tel:+13215243838">
+            <Button className="bg-teal-600 hover:bg-teal-700">
+              <Phone className="w-4 h-4 mr-2" />
+              Call Us
+            </Button>
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   // Check if account is suspended
   const isSuspended = lead?.accountStatus?.includes('suspended') || lead?.accountStatus?.includes('cancelled');
 
