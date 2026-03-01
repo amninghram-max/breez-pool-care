@@ -68,16 +68,8 @@ Deno.serve(async (req) => {
         notes: '[TEST SEED] Activated customer persona',
       });
       activatedLeadCreated = true;
-    } else {
-      await db.entities.Lead.update(activatedLead.id, {
-        stage: 'converted',
-        accountStatus: 'active',
-        activationPaymentStatus: 'paid',
-        activationPaymentDate: now,
-        agreementsAccepted: true,
-        agreementsAcceptedAt: now,
-      });
     }
+    // If already exists, reuse as-is (avoid RLS conflicts on update)
     result.activatedLeadId = activatedLead.id;
     result.activatedLeadCreated = activatedLeadCreated;
 
