@@ -175,14 +175,8 @@ Deno.serve(async (req) => {
         notes: '[TEST SEED] Pending payment customer persona',
       });
       pendingLeadCreated = true;
-    } else {
-      await db.entities.Lead.update(pendingLead.id, {
-        stage: 'converted',
-        accountStatus: 'active',
-        activationPaymentStatus: 'pending',
-        agreementsAccepted: false,
-      });
     }
+    // If already exists, reuse as-is
     result.pendingLeadId = pendingLead.id;
     result.pendingLeadCreated = pendingLeadCreated;
 
