@@ -721,13 +721,14 @@ export default function AdminPricingConfig() {
 
         {/* Risk Engine */}
         <TabsContent value="risk" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5" />
-                Risk Points (Raw)
-              </CardTitle>
-            </CardHeader>
+        <Card className="bg-white">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-purple-600" />
+              Risk Adjustments
+            </CardTitle>
+            <p className="text-sm text-gray-600 mt-1">Risk scoring and escalation brackets</p>
+          </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-3 gap-4">
                 <div>
