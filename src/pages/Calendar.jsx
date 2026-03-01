@@ -37,6 +37,8 @@ export default function Calendar() {
     queryFn: () => base44.entities.StormDay.filter({})
   });
 
+  const [optimizeResult, setOptimizeResult] = useState(null);
+
   const optimizeRouteMutation = useMutation({
     mutationFn: async ({ date, technicianName }) => {
       const response = await base44.functions.invoke('optimizeRoute', {
@@ -45,9 +47,9 @@ export default function Calendar() {
       });
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
-      alert('Route optimized successfully!');
+      setOptimizeResult(data);
     }
   });
 
