@@ -46,6 +46,17 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Lead not found' }, { status: 404 });
     }
 
+    // ── Activation gates ──
+    if (lead.activationPaymentStatus !== 'paid') {
+      return Response.json({ error: 'Activation payment required before scheduling service', code: 'PAYMENT_NOT_COMPLETED' }, { status: 403 });
+    }
+    if (!lead.agreementsAccepted) {
+      return Response.json({ error: 'Service agreement must be accepted before scheduling', code: 'AGREEMENTS_NOT_ACCEPTED' }, { status: 403 });
+    }
+    if (lead.acceptedQuoteId !== quoteId) {
+      return Response.json({ error: 'Quote mismatch: provided quoteId does not match lead accepted quote', code: 'QUOTE_NOT_ACCEPTED' }, { status: 403 });
+    }
+
     // Load quote — derive frequency from immutable field
     const quote = await base44.asServiceRole.entities.Quote.get(quoteId);
     if (!quote) {
