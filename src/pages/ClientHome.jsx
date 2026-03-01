@@ -24,8 +24,9 @@ export default function ClientHome() {
   const { data: lead } = useQuery({
     queryKey: ['currentLead'],
     queryFn: async () => {
-      const leads = await base44.entities.Lead.filter({ created_by: user.email });
-      return leads[0];
+      if (!user.linkedLeadId) return null;
+      const leads = await base44.entities.Lead.filter({ id: user.linkedLeadId });
+      return leads[0] || null;
     },
     enabled: !!user,
   });
