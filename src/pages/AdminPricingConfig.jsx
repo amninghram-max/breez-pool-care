@@ -998,6 +998,7 @@ export default function AdminPricingConfig() {
               Frequency & Costs
             </CardTitle>
             <p className="text-sm text-gray-600 mt-1">Service frequency and one-time fees</p>
+            <p className="text-sm text-muted-foreground mt-2">Controls how pricing changes when service frequency increases and manages one-time service fees.</p>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Frequency */}
