@@ -663,7 +663,7 @@ export default function AdminPricingConfig() {
         </Card>
 
         {/* Frequency & Costs Section */}
-        <Card className="bg-white">
+        <Card className="bg-white" id="frequency-section">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-blue-600" />
