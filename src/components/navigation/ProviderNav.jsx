@@ -96,8 +96,6 @@ export default function ProviderNav({ userRole }) {
       { key: 'operations', items: [
         { name: 'Calendar',          path: 'Calendar',             icon: Calendar },
         { name: 'Routes',            path: 'TechnicianRoute',      icon: MapPin },
-        { name: 'Submit Inspection', path: 'InspectionSubmit',     icon: ClipboardCheck },
-        { name: 'Service Entry',     path: 'ServiceVisitEntry',    icon: Droplet },
         { name: 'Reinstatements',    path: 'AdminReinstatements',  icon: AlertCircle },
       ]},
       { key: 'customers', items: [
@@ -129,9 +127,6 @@ export default function ProviderNav({ userRole }) {
     { key: 'operations', items: [
       { name: 'Calendar',              path: 'Calendar',             icon: Calendar },
       { name: 'Routes',                path: 'TechnicianRoute',      icon: MapPin },
-      { name: 'Submit Inspection',     path: 'InspectionSubmit',     icon: ClipboardCheck },
-      { name: 'Inspection Queue',      path: 'InspectionFinalization',icon: ClipboardCheck },
-      { name: 'Service Entry',         path: 'ServiceVisitEntry',    icon: Droplet },
       { name: 'Reinstatements',        path: 'AdminReinstatements',  icon: AlertCircle },
     ]},
     { key: 'customers', items: [
