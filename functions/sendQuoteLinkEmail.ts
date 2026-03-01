@@ -65,7 +65,8 @@ Deno.serve(async (req) => {
       return Response.json({
         success: false,
         error: 'Missing or invalid required fields',
-        missingFields
+        missingFields,
+        build: BUILD
       }, { status: 200 });
     }
 
