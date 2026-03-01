@@ -814,7 +814,7 @@ export default function AdminPricingConfig() {
 
               {/* Reset Confirmation Dialog */}
               <AlertDialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
-          <AlertDialogContent>
+              <AlertDialogContent>
             <AlertDialogTitle>Revert to Last Saved?</AlertDialogTitle>
             <AlertDialogDescription>
               This will discard all unsaved changes and restore the last persisted configuration.
