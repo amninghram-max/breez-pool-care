@@ -47,8 +47,8 @@ export default function ScheduleInspection() {
     try {
       const response = await base44.functions.invoke('scheduleInspectionByToken', {
         scheduleToken: token,
-        requestedInspectionDate: selectedDate,
-        requestedInspectionTime: selectedTimeWindow
+        requestedDate: selectedDate,
+        requestedTimeSlot: selectedTimeWindow
       });
 
       if (response.data?.success) {
@@ -196,8 +196,8 @@ export default function ScheduleInspection() {
           <Card>
             <CardContent className="pt-6">
               <PublicScheduler
-                onSubmit={handleScheduleSubmit}
-                clientName={validationResult.quote.clientFirstName}
+                onSuccess={handleScheduleSubmit}
+                clientFirstName={validationResult.quote.clientFirstName}
               />
             </CardContent>
           </Card>
