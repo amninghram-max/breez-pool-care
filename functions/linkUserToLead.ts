@@ -9,7 +9,25 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    const { userId, leadId } = await req.json();
+    const { userId, leadId, validateOnly } = await req.json();
+
+    // ── Validate-only mode (called from Activate page to check if leadId is valid) ──
+    if (validateOnly) {
+      if (!leadId) {
+        return Response.json({ leadExists: false });
+      }
+      try {
+        const lead = await base44.asServiceRole.entities.Lead.get(leadId);
+        return Response.json({ leadExists: !!lead });
+      } catch {
+        return Response.json({ leadExists: false });
+      }
+    }
+
+    // ── Admin-only linking mode ──────────────────────────────────────────────
+    if (user?.role !== 'admin') {
+      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+    }
 
     if (!userId || !leadId) {
       return Response.json({ error: 'userId and leadId are required' }, { status: 400 });
