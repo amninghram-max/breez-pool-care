@@ -89,22 +89,20 @@ export default function EquipmentProfiles() {
   // Show errors
   if (equipmentError || leadsError) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <Alert className="border-red-200 bg-red-50">
-          <AlertCircle className="h-4 w-4 text-red-600" />
-          <AlertDescription className="text-red-800">
-            {equipmentError && <div>Equipment query error: {equipmentError.message}</div>}
-            {leadsError && <div>Leads query error: {leadsError.message}</div>}
-          </AlertDescription>
-        </Alert>
-      </div>
+      <Alert className="border-red-200 bg-red-50">
+        <AlertCircle className="h-4 w-4 text-red-600" />
+        <AlertDescription className="text-red-800">
+          {equipmentError && <div>Equipment query error: {equipmentError.message}</div>}
+          {leadsError && <div>Leads query error: {leadsError.message}</div>}
+        </AlertDescription>
+      </Alert>
     );
   }
 
   // Empty state
   if (equipment.length === 0) {
     return (
-      <div className="max-w-4xl mx-auto space-y-6 p-6">
+      <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Equipment Profiles</h1>
           <p className="text-sm text-gray-600 mt-1">0 PoolEquipment records found</p>
@@ -133,7 +131,7 @@ export default function EquipmentProfiles() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 p-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Equipment Profiles</h1>
         <p className="text-sm text-gray-600 mt-1">
