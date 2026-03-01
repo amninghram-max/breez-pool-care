@@ -633,6 +633,7 @@ export default function AdminPricingConfig() {
               Additive Pricing Tokens
             </CardTitle>
             <p className="text-sm text-gray-600 mt-1">Monthly add-ons for various conditions</p>
+            <p className="text-sm text-muted-foreground mt-2">Small monthly adjustments for environmental, usage, or system factors that increase service complexity.</p>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Environmental */}
