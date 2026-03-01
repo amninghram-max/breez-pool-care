@@ -47,7 +47,8 @@ Deno.serve(async (req) => {
         success: false,
         error: 'Invalid JSON body',
         diagnostics: { method, contentType, bodyLength, rawPreview: raw.slice(0, 120) },
-        message: String(parseError?.message ?? parseError)
+        message: String(parseError?.message ?? parseError),
+        build: BUILD
       }, { status: 200 });
     }
 
