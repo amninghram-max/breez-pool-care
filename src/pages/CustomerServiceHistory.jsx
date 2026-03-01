@@ -2,7 +2,7 @@ import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Download } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
 import VisitHistoryCard from '../components/customer/VisitHistoryCard';
@@ -78,12 +78,24 @@ export default function CustomerServiceHistory() {
 
       <div className="space-y-3">
         {records.map(record => (
-          <VisitHistoryCard
-            key={record.id}
-            record={record}
-            dosePlan={dosePlanByTestRecord[record.id]}
-            retestRecord={retestByOriginalTest[record.id]}
-          />
+          <div key={record.id} className="space-y-1">
+            <VisitHistoryCard
+              record={record}
+              dosePlan={dosePlanByTestRecord[record.id]}
+              retestRecord={retestByOriginalTest[record.id]}
+            />
+            <div className="flex justify-end px-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-gray-400 h-7 cursor-not-allowed"
+                disabled
+                title="Coming soon"
+              >
+                Download Full Service Report
+              </Button>
+            </div>
+          </div>
         ))}
       </div>
     </div>
