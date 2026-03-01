@@ -197,8 +197,7 @@ Deno.serve(async (req) => {
     // ─────────────────────────────────────────────
     // D) FECAL INCIDENT CUSTOMER
     // ─────────────────────────────────────────────
-    let fecalLeads = await db.entities.Lead.filter({ email: TEST_CUSTOMER3_EMAIL });
-    let fecalLead = fecalLeads?.[0] || null;
+    let fecalLead = await findByEmail(db, 'Lead', TEST_CUSTOMER3_EMAIL);
     let fecalLeadCreated = false;
 
     if (!fecalLead) {
