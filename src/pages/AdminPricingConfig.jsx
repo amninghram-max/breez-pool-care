@@ -112,6 +112,12 @@ export default function AdminPricingConfig() {
     saveSettingsMutation.mutate();
   };
 
+  const handleReset = () => {
+    setLocalSettings(settings);
+    setShowResetConfirm(false);
+    toast.success('Changes reverted to last saved state');
+  };
+
   const updateField = (path, value) => {
     setLocalSettings(prev => {
       const updated = { ...prev };
