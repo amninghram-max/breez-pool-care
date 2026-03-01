@@ -228,9 +228,10 @@ export default function LeadsPipeline() {
   );
 }
 
-function LeadRow({ lead, stage, onAdvance, onStageChange, onEdit }) {
+function LeadRow({ lead, stage, onAdvance, onStageChange, onEdit, onUpdate, queryClient }) {
+  const [validationError, setValidationError] = React.useState(null);
   const isLost = lead.stage === 'lost';
-  const canAdvance = !isLost && STAGES.findIndex(s => s.key === lead.stage) < STAGES.length - 1;
+  const canAdvance = !isLost && lead.stage !== 'inspection_scheduled' && STAGES.findIndex(s => s.key === lead.stage) < STAGES.length - 1;
   
   // Extract first line of address
   const addressLine = lead.serviceAddress?.split(',')[0] || 'No address';
@@ -240,61 +241,80 @@ function LeadRow({ lead, stage, onAdvance, onStageChange, onEdit }) {
   const daysAgo = Math.floor((Date.now() - lastUpdate) / (1000 * 60 * 60 * 24));
   const timeStr = daysAgo === 0 ? 'Today' : `${daysAgo}d ago`;
 
+  const handleStageAction = (newStage, data) => {
+    const updateData = { stage: newStage, ...data };
+    onUpdate({ id: lead.id, data: updateData });
+    setValidationError(null);
+  };
+
+  const handleValidationError = (msg) => {
+    setValidationError(msg);
+  };
+
   return (
-    <div className="px-4 py-3 flex items-center justify-between gap-3 hover:bg-gray-50 text-sm">
-      {/* Lead Info */}
-      <div className="flex-1 min-w-0 cursor-pointer" onClick={onEdit}>
-        <div className="flex items-start gap-2">
-          <div className="flex-1 min-w-0">
-            <p className="font-medium text-gray-900">{lead.firstName} {lead.lastName}</p>
-            <p className="text-xs text-gray-600 truncate">{addressLine}</p>
+    <div className="px-4 py-3 space-y-2 hover:bg-gray-50">
+      {/* Validation Error */}
+      {validationError && (
+        <StageValidationError error={validationError} onEditInfo={onEdit} />
+      )}
+
+      {/* Row */}
+      <div className="flex items-center justify-between gap-3 text-sm">
+        {/* Lead Info */}
+        <div className="flex-1 min-w-0 cursor-pointer" onClick={onEdit}>
+          <div className="flex items-start gap-2">
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-gray-900">{lead.firstName} {lead.lastName}</p>
+              <p className="text-xs text-gray-600 truncate">{addressLine}</p>
+            </div>
+            {!lead.isEligible && <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-1" />}
           </div>
-          {!lead.isEligible && <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-1" />}
         </div>
-      </div>
 
-      {/* Metadata */}
-      <div className="text-xs text-gray-500">{timeStr}</div>
+        {/* Metadata */}
+        <div className="text-xs text-gray-500 w-12 text-right">{timeStr}</div>
 
-      {/* Primary Action: Advance */}
-      <Button
-        size="sm"
-        variant={canAdvance ? 'default' : 'ghost'}
-        className="gap-1"
-        onClick={onAdvance}
-        disabled={!canAdvance}
-        title={canAdvance ? `Move to ${STAGES[STAGES.findIndex(s => s.key === lead.stage) + 1]?.label}` : 'Cannot advance'}
-      >
-        <ArrowRight className="w-3 h-3" />
-        Advance
-      </Button>
+        {/* Stage-Specific Primary Action */}
+        <div className="flex-shrink-0">
+          {lead.stage === 'inspection_scheduled' ? (
+            <StartInspectionButton leadId={lead.id} />
+          ) : (
+            <StageActionButton
+              lead={lead}
+              currentStage={lead.stage}
+              onAction={handleStageAction}
+              onValidationError={handleValidationError}
+            />
+          )}
+        </div>
 
-      {/* Stage Dropdown */}
-      <Select value={lead.stage} onValueChange={onStageChange}>
-        <SelectTrigger className="w-32 h-8 text-xs">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {STAGES.map(s => (
-            <SelectItem key={s.key} value={s.key}>
-              {s.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        {/* Stage Dropdown */}
+        <Select value={lead.stage} onValueChange={onStageChange}>
+          <SelectTrigger className="w-32 h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {STAGES.map(s => (
+              <SelectItem key={s.key} value={s.key}>
+                {s.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-      {/* Actions */}
-      <div className="flex gap-1">
-        <Link to={createPageUrl('CustomerTimeline') + `?leadId=${lead.id}`}>
-          <Button size="icon" variant="outline" className="h-8 w-8" title="View Timeline">
-            <Eye className="w-3 h-3" />
-          </Button>
-        </Link>
-        <Link to={createPageUrl('EquipmentProfileAdmin') + `?leadId=${lead.id}`}>
-          <Button size="icon" variant="outline" className="h-8 w-8" title="Manage Equipment">
-            <Settings className="w-3 h-3" />
-          </Button>
-        </Link>
+        {/* Actions */}
+        <div className="flex gap-1">
+          <Link to={createPageUrl('CustomerTimeline') + `?leadId=${lead.id}`}>
+            <Button size="icon" variant="outline" className="h-8 w-8" title="View Timeline">
+              <Eye className="w-3 h-3" />
+            </Button>
+          </Link>
+          <Link to={createPageUrl('EquipmentProfileAdmin') + `?leadId=${lead.id}`}>
+            <Button size="icon" variant="outline" className="h-8 w-8" title="Manage Equipment">
+              <Settings className="w-3 h-3" />
+            </Button>
+          </Link>
+        </div>
       </div>
     </div>
   );
