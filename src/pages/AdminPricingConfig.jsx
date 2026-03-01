@@ -1004,6 +1004,7 @@ export default function AdminPricingConfig() {
             {/* Frequency */}
             <div>
               <h4 className="font-semibold text-gray-800 mb-3">Service Frequency</h4>
+              <p className="text-sm text-muted-foreground mb-4">Controls how pricing changes when service frequency increases.</p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Twice/Week Multiplier</Label>
