@@ -79,8 +79,9 @@ Deno.serve(async (req) => {
       return Response.json({
         success: false,
         error: 'Could not determine application URL',
-        details: error.message
-      }, { status: 500 });
+        details: error.message,
+        build: BUILD
+      }, { status: 200 });
     }
 
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
