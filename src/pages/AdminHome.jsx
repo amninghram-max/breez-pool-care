@@ -138,7 +138,7 @@ export default function AdminHome() {
       {/* 6. Quick nav to other admin tools */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {[
-          { label: 'Pricing & Settings', path: 'Admin', icon: Settings, color: 'bg-orange-600 hover:bg-orange-700' },
+          { label: 'Pricing & Settings', path: 'AdminPricingConfig', icon: Settings, color: 'bg-orange-600 hover:bg-orange-700' },
           { label: 'Staff Management', path: 'StaffManagement', icon: Users, color: 'bg-blue-600 hover:bg-blue-700' },
           { label: 'Analytics', path: 'Analytics', icon: BarChart3, color: 'bg-purple-600 hover:bg-purple-700' },
           { label: 'Chemistry Review', path: 'AdminReviewDashboard', icon: Shield, color: 'bg-red-600 hover:bg-red-700' },
