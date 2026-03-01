@@ -70,16 +70,48 @@ class ErrorBoundary extends React.Component {
 }
 
 export default function Layout({ children, currentPageName }) {
-  const { data: user } = useQuery({
+  const location = useLocation();
+  const [layoutTimedOut, setLayoutTimedOut] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      console.info('[Layout] mount at', location.pathname);
+    }
+  }, [location.pathname]);
+
+  const { data: user, isLoading: userIsLoading } = useQuery({
     queryKey: ['user'],
     queryFn: async () => {
       try {
-        return await base44.auth.me();
+        if (typeof window !== 'undefined') {
+          console.info('[Layout] auth query started');
+        }
+        const result = await base44.auth.me();
+        if (typeof window !== 'undefined') {
+          console.info('[Layout] auth resolved, user:', result?.email);
+        }
+        return result;
       } catch (error) {
+        if (typeof window !== 'undefined') {
+          console.info('[Layout] auth error', error?.message);
+        }
         return null;
       }
     },
   });
+
+  // Route loading watchdog: if still loading after 8 seconds, show diagnostic
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (userIsLoading) {
+        if (typeof window !== 'undefined') {
+          console.info('[Layout] 8-second timeout - still loading');
+        }
+        setLayoutTimedOut(true);
+      }
+    }, 8000);
+    return () => clearTimeout(timer);
+  }, [userIsLoading]);
 
   const userRole = user?.role || '';
   const isProvider = ['admin', 'staff', 'technician'].includes(userRole);
