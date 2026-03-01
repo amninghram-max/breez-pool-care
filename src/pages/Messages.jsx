@@ -48,6 +48,14 @@ export default function Messages() {
     return <Badge className={config.className}>{config.label}</Badge>;
   };
 
+  if (userLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
