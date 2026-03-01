@@ -104,6 +104,8 @@ export default function AdminPricingConfig() {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
   const [userAuthError, setUserAuthError] = useState(null);
+  const [creatingDefault, setCreatingDefault] = useState(false);
+  const [createError, setCreateError] = useState(null);
 
   const { data: user, isLoading: userIsLoading, isError: userIsError, error: userError } = useQuery({
     queryKey: ['user'],
