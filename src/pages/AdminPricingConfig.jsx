@@ -38,7 +38,6 @@ const formatTimestamp = (dateString) => {
 export default function AdminPricingConfig() {
   const queryClient = useQueryClient();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [showNavigateConfirm, setShowNavigateConfirm] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['user'],
