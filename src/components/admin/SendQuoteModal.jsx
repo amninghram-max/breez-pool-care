@@ -33,14 +33,26 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
         await base44.entities.Lead.update(lead.id, { email });
       }
 
-      // Trigger quote email workflow
-      const res = await base44.functions.invoke('sendQuoteEmail', {
-        leadId: lead.id,
+      // Generate quote for this lead
+      const quoteRes = await base44.functions.invoke('calculateQuote', {
+        leadId: lead.id
+      });
+
+      if (!quoteRes.data?.quote) {
+        throw new Error(quoteRes.data?.error || 'Failed to generate quote');
+      }
+
+      const quote = quoteRes.data.quote;
+
+      // Send quote email with generated quote
+      const emailRes = await base44.functions.invoke('sendQuoteEmail', {
+        quote,
+        firstName: lead.firstName,
         email
       });
 
-      if (!res.data?.success) {
-        throw new Error(res.data?.error || 'Failed to send quote');
+      if (!emailRes.data?.success) {
+        throw new Error(emailRes.data?.error || 'Failed to send quote');
       }
 
       // Log timestamp in notes
