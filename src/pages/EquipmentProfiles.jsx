@@ -21,16 +21,41 @@ const TYPE_LABELS = {
 };
 
 export default function EquipmentProfiles() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
 
-  const { data: equipment = [], isLoading } = useQuery({
-    queryKey: ['equipmentProfiles'],
-    queryFn: () => base44.entities.PoolEquipment.filter({ isActive: true }, 'equipmentType')
+  const { data: user } = useQuery({
+    queryKey: ['userForEquipmentProfiles'],
+    queryFn: async () => {
+      try {
+        return await base44.auth.me();
+      } catch {
+        return null;
+      }
+    }
   });
 
-  const { data: leads = [] } = useQuery({
+  // Role guard
+  if (user && !['admin', 'staff', 'technician'].includes(user.role)) {
+    return (
+      <Card className="max-w-2xl mx-auto mt-6 border-red-200 bg-red-50">
+        <CardContent className="pt-6">
+          <p className="text-red-800">Access Denied: Only admin, staff, and technician roles can view equipment profiles.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const { data: equipment = [], isLoading, error: equipmentError } = useQuery({
+    queryKey: ['equipmentProfiles'],
+    queryFn: () => base44.entities.PoolEquipment.filter({ isActive: true }, 'equipmentType'),
+    enabled: !!user && ['admin', 'staff', 'technician'].includes(user?.role)
+  });
+
+  const { data: leads = [], error: leadsError } = useQuery({
     queryKey: ['leadsForEquipment'],
-    queryFn: () => base44.entities.Lead.list('-created_date', 200)
+    queryFn: () => base44.entities.Lead.list('-created_date', 200),
+    enabled: !!user && ['admin', 'staff', 'technician'].includes(user?.role)
   });
 
   const leadMap = Object.fromEntries(leads.map(l => [l.id, l]));
@@ -61,19 +86,49 @@ export default function EquipmentProfiles() {
     return <div className="p-6 text-gray-500">Loading equipment profiles...</div>;
   }
 
+  // Show errors
+  if (equipmentError || leadsError) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <Alert className="border-red-200 bg-red-50">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-800">
+            {equipmentError && <div>Equipment query error: {equipmentError.message}</div>}
+            {leadsError && <div>Leads query error: {leadsError.message}</div>}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  // Empty state
   if (equipment.length === 0) {
     return (
-      <Card className="max-w-2xl mx-auto mt-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Wrench className="w-5 h-5" />
-            Equipment Profiles
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-gray-600">No equipment records found.</p>
-        </CardContent>
-      </Card>
+      <div className="max-w-4xl mx-auto space-y-6 p-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Equipment Profiles</h1>
+          <p className="text-sm text-gray-600 mt-1">0 PoolEquipment records found</p>
+        </div>
+        <Card className="bg-amber-50 border-amber-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Wrench className="w-5 h-5" />
+              No Equipment on File
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-gray-700">There are no active equipment records in the system yet.</p>
+            <Link to={createPageUrl('LeadsPipeline')}>
+              <Button className="bg-teal-600 hover:bg-teal-700">
+                Go to Leads Pipeline
+              </Button>
+            </Link>
+            <p className="text-xs text-gray-600 mt-3">
+              Tip: Select a converted customer and click "Manage Equipment" to add pool equipment.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
