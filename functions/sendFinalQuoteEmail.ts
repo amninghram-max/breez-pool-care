@@ -41,8 +41,8 @@ Deno.serve(async (req) => {
 
     // Links
     const appBase = Deno.env.get('APP_URL') || 'https://app.base44.com/app/breezpoolcare';
-    const agreementLink = `${appBase}/agreements?inspectionId=${inspectionRecordId}`;
-    const activationLink = `${appBase}/activate?leadId=${leadId}`;
+    const agreementLink = `${appBase}/#/Agreements?inspectionId=${inspectionRecordId}`;
+    const activationLink = `${appBase}/#/Activate?leadId=${leadId}`;
 
     const greenFeeSection = greenFee > 0
       ? `\n• Green-to-Clean Recovery (first month, one-time): $${greenFee.toFixed(2)}`

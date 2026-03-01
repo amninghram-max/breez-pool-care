@@ -49,6 +49,7 @@
  */
 import AIChat from './pages/AIChat';
 import AccessSetup from './pages/AccessSetup';
+import Activate from './pages/Activate';
 import Admin from './pages/Admin';
 import AdminHome from './pages/AdminHome';
 import AdminMessaging from './pages/AdminMessaging';
@@ -91,13 +92,13 @@ import StaffManagement from './pages/StaffManagement';
 import TechnicianHome from './pages/TechnicianHome';
 import TechnicianRoute from './pages/TechnicianRoute';
 import TestDashboard from './pages/TestDashboard';
-import Activate from './pages/Activate';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "AIChat": AIChat,
     "AccessSetup": AccessSetup,
+    "Activate": Activate,
     "Admin": Admin,
     "AdminHome": AdminHome,
     "AdminMessaging": AdminMessaging,
@@ -140,7 +141,6 @@ export const PAGES = {
     "TechnicianHome": TechnicianHome,
     "TechnicianRoute": TechnicianRoute,
     "TestDashboard": TestDashboard,
-    "Activate": Activate,
 }
 
 export const pagesConfig = {
