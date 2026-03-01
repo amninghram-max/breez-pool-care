@@ -225,8 +225,7 @@ Deno.serve(async (req) => {
     result.fecalLeadCreated = fecalLeadCreated;
 
     // FecalIncident — reuse open one if exists
-    let incidents = await db.entities.FecalIncident.filter({ leadId: fecalLead.id, status: 'open' });
-    let incident = incidents?.[0] || null;
+    let incident = await findByLeadId(db, 'FecalIncident', fecalLead.id, r => r.status === 'open');
     let incidentCreated = false;
 
     if (!incident) {
