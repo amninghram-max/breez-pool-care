@@ -186,6 +186,11 @@ export default function AdminPricingConfig() {
   const riskEnabled = localSettings.riskEngine?.points ? 'Enabled' : 'Disabled';
   const frequencyMultiplier = localSettings.frequencyLogic?.twice_weekly_multiplier || 1.8;
   const minFloor = localSettings.baseTierPrices?.absolute_floor || 120;
+  
+  // Compute badge statuses
+  const marginStatus = getPricingMarginStatus(avgBasePrice);
+  const riskStatus = getRiskScoringStatus(localSettings.riskEngine);
+  const frequencyStatus = getFrequencyStatus(frequencyMultiplier);
 
   return (
     <div className="min-h-screen bg-gray-50">
