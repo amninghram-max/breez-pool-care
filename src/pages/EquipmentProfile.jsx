@@ -18,13 +18,13 @@ import WaterLevelEditor from '../components/equipment/WaterLevelEditor';
 import EquipmentMediaEditor from '../components/equipment/EquipmentMediaEditor';
 
 const TYPE_META = {
-  pump:         { label: 'Pump',         icon: Zap,      color: 'bg-blue-100 text-blue-700' },
-  filter:       { label: 'Filter',       icon: Filter,   color: 'bg-teal-100 text-teal-700' },
-  heater:       { label: 'Heater',       icon: Flame,    color: 'bg-orange-100 text-orange-700' },
-  solar_heater: { label: 'Solar Heater', icon: Sun,      color: 'bg-yellow-100 text-yellow-700' },
-  automation:   { label: 'Automation',   icon: Wrench,   color: 'bg-purple-100 text-purple-700' },
-  salt_cell:    { label: 'Salt Cell',    icon: Droplets, color: 'bg-cyan-100 text-cyan-700' },
-  other:        { label: 'Other',        icon: Wrench,   color: 'bg-gray-100 text-gray-700' },
+  pump: { label: 'Pump', icon: Zap, color: 'bg-blue-100 text-blue-700' },
+  filter: { label: 'Filter', icon: Filter, color: 'bg-teal-100 text-teal-700' },
+  heater: { label: 'Heater', icon: Flame, color: 'bg-orange-100 text-orange-700' },
+  solar_heater: { label: 'Solar Heater', icon: Sun, color: 'bg-yellow-100 text-yellow-700' },
+  automation: { label: 'Automation', icon: Wrench, color: 'bg-purple-100 text-purple-700' },
+  salt_cell: { label: 'Salt Cell', icon: Droplets, color: 'bg-cyan-100 text-cyan-700' },
+  other: { label: 'Other', icon: Wrench, color: 'bg-gray-100 text-gray-700' }
 };
 
 function EquipmentCard({ equipment, pool, user }) {
@@ -32,40 +32,40 @@ function EquipmentCard({ equipment, pool, user }) {
   const meta = TYPE_META[equipment.equipmentType] || TYPE_META.other;
   const Icon = meta.icon;
 
-  const isFilter   = equipment.equipmentType === 'filter';
-  const isPump     = equipment.equipmentType === 'pump';
-  const isHeater   = equipment.equipmentType === 'heater' || equipment.equipmentType === 'solar_heater';
-  const isWater    = false; // water level is per-pool, not per-equipment — shown at pool level
+  const isFilter = equipment.equipmentType === 'filter';
+  const isPump = equipment.equipmentType === 'pump';
+  const isHeater = equipment.equipmentType === 'heater' || equipment.equipmentType === 'solar_heater';
+  const isWater = false; // water level is per-pool, not per-equipment — shown at pool level
 
   return (
     <Card className={`border-2 transition-colors ${expanded ? 'border-teal-300' : 'border-gray-100'}`}>
       <CardHeader className="pb-2 pt-4">
-        <button className="w-full flex items-start justify-between gap-3 text-left" onClick={() => setExpanded(v => !v)}>
+        <button className="w-full flex items-start justify-between gap-3 text-left" onClick={() => setExpanded((v) => !v)}>
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-lg ${meta.color}`}>
               <Icon className="w-4 h-4" />
             </div>
             <div>
               <p className="font-semibold text-sm text-gray-900">{meta.label}</p>
-              {(equipment.brand || equipment.model) && (
-                <p className="text-xs text-gray-400">{[equipment.brand, equipment.model].filter(Boolean).join(' · ')}</p>
-              )}
+              {(equipment.brand || equipment.model) &&
+              <p className="text-xs text-gray-400">{[equipment.brand, equipment.model].filter(Boolean).join(' · ')}</p>
+              }
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {isFilter && equipment.normalPsi && (
-              <Badge className="bg-teal-100 text-teal-800 text-xs">{equipment.normalPsi} PSI normal</Badge>
-            )}
-            {isPump && equipment.pumpSpeed && (
-              <Badge className="bg-blue-100 text-blue-800 text-xs capitalize">{equipment.pumpSpeed.replace('_', ' ')}</Badge>
-            )}
+            {isFilter && equipment.normalPsi &&
+            <Badge className="bg-teal-100 text-teal-800 text-xs">{equipment.normalPsi} PSI normal</Badge>
+            }
+            {isPump && equipment.pumpSpeed &&
+            <Badge className="bg-blue-100 text-blue-800 text-xs capitalize">{equipment.pumpSpeed.replace('_', ' ')}</Badge>
+            }
             {expanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
           </div>
         </button>
       </CardHeader>
 
-      {expanded && (
-        <CardContent className="pt-2">
+      {expanded &&
+      <CardContent className="pt-2">
           <Tabs defaultValue="settings">
             <TabsList className="h-8 mb-4">
               <TabsTrigger value="settings" className="text-xs h-7">
@@ -75,12 +75,12 @@ function EquipmentCard({ equipment, pool, user }) {
             </TabsList>
 
             <TabsContent value="settings">
-              {isPump   && <PumpEditor   equipment={equipment} user={user} />}
+              {isPump && <PumpEditor equipment={equipment} user={user} />}
               {isFilter && <FilterEditor equipment={equipment} user={user} pool={pool} />}
               {isHeater && <HeaterEditor equipment={equipment} user={user} />}
-              {!isPump && !isFilter && !isHeater && (
-                <p className="text-sm text-gray-500">No configurable settings for this equipment type yet.</p>
-              )}
+              {!isPump && !isFilter && !isHeater &&
+            <p className="text-sm text-gray-500">No configurable settings for this equipment type yet.</p>
+            }
             </TabsContent>
 
             <TabsContent value="media">
@@ -88,9 +88,9 @@ function EquipmentCard({ equipment, pool, user }) {
             </TabsContent>
           </Tabs>
         </CardContent>
-      )}
-    </Card>
-  );
+      }
+    </Card>);
+
 }
 
 function AddEquipmentForm({ leadId, poolId, onAdded }) {
@@ -106,7 +106,7 @@ function AddEquipmentForm({ leadId, poolId, onAdded }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['poolEquipment', leadId] });
       toast.success('Equipment added');
-      setType(''); setBrand(''); setModel('');
+      setType('');setBrand('');setModel('');
       if (onAdded) onAdded();
     }
   });
@@ -116,20 +116,20 @@ function AddEquipmentForm({ leadId, poolId, onAdded }) {
       <Select value={type} onValueChange={setType}>
         <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Equipment type…" /></SelectTrigger>
         <SelectContent>
-          {Object.entries(TYPE_META).map(([k, v]) => (
-            <SelectItem key={k} value={k}>{v.label}</SelectItem>
-          ))}
+          {Object.entries(TYPE_META).map(([k, v]) =>
+          <SelectItem key={k} value={k}>{v.label}</SelectItem>
+          )}
         </SelectContent>
       </Select>
-      <Input value={brand} onChange={e => setBrand(e.target.value)} placeholder="Brand" className="h-9 text-sm" />
-      <Input value={model} onChange={e => setModel(e.target.value)} placeholder="Model" className="h-9 text-sm" />
+      <Input value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="Brand" className="h-9 text-sm" />
+      <Input value={model} onChange={(e) => setModel(e.target.value)} placeholder="Model" className="h-9 text-sm" />
       <Button className="bg-teal-600 hover:bg-teal-700 h-9"
-        onClick={() => addMutation.mutate()} disabled={!type || addMutation.isPending}>
+      onClick={() => addMutation.mutate()} disabled={!type || addMutation.isPending}>
         {addMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
         Add
       </Button>
-    </div>
-  );
+    </div>);
+
 }
 
 export default function EquipmentProfile() {
@@ -167,7 +167,7 @@ export default function EquipmentProfile() {
     enabled: !!leadId
   });
 
-  const lead = leads.find(l => l.id === leadId);
+  const lead = leads.find((l) => l.id === leadId);
   const isAdminOrStaff = user?.role === 'admin' || user?.role === 'staff';
 
   return (
@@ -175,44 +175,44 @@ export default function EquipmentProfile() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Equipment Profile</h1>
-          {lead && (
-            <p className="text-sm text-gray-500 mt-0.5">
+          {lead &&
+          <p className="text-sm text-gray-500 mt-0.5">
               {lead.firstName} {lead.lastName} — {lead.serviceAddress}
             </p>
-          )}
+          }
         </div>
-        {isAdminOrStaff && leads.length > 0 && !leadIdParam && (
-          <Select value={selectedLeadId} onValueChange={setSelectedLeadId}>
+        {isAdminOrStaff && leads.length > 0 && !leadIdParam &&
+        <Select value={selectedLeadId} onValueChange={setSelectedLeadId}>
             <SelectTrigger className="w-64 h-9 text-sm"><SelectValue placeholder="Select customer…" /></SelectTrigger>
             <SelectContent>
-              {leads.filter(l => l.stage === 'converted').map(l => (
-                <SelectItem key={l.id} value={l.id}>
+              {leads.filter((l) => l.stage === 'converted').map((l) =>
+            <SelectItem key={l.id} value={l.id}>
                   {l.firstName} {l.lastName} — {l.serviceAddress?.split(',')[0]}
                 </SelectItem>
-              ))}
+            )}
             </SelectContent>
           </Select>
-        )}
+        }
       </div>
 
-      {!leadId && (
-        <Card>
+      {!leadId &&
+      <Card>
           <CardContent className="p-12 text-center">
             <Wrench className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">Select a customer to view their equipment profile.</p>
+            <p className="text-gray-500">Select a customer to view their equipment profile. test</p>
           </CardContent>
         </Card>
-      )}
+      }
 
-      {leadId && isLoading && (
-        <div className="text-center py-12"><Loader2 className="w-8 h-8 animate-spin text-teal-600 mx-auto" /></div>
-      )}
+      {leadId && isLoading &&
+      <div className="text-center py-12"><Loader2 className="w-8 h-8 animate-spin text-teal-600 mx-auto" /></div>
+      }
 
-      {leadId && !isLoading && (
-        <>
+      {leadId && !isLoading &&
+      <>
           {/* Water Level — pool-level, shown once */}
-          {pool && isAdminOrStaff && (
-            <Card>
+          {pool && isAdminOrStaff &&
+        <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Droplets className="w-4 h-4 text-cyan-600" /> Water Level Monitoring
@@ -221,45 +221,45 @@ export default function EquipmentProfile() {
               <CardContent>
                 {/* Use first pump/filter equipment as anchor for settings storage, or pool itself */}
                 <WaterLevelEditor
-                  equipment={equipment[0] || { id: pool.id, leadId, waterLevelNormalMin: 'mid_skimmer', waterLevelNormalMax: 'top_skimmer', waterAddedConsecutiveVisitThreshold: 3, excessiveWaterLossFlag: false }}
-                  pool={pool}
-                  user={user}
-                />
+              equipment={equipment[0] || { id: pool.id, leadId, waterLevelNormalMin: 'mid_skimmer', waterLevelNormalMax: 'top_skimmer', waterAddedConsecutiveVisitThreshold: 3, excessiveWaterLossFlag: false }}
+              pool={pool}
+              user={user} />
+
               </CardContent>
             </Card>
-          )}
+        }
 
           {/* Equipment items */}
           <div className="space-y-3">
-            {equipment.map(eq => (
-              <EquipmentCard key={eq.id} equipment={eq} pool={pool} user={user} />
-            ))}
+            {equipment.map((eq) =>
+          <EquipmentCard key={eq.id} equipment={eq} pool={pool} user={user} />
+          )}
           </div>
 
-          {equipment.length === 0 && (
-            <div className="text-center py-8 text-gray-400">
+          {equipment.length === 0 &&
+        <div className="text-center py-8 text-gray-400">
               <Wrench className="w-10 h-10 mx-auto mb-2 opacity-40" />
               <p>No equipment recorded yet.</p>
             </div>
-          )}
+        }
 
-          {isAdminOrStaff && (
-            <div>
-              {!showAdd ? (
-                <Button variant="outline" className="w-full border-dashed" onClick={() => setShowAdd(true)}>
+          {isAdminOrStaff &&
+        <div>
+              {!showAdd ?
+          <Button variant="outline" className="w-full border-dashed" onClick={() => setShowAdd(true)}>
                   <Plus className="w-4 h-4 mr-2" /> Add Equipment
-                </Button>
-              ) : (
-                <AddEquipmentForm
-                  leadId={leadId}
-                  poolId={pool?.id}
-                  onAdded={() => setShowAdd(false)}
-                />
-              )}
+                </Button> :
+
+          <AddEquipmentForm
+            leadId={leadId}
+            poolId={pool?.id}
+            onAdded={() => setShowAdd(false)} />
+
+          }
             </div>
-          )}
+        }
         </>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }
