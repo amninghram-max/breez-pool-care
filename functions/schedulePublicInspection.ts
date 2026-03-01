@@ -73,50 +73,11 @@ Deno.serve(async (req) => {
       stage: 'inspection_scheduled',
     });
 
-    // ── Format date for email ──
-    const dateObj = new Date(requestedDate + 'T00:00:00');
-    const dateFormatted = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-    // ── Send confirmation email ──
-    const emailBody = `Hi ${firstName},
-
-Your free pool inspection with Breez Pool Care is confirmed!
-
-DATE: ${dateFormatted}
-TIME WINDOW: ${timeDisplay}
-INSPECTOR: ${event.assignedTechnician}
-
-WHAT TO EXPECT
---------------
-• We will call approximately one hour before arrival.
-• The inspection typically takes 20–30 minutes.
-• We will test your water chemistry, inspect equipment and circulation, and answer any questions you have.
-• No obligation — this visit is completely free.
-
-WHAT TO PREPARE
----------------
-• Homeowner or designated caretaker must be present.
-• Please ensure we can access the pool area.
-
-If you need to reschedule or have any questions, call us at (321) 524-3838 or reply to this email.
-
-We look forward to meeting you!
-
-Breez Pool Care LLC
-Owner/Operator: Matt Inghram
-(321) 524-3838
-Mon–Sat: 8am–6pm`;
-
+    // ── Send confirmation email via centralized function ──
     try {
-      await base44.asServiceRole.integrations.Core.SendEmail({
-        to: clientEmail,
-        subject: `Inspection Confirmed — ${dateFormatted} · Breez Pool Care`,
-        body: emailBody,
-      });
-      // Mark confirmation sent
-      await base44.asServiceRole.entities.Lead.update(lead.id, {
-        inspectionConfirmationSent: true,
-        confirmationSentAt: new Date().toISOString(),
+      await base44.functions.invoke('sendInspectionConfirmation', {
+        leadId: lead.id,
+        force: false
       });
     } catch (e) {
       console.warn('Confirmation email failed (non-blocking):', e.message);

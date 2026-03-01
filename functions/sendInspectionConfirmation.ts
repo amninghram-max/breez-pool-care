@@ -3,68 +3,78 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { leadId, firstName, email, mobilePhone, inspectionDate, inspectionTime, serviceAddress, preferredContact, force } = await req.json();
+    const { leadId, firstName, email, inspectionDate, inspectionTime, serviceAddress, force } = await req.json();
 
-    if (!firstName || !email) {
-      return Response.json({ error: 'Missing required fields' }, { status: 400 });
+    // ── Load Lead if leadId provided (Lead is source of truth) ──
+    let lead = null;
+    if (leadId) {
+      lead = await base44.asServiceRole.entities.Lead.get(leadId).catch(() => null);
+    }
+
+    // Resolve fields: Lead wins when available, fallback to params
+    const finalFirstName = lead ? (lead.firstName || 'Customer') : (firstName || 'Customer');
+    const finalEmail = lead ? lead.email : email;
+    const finalInspectionDate = lead
+      ? (lead.confirmedInspectionDate ? lead.confirmedInspectionDate.split('T')[0] : inspectionDate)
+      : inspectionDate;
+    const finalInspectionTime = lead
+      ? (lead.requestedInspectionTime || inspectionTime || 'To be confirmed')
+      : (inspectionTime || 'To be confirmed');
+
+    if (!finalEmail) {
+      return Response.json({ error: 'Missing email: provide leadId or email param' }, { status: 400 });
     }
 
     // ── Idempotency check ──
-    if (leadId && !force) {
-      const lead = await base44.asServiceRole.entities.Lead.get(leadId).catch(() => null);
-      if (lead?.inspectionConfirmationSent) {
-        console.log(`Confirmation already sent for leadId=${leadId}, skipping. Use force=true to resend.`);
-        return Response.json({ success: true, skipped: true, reason: 'already_sent' });
-      }
+    if (leadId && !force && lead?.inspectionConfirmationSent) {
+      console.log(`Confirmation already sent for leadId=${leadId}, skipping.`);
+      return Response.json({ success: true, skipped: true, reason: 'already_sent' });
     }
 
-    // Send Email Confirmation
-    const emailSubject = "Your Breez Pool Inspection is Confirmed";
-    
-    const emailBody = `Hi ${firstName},
+    // ── Format date for display ──
+    const dateFormatted = finalInspectionDate
+      ? new Date(finalInspectionDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+      : 'To be scheduled';
 
-Great news — your free pool inspection is confirmed.
+    const emailSubject = `Inspection Confirmed — ${dateFormatted} · Breez Pool Care`;
 
-Appointment Details:
+    const emailBody = `Hi ${finalFirstName},
 
-Date: ${inspectionDate || 'To be scheduled'}
-Time: ${inspectionTime || 'To be confirmed'}
-Address: ${serviceAddress || 'Your service address'}
+Your free pool inspection with Breez Pool Care is confirmed!
 
-Matt will contact you approximately 30–60 minutes prior to arrival.
+DATE: ${dateFormatted}
+TIME WINDOW: ${finalInspectionTime}
+INSPECTOR: Matt
 
-If you need to make changes, please contact us directly.
+WHAT TO EXPECT
+--------------
+• We will call approximately one hour before arrival.
+• The inspection typically takes 20–30 minutes.
+• We will test your water chemistry, inspect equipment and circulation, and answer any questions you have.
+• No obligation — this visit is completely free.
 
-Thank you again for choosing Breez.
+WHAT TO PREPARE
+---------------
+• Homeowner or designated caretaker must be present.
+• Please ensure we can access the pool area.
 
-We look forward to meeting you.
+If you need to reschedule or have any questions, call us at (321) 524-3838 or reply to this email.
 
-— Breez Pool Care`;
+We look forward to meeting you!
 
+Breez Pool Care LLC
+Owner/Operator: Matt Inghram
+(321) 524-3838
+Mon–Sat: 8am–6pm`;
+
+    // ── Send email (flag set only on success) ──
     await base44.asServiceRole.integrations.Core.SendEmail({
-      to: email,
+      to: finalEmail,
       subject: emailSubject,
       body: emailBody,
       from_name: 'Breez Pool Care'
     });
 
-    // Send SMS if phone exists and preferred contact includes text
-    if (mobilePhone && (preferredContact === 'text' || !preferredContact)) {
-      const smsBody = `Breez: Hi ${firstName}! Your free pool inspection is scheduled for ${inspectionDate} at ${inspectionTime}. Matt will call before arrival.`;
-      
-      try {
-        await base44.asServiceRole.integrations.Core.SendEmail({
-          to: mobilePhone + '@txt.att.net',
-          subject: '',
-          body: smsBody,
-          from_name: 'Breez'
-        });
-      } catch (smsError) {
-        console.warn('SMS send failed, continuing:', smsError);
-      }
-    }
-
-    // ── Mark sent on Lead ──
     if (leadId) {
       await base44.asServiceRole.entities.Lead.update(leadId, {
         inspectionConfirmationSent: true,
@@ -72,9 +82,9 @@ We look forward to meeting you.
       }).catch(e => console.warn('Could not update Lead confirmation flag:', e.message));
     }
 
-    return Response.json({ success: true, emailSent: true, smsSent: !!mobilePhone });
+    return Response.json({ success: true, emailSent: true });
   } catch (error) {
-    console.error('Error sending confirmation:', error);
+    console.error('sendInspectionConfirmation error:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
