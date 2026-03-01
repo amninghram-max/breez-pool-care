@@ -39,18 +39,28 @@ export default function Activate() {
     const doLink = async () => {
       setStatus('linking');
       try {
-        // Validate lead exists (user-scoped read)
-        let lead = null;
+        // Validate lead exists via backend function (bypasses RLS for new users)
+        let leadValid = false;
         try {
-          lead = await base44.entities.Lead.get(leadId);
+          const res = await base44.functions.invoke('linkUserToLead', {
+            validateOnly: true,
+            leadId,
+          });
+          leadValid = res.data?.leadExists === true;
         } catch {
-          // Might fail due to RLS if user not yet linked — try service-role equivalent via a known filter
+          leadValid = false;
+        }
+
+        if (!leadValid) {
+          setErrorMsg('This activation link is invalid or has expired. Please contact support.');
+          setStatus('error');
+          return;
         }
 
         // Build updateMe payload — never downgrade protected roles
         const updatePayload = { linkedLeadId: leadId };
         const isProtected = PROTECTED_ROLES.includes(user.role);
-        if (!isProtected && (!user.role || user.role === '')) {
+        if (!isProtected) {
           updatePayload.role = 'customer';
         }
 
