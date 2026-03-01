@@ -110,19 +110,47 @@ export default function AdminPricingConfig() {
     queryFn: () => base44.auth.me()
   });
 
-  const settingsQuery = useQuery({
-    queryKey: ['adminSettings'],
-    queryFn: async () => {
-      if (typeof window !== 'undefined') {
-        console.info('[AdminPricingConfig] settings query started');
-      }
-      const result = await base44.entities.AdminSettings.filter({ settingKey: 'default' });
-      if (typeof window !== 'undefined') {
-        console.info('[AdminPricingConfig] settings query resolved', result[0]?.id);
-      }
-      return result[0] || null;
-    }
-  });
+ // Whatever your query hook is called:
+const settingsQuery = useQuery(/* ... */)
+
+// ✅ only show spinner while the query is actually loading
+if (settingsQuery.isLoading) {
+  return (
+    <div className="p-6">
+      <div className="text-sm text-muted-foreground">Loading pricing settings…</div>
+    </div>
+  )
+}
+
+// ✅ show an actual error if it failed
+if (settingsQuery.isError) {
+  return (
+    <div className="p-6">
+      <div className="text-sm text-red-600">
+        Failed to load AdminSettings: {String(settingsQuery.error)}
+      </div>
+      <button className="mt-3 px-3 py-2 border rounded" onClick={() => settingsQuery.refetch()}>
+        Retry
+      </button>
+    </div>
+  )
+}
+
+// ✅ query finished. data may be undefined if no record exists.
+const settings = settingsQuery.data
+
+if (!settings) {
+  return (
+    <div className="p-6">
+      <h2 className="text-lg font-semibold">No pricing config yet</h2>
+      <p className="text-sm text-muted-foreground mt-1">
+        AdminSettings returned empty. Create the first pricing configuration to continue.
+      </p>
+    </div>
+  )
+}
+
+// ...normal page render below using `settings`
   const settings = settingsQuery.data;
 
   const [localSettings, setLocalSettings] = useState(null);
