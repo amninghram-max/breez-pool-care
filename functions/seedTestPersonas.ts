@@ -140,30 +140,94 @@ Deno.serve(async (req) => {
     result.activatedEventId = event.id;
     result.activatedEventCreated = eventCreated;
 
-    // Past ServiceVisit
+    // Past ServiceVisit — also try ChemTestRecord as fallback for service history display
     let visit = await findByLeadId(db, 'ServiceVisit', activatedLead.id);
     let visitCreated = false;
 
     if (!visit) {
-      visit = await db.entities.ServiceVisit.create({
-        propertyId: activatedLead.id,
-        visitDate: todayMinus7,
-        technicianName: 'Test Technician',
-        freeChlorine: 2.5,
-        pH: 7.4,
-        totalAlkalinity: 100,
-        combinedChlorine: 0.1,
-        cyanuricAcid: 45,
-        calciumHardness: 250,
-        waterTemp: 78,
-        servicesPerformed: ['skim', 'brush', 'empty_baskets', 'filter_check'],
-        notes: '[TEST SEED] Past service visit',
-        chemicalsAdded: { liquidChlorine: 0.25 },
-      });
-      visitCreated = true;
+      try {
+        visit = await db.entities.ServiceVisit.create({
+          propertyId: activatedLead.id,
+          visitDate: todayMinus7,
+          technicianName: 'Test Technician',
+          freeChlorine: 2.5,
+          pH: 7.4,
+          totalAlkalinity: 100,
+          combinedChlorine: 0.1,
+          cyanuricAcid: 45,
+          calciumHardness: 250,
+          waterTemp: 78,
+          servicesPerformed: ['skim', 'brush', 'empty_baskets', 'filter_check'],
+          notes: '[TEST SEED] Past service visit',
+          chemicalsAdded: { liquidChlorine: 0.25 },
+        });
+        visitCreated = true;
+      } catch (e) {
+        result.activatedServiceVisitNote = `Could not create ServiceVisit: ${e.message}`;
+        visit = { id: null };
+      }
     }
     result.activatedServiceVisitId = visit.id;
     result.activatedServiceVisitCreated = visitCreated;
+
+    // Also create ChemTestRecord (used by CustomerServiceHistory page)
+    let pool = null;
+    try {
+      const allPools = await db.entities.Pool.list();
+      pool = allPools.find(p => p.leadId === activatedLead.id) || null;
+    } catch (e) { /* ignore */ }
+
+    if (!pool) {
+      try {
+        pool = await db.entities.Pool.create({
+          leadId: activatedLead.id,
+          surfaceType: 'CONCRETE_PLASTER',
+          volumeGallons: 15000,
+          poolType: 'in_ground',
+          enclosure: 'fully_screened',
+          filterType: 'cartridge',
+          chlorinationMethod: 'liquid_chlorine',
+          status: 'active',
+        });
+        result.activatedPoolId = pool.id;
+        result.activatedPoolCreated = true;
+      } catch (e) {
+        result.activatedPoolNote = `Could not create Pool: ${e.message}`;
+      }
+    } else {
+      result.activatedPoolId = pool.id;
+      result.activatedPoolCreated = false;
+    }
+
+    if (pool?.id) {
+      try {
+        const allChemTests = await db.entities.ChemTestRecord.list();
+        const existingTest = allChemTests.find(r => r.leadId === activatedLead.id);
+        if (!existingTest) {
+          const chemTest = await db.entities.ChemTestRecord.create({
+            poolId: pool.id,
+            leadId: activatedLead.id,
+            testDate: todayMinus7,
+            technicianId: 'test-seed-tech',
+            freeChlorine: 2.5,
+            pH: 7.4,
+            totalAlkalinity: 100,
+            combinedChlorine: 0.1,
+            cyanuricAcid: 45,
+            calciumHardness: 250,
+            waterTemp: 78,
+            notes: '[TEST SEED] Past chemistry test',
+          });
+          result.activatedChemTestId = chemTest.id;
+          result.activatedChemTestCreated = true;
+        } else {
+          result.activatedChemTestId = existingTest.id;
+          result.activatedChemTestCreated = false;
+        }
+      } catch (e) {
+        result.activatedChemTestNote = `Could not create ChemTestRecord: ${e.message}`;
+      }
+    }
 
     // ─────────────────────────────────────────────
     // C) PENDING CUSTOMER
