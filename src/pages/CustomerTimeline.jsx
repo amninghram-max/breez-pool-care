@@ -243,58 +243,105 @@ export default function CustomerTimeline() {
         </CardContent>
       </Card>
 
-      {/* Timeline */}
-      {timelineEvents.length === 0 ? (
-        <Card className="bg-gray-50 border-gray-200">
-          <CardContent className="pt-6">
-            <p className="text-gray-600">No activity yet. Start by logging a service or submitting an inspection.</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {timelineEvents.map((event) => {
-            const Icon = event.icon;
-            return (
-              <Card key={event.id} className={`border-2 ${event.color}`}>
-                <CardContent className="pt-6">
-                  <div className="flex gap-4">
-                    {/* Icon */}
-                    <div className="flex-shrink-0">
-                      <div className="w-10 h-10 rounded-lg bg-white border-2 border-gray-300 flex items-center justify-center">
-                        <Icon className="w-5 h-5 text-gray-700" />
-                      </div>
-                    </div>
+      {/* Recent Visits Section */}
+      <Card className="bg-blue-50 border-blue-200">
+        <CardHeader>
+          <CardTitle className="text-base">Recent Visits</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {recentVisits.length === 0 ? (
+            <p className="text-gray-600 text-sm">No service visits recorded yet.</p>
+          ) : (
+            recentVisits.map(visit => (
+              <div key={visit.id} className="border border-gray-200 rounded-lg p-3 bg-white text-sm space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="font-medium text-gray-900">
+                    {format(new Date(visit.visitDate), 'MMM d, yyyy')}
+                  </p>
+                  {visit.technicianName && (
+                    <Badge className="bg-blue-100 text-blue-800">{visit.technicianName}</Badge>
+                  )}
+                </div>
+                {(visit.freeChlorine || visit.pH || visit.totalAlkalinity) && (
+                  <div className="text-xs text-gray-600 space-y-1">
+                    {visit.freeChlorine && <p>FC: {visit.freeChlorine} ppm</p>}
+                    {visit.pH && <p>pH: {visit.pH}</p>}
+                    {visit.totalAlkalinity && <p>TA: {visit.totalAlkalinity} ppm</p>}
+                  </div>
+                )}
+                {visit.notes && (
+                  <p className="text-xs text-gray-700 italic">{visit.notes.substring(0, 100)}...</p>
+                )}
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-gray-900">{event.title}</h3>
-                        <Badge className={event.badgeColor}>{event.badge}</Badge>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-2">
-                        {format(event.timestamp, 'PPP p')}
-                      </p>
-                      {event.details.length > 0 && (
-                        <ul className="text-sm text-gray-700 space-y-1 mb-3">
-                          {event.details.map((detail, idx) => (
-                            <li key={idx}>{detail}</li>
-                          ))}
-                        </ul>
-                      )}
-                      {event.link && (
-                        <Link to={event.link}>
-                          <Button size="sm" variant="outline">
-                            {event.linkText}
-                          </Button>
-                        </Link>
-                      )}
+      {/* Older Visits Dropdown */}
+      {olderVisitOptions.length > 0 && (
+        <Card className="bg-gray-50 border-gray-200">
+          <CardHeader>
+            <CardTitle className="text-base">Older Visits</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Select value={selectedOldVisitId || ''} onValueChange={setSelectedOldVisitId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a visit to view details…" />
+              </SelectTrigger>
+              <SelectContent>
+                {olderVisitOptions.map(opt => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Selected Older Visit Details */}
+            {selectedOldVisit && (
+              <div className="border border-gray-300 rounded-lg p-4 bg-white space-y-3 mt-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold text-gray-900">
+                    {format(new Date(selectedOldVisit.visitDate), 'PPP p')}
+                  </h4>
+                  {selectedOldVisit.technicianName && (
+                    <Badge>{selectedOldVisit.technicianName}</Badge>
+                  )}
+                </div>
+
+                {(selectedOldVisit.freeChlorine || selectedOldVisit.pH || selectedOldVisit.totalAlkalinity || selectedOldVisit.calciumHardness || selectedOldVisit.cyanuricAcid) && (
+                  <div className="grid grid-cols-2 gap-2 text-xs text-gray-700">
+                    {selectedOldVisit.freeChlorine && <p>FC: {selectedOldVisit.freeChlorine} ppm</p>}
+                    {selectedOldVisit.pH && <p>pH: {selectedOldVisit.pH}</p>}
+                    {selectedOldVisit.totalAlkalinity && <p>TA: {selectedOldVisit.totalAlkalinity} ppm</p>}
+                    {selectedOldVisit.calciumHardness && <p>CH: {selectedOldVisit.calciumHardness} ppm</p>}
+                    {selectedOldVisit.cyanuricAcid && <p>CYA: {selectedOldVisit.cyanuricAcid} ppm</p>}
+                  </div>
+                )}
+
+                {selectedOldVisit.chemicalsAdded && Object.keys(selectedOldVisit.chemicalsAdded).length > 0 && (
+                  <div className="border-t pt-2">
+                    <p className="text-xs font-medium text-gray-900 mb-1">Chemicals Added</p>
+                    <div className="grid grid-cols-2 gap-1 text-xs text-gray-700">
+                      {selectedOldVisit.chemicalsAdded.liquidChlorine && <p>Liquid Chlorine: {selectedOldVisit.chemicalsAdded.liquidChlorine} gal</p>}
+                      {selectedOldVisit.chemicalsAdded.chlorineTablets && <p>Tablets: {selectedOldVisit.chemicalsAdded.chlorineTablets} lbs</p>}
+                      {selectedOldVisit.chemicalsAdded.acid && <p>Acid: {selectedOldVisit.chemicalsAdded.acid} gal</p>}
+                      {selectedOldVisit.chemicalsAdded.bakingSoda && <p>Baking Soda: {selectedOldVisit.chemicalsAdded.bakingSoda} lbs</p>}
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                )}
+
+                {selectedOldVisit.notes && (
+                  <div className="border-t pt-2">
+                    <p className="text-xs font-medium text-gray-900 mb-1">Notes</p>
+                    <p className="text-xs text-gray-700">{selectedOldVisit.notes}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
     </div>
   );
