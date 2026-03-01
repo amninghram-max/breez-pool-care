@@ -202,6 +202,8 @@ export default function LeadsPipeline() {
                         onAdvance={() => handleAdvance(lead)}
                         onStageChange={(newStage) => handleStageChange(lead.id, newStage, lead.stage)}
                         onEdit={() => setSelectedLead(lead)}
+                        onUpdate={(update) => updateLeadMutation.mutate(update)}
+                        queryClient={queryClient}
                       />
                     ))
                   )}
