@@ -16,13 +16,19 @@ import { getAppOrigin } from "./_getAppOrigin.js";
 
 Deno.serve(async (req) => {
   try {
-    // Safe body parsing: read as text first
+    // Capture diagnostics immediately
+    const method = req.method;
+    const contentType = req.headers.get("content-type") || "";
     const raw = await req.text();
-    
-    if (!raw || raw.trim() === '') {
+    const bodyLength = raw?.length ?? 0;
+
+    console.log('📨 sendQuoteLinkEmail request:', { method, contentType, bodyLength, bodyPreview: raw.slice(0, 80) });
+
+    if (bodyLength === 0) {
       return Response.json({
         success: false,
         error: 'Missing JSON body',
+        diagnostics: { method, contentType, bodyLength },
         expected: { leadId: 'string', firstName: 'string', email: 'string' }
       }, { status: 400 });
     }
@@ -34,6 +40,7 @@ Deno.serve(async (req) => {
       return Response.json({
         success: false,
         error: 'Invalid JSON body',
+        diagnostics: { method, contentType, bodyLength, rawPreview: raw.slice(0, 120) },
         message: String(parseError?.message ?? parseError)
       }, { status: 400 });
     }
