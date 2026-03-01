@@ -39,16 +39,28 @@ const formatTimestamp = (dateString) => {
   return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
-// Helper: determine badge variant and label based on pricing health
-const getPricingMarginStatus = (avgPrice) => {
-  // Recommended range: $120-$350 (healthy margin for pool care)
-  if (avgPrice >= 120 && avgPrice <= 350) {
-    return { variant: 'default', label: 'Healthy Range', className: 'bg-green-100 text-green-800 border-green-300' };
-  } else if (avgPrice < 120) {
-    return { variant: 'destructive', label: 'Below Range', className: 'bg-red-100 text-red-800 border-red-300' };
-  } else {
-    return { variant: 'secondary', label: 'Above Range', className: 'bg-amber-100 text-amber-800 border-amber-300' };
+// Helper: determine badge variant and label based on pricing configuration state
+const getPricingConfigStatus = (baseTierPrices) => {
+  // Check if base tiers are missing or zero
+  const tierA = baseTierPrices?.tier_a_10_15k || 0;
+  const tierB = baseTierPrices?.tier_b_15_20k || 0;
+  const tierC = baseTierPrices?.tier_c_20_30k || 0;
+  const tierD = baseTierPrices?.tier_d_30k_plus || 0;
+  const floor = baseTierPrices?.absolute_floor || 0;
+  
+  // Not configured: if any tier is zero
+  if (tierA === 0 || tierB === 0 || tierC === 0 || tierD === 0) {
+    return { variant: 'destructive', label: 'Not Configured', className: 'bg-red-100 text-red-800 border-red-300' };
   }
+  
+  // Floor too high: if floor > lowest tier
+  const lowestTier = Math.min(tierA, tierB, tierC, tierD);
+  if (floor > lowestTier) {
+    return { variant: 'secondary', label: 'Floor High', className: 'bg-amber-100 text-amber-800 border-amber-300' };
+  }
+  
+  // All configured and healthy
+  return { variant: 'default', label: 'Configured', className: 'bg-green-100 text-green-800 border-green-300' };
 };
 
 // Helper: determine risk scoring badge
