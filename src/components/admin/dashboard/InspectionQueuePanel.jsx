@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { format, parseISO } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import InspectionFinalizePanel from '../InspectionFinalizePanel';
+import InspectionFinalizePanel from '../InspectionFinalizePanel.jsx';
 
 export default function InspectionQueuePanel() {
   const [selectedId, setSelectedId] = useState(null);
