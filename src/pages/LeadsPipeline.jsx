@@ -273,7 +273,7 @@ function LeadCard({ lead, onClick, onUpdateStage }) {
                 View Timeline
               </Button>
             </Link>
-            <Link to={createPageUrl('EquipmentProfiles')} className="flex-1">
+            <Link to={createPageUrl('EquipmentProfileAdmin') + `?leadId=${lead.id}`} className="flex-1">
               <Button size="sm" variant="outline" className="w-full text-xs">
                 Manage Equipment
               </Button>
