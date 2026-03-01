@@ -85,6 +85,19 @@ const getAutopayStatus = (discount) => {
     : { variant: 'secondary', label: 'None', className: 'bg-gray-100 text-gray-700 border-gray-300' };
 };
 
+// Helper: determine target gross margin badge
+const getTargetMarginStatus = (margin) => {
+  if (!margin || margin === 0) {
+    return { variant: 'destructive', label: 'Not Set', className: 'bg-red-100 text-red-800 border-red-300' };
+  }
+  const marginPct = margin * 100;
+  if (marginPct >= 45 && marginPct <= 70) {
+    return { variant: 'default', label: 'Within Range', className: 'bg-green-100 text-green-800 border-green-300' };
+  } else {
+    return { variant: 'secondary', label: 'Outside Range', className: 'bg-amber-100 text-amber-800 border-amber-300' };
+  }
+};
+
 export default function AdminPricingConfig() {
   const queryClient = useQueryClient();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
