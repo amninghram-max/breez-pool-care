@@ -70,6 +70,7 @@ Deno.serve(async (req) => {
       inspectionScheduled: true,
       inspectionEventId: event.id,
       confirmedInspectionDate: new Date(requestedDate + 'T00:00:00').toISOString(),
+      confirmedInspectionTimeWindow: timeDisplay,
       stage: 'inspection_scheduled',
     });
 

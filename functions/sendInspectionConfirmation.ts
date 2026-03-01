@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
       ? (lead.confirmedInspectionDate ? lead.confirmedInspectionDate.split('T')[0] : inspectionDate)
       : inspectionDate;
     const finalInspectionTime = lead
-      ? (lead.requestedInspectionTime || inspectionTime || 'To be confirmed')
+      ? (lead.confirmedInspectionTimeWindow || inspectionTime || 'To be confirmed')
       : (inspectionTime || 'To be confirmed');
 
     if (!finalEmail) {
