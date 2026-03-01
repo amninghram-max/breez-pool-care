@@ -21,10 +21,24 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Build frontend app link (base44.app, not deno.dev)
+    // Validate env vars first
     const publicAppUrl = Deno.env.get('PUBLIC_APP_URL');
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    
     if (!publicAppUrl) {
-      throw new Error('PUBLIC_APP_URL environment variable not set');
+      console.error('❌ PUBLIC_APP_URL env var not set');
+      return Response.json({
+        success: false,
+        error: 'PUBLIC_APP_URL environment variable not configured'
+      }, { status: 500 });
+    }
+    
+    if (!resendApiKey) {
+      console.error('❌ RESEND_API_KEY env var not set');
+      return Response.json({
+        success: false,
+        error: 'RESEND_API_KEY environment variable not configured'
+      }, { status: 500 });
     }
     const quoteLink = `${publicAppUrl}/PreQualification?leadId=${leadId}`;
 
