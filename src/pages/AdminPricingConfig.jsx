@@ -134,17 +134,17 @@ export default function AdminPricingConfig() {
   const [isCreatingDefaults, setIsCreatingDefaults] = useState(false);
   const unsaved = hasUnsavedChanges(localSettings, settings);
 
-  // Timeout watchdog: if still loading after 8 seconds, show diagnostic
+  // Timeout watchdog: if still loading after 5 seconds, show diagnostic
   useEffect(() => {
     const isLoading = userIsLoading || settingsQuery.isLoading;
     const timer = setTimeout(() => {
       if (isLoading) {
         if (typeof window !== 'undefined') {
-          console.info('[AdminPricingConfig] 8-second timeout - page still loading');
+          console.warn('[AdminPricingConfig] 5-second timeout - page still loading');
         }
         setTimedOut(true);
       }
-    }, 8000);
+    }, 5000);
     return () => clearTimeout(timer);
   }, [userIsLoading, settingsQuery.isLoading]);
 
