@@ -86,8 +86,8 @@ Deno.serve(async (req) => {
     result.activatedLeadCreated = activatedLeadCreated;
 
     // Quote for activated customer
-    let quotes = await db.entities.Quote.filter({ clientEmail: TEST_CUSTOMER1_EMAIL });
-    let quote = quotes?.[0] || null;
+    const allQuotes = await db.entities.Quote.list();
+    let quote = allQuotes.find(q => q.clientEmail === TEST_CUSTOMER1_EMAIL) || null;
     let quoteCreated = false;
 
     if (!quote) {
