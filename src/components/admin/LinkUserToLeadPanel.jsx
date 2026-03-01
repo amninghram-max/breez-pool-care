@@ -53,18 +53,29 @@ export default function LinkUserToLeadPanel({ lead }) {
   const handleInvite = async () => {
     setInviting(true);
     try {
+      // DEBUG
+      console.log('DEBUG lead.id:', lead.id);
+      console.log('DEBUG lead._id:', lead._id);
+      console.log('DEBUG lead.leadId:', lead.leadId);
+      console.log('DEBUG activationUrl:', activationUrl);
+      toast.info(`DEBUG: Sending URL: ${activationUrl}`);
+
       const customerName = lead.firstName || 'there';
-      const emailBody = `Hi ${customerName},
-
-You've been invited to activate your Breez Pool Care customer account.
-
-Click the link below to create your account or log in — your pool profile will be linked automatically:
-
-${activationLink}
-
-If you have any trouble, call us at (321) 524-3838.
-
-— The Breez Pool Care Team`;
+      const emailBody = `<!DOCTYPE html>
+<html>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; color: #333;">
+  <p style="font-size: 16px;">Hi ${customerName},</p>
+  <p style="font-size: 16px;">You've been invited to activate your Breez Pool Care customer account.</p>
+  <p style="font-size: 16px;">Click the button below to create your account or log in — your pool profile will be linked automatically:</p>
+  <p style="margin: 24px 0;">
+    <a href="${activationUrl}" style="display: inline-block; background: #1B9B9F; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">Access app</a>
+  </p>
+  <p style="font-size: 14px; color: #666;">Or copy and paste this link:</p>
+  <p style="font-size: 14px; color: #1B9B9F; word-break: break-all;">${activationUrl}</p>
+  <p style="font-size: 14px; color: #666; margin-top: 24px;">If you have any trouble, call us at (321) 524-3838.</p>
+  <p style="font-size: 14px; color: #666;">— The Breez Pool Care Team</p>
+</body>
+</html>`;
 
       await base44.integrations.Core.SendEmail({
         to: trimmedEmail,
