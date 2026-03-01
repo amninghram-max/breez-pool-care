@@ -60,7 +60,8 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
       // Send quote link via direct fetch
       const payload = { leadId: lead.id, firstName: lead.firstName, email };
       
-      const r = await fetch('/api/functions/sendQuoteLinkEmail', {
+      const url = new URL("/api/functions/sendQuoteLinkEmail", window.location.origin).toString();
+      const r = await fetch(url, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(payload),
