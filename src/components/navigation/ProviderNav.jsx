@@ -138,8 +138,8 @@ export default function ProviderNav({ userRole }) {
       { name: 'Leads Pipeline',        path: 'LeadsPipeline',        icon: Users },
       { name: 'Equipment Profiles',    path: 'EquipmentProfile',     icon: Activity },
     ]},
-    { key: 'system', items: [
-      { name: 'Pricing & Settings',    path: 'AdminPricingConfig',   icon: Settings },
+    { key: 'pricing', items: [
+      { name: 'Pricing Dashboard',     path: 'AdminPricingConfig',   icon: Settings },
       { name: 'Config Setup',          path: 'AdminSettingsSetup',   icon: Settings },
       { name: 'Release Readiness',     path: 'ReleaseReadiness',     icon: Shield },
     ]},
