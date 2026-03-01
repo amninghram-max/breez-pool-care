@@ -21,9 +21,12 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Build quote wizard link with leadId preserved
-    const baseUrl = Deno.env.get('BASE_URL') || new URL(req.url).origin;
-    const quoteLink = `${baseUrl}/PreQualification?leadId=${leadId}`;
+    // Build frontend app link (base44.app, not deno.dev)
+    const publicAppUrl = Deno.env.get('PUBLIC_APP_URL');
+    if (!publicAppUrl) {
+      throw new Error('PUBLIC_APP_URL environment variable not set');
+    }
+    const quoteLink = `${publicAppUrl}/PreQualification?leadId=${leadId}`;
 
     console.log('📧 sendQuoteLinkEmail:', { leadId, email, quoteLink });
 
