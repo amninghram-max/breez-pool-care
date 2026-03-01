@@ -12,10 +12,10 @@ export default function NewLeadModal({ onClose }) {
     firstName: '', lastName: '', email: '', mobilePhone: '',
     streetAddress: '', city: '', state: 'FL', zipCode: '',
     preferredContact: 'text',
-    poolType: 'in_ground', poolSurface: 'concrete',
-    filterType: 'not_sure', sanitizerType: 'not_sure',
-    screenedArea: 'fully_screened', poolCondition: 'clear',
-    usageFrequency: 'weekends', accessRestrictions: 'none',
+    poolType: '', poolSurface: '',
+    filterType: '', sanitizerType: '',
+    screenedArea: '', poolCondition: '',
+    usageFrequency: '', accessRestrictions: 'none',
     isEligible: true, notes: ''
   });
 
