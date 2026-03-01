@@ -185,6 +185,14 @@ export default function PaymentSetup() {
         </CardContent>
       </Card>
 
+      {!stripePromise && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Stripe Not Configured</AlertTitle>
+          <AlertDescription>Stripe payment processing is not available. Please contact support to complete your activation.</AlertDescription>
+        </Alert>
+      )}
+
       {error && (
         <Alert variant="destructive" className="mb-6">
           <AlertCircle className="h-4 w-4" />
@@ -193,7 +201,7 @@ export default function PaymentSetup() {
         </Alert>
       )}
 
-      <Button onClick={handlePayment} disabled={processing} className="w-full h-14 text-lg bg-teal-600 hover:bg-teal-700">
+      <Button onClick={handlePayment} disabled={processing || !stripePromise} className="w-full h-14 text-lg bg-teal-600 hover:bg-teal-700">
         {processing ? 'Processing...' : <><DollarSign className="w-5 h-5 mr-2" />Pay ${totalDueToday.toFixed(2)} & Activate Service</>}
       </Button>
 
