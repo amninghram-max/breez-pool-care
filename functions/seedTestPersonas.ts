@@ -98,8 +98,13 @@ Deno.serve(async (req) => {
     result.activatedQuoteCreated = quoteCreated;
 
     // Set acceptedQuoteId on lead if not already set
+    // Note: Lead RLS update requires admin/staff role on the calling user — service role handles this
     if (!activatedLead.acceptedQuoteId || activatedLeadCreated) {
-      await db.entities.Lead.update(activatedLead.id, { acceptedQuoteId: quote.id });
+      try {
+        await db.entities.Lead.update(activatedLead.id, { acceptedQuoteId: quote.id });
+      } catch (e) {
+        result.acceptedQuoteIdUpdateNote = `Could not set acceptedQuoteId: ${e.message}. Set it manually on leadId=${activatedLead.id}.`;
+      }
     }
 
     // Future CalendarEvent
