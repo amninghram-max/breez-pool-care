@@ -148,10 +148,19 @@ Deno.serve(async (req) => {
       })
     });
 
-    const emailData = await emailRes.json();
+    // Safe response parsing: guard against empty/invalid JSON from Resend
+    let emailData;
+    try {
+      const responseText = await emailRes.text();
+      emailData = responseText ? JSON.parse(responseText) : {};
+    } catch (parseError) {
+      console.error('❌ Resend response parsing error:', parseError.message);
+      emailData = { message: 'Failed to parse Resend response' };
+    }
+
     if (!emailRes.ok) {
-      const errorMsg = emailData.message || emailRes.statusText;
-      console.error('❌ Resend API error:', errorMsg);
+      const errorMsg = emailData.message || emailRes.statusText || 'Unknown error';
+      console.error('❌ Resend API error:', errorMsg, { status: emailRes.status });
       throw new Error(`Resend API error: ${errorMsg}`);
     }
 
