@@ -277,7 +277,7 @@ export default function Activate() {
           <p className="text-sm text-gray-500 text-center">
             {isSignup ? (
               <>Already have an account?{' '}
-                <button className="text-teal-600 hover:underline font-medium" onClick={() => { setAuthMode('signin'); setAuthError(''); setOtpStep(false); }}>Sign in</button>
+                <button className="text-teal-600 hover:underline font-medium" onClick={() => { setAuthMode('signin'); setAuthError(''); setOtpStep(false); setConfirmPassword(''); }}>Sign in</button>
               </>
             ) : (
               <>Don't have an account?{' '}
