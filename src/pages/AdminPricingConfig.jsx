@@ -687,8 +687,11 @@ export default function AdminPricingConfig() {
             </div>
 
             {/* Usage */}
-            <div className="border-t pt-4">
-              <h4 className="font-semibold text-gray-800 mb-3">Usage Frequency</h4>
+             <div className="border-t pt-4">
+               <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                 Usage Frequency
+                 <Info className="w-4 h-4 text-gray-400" title="Adjustments based on pool usage patterns. High swimmer activity or frequent pool parties increase cleaning time and chemical usage." />
+               </h4>
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label>Weekends</Label>
