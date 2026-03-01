@@ -117,39 +117,11 @@ Deno.serve(async (req) => {
 
     console.log('✅ Quote link email sent via Resend:', { id: emailData.id, to: email });
 
-    // Update lead email and log timestamp (service role, no stage change)
-    try {
-      const timestamp = new Date().toISOString();
-      const updatePayload = {};
-      if (email) updatePayload.email = email;
-      
-      // Fetch current lead to append notes safely
-      const leadList = await base44.asServiceRole.entities.Lead.list();
-      const currentLead = leadList.find(l => l.id === leadId);
-      const existingNotes = currentLead?.notes || '';
-      updatePayload.notes = (existingNotes + `\n[QUOTE_LINK_SENT] ${timestamp}`).trim();
-
-      await base44.asServiceRole.entities.Lead.update(leadId, updatePayload);
-      console.log('✅ Lead updated (email + timestamp logged)', { leadId });
-
-      return Response.json({
-        success: true,
-        link: quoteLink,
-        resendId: emailData.id,
-        email,
-        leadUpdated: true
-      });
-    } catch (updateError) {
-      console.warn('⚠️ Email sent but lead update failed:', updateError.message);
-      return Response.json({
-        success: true,
-        link: quoteLink,
-        resendId: emailData.id,
-        email,
-        leadUpdated: false,
-        warning: `Email sent but could not log timestamp: ${updateError.message}`
-      });
-    }
+    return Response.json({
+      success: true,
+      link: quoteLink,
+      resendId: emailData.id
+    });
   } catch (error) {
     console.error('❌ sendQuoteLinkEmail error:', error);
     return Response.json({
