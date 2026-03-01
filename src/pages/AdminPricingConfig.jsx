@@ -182,7 +182,17 @@ export default function AdminPricingConfig() {
         chemistryTargets: JSON.stringify({}),
         seasonalPeriods: JSON.stringify({})
       };
+      // Create the record
       await base44.entities.AdminSettings.create(defaultPayload);
+      // Immediately re-fetch to verify read access
+      const list = await base44.entities.AdminSettings.list('-created_date', 1);
+      const first = (Array.isArray(list) ? list[0] : list?.[0]) ?? null;
+      if (typeof window !== 'undefined') {
+        console.info('[AdminPricingConfig][debug] post-create list count:', Array.isArray(list) ? list.length : 0, 'firstId:', first?.id || null);
+      }
+      if (!first) {
+        throw new Error('Created but cannot read. Likely env mismatch or RLS.');
+      }
       await settingsQuery.refetch();
       toast.success('Default pricing configuration created');
     } catch (error) {
