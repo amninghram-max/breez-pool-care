@@ -588,6 +588,7 @@ export default function AdminPricingConfig() {
                   onChange={(e) => updateField('baseTierPrices.tier_c_20_30k', e.target.value)}
                   className="mt-2"
                 />
+                <p className="text-xs text-gray-500 mt-1">Base monthly price for large pools</p>
               </div>
               <div>
                 <Label>Tier D (30k+ gallons)</Label>
