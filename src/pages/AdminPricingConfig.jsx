@@ -553,7 +553,10 @@ export default function AdminPricingConfig() {
               <DollarSign className="w-5 h-5 text-teal-600" />
               Base Pricing Tiers
             </CardTitle>
-            <p className="text-sm text-gray-600 mt-1">Monthly base prices by pool size</p>
+            <p className="text-sm text-gray-600 mt-1">
+              Starting monthly service price before risk adjustments or additive tokens are applied.
+              Pools are automatically assigned to a tier based on estimated gallon size.
+            </p>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
