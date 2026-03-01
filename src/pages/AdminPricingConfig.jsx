@@ -1055,10 +1055,26 @@ export default function AdminPricingConfig() {
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Reset Confirmation Dialog */}
+        <AlertDialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
+          <AlertDialogContent>
+            <AlertDialogTitle>Revert to Last Saved?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will discard all unsaved changes and restore the last persisted configuration.
+            </AlertDialogDescription>
+            <div className="flex gap-3 justify-end">
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleReset} className="bg-red-600 hover:bg-red-700">
+                Revert
+              </AlertDialogAction>
+            </div>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </div>
   );
 }
