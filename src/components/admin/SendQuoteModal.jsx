@@ -8,12 +8,22 @@ import { base44 } from '@/api/base44Client';
 
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
+// Check if lead has questionnaireData (pool details filled in)
+const hasQuestionnaireData = (lead) => {
+  const requiredFields = ['poolSize', 'poolType', 'enclosure', 'filterType', 'chlorinationMethod', 'useFrequency', 'poolCondition'];
+  return requiredFields.every(f => lead?.[f]);
+};
+
 export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
   const [email, setEmail] = useState(lead?.email || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSend = async () => {
+  // Determine flow: NEW stage sends link only, QUOTED can send pricing if data exists
+  const isNewStage = lead?.stage === 'new_lead';
+  const hasData = hasQuestionnaireData(lead);
+
+  const handleSendQuoteLink = async () => {
     setError('');
 
     if (!email.trim()) {
@@ -26,12 +36,68 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
       return;
     }
 
-    // Check if lead has required quote inputs
-    const requiredQuoteFields = ['poolSize', 'poolType', 'enclosure', 'filterType', 'chlorinationMethod', 'useFrequency', 'poolCondition'];
-    const missingQuoteFields = requiredQuoteFields.filter(f => !lead[f]);
+    setLoading(true);
+    try {
+      // Update lead email if changed
+      if (email !== lead.email) {
+        await base44.entities.Lead.update(lead.id, { email });
+      }
 
-    if (missingQuoteFields.length > 0) {
-      setError(`Lead is missing required information: ${missingQuoteFields.join(', ')}. Please complete the quote flow first.`);
+      // Send quote link (no pricing, just link to wizard)
+      const res = await base44.functions.invoke('sendQuoteEmail', {
+        leadId: lead.id,
+        firstName: lead.firstName,
+        email,
+        linkOnly: true  // Signal to send link-only email, no pricing
+      });
+
+      if (!res.data?.success) {
+        const errMsg = typeof res.data?.error === 'object' 
+          ? JSON.stringify(res.data.error)
+          : res.data?.error || 'Failed to send quote link';
+        throw new Error(errMsg);
+      }
+
+      // Log timestamp in notes
+      const timestamp = new Date().toISOString();
+      const newNotes = (lead.notes || '') + `\n[QUOTE_EMAIL_SENT] ${timestamp}`;
+      
+      // Update lead to QUOTED stage
+      await base44.entities.Lead.update(lead.id, {
+        stage: 'quoted',
+        notes: newNotes
+      });
+
+      toast.success('Quote link sent');
+      onSuccess?.();
+      onClose();
+    } catch (err) {
+      console.error('Send quote link error:', err);
+      const errorMsg = err.response?.data 
+        ? (typeof err.response.data === 'object' ? JSON.stringify(err.response.data) : err.response.data)
+        : err.message || 'Failed to send quote link';
+      setError(errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendPricingEmail = async () => {
+    setError('');
+
+    if (!email.trim()) {
+      setError('Email is required');
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    if (!hasData) {
+      setError('Customer must complete quote questions first');
       return;
     }
 
@@ -65,9 +131,9 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
 
       if (quoteRes.status !== 200) {
         const errorData = quoteRes.data;
-        const errorMsg = errorData.missingFields 
-          ? `Missing pool information: ${errorData.missingFields.join(', ')}. Complete lead details first.`
-          : errorData.message || errorData.error || 'Failed to generate quote';
+        const errorMsg = typeof errorData === 'object' 
+          ? JSON.stringify(errorData)
+          : errorData?.error || 'Failed to generate quote';
         setError(errorMsg);
         console.error('Quote generation error:', errorData);
         toast.error(errorMsg);
@@ -91,7 +157,9 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
       });
 
       if (!emailRes.data?.success) {
-        const emailErr = emailRes.data?.error || 'Failed to send quote email';
+        const emailErr = typeof emailRes.data?.error === 'object'
+          ? JSON.stringify(emailRes.data.error)
+          : emailRes.data?.error || 'Failed to send quote email';
         setError(emailErr);
         toast.error(emailErr);
         return;
@@ -101,11 +169,9 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
       const timestamp = new Date().toISOString();
       const newNotes = (lead.notes || '') + `\n[QUOTE_EMAIL_SENT] ${timestamp}`;
       
-      // Update lead to QUOTED stage with timestamp
+      // Update lead notes with timestamp
       await base44.entities.Lead.update(lead.id, {
-        stage: 'quoted',
-        notes: newNotes,
-        quoteEmailSent: true
+        notes: newNotes
       });
 
       toast.success('Quote email sent');
@@ -114,7 +180,7 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
     } catch (err) {
       console.error('Send quote error:', err);
       const errorMsg = err.response?.data 
-        ? JSON.stringify(err.response.data)
+        ? (typeof err.response.data === 'object' ? JSON.stringify(err.response.data) : err.response.data)
         : err.message || 'Failed to send quote';
       setError(errorMsg);
       toast.error(errorMsg);
@@ -123,11 +189,14 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
     }
   };
 
+  const handleClick = isNewStage ? handleSendQuoteLink : handleSendPricingEmail;
+  const buttonLabel = isNewStage ? 'Send Link' : (hasData ? 'Send Quote' : 'Send Link');
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Send Quote</DialogTitle>
+          <DialogTitle>{isNewStage ? 'Send Quote Link' : 'Send Quote'}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -153,9 +222,22 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
               className="w-full"
             />
             <p className="text-xs text-gray-500 mt-1">
-              This email will receive the quote + scheduling link.
+              {isNewStage 
+                ? 'This email will receive the quote wizard link.' 
+                : 'This email will receive the quote details + scheduling link.'}
             </p>
           </div>
+
+          {/* Warning: Missing Pool Data */}
+          {!isNewStage && !hasData && (
+            <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="text-amber-800 font-medium">Pool information incomplete</p>
+                <p className="text-amber-700 text-xs mt-1">Customer must complete the quote questions first. Send quote link instead.</p>
+              </div>
+            </div>
+          )}
 
           {/* Error Display */}
           {error && (
@@ -171,12 +253,12 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
             Cancel
           </Button>
           <Button
-            onClick={handleSend}
-            disabled={loading || !email.trim()}
+            onClick={handleClick}
+            disabled={loading || !email.trim() || (!isNewStage && !hasData && !error)}
             className="bg-teal-600 hover:bg-teal-700"
           >
             {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {loading ? 'Sending...' : 'Send Quote'}
+            {loading ? 'Sending...' : buttonLabel}
           </Button>
         </DialogFooter>
       </DialogContent>
