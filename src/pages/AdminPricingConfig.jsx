@@ -197,10 +197,9 @@ export default function AdminPricingConfig() {
       if (typeof window !== 'undefined') {
         console.info('[AdminPricingConfig] create result:', result);
       }
-      await settingsQuery.refetch();
-      const refetched = settingsQuery.data;
+      const { data: refetched } = await settingsQuery.refetch();
       if (!refetched) {
-        setCreateError('Record created but refetch returned null/undefined. Check RLS permissions for reading AdminSettings.');
+        setCreateError('Record created successfully but subsequent read returned null/undefined. Check RLS read permissions for AdminSettings or verify query parameters match.');
         return;
       }
       toast.success('Default pricing configuration created');
