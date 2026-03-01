@@ -108,7 +108,7 @@ export default function SystemHealthPanel() {
           label="Chemistry targets"
           ok={hasChemTargets}
           blocker={!hasChemTargets}
-          detail={hasChemTargets ? `${chemTargets.length} profile(s)` : 'No ChemistryTargets record — dose engine may fail'}
+          detail={hasChemTargets ? `${chemTargets.length} target(s) loaded` : 'No ChemistryTargets record — dose engine may fail'}
         />
         <Check
           label="Product profiles (active)"
