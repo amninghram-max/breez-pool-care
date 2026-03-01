@@ -825,14 +825,11 @@ export default function AdminPricingConfig() {
                   />
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Size Multipliers</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+            {/* Size Multipliers */}
+            <div className="border-t pt-4">
+              <h4 className="font-semibold text-gray-800 mb-3">Size Multipliers</h4>
               <div className="grid grid-cols-4 gap-4">
                 <div>
                   <Label>Tier A</Label>
