@@ -49,6 +49,15 @@ export default function ClientHome() {
     enabled: !!lead,
   });
 
+  const { data: openIncident } = useQuery({
+    queryKey: ['openFecalIncident', lead?.id],
+    queryFn: async () => {
+      const incidents = await base44.entities.FecalIncident.filter({ leadId: lead.id, status: 'open' }, '-reportedAt', 1);
+      return incidents[0] || null;
+    },
+    enabled: !!lead,
+  });
+
   // Check if account is suspended
   const isSuspended = lead?.accountStatus?.includes('suspended') || lead?.accountStatus?.includes('cancelled');
 
