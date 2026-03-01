@@ -43,9 +43,6 @@ Deno.serve(async (req) => {
     }
     
     const quoteLink = `${appOrigin}/PreQualification?leadId=${encodeURIComponent(leadId)}`;
-    
-    // Note: PreQualification page not confirmed as existing route.
-    // Actual routes: /Activate, /Agreements, /schedule-inspection
 
     console.log('📧 sendQuoteLinkEmail:', { leadId, email, quoteLink, resendFrom: 'info@breezpoolcare.com' });
 
