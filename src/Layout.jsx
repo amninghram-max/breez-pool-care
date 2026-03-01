@@ -10,6 +10,22 @@ import { Badge } from '@/components/ui/badge';
 import CustomerNav from '../components/navigation/CustomerNav';
 import ProviderNav from '../components/navigation/ProviderNav';
 
+// Bootstrap: Log resolved API/asset URLs once at app startup
+if (typeof window !== 'undefined' && !window.__BASE44_BOOTSTRAP_LOGGED) {
+  window.__BASE44_BOOTSTRAP_LOGGED = true;
+  const searchParams = new URLSearchParams(window.location.search);
+  const serverUrlParam = searchParams.get('server_url');
+  
+  console.info('[Base44] App bootstrap', {
+    origin: window.location.origin,
+    pathname: window.location.pathname,
+    asset_base: window.location.origin,
+    api_origin: window.location.origin,
+    server_url_param: serverUrlParam ? '(WARNING: param detected, should not be used)' : 'not set',
+    vite_mode: import.meta.env.MODE
+  });
+}
+
 // ErrorBoundary for catching page render errors
 class ErrorBoundary extends React.Component {
   constructor(props) {
