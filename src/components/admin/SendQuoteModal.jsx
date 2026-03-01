@@ -13,13 +13,6 @@ const getErrMsg = (err) => {
   return 'Failed to send quote link email';
 };
 
-const getErrMsg = (err) => {
-  const data = err?.response?.data ?? err?.data;
-  if (data) return typeof data === 'object' ? JSON.stringify(data) : String(data);
-  if (err?.message) return err.message;
-  return 'Failed to send quote link email';
-};
-
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 // Check if lead has questionnaireData (pool details filled in)
