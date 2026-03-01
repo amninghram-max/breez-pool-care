@@ -64,6 +64,14 @@ We look forward to meeting you.
       }
     }
 
+    // ── Mark sent on Lead ──
+    if (leadId) {
+      await base44.asServiceRole.entities.Lead.update(leadId, {
+        inspectionConfirmationSent: true,
+        confirmationSentAt: new Date().toISOString(),
+      }).catch(e => console.warn('Could not update Lead confirmation flag:', e.message));
+    }
+
     return Response.json({ success: true, emailSent: true, smsSent: !!mobilePhone });
   } catch (error) {
     console.error('Error sending confirmation:', error);
