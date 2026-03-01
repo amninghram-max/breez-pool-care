@@ -29,25 +29,21 @@ export default function Activate() {
 
   useEffect(() => {
     if (userLoading) return;
-    if (!user) return; // wait for auth
-    if (!leadId) return; // show error UI below
+    if (!leadId) return; // error UI shown below
+    if (!user) return;  // login UI shown below — wait for auth before validating
 
     const doLink = async () => {
       setStatus('linking');
       try {
-        // Validate lead exists via backend function (bypasses RLS for new users)
-        let leadValid = false;
+        // Validate lead exists using authenticated user permissions
+        let lead = null;
         try {
-          const res = await base44.functions.invoke('linkUserToLead', {
-            validateOnly: true,
-            leadId,
-          });
-          leadValid = res.data?.leadExists === true;
+          lead = await base44.entities.Lead.get(leadId);
         } catch {
-          leadValid = false;
+          lead = null;
         }
 
-        if (!leadValid) {
+        if (!lead) {
           setErrorMsg('This activation link is invalid or has expired. Please contact support.');
           setStatus('error');
           return;
