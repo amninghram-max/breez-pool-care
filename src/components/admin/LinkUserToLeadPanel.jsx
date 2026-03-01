@@ -27,7 +27,7 @@ export default function LinkUserToLeadPanel({ lead }) {
   const hasSearched = trimmedEmail.length > 0;
   const userNotFound = hasSearched && !matchedUser;
 
-  const activationLink = `${APP_BASE}/#/Activate?leadId=${lead.id}`;
+  const activationLink = `${APP_BASE}/Activate?leadId=${lead.id}`;
 
   const handleLink = async () => {
     if (!matchedUser) return;
