@@ -10,7 +10,7 @@ const SECTION_CONFIG = {
   command_center: { label: 'Command Center', color: 'teal' },
   operations:     { label: 'Operations',      color: 'teal' },
   customers:      { label: 'Customers',       color: 'teal' },
-  system:         { label: 'System',          color: 'orange' },
+  pricing:        { label: 'Pricing',         color: 'orange' },
   team_analytics: { label: 'Team & Analytics',color: 'orange' },
   main:           { label: 'Main',            color: 'teal' },
 };
