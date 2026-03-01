@@ -2,18 +2,30 @@ import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { AlertCircle, CheckCircle, Loader2, Phone } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { AlertCircle, CheckCircle, Loader2, Phone, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function Activate() {
   const navigate = useNavigate();
-  // Path routing only — /Activate?leadId=...
   const leadId = new URLSearchParams(window.location.search).get('leadId');
 
   const [status, setStatus] = useState('idle'); // idle | linking | success | error | role_blocked
   const [errorMsg, setErrorMsg] = useState('');
   const [leadFirstName, setLeadFirstName] = useState(null);
+
+  // Auth form state
+  const [authMode, setAuthMode] = useState('signup'); // 'signup' | 'signin'
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
+  // OTP verification
+  const [otpStep, setOtpStep] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+
+  const queryClient = useQueryClient();
 
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['activateUser'],
