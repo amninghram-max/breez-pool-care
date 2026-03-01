@@ -44,11 +44,9 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
       }
 
       // Send quote link via dedicated function (no quote required)
-      const res = await base44.functions.invoke('sendQuoteLinkEmail', {
-        leadId: lead.id,
-        firstName: lead.firstName,
-        email
-      });
+      const payload = { leadId: lead.id, firstName: lead.firstName, email };
+      console.log('📧 Invoking sendQuoteLinkEmail', payload);
+      const res = await base44.functions.invoke('sendQuoteLinkEmail', payload);
 
       if (!res.data?.success) {
         const errMsg = typeof res.data?.error === 'object' 
