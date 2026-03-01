@@ -152,10 +152,12 @@ export default function Layout({ children, currentPageName }) {
           </CardHeader>
           <CardContent className="space-y-4 text-sm">
             <div className="bg-white p-4 rounded border border-red-200">
-              <p className="font-semibold text-gray-800 mb-2">Route Info</p>
+              <p className="font-semibold text-gray-800 mb-2">Route & Asset Info</p>
               <div className="text-gray-700 space-y-1 ml-4">
                 <p>Current path: {location.pathname}</p>
                 <p>Current page: {currentPageName || 'Unknown'}</p>
+                <p>Asset origin: {window.location.origin}</p>
+                <p>Query params: {window.location.search || 'none'}</p>
               </div>
             </div>
 
