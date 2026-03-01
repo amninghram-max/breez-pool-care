@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
     }
     const quoteLink = `${publicAppUrl}/PreQualification?leadId=${leadId}`;
 
-    console.log('📧 sendQuoteLinkEmail:', { leadId, email, quoteLink });
+    console.log('📧 sendQuoteLinkEmail:', { leadId, email, quoteLink, resendFrom: 'info@breezpoolcare.com' });
 
     // Send HTML email with branded CTA button via Resend (supports external emails)
     const htmlBody = `
