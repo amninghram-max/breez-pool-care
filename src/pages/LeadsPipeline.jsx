@@ -404,6 +404,41 @@ function LeadRow({ lead, stage, onAdvance, onStageChange, onEdit, onUpdate, quer
         </div>
       </div>
 
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowDeleteConfirm(false)}>
+          <Card className="max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <CardHeader>
+              <CardTitle className="text-red-900">Delete Lead?</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-red-50 border border-red-200 rounded p-3 text-sm text-red-800">
+                ⚠️ This permanently deletes the lead and cannot be undone.
+              </div>
+              <p className="text-sm text-gray-600">
+                {lead.firstName} {lead.lastName} ({lead.email})
+              </p>
+              <div className="flex gap-3 justify-end pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="bg-red-600 hover:bg-red-700"
+                  onClick={handleDeleteLead}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Modals */}
       <SendQuoteModal
         lead={lead}
