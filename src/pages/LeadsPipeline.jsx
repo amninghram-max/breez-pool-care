@@ -17,6 +17,8 @@ import LinkUserToLeadPanel from '@/components/admin/LinkUserToLeadPanel';
 import StageActionButton from '@/components/admin/StageActionButton';
 import StageValidationError from '@/components/admin/StageValidationError';
 import StartInspectionButton from '@/components/admin/StartInspectionButton';
+import SendQuoteModal from '@/components/admin/SendQuoteModal';
+import SendInspectionLinkModal from '@/components/admin/SendInspectionLinkModal';
 
 // Canonical stage order (business rule)
 const STAGES = [
