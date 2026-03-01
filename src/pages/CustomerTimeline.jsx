@@ -14,6 +14,13 @@ function CustomerPicker() {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
+  // DEV DEBUG: Global click listener
+  React.useEffect(() => {
+    const handleDocClick = (e) => console.log('[DEV] Document click fired', { target: e.target?.tagName, text: e.target?.textContent?.substring(0, 20) });
+    document.addEventListener('click', handleDocClick, true);
+    return () => document.removeEventListener('click', handleDocClick, true);
+  }, []);
+
   const { data: leads = [] } = useQuery({
     queryKey: ['leadsForPicker'],
     queryFn: () => base44.entities.Lead.list('-created_date', 200)
