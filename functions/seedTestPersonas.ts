@@ -206,12 +206,8 @@ Deno.serve(async (req) => {
         notes: '[TEST SEED] Fecal incident customer persona',
       });
       fecalLeadCreated = true;
-    } else {
-      await db.entities.Lead.update(fecalLead.id, {
-        stage: 'converted',
-        accountStatus: 'active',
-      });
     }
+    // If already exists, reuse as-is
     result.fecalLeadId = fecalLead.id;
     result.fecalLeadCreated = fecalLeadCreated;
 
