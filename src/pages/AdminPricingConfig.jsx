@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Save, DollarSign, TrendingUp, Zap, RotateCcw, AlertCircle, CheckCircle2, Info } from 'lucide-react';
+import { Save, DollarSign, TrendingUp, Zap, RotateCcw, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Helper: detect unsaved changes
@@ -104,8 +104,6 @@ export default function AdminPricingConfig() {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
   const [userAuthError, setUserAuthError] = useState(null);
-  const [creatingDefault, setCreatingDefault] = useState(false);
-  const [createError, setCreateError] = useState(null);
 
   const { data: user, isLoading: userIsLoading, isError: userIsError, error: userError } = useQuery({
     queryKey: ['user'],
@@ -113,22 +111,16 @@ export default function AdminPricingConfig() {
   });
 
   const settingsQuery = useQuery({
-    queryKey: ['adminSettings', 'latest'],
+    queryKey: ['adminSettings'],
     queryFn: async () => {
       if (typeof window !== 'undefined') {
         console.info('[AdminPricingConfig] settings query started');
       }
-      const res = await base44.entities.AdminSettings.list('-created_date', 1);
+      const result = await base44.entities.AdminSettings.filter({ settingKey: 'default' });
       if (typeof window !== 'undefined') {
-        console.info('[AdminPricingConfig] AdminSettings list raw:', res);
+        console.info('[AdminPricingConfig] settings query resolved', result[0]?.id);
       }
-      // Normalize response shape (may be array, {items:[]}, {data:[]}, etc)
-      const items = Array.isArray(res) ? res : (res?.items ?? res?.data ?? []);
-      const first = items[0] ?? null;
-      if (typeof window !== 'undefined') {
-        console.info('[AdminPricingConfig] AdminSettings normalized first:', first);
-      }
-      return first;
+      return result[0] || null;
     }
   });
 
@@ -174,13 +166,9 @@ export default function AdminPricingConfig() {
 
   // Handler: Create default AdminSettings record
   const handleCreateDefaults = async () => {
-    if (typeof window !== 'undefined') {
-      console.info('[AdminPricingConfig] createDefaultConfig clicked');
-    }
-    setCreatingDefault(true);
-    setCreateError(null);
+    setIsCreatingDefaults(true);
     try {
-      const defaults = {
+      const defaultPayload = {
         settingKey: 'default',
         baseTierPrices: JSON.stringify({}),
         additiveTokens: JSON.stringify({}),
@@ -190,28 +178,16 @@ export default function AdminPricingConfig() {
         chemistryTargets: JSON.stringify({}),
         seasonalPeriods: JSON.stringify({})
       };
-      if (typeof window !== 'undefined') {
-        console.info('[AdminPricingConfig] creating AdminSettings with defaults:', defaults);
-      }
-      const result = await base44.entities.AdminSettings.create(defaults);
-      if (typeof window !== 'undefined') {
-        console.info('[AdminPricingConfig] create result:', result);
-      }
-      const { data: refetched } = await settingsQuery.refetch();
-      if (!refetched) {
-        setCreateError('Record created successfully but subsequent read returned null/undefined. Check RLS read permissions for AdminSettings or verify query parameters match.');
-        return;
-      }
+      await base44.entities.AdminSettings.create(defaultPayload);
+      await settingsQuery.refetch();
       toast.success('Default pricing configuration created');
     } catch (error) {
-      const errorMsg = error?.message || 'Unknown error';
-      setCreateError(errorMsg);
+      toast.error('Failed to create defaults: ' + error.message);
       if (typeof window !== 'undefined') {
         console.error('[AdminPricingConfig] create defaults error:', error);
       }
-      toast.error('Failed to create defaults: ' + errorMsg);
     } finally {
-      setCreatingDefault(false);
+      setIsCreatingDefaults(false);
     }
   };
 
@@ -384,19 +360,13 @@ export default function AdminPricingConfig() {
               <p className="text-amber-800">
                 The system does not yet have an AdminSettings record. You need to create a default configuration to proceed.
               </p>
-              {createError && (
-                <div className="p-4 bg-red-100 border border-red-300 rounded-lg">
-                  <p className="text-red-800 text-sm font-semibold mb-1">Creation Failed</p>
-                  <p className="text-red-700 text-sm whitespace-pre-wrap">{createError}</p>
-                </div>
-              )}
               <div className="flex gap-3 pt-4">
                 <Button
                   onClick={handleCreateDefaults}
-                  disabled={creatingDefault}
+                  disabled={isCreatingDefaults}
                   className="bg-amber-600 hover:bg-amber-700"
                 >
-                  {creatingDefault ? 'Creating...' : 'Create Default Configuration'}
+                  {isCreatingDefaults ? 'Creating...' : 'Create Default Configuration'}
                 </Button>
                 <Button
                   onClick={() => window.location.href = createPageUrl('AdminHome')}
@@ -583,10 +553,7 @@ export default function AdminPricingConfig() {
               <DollarSign className="w-5 h-5 text-teal-600" />
               Base Pricing Tiers
             </CardTitle>
-            <p className="text-sm text-gray-600 mt-1">
-              Starting monthly service price before risk adjustments or additive tokens are applied.
-              Pools are automatically assigned to a tier based on estimated gallon size.
-            </p>
+            <p className="text-sm text-gray-600 mt-1">Monthly base prices by pool size</p>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -598,7 +565,6 @@ export default function AdminPricingConfig() {
                   onChange={(e) => updateField('baseTierPrices.tier_a_10_15k', e.target.value)}
                   className="mt-2"
                 />
-                <p className="text-xs text-gray-500 mt-1">Base monthly price for small pools</p>
               </div>
               <div>
                 <Label>Tier B (15k-20k gallons)</Label>
@@ -608,7 +574,6 @@ export default function AdminPricingConfig() {
                   onChange={(e) => updateField('baseTierPrices.tier_b_15_20k', e.target.value)}
                   className="mt-2"
                 />
-                <p className="text-xs text-gray-500 mt-1">Base monthly price for medium pools</p>
               </div>
               <div>
                 <Label>Tier C (20k-30k gallons)</Label>
@@ -618,7 +583,6 @@ export default function AdminPricingConfig() {
                   onChange={(e) => updateField('baseTierPrices.tier_c_20_30k', e.target.value)}
                   className="mt-2"
                 />
-                <p className="text-xs text-gray-500 mt-1">Base monthly price for large pools</p>
               </div>
               <div>
                 <Label>Tier D (30k+ gallons)</Label>
@@ -628,22 +592,18 @@ export default function AdminPricingConfig() {
                   onChange={(e) => updateField('baseTierPrices.tier_d_30k_plus', e.target.value)}
                   className="mt-2"
                 />
-                <p className="text-xs text-gray-500 mt-1">Base monthly price for extra-large pools</p>
               </div>
             </div>
             <div className="border-t pt-4">
-               <Label className="flex items-center gap-2">
-                 Minimum Monthly Floor
-                 <Info className="w-4 h-4 text-gray-400" title="The minimum price the system will allow for monthly service. Adjustments cannot push the price below this amount." />
-               </Label>
-               <Input
-                 type="number"
-                 value={localSettings.baseTierPrices?.absolute_floor || 120}
-                 onChange={(e) => updateField('baseTierPrices.absolute_floor', e.target.value)}
-                 className="mt-2"
-               />
-               <p className="text-xs text-gray-500 mt-1">Minimum price—adjustments cannot go below this</p>
-             </div>
+              <Label>Minimum Monthly Floor</Label>
+              <Input
+                type="number"
+                value={localSettings.baseTierPrices?.absolute_floor || 120}
+                onChange={(e) => updateField('baseTierPrices.absolute_floor', e.target.value)}
+                className="mt-2"
+              />
+              <p className="text-xs text-gray-500 mt-1">Minimum price regardless of calculations</p>
+            </div>
           </CardContent>
         </Card>
 
@@ -654,19 +614,13 @@ export default function AdminPricingConfig() {
               <Zap className="w-5 h-5 text-amber-600" />
               Additive Pricing Tokens
             </CardTitle>
-            <p className="text-sm text-gray-600 mt-1">
-              Tokens add small price adjustments for environmental or usage factors that increase service complexity.
-              Each adjustment compounds on the base price.
-            </p>
+            <p className="text-sm text-gray-600 mt-1">Monthly add-ons for various conditions</p>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Environmental */}
-             <div>
-               <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                 Environmental
-                 <Info className="w-4 h-4 text-gray-400" title="Price adjustments for environmental conditions such as debris load, heavy foliage, or surrounding landscape factors." />
-               </h4>
-               <p className="text-sm text-gray-600 mb-4">Unscreened pool add-ons by tier</p>
+            <div>
+              <h4 className="font-semibold text-gray-800 mb-3">Environmental</h4>
+              <p className="text-sm text-gray-600 mb-4">Unscreened pool add-ons by tier</p>
               <div className="grid grid-cols-4 gap-4">
                 <div>
                   <Label>Tier A</Label>
@@ -717,11 +671,8 @@ export default function AdminPricingConfig() {
             </div>
 
             {/* Usage */}
-             <div className="border-t pt-4">
-               <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                 Usage Frequency
-                 <Info className="w-4 h-4 text-gray-400" title="Adjustments based on pool usage patterns. High swimmer activity or frequent pool parties increase cleaning time and chemical usage." />
-               </h4>
+            <div className="border-t pt-4">
+              <h4 className="font-semibold text-gray-800 mb-3">Usage Frequency</h4>
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label>Weekends</Label>
@@ -754,12 +705,9 @@ export default function AdminPricingConfig() {
             </div>
 
             {/* Chlorination */}
-             <div className="border-t pt-4">
-               <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                 Chlorination
-                 <Info className="w-4 h-4 text-gray-400" title="Different sanitizing systems affect chemical consumption and service complexity." />
-               </h4>
-               <p className="text-sm text-gray-600 mb-4">Floater/Skimmer add-ons by tier</p>
+            <div className="border-t pt-4">
+              <h4 className="font-semibold text-gray-800 mb-3">Chlorination</h4>
+              <p className="text-sm text-gray-600 mb-4">Floater/Skimmer add-ons by tier</p>
               <div className="grid grid-cols-4 gap-4">
                 <div>
                   <Label>Tier A</Label>
@@ -810,11 +758,8 @@ export default function AdminPricingConfig() {
             </div>
 
             {/* Pets */}
-             <div className="border-t pt-4">
-               <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                 Pets / Contamination
-                 <Info className="w-4 h-4 text-gray-400" title="Pools frequently used by pets or with increased contamination risk require more frequent cleaning." />
-               </h4>
+            <div className="border-t pt-4">
+              <h4 className="font-semibold text-gray-800 mb-3">Pets</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Occasional</Label>
@@ -840,24 +785,18 @@ export default function AdminPricingConfig() {
         </Card>
 
         {/* Risk Adjustments Section */}
-         <Card className="bg-white" id="risk-section">
-           <CardHeader>
-             <CardTitle className="flex items-center gap-2">
-               <TrendingUp className="w-5 h-5 text-purple-600" />
-               Risk Engine
-             </CardTitle>
-             <p className="text-sm text-gray-600 mt-1">
-               The risk engine evaluates service difficulty using a point-based system.
-               Higher risk scores increase the final price recommendation.
-             </p>
-           </CardHeader>
+        <Card className="bg-white" id="risk-section">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-purple-600" />
+              Risk Adjustments
+            </CardTitle>
+            <p className="text-sm text-gray-600 mt-1">Risk scoring and escalation brackets</p>
+          </CardHeader>
           <CardContent className="space-y-6">
             {/* Risk Points */}
             <div>
-              <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                Raw Risk Points
-                <Info className="w-4 h-4 text-gray-400" title="Individual factors that contribute to the pool's service difficulty score. Examples include debris load, equipment condition, or water stability issues." />
-              </h4>
+              <h4 className="font-semibold text-gray-800 mb-3">Raw Risk Points</h4>
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label>Unscreened</Label>
@@ -954,10 +893,7 @@ export default function AdminPricingConfig() {
 
             {/* Size Multipliers */}
             <div className="border-t pt-4">
-              <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                Size Multipliers
-                <Info className="w-4 h-4 text-gray-400" title="Multipliers applied to raw risk points based on pool size. Larger pools require more chemicals and effort." />
-              </h4>
+              <h4 className="font-semibold text-gray-800 mb-3">Size Multipliers</h4>
               <div className="grid grid-cols-4 gap-4">
                 <div>
                   <Label>Tier A</Label>
@@ -1004,11 +940,8 @@ export default function AdminPricingConfig() {
 
             {/* Escalation Brackets */}
             <div className="border-t pt-4">
-              <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                Risk Escalation Brackets
-                <Info className="w-4 h-4 text-gray-400" title="Risk score ranges that trigger price adjustments. Pools with higher risk scores require more time and chemicals, increasing the service price." />
-              </h4>
-              <p className="text-sm text-gray-600 mb-4">Monthly add-ons triggered by adjusted risk score ranges</p>
+              <h4 className="font-semibold text-gray-800 mb-3">Risk Escalation Brackets</h4>
+              <p className="text-sm text-gray-600 mb-4">Monthly add-ons based on adjusted risk</p>
               <div className="space-y-3">
                 {(localSettings.riskEngine?.escalation_brackets || []).map((bracket, index) => (
                   <div key={index} className="grid grid-cols-3 gap-4 items-center p-3 bg-gray-50 rounded-lg">
@@ -1035,24 +968,21 @@ export default function AdminPricingConfig() {
         </Card>
 
         {/* Frequency & Costs Section */}
-         <Card className="bg-white" id="frequency-section">
-           <CardHeader>
-             <CardTitle className="flex items-center gap-2">
-               <TrendingUp className="w-5 h-5 text-blue-600" />
-               Service Frequency & One-Time Fees
-             </CardTitle>
-             <p className="text-sm text-gray-600 mt-1">Configure visit frequency multipliers and initial service charges</p>
-           </CardHeader>
+        <Card className="bg-white" id="frequency-section">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-blue-600" />
+              Frequency & Costs
+            </CardTitle>
+            <p className="text-sm text-gray-600 mt-1">Service frequency and one-time fees</p>
+          </CardHeader>
           <CardContent className="space-y-6">
             {/* Frequency */}
             <div>
-              <h4 className="font-semibold text-gray-800 mb-3">Service Frequency Multipliers</h4>
+              <h4 className="font-semibold text-gray-800 mb-3">Service Frequency</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="flex items-center gap-2">
-                    Twice/Week Multiplier
-                    <Info className="w-4 h-4 text-gray-400" title="Multiplies the monthly service price when the pool requires twice-weekly visits. Pools with high debris load or heavy usage may require more frequent service." />
-                  </Label>
+                  <Label>Twice/Week Multiplier</Label>
                   <Input
                     type="number"
                     step="0.1"
@@ -1078,28 +1008,21 @@ export default function AdminPricingConfig() {
 
             {/* Initial Fees */}
             <div className="border-t pt-4">
-              <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                One-Time Fees
-                <Info className="w-4 h-4 text-gray-400" title="One-time charges applied during the first service visit to cover startup work such as inspection, water balancing, and debris removal." />
-              </h4>
+              <h4 className="font-semibold text-gray-800 mb-3">One-Time Fees</h4>
               <div>
-                <Label>Initial Service Fee (Slightly Cloudy)</Label>
+                <Label>Slightly Cloudy</Label>
                 <Input
                   type="number"
                   value={localSettings.initialFees?.slightly_cloudy || 25}
                   onChange={(e) => updateField('initialFees.slightly_cloudy', e.target.value)}
                   className="mt-2"
                 />
-                <p className="text-xs text-gray-500 mt-1">Charge for slightly cloudy water conditions on first visit</p>
               </div>
 
               <p className="text-sm text-gray-700 font-semibold mt-6 mb-3">Green-to-Clean Pricing</p>
               <div className="space-y-6">
               <div>
-                <p className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                 Light Algae
-                 <Info className="w-3 h-3 text-gray-400" title="Green-to-Clean services require multiple visits, additional chemicals, and extended cleaning time." />
-               </p>
+                <p className="text-sm font-semibold text-gray-700 mb-3">Light Algae</p>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label>Small (Tier A)</Label>
@@ -1132,10 +1055,7 @@ export default function AdminPricingConfig() {
               </div>
 
               <div>
-                <p className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                 Moderate Algae
-                 <Info className="w-3 h-3 text-gray-400" title="More intensive treatment required; typically 2–3 visits over a week." />
-               </p>
+                <p className="text-sm font-semibold text-gray-700 mb-3">Moderate Algae</p>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label>Small</Label>
@@ -1168,10 +1088,7 @@ export default function AdminPricingConfig() {
               </div>
 
               <div>
-                <p className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                 Black Swamp (Severe)
-                 <Info className="w-3 h-3 text-gray-400" title="Heavily contaminated pools requiring extensive treatment over multiple days." />
-               </p>
+                <p className="text-sm font-semibold text-gray-700 mb-3">Black Swamp</p>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label>Small</Label>
