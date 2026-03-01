@@ -639,7 +639,7 @@ export default function AdminPricingConfig() {
             {/* Environmental */}
             <div>
               <h4 className="font-semibold text-gray-800 mb-3">Environmental</h4>
-              <p className="text-sm text-gray-600 mb-4">Unscreened pool add-ons by tier</p>
+              <p className="text-sm text-muted-foreground mb-4">Adjustments for debris load, surrounding foliage, and other environmental factors.</p>
               <div className="grid grid-cols-4 gap-4">
                 <div>
                   <Label>Tier A</Label>
