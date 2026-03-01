@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import { base44 } from '@/api/base44Client';
 import {
   ShieldCheck, FileText, BarChart2, Lock, User,
   MessageSquare, CreditCard, Wrench, Camera,
@@ -102,7 +103,7 @@ export default function PublicHome() {
                 Get Free Quote
               </button>
               <button
-                onClick={() => navigate(createPageUrl('Home'))}
+                onClick={() => base44.auth.redirectToLogin(window.location.href)}
                 className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-50 transition-colors"
               >
                 Log In

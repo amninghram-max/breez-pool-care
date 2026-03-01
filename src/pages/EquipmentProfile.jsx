@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
+import { Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -133,14 +136,51 @@ function AddEquipmentForm({ leadId, poolId, onAdded }) {
 }
 
 export default function EquipmentProfile() {
+  const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
   const leadIdParam = urlParams.get('leadId');
   const [showAdd, setShowAdd] = useState(false);
 
-  const { data: user } = useQuery({
+  const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['user'],
-    queryFn: () => base44.auth.me()
+    queryFn: async () => {
+      try {
+        return await base44.auth.me();
+      } catch {
+        return null;
+      }
+    }
   });
+
+  // Route guard: Redirect if not authenticated
+  React.useEffect(() => {
+    if (!userLoading && !user) {
+      navigate(createPageUrl('PublicHome'), { replace: true });
+    }
+  }, [user, userLoading, navigate]);
+
+  // Route guard: Redirect if authenticated but not linked (unlinked customer)
+  React.useEffect(() => {
+    if (user && !user.linkedLeadId && !['admin', 'staff', 'technician'].includes(user.role)) {
+      navigate(createPageUrl('ClientHome'), { replace: true });
+    }
+  }, [user, navigate]);
+
+  // Show loading while checking auth
+  if (userLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+      </div>
+    );
+  }
+
+  // Guard: only linked customers or providers should see this
+  const isProvider = user && ['admin', 'staff', 'technician'].includes(user.role);
+  const isLinkedCustomer = user && user.linkedLeadId && !isProvider;
+  if (!isLinkedCustomer && !isProvider) {
+    return null; // guards above will navigate
+  }
 
   // Resolve leadId — admin passes ?leadId=..., staff/tech see their first
   const { data: leads = [] } = useQuery({

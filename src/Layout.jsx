@@ -24,7 +24,7 @@ export default function Layout({ children, currentPageName }) {
   const isLinkedCustomer = !!user?.linkedLeadId && !isProvider;
 
   const handleLogout = async () => {
-    await base44.auth.logout('/');
+    await base44.auth.logout(createPageUrl('PublicHome'));
   };
 
   // Minimal layout for Activate page - no header/sidebar chrome
