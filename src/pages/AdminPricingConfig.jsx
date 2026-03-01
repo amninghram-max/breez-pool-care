@@ -302,6 +302,16 @@ export default function AdminPricingConfig() {
     );
   }
 
+  // Guard: user not authenticated or not admin
+  if (userIsLoading) {
+    return null; // Layout handles the timeout watchdog
+  }
+
+  if (!user) {
+    window.location.href = createPageUrl('PublicHome');
+    return null;
+  }
+
   if (user?.role !== 'admin') {
     return (
       <Card className="border-red-200 bg-red-50">
@@ -312,8 +322,14 @@ export default function AdminPricingConfig() {
     );
   }
 
+  // Guard: settings still loading
+  if (settingsQuery.isLoading) {
+    return null; // Layout handles the timeout watchdog
+  }
+
+  // Guard: localSettings not yet initialized
   if (!localSettings) {
-    return <div className="flex items-center justify-center py-12"><p>Loading...</p></div>;
+    return null; // Should not reach here (effect above handles it)
   }
 
   // Summary card data (truth audit: only real persisted fields)
