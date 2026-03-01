@@ -11,8 +11,9 @@ export default function Activate() {
   // Path routing only — /Activate?leadId=...
   const leadId = new URLSearchParams(window.location.search).get('leadId');
 
-  const [status, setStatus] = useState('idle'); // idle | linking | success | error
+  const [status, setStatus] = useState('idle'); // idle | linking | success | error | role_blocked
   const [errorMsg, setErrorMsg] = useState('');
+  const [leadFirstName, setLeadFirstName] = useState(null);
 
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['activateUser'],
