@@ -101,8 +101,10 @@ const getTargetMarginStatus = (margin) => {
 export default function AdminPricingConfig() {
   const queryClient = useQueryClient();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
+  const [userAuthError, setUserAuthError] = useState(null);
 
-  const { data: user } = useQuery({
+  const { data: user, isLoading: userIsLoading, isError: userIsError, error: userError } = useQuery({
     queryKey: ['user'],
     queryFn: () => base44.auth.me()
   });
@@ -110,7 +112,13 @@ export default function AdminPricingConfig() {
   const settingsQuery = useQuery({
     queryKey: ['adminSettings'],
     queryFn: async () => {
+      if (typeof window !== 'undefined') {
+        console.info('[AdminPricingConfig] settings query started');
+      }
       const result = await base44.entities.AdminSettings.filter({ settingKey: 'default' });
+      if (typeof window !== 'undefined') {
+        console.info('[AdminPricingConfig] settings query resolved', result[0]?.id);
+      }
       return result[0] || null;
     }
   });
@@ -119,6 +127,31 @@ export default function AdminPricingConfig() {
   const [localSettings, setLocalSettings] = useState(null);
   const unsaved = hasUnsavedChanges(localSettings, settings);
 
+  // Timeout watchdog: if still loading after 8 seconds, show diagnostic
+  useEffect(() => {
+    const isLoading = userIsLoading || settingsQuery.isLoading;
+    const timer = setTimeout(() => {
+      if (isLoading) {
+        if (typeof window !== 'undefined') {
+          console.info('[AdminPricingConfig] 8-second timeout - page still loading');
+        }
+        setTimedOut(true);
+      }
+    }, 8000);
+    return () => clearTimeout(timer);
+  }, [userIsLoading, settingsQuery.isLoading]);
+
+  // Handle user auth errors
+  useEffect(() => {
+    if (userIsError) {
+      if (typeof window !== 'undefined') {
+        console.info('[AdminPricingConfig] auth error:', userError?.message);
+      }
+      setUserAuthError(userError?.message || 'Auth failed');
+    }
+  }, [userIsError, userError]);
+
+  // Sync settings to local (dependency: settings only)
   useEffect(() => {
     if (settings && !localSettings) {
       setLocalSettings(settings);
