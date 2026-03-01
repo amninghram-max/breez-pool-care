@@ -2,16 +2,19 @@ import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Download } from 'lucide-react';
+import { ChevronLeft, Download, Loader2 } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
+import { useCustomerPageGuard } from '@/components/auth/useCustomerPageGuard';
 import VisitHistoryCard from '../components/customer/VisitHistoryCard';
 
 export default function CustomerServiceHistory() {
-  const { data: user } = useQuery({
+  const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['user'],
     queryFn: () => base44.auth.me(),
   });
+
+  useCustomerPageGuard(user, userLoading);
 
   const { data: lead } = useQuery({
     queryKey: ['customerLead'],
