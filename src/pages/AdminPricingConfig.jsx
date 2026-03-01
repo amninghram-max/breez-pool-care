@@ -872,15 +872,12 @@ export default function AdminPricingConfig() {
                   />
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Risk Escalation Brackets</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 mb-4">Monthly add-ons based on adjusted risk (hidden from customers)</p>
+            {/* Escalation Brackets */}
+            <div className="border-t pt-4">
+              <h4 className="font-semibold text-gray-800 mb-3">Risk Escalation Brackets</h4>
+              <p className="text-sm text-gray-600 mb-4">Monthly add-ons based on adjusted risk</p>
               <div className="space-y-3">
                 {(localSettings.riskEngine?.escalation_brackets || []).map((bracket, index) => (
                   <div key={index} className="grid grid-cols-3 gap-4 items-center p-3 bg-gray-50 rounded-lg">
