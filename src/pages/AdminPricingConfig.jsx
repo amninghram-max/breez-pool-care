@@ -924,7 +924,10 @@ export default function AdminPricingConfig() {
 
             {/* Size Multipliers */}
             <div className="border-t pt-4">
-              <h4 className="font-semibold text-gray-800 mb-3">Size Multipliers</h4>
+              <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                Size Multipliers
+                <Info className="w-4 h-4 text-gray-400" title="Multipliers applied to raw risk points based on pool size. Larger pools require more chemicals and effort." />
+              </h4>
               <div className="grid grid-cols-4 gap-4">
                 <div>
                   <Label>Tier A</Label>
