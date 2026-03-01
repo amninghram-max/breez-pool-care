@@ -390,6 +390,17 @@ function LeadRow({ lead, stage, onAdvance, onStageChange, onEdit, onUpdate, quer
               <Settings className="w-3 h-3" />
             </Button>
           </Link>
+          {user?.role === 'admin' && lead.stage === 'new_lead' && (
+            <Button
+              size="icon"
+              variant="outline"
+              className="h-8 w-8 text-red-600 hover:bg-red-50 border-red-200"
+              title="Delete Lead (NEW only)"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              <Trash2 className="w-3 h-3" />
+            </Button>
+          )}
         </div>
       </div>
 
