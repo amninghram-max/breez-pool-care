@@ -121,11 +121,70 @@ export default function Layout({ children, currentPageName }) {
     await base44.auth.logout(createPageUrl('PublicHome'));
   };
 
+  // Layout timeout diagnostic
+  if (layoutTimedOut) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <Card className="border-red-200 bg-red-50 max-w-2xl mx-auto">
+          <CardHeader>
+            <CardTitle className="text-red-900">Layout Loading Diagnostics</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm">
+            <div className="bg-white p-4 rounded border border-red-200">
+              <p className="font-semibold text-gray-800 mb-2">Route Info</p>
+              <div className="text-gray-700 space-y-1 ml-4">
+                <p>Current path: {location.pathname}</p>
+                <p>Current page: {currentPageName || 'Unknown'}</p>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded border border-red-200">
+              <p className="font-semibold text-gray-800 mb-2">Auth State</p>
+              <div className="text-gray-700 space-y-1 ml-4">
+                <p>Auth loading: {userIsLoading}</p>
+                <p>User present: {user ? 'Yes' : 'No'}</p>
+                <p>User email: {user?.email || 'N/A'}</p>
+                <p>User role: {user?.role || 'N/A'}</p>
+                <p>User linkedLeadId: {user?.linkedLeadId || 'N/A'}</p>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded border border-red-200">
+              <p className="font-semibold text-gray-800 mb-2">Possible Causes</p>
+              <ul className="text-gray-700 space-y-1 ml-4 list-disc">
+                <li>Auth query stuck or network timeout</li>
+                <li>Page component failing to render</li>
+                <li>Browser console may have additional errors</li>
+              </ul>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                onClick={() => window.location.reload()}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Reload Page
+              </Button>
+              <Button
+                onClick={() => window.location.href = createPageUrl('AdminHome')}
+                variant="outline"
+              >
+                Go Home
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   // Minimal layout for Activate page - no header/sidebar chrome
   if (currentPageName === 'Activate') {
     return (
       <div className="min-h-screen bg-gray-50">
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
       </div>
     );
   }
