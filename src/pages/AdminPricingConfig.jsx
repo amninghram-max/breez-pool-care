@@ -1005,14 +1005,14 @@ export default function AdminPricingConfig() {
         </Card>
 
         {/* Frequency & Costs Section */}
-        <Card className="bg-white" id="frequency-section">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-blue-600" />
-              Frequency & Costs
-            </CardTitle>
-            <p className="text-sm text-gray-600 mt-1">Service frequency and one-time fees</p>
-          </CardHeader>
+         <Card className="bg-white" id="frequency-section">
+           <CardHeader>
+             <CardTitle className="flex items-center gap-2">
+               <TrendingUp className="w-5 h-5 text-blue-600" />
+               Service Frequency & One-Time Fees
+             </CardTitle>
+             <p className="text-sm text-gray-600 mt-1">Configure visit frequency multipliers and initial service charges</p>
+           </CardHeader>
           <CardContent className="space-y-6">
             {/* Frequency */}
             <div>
