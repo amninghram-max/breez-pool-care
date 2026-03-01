@@ -136,35 +136,40 @@ export default function CustomerTimeline() {
     enabled: !!leadId
   });
 
-  const { data: serviceVisits = [] } = useQuery({
-    queryKey: ['serviceVisitsTimeline', leadId],
-    queryFn: () => leadId ? base44.entities.ServiceVisit.filter({ propertyId: leadId }) : [],
-    enabled: !!leadId
+  const [selectedOldVisitId, setSelectedOldVisitId] = useState(null);
+
+  // Load only recent 4 visits on initial render
+  const { data: recentVisits = [] } = useQuery({
+    queryKey: ['recentVisits', leadId],
+    queryFn: () => leadId ? base44.entities.ServiceVisit.filter({ propertyId: leadId }, '-visitDate', 4) : [],
+    enabled: !!leadId,
+    staleTime: 60000
   });
 
-  const { data: inspections = [] } = useQuery({
-    queryKey: ['inspectionsTimeline', leadId],
-    queryFn: () => leadId ? base44.entities.InspectionRecord.filter({ leadId }) : [],
-    enabled: !!leadId
+  // Load all visits for dropdown (older than the 4 recent)
+  const { data: allVisits = [] } = useQuery({
+    queryKey: ['allVisitsForDropdown', leadId],
+    queryFn: () => leadId ? base44.entities.ServiceVisit.filter({ propertyId: leadId }, '-visitDate', 50) : [],
+    enabled: !!leadId,
+    staleTime: 60000
   });
 
-  const { data: chemTests = [] } = useQuery({
-    queryKey: ['chemTestsTimeline', leadId],
-    queryFn: () => leadId ? base44.entities.ChemTestRecord.filter({ leadId }) : [],
-    enabled: !!leadId
+  // Load single selected older visit details
+  const { data: selectedOldVisit } = useQuery({
+    queryKey: ['selectedOldVisit', selectedOldVisitId],
+    queryFn: () => selectedOldVisitId ? base44.entities.ServiceVisit.list() : null,
+    select: (visits) => visits?.find(v => v.id === selectedOldVisitId),
+    enabled: !!selectedOldVisitId,
+    staleTime: 60000
   });
 
-  const { data: equipmentChanges = [] } = useQuery({
-    queryKey: ['equipmentChangesTimeline', leadId],
-    queryFn: () => leadId ? base44.entities.EquipmentChangeLog.filter({ leadId }) : [],
-    enabled: !!leadId
-  });
-
-  const { data: messages = [] } = useQuery({
-    queryKey: ['messagesTimeline', leadId],
-    queryFn: () => leadId ? base44.entities.MessageThread.filter({ leadId }) : [],
-    enabled: !!leadId
-  });
+  // Generate older visits dropdown options (skip the 4 recent)
+  const olderVisitOptions = useMemo(() => {
+    return allVisits.slice(4).map(v => ({
+      value: v.id,
+      label: `${format(new Date(v.visitDate), 'MMM d, yyyy')}${v.technicianName ? ` • ${v.technicianName}` : ''}`
+    }));
+  }, [allVisits]);
 
   // Normalize all events into a timeline
   const timelineEvents = useMemo(() => {
