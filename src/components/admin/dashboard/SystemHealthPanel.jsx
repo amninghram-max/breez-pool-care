@@ -32,7 +32,7 @@ export default function SystemHealthPanel() {
 
   const { data: chemTargets = [] } = useQuery({
     queryKey: ['chemTargetsHealth'],
-    queryFn: () => base44.entities.ChemistryTargets.list()
+    queryFn: () => base44.entities.ChemistryTargets.list('-created_date', 1)
   });
 
   const { data: productProfiles = [] } = useQuery({
@@ -47,7 +47,7 @@ export default function SystemHealthPanel() {
   const hasRiskEngine = !!settings?.riskEngine;
   const hasFreqLogic = !!settings?.frequencyLogic;
   const hasChemTargets = chemTargets.length > 0;
-  const hasProducts = productProfiles.length >= 3; // expect at least chlorine, acid, alk
+  const hasProducts = productProfiles.length > 0; // at least one active product
 
   const allGood = hasSettings && hasBaseTiers && hasRiskEngine && hasFreqLogic && hasChemTargets && hasProducts;
 
