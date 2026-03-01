@@ -102,8 +102,9 @@ Deno.serve(async (req) => {
           leadId: lead1.id,
           eventType: 'service',
           status: 'scheduled',
-          scheduledDate: todayPlus7,
-          assignedTechnicianName: 'Test Technician',
+          scheduledDate: todayPlus7.split('T')[0],
+          serviceAddress: '100 Active Lane, Tampa, FL 33601',
+          assignedTechnician: 'Test Technician',
           notes: '[TEST SEED] Future service visit',
         });
         results.ids.activatedEventId = event.id;
