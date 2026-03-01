@@ -93,7 +93,7 @@ function CustomerPicker() {
                       window.location.href = `/CustomerTimeline?leadId=${lead.id}`;
                     }, 100);
                   }}
-                  className="w-full text-left p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors cursor-pointer pointer-events-auto relative z-10 outline outline-2 outline-red-500"
+                  className="w-full text-left p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors cursor-pointer"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
