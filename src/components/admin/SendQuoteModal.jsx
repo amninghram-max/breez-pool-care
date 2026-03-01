@@ -29,32 +29,7 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
   // Determine flow: NEW stage sends link only, QUOTED can send pricing if data exists
   const isNewStage = lead?.stage === 'new_lead';
   const hasData = hasQuestionnaireData(lead);
-const payload = { leadId: lead.id, firstName: lead.firstName, email };
 
-const r = await fetch("/api/functions/sendQuoteLinkEmail", {
-  method: "POST",
-  headers: { "content-type": "application/json" },
-  body: JSON.stringify(payload),
-});
-
-const text = await r.text();
-let data = null;
-try {
-  data = text ? JSON.parse(text) : null;
-} catch (e) {
-  // response wasn't JSON
-}
-
-if (!data?.success) {
-  const backendMsg =
-    data?.error ||
-    data?.message ||
-    (text ? `Non-success response: ${text.slice(0, 200)}` : `Empty response (status ${r.status})`);
-
-  throw new Error(backendMsg);
-}
-
-// success path continues here
   const handleSendQuoteLink = async () => {
     setError('');
 
