@@ -408,43 +408,56 @@ export default function AdminPricingConfig() {
     <div className="min-h-screen bg-gray-50">
       {/* Sticky Header with Action Bar */}
       <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Pricing Settings</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            {unsaved && (
-              <Badge variant="outline" className="bg-amber-50 border-amber-200 text-amber-800">
-                <AlertCircle className="w-3 h-3 mr-1" />
-                Unsaved changes
-              </Badge>
-            )}
-            <span className="text-sm text-gray-600">
-              Last saved: {formatTimestamp(settings?.updated_date || settings?.created_date)}
-            </span>
-            <Button
-              variant="outline"
-              onClick={() => setShowResetConfirm(true)}
-              disabled={!unsaved || saveSettingsMutation.isPending}
-              size="sm"
-            >
-              <RotateCcw className="w-4 h-4 mr-1" />
-              Reset
-            </Button>
-             <Button
-              onClick={handleSave}
-              disabled={!unsaved || saveSettingsMutation.isPending}
-              className="bg-teal-600 hover:bg-teal-700"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              {saveSettingsMutation.isPending ? 'Saving...' : 'Save Changes'}
-            </Button>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            {/* Left: Title & Subtitle */}
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold text-gray-900">Pricing & Settings</h1>
+              <p className="text-sm text-gray-600 mt-1">Manage pricing engine + readiness checks</p>
+            </div>
+            
+            {/* Right: Action Buttons */}
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              {unsaved && (
+                <Badge variant="outline" className="bg-amber-50 border-amber-200 text-amber-800 whitespace-nowrap">
+                  <AlertCircle className="w-3 h-3 mr-1" />
+                  Unsaved changes
+                </Badge>
+              )}
+              <Button
+                variant="ghost"
+                onClick={() => window.location.href = createPageUrl('AdminHome')}
+                size="sm"
+                className="text-gray-600 hover:text-gray-900"
+              >
+                Go Home
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowResetConfirm(true)}
+                disabled={!unsaved || saveSettingsMutation.isPending}
+                size="sm"
+                className="whitespace-nowrap"
+              >
+                <RotateCcw className="w-4 h-4 mr-1" />
+                Refresh
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={!unsaved || saveSettingsMutation.isPending}
+                className="bg-teal-600 hover:bg-teal-700 whitespace-nowrap"
+                size="sm"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {saveSettingsMutation.isPending ? 'Saving...' : 'Save'}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8" id="autopay-section">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6" id="autopay-section">
 
         {/* Summary Cards with Visual State Indicators */}
         <div className="grid grid-cols-6 gap-4">
