@@ -94,6 +94,7 @@ import TechnicianRoute from './pages/TechnicianRoute';
 import TestDashboard from './pages/TestDashboard';
 import EquipmentProfiles from './pages/EquipmentProfiles';
 import EquipmentProfileAdmin from './pages/EquipmentProfileAdmin';
+import CustomerTimeline from './pages/CustomerTimeline';
 import __Layout from './Layout.jsx';
 
 
@@ -145,6 +146,7 @@ export const PAGES = {
     "TestDashboard": TestDashboard,
     "EquipmentProfiles": EquipmentProfiles,
     "EquipmentProfileAdmin": EquipmentProfileAdmin,
+    "CustomerTimeline": CustomerTimeline,
 }
 
 export const pagesConfig = {
