@@ -1,43 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Plus, Droplet, TrendingUp, AlertCircle } from 'lucide-react';
 import { createPageUrl } from '@/utils';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { getHomePageForRole } from '../components/auth/roleCapabilities';
+import PublicHome from './PublicHome';
 
 export default function Home() {
   const navigate = useNavigate();
-  const [isLoadingQuote, setIsLoadingQuote] = useState(false);
 
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['user'],
     queryFn: async () => {
       try {
         return await base44.auth.me();
-      } catch (error) {
-        // Not authenticated - redirect to public home
-        navigate(createPageUrl('PublicHome'), { replace: true });
-        return null;
+      } catch {
+        return null; // Not authenticated — render public landing below
       }
     },
   });
 
-  // Redirect to role-specific home only if user is logged in
+  // If authenticated, redirect to role-specific home
   useEffect(() => {
-    if (!user || userLoading) return;
-
-    const userRole = user.role || 'customer';
-    const currentPath = window.location.pathname;
-    const homePage = getHomePageForRole(userRole);
-    const expectedPath = `/${homePage}`;
-
-    // Redirect to role-specific home if on /Home
-    if (currentPath === '/Home' && expectedPath !== '/Home') {
-      navigate(createPageUrl(homePage), { replace: true });
-    }
+    if (userLoading || !user) return;
+    const homePage = getHomePageForRole(user.role || 'customer');
+    navigate(createPageUrl(homePage), { replace: true });
   }, [user, userLoading, navigate]);
 
   const { data: leads = [] } = useQuery({
