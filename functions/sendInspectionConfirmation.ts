@@ -3,10 +3,19 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { firstName, email, mobilePhone, inspectionDate, inspectionTime, serviceAddress, preferredContact } = await req.json();
+    const { leadId, firstName, email, mobilePhone, inspectionDate, inspectionTime, serviceAddress, preferredContact, force } = await req.json();
 
     if (!firstName || !email) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // ── Idempotency check ──
+    if (leadId && !force) {
+      const lead = await base44.asServiceRole.entities.Lead.get(leadId).catch(() => null);
+      if (lead?.inspectionConfirmationSent) {
+        console.log(`Confirmation already sent for leadId=${leadId}, skipping. Use force=true to resend.`);
+        return Response.json({ success: true, skipped: true, reason: 'already_sent' });
+      }
     }
 
     // Send Email Confirmation
