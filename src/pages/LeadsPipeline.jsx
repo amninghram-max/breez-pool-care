@@ -288,6 +288,24 @@ function LeadRow({ lead, stage, onAdvance, onStageChange, onEdit, onUpdate, quer
     queryClient?.invalidateQueries({ queryKey: ['leads'] });
   };
 
+  const handleDeleteLead = async () => {
+    setIsDeleting(true);
+    try {
+      const res = await base44.functions.invoke('deleteNewLeadPermanently', { leadId: lead.id });
+      if (res.data?.success) {
+        toast.success('Lead deleted');
+        queryClient?.invalidateQueries({ queryKey: ['leads'] });
+      } else {
+        toast.error(res.data?.message || 'Failed to delete lead');
+      }
+    } catch (e) {
+      toast.error('Failed to delete lead');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
   return (
     <div className="px-4 py-3 space-y-2 hover:bg-gray-50">
       {/* Validation Error */}
