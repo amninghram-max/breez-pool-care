@@ -631,9 +631,12 @@ export default function AdminPricingConfig() {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Environmental */}
-            <div>
-              <h4 className="font-semibold text-gray-800 mb-3">Environmental</h4>
-              <p className="text-sm text-gray-600 mb-4">Unscreened pool add-ons by tier</p>
+             <div>
+               <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                 Environmental
+                 <Info className="w-4 h-4 text-gray-400" title="Price adjustments for environmental conditions such as debris load, heavy foliage, or surrounding landscape factors." />
+               </h4>
+               <p className="text-sm text-gray-600 mb-4">Unscreened pool add-ons by tier</p>
               <div className="grid grid-cols-4 gap-4">
                 <div>
                   <Label>Tier A</Label>
