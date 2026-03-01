@@ -81,14 +81,7 @@ function CustomerPicker() {
                   key={lead.id}
                   type="button"
                   onClick={() => {
-                    console.log('[DEV] Button onClick fired', lead.id);
-                    console.log('[DEV] Attempting navigate to /CustomerTimeline?leadId=', lead.id);
-                    navigate(`/CustomerTimeline?leadId=${lead.id}`);
-                    // Fallback: hard redirect to test if navigate is broken
-                    setTimeout(() => {
-                      console.log('[DEV] If you see this, navigate may not have worked. Trying hard redirect...');
-                      window.location.href = `/CustomerTimeline?leadId=${lead.id}`;
-                    }, 100);
+                    window.location.href = `/CustomerTimeline?leadId=${lead.id}`;
                   }}
                   className="w-full text-left p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors cursor-pointer"
                 >
