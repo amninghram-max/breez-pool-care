@@ -1,57 +1,49 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+const PROTECTED_ROLES = ['admin', 'staff', 'technician'];
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+
+    // Require authenticated user — derive identity from auth context only
     const user = await base44.auth.me();
-
-    const { userId, leadId, validateOnly } = await req.json();
-
-    // ── Validate-only mode (called from Activate page to check if leadId is valid) ──
-    if (validateOnly) {
-      if (!leadId) {
-        return Response.json({ leadExists: false });
-      }
-      try {
-        const lead = await base44.asServiceRole.entities.Lead.get(leadId);
-        return Response.json({ leadExists: !!lead });
-      } catch {
-        return Response.json({ leadExists: false });
-      }
+    if (!user) {
+      return Response.json({ ok: false, error: 'unauthenticated' }, { status: 401 });
     }
 
-    // ── Admin-only linking mode ──────────────────────────────────────────────
-    if (!user || user?.role !== 'admin') {
-      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+    const { leadId } = await req.json();
+
+    if (!leadId) {
+      return Response.json({ ok: false, error: 'invalid_or_expired' }, { status: 400 });
     }
 
-    if (!userId || !leadId) {
-      return Response.json({ error: 'userId and leadId are required' }, { status: 400 });
+    // Validate Lead existence server-side via service role (no RLS exposure)
+    let lead = null;
+    try {
+      lead = await base44.asServiceRole.entities.Lead.get(leadId);
+    } catch {
+      lead = null;
     }
 
-    // Verify Lead exists
-    const lead = await base44.asServiceRole.entities.Lead.get(leadId);
     if (!lead) {
-      return Response.json({ error: 'Lead not found' }, { status: 404 });
+      return Response.json({ ok: false, error: 'invalid_or_expired' });
     }
 
-    // Verify User exists
-    const targetUser = await base44.asServiceRole.entities.User.get(userId);
-    if (!targetUser) {
-      return Response.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    // Build update payload — only set role to 'customer' if role is empty/undefined
+    // Build update payload — only update the authenticated user, never accept userId from client
     const updatePayload = { linkedLeadId: leadId };
-    if (!targetUser.role || targetUser.role === '') {
+
+    // Only set role to 'customer' if not already a protected role
+    const isProtected = PROTECTED_ROLES.includes(user.role);
+    if (!isProtected) {
       updatePayload.role = 'customer';
     }
 
-    await base44.asServiceRole.entities.User.update(userId, updatePayload);
+    await base44.asServiceRole.entities.User.update(user.id, updatePayload);
 
-    return Response.json({ success: true, userId, leadId });
+    return Response.json({ ok: true });
   } catch (error) {
     console.error('linkUserToLead error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ ok: false, error: error.message }, { status: 500 });
   }
 });
