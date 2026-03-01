@@ -810,14 +810,17 @@ export default function AdminPricingConfig() {
         </Card>
 
         {/* Risk Adjustments Section */}
-        <Card className="bg-white" id="risk-section">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-purple-600" />
-              Risk Adjustments
-            </CardTitle>
-            <p className="text-sm text-gray-600 mt-1">Risk scoring and escalation brackets</p>
-          </CardHeader>
+         <Card className="bg-white" id="risk-section">
+           <CardHeader>
+             <CardTitle className="flex items-center gap-2">
+               <TrendingUp className="w-5 h-5 text-purple-600" />
+               Risk Engine
+             </CardTitle>
+             <p className="text-sm text-gray-600 mt-1">
+               The risk engine evaluates service difficulty using a point-based system.
+               Higher risk scores increase the final price recommendation.
+             </p>
+           </CardHeader>
           <CardContent className="space-y-6">
             {/* Risk Points */}
             <div>
