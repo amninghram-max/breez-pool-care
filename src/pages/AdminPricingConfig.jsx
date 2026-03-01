@@ -234,41 +234,75 @@ export default function AdminPricingConfig() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8" id="autopay-section">
 
-        {/* Summary Cards - Truth Audit: Only Real Persisted Fields */}
+        {/* Summary Cards with Visual State Indicators */}
         <div className="grid grid-cols-5 gap-4">
+          {/* Base Pricing Card */}
           <Card className="bg-white cursor-pointer hover:shadow-md transition-shadow" onClick={() => document.getElementById('base-pricing-section')?.scrollIntoView({ behavior: 'smooth' })}>
             <CardContent className="pt-6">
-              <p className="text-xs text-gray-600 font-medium">Base Monthly (Avg)</p>
+              <div className="flex items-start justify-between mb-2">
+                <p className="text-xs text-gray-600 font-medium">Base Monthly (Avg)</p>
+                <Badge className={`text-xs ${marginStatus.className}`}>
+                  {marginStatus.label}
+                </Badge>
+              </div>
               <p className="text-2xl font-bold text-teal-600 mt-2">{formatCurrency(avgBasePrice)}</p>
-              <p className="text-xs text-gray-500 mt-1">Tiers A–D</p>
+              <p className="text-xs text-gray-500 mt-1">Tiers A–D average</p>
             </CardContent>
           </Card>
-          <Card className="bg-white cursor-pointer hover:shadow-md transition-shadow" onClick={() => document.getElementById('autopay-section')?.scrollIntoView({ behavior: 'smooth' })}>
-            <CardContent className="pt-6">
-              <p className="text-xs text-gray-600 font-medium">AutoPay Discount</p>
-              <p className="text-2xl font-bold text-blue-600 mt-2">{formatCurrency(autopayValue)}</p>
-              <p className="text-xs text-gray-500 mt-1">Per Month</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-white cursor-pointer hover:shadow-md transition-shadow" onClick={() => document.getElementById('risk-section')?.scrollIntoView({ behavior: 'smooth' })}>
-            <CardContent className="pt-6">
-              <p className="text-xs text-gray-600 font-medium">Risk Scoring</p>
-              <p className="text-2xl font-bold text-purple-600 mt-2">{riskEnabled}</p>
-              <p className="text-xs text-gray-500 mt-1">Active</p>
-            </CardContent>
-          </Card>
+
+          {/* AutoPay Discount Card */}
           <Card className="bg-white cursor-pointer hover:shadow-md transition-shadow" onClick={() => document.getElementById('frequency-section')?.scrollIntoView({ behavior: 'smooth' })}>
             <CardContent className="pt-6">
-              <p className="text-xs text-gray-600 font-medium">2x/Week Multiplier</p>
-              <p className="text-2xl font-bold text-orange-600 mt-2">{frequencyMultiplier.toFixed(2)}×</p>
-              <p className="text-xs text-gray-500 mt-1">Frequency</p>
+              <div className="flex items-start justify-between mb-2">
+                <p className="text-xs text-gray-600 font-medium">AutoPay Discount</p>
+                <Badge className="text-xs bg-blue-100 text-blue-800 border-blue-300">
+                  Configured
+                </Badge>
+              </div>
+              <p className="text-2xl font-bold text-blue-600 mt-2">{formatCurrency(autopayValue)}</p>
+              <p className="text-xs text-gray-500 mt-1">Monthly savings</p>
             </CardContent>
           </Card>
+
+          {/* Risk Scoring Card */}
+          <Card className="bg-white cursor-pointer hover:shadow-md transition-shadow" onClick={() => document.getElementById('risk-section')?.scrollIntoView({ behavior: 'smooth' })}>
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between mb-2">
+                <p className="text-xs text-gray-600 font-medium">Risk Scoring</p>
+                <Badge className={`text-xs ${riskStatus.className}`}>
+                  {riskStatus.label}
+                </Badge>
+              </div>
+              <p className="text-2xl font-bold text-purple-600 mt-2">{riskEnabled}</p>
+              <p className="text-xs text-gray-500 mt-1">Config status</p>
+            </CardContent>
+          </Card>
+
+          {/* Frequency Multiplier Card */}
+          <Card className="bg-white cursor-pointer hover:shadow-md transition-shadow" onClick={() => document.getElementById('frequency-section')?.scrollIntoView({ behavior: 'smooth' })}>
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between mb-2">
+                <p className="text-xs text-gray-600 font-medium">2x/Week Multiplier</p>
+                <Badge className={`text-xs ${frequencyStatus.className}`}>
+                  {frequencyStatus.label}
+                </Badge>
+              </div>
+              <p className="text-2xl font-bold text-orange-600 mt-2">{frequencyMultiplier.toFixed(2)}×</p>
+              <p className="text-xs text-gray-500 mt-1">Frequency boost</p>
+            </CardContent>
+          </Card>
+
+          {/* Price Floor Card */}
           <Card className="bg-white cursor-pointer hover:shadow-md transition-shadow" onClick={() => document.getElementById('base-pricing-section')?.scrollIntoView({ behavior: 'smooth' })}>
             <CardContent className="pt-6">
-              <p className="text-xs text-gray-600 font-medium">Price Floor</p>
+              <div className="flex items-start justify-between mb-2">
+                <p className="text-xs text-gray-600 font-medium">Price Floor</p>
+                <Badge className="text-xs bg-slate-100 text-slate-800 border-slate-300">
+                  Set
+                </Badge>
+              </div>
               <p className="text-2xl font-bold text-green-600 mt-2">{formatCurrency(minFloor)}</p>
-              <p className="text-xs text-gray-500 mt-1">Minimum</p>
+              <p className="text-xs text-gray-500 mt-1">Floor minimum</p>
             </CardContent>
           </Card>
         </div>
