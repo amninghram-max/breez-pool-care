@@ -824,7 +824,10 @@ export default function AdminPricingConfig() {
           <CardContent className="space-y-6">
             {/* Risk Points */}
             <div>
-              <h4 className="font-semibold text-gray-800 mb-3">Raw Risk Points</h4>
+              <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                Raw Risk Points
+                <Info className="w-4 h-4 text-gray-400" title="Individual factors that contribute to the pool's service difficulty score. Examples include debris load, equipment condition, or water stability issues." />
+              </h4>
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label>Unscreened</Label>
