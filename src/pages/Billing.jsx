@@ -48,6 +48,14 @@ export default function Billing() {
   const isSuspended = lead?.accountStatus?.includes('suspended');
   const hasPastDue = invoices.some(inv => inv.status === 'past_due' || inv.status === 'open');
 
+  if (userLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+      </div>
+    );
+  }
+
   if (!user || !lead) {
     return (
       <div className="max-w-4xl mx-auto p-6">
