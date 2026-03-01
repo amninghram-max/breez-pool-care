@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAppOrigin } from './_getAppOrigin.js';
 
 Deno.serve(async (req) => {
   try {
@@ -23,7 +24,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Lead not found' }, { status: 404 });
     }
 
-    const acceptanceUrl = `${req.headers.get('origin')}/Agreements`;
+    const appOrigin = getAppOrigin(req);
+    const acceptanceUrl = `${appOrigin}/Agreements`;
 
     // Send email
     await base44.integrations.Core.SendEmail({
