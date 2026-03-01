@@ -729,7 +729,10 @@ export default function AdminPricingConfig() {
             </CardTitle>
             <p className="text-sm text-gray-600 mt-1">Risk scoring and escalation brackets</p>
           </CardHeader>
-            <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
+            {/* Risk Points */}
+            <div>
+              <h4 className="font-semibold text-gray-800 mb-3">Raw Risk Points</h4>
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label>Unscreened</Label>
