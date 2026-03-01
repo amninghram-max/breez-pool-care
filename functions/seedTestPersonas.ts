@@ -242,7 +242,8 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('seedTestPersonas error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('seedTestPersonas error:', error.message);
+    console.error('Error data:', JSON.stringify(error?.data || {}));
+    return Response.json({ error: error.message, partialResult: result }, { status: 500 });
   }
 });
