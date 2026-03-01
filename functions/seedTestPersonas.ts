@@ -120,8 +120,7 @@ Deno.serve(async (req) => {
     }
 
     // Future CalendarEvent
-    let events = await db.entities.CalendarEvent.filter({ leadId: activatedLead.id, eventType: 'service', status: 'scheduled' });
-    let event = events?.[0] || null;
+    let event = await findByLeadId(db, 'CalendarEvent', activatedLead.id, r => r.eventType === 'service' && r.status === 'scheduled');
     let eventCreated = false;
 
     if (!event) {
