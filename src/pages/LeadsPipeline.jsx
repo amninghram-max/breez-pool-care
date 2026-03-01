@@ -296,6 +296,9 @@ function LeadRow({ lead, stage, onAdvance, onStageChange, onEdit, onUpdate, quer
             <div className="flex-1 min-w-0">
               <p className="font-medium text-gray-900">{lead.firstName} {lead.lastName}</p>
               <p className="text-xs text-gray-600 truncate">{addressLine}</p>
+              {lastEmailSent && (
+                <p className="text-xs text-gray-400 mt-1">📧 {lastEmailSent}</p>
+              )}
             </div>
             {!lead.isEligible && <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-1" />}
           </div>
@@ -306,7 +309,25 @@ function LeadRow({ lead, stage, onAdvance, onStageChange, onEdit, onUpdate, quer
 
         {/* Stage-Specific Primary Action */}
         <div className="flex-shrink-0">
-          {lead.stage === 'inspection_scheduled' ? (
+          {lead.stage === 'new_lead' ? (
+            <Button
+              size="sm"
+              variant="default"
+              onClick={() => setShowSendQuoteModal(true)}
+              className="gap-2"
+            >
+              Send Quote
+            </Button>
+          ) : lead.stage === 'quoted' ? (
+            <Button
+              size="sm"
+              variant="default"
+              onClick={() => setShowSendInspectionModal(true)}
+              className="gap-2"
+            >
+              Send Link
+            </Button>
+          ) : lead.stage === 'inspection_scheduled' ? (
             <StartInspectionButton leadId={lead.id} />
           ) : (
             <StageActionButton
@@ -346,6 +367,20 @@ function LeadRow({ lead, stage, onAdvance, onStageChange, onEdit, onUpdate, quer
           </Link>
         </div>
       </div>
+
+      {/* Modals */}
+      <SendQuoteModal
+        lead={lead}
+        isOpen={showSendQuoteModal}
+        onClose={() => setShowSendQuoteModal(false)}
+        onSuccess={handleSendQuoteSuccess}
+      />
+      <SendInspectionLinkModal
+        lead={lead}
+        isOpen={showSendInspectionModal}
+        onClose={() => setShowSendInspectionModal(false)}
+        onSuccess={handleSendInspectionSuccess}
+      />
     </div>
   );
 }
