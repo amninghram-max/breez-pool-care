@@ -89,6 +89,14 @@ export default function CustomerMessagingPage() {
 
   const isSending = createThreadMutation.isPending || sendMessageMutation.isPending;
 
+  if (userLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-[calc(100vh-80px)] max-w-xl mx-auto">
       {/* Header */}
