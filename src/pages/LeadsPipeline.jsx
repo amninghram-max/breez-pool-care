@@ -166,97 +166,48 @@ export default function LeadsPipeline() {
         </div>
       )}
 
-      <Tabs defaultValue="pipeline" className="w-full">
-        <TabsList className="grid grid-cols-2 w-full max-w-md">
-          <TabsTrigger value="pipeline">Pipeline View</TabsTrigger>
-          <TabsTrigger value="list">List View</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="pipeline" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {stages.map(stage => {
-              const stageLeads = getLeadsByStage(stage.key);
-              return (
-                <div key={stage.key} className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900">{stage.label}</h3>
-                    <Badge className={stage.color}>{stageLeads.length}</Badge>
-                  </div>
-                  <div className="space-y-2">
-                    {stageLeads.map(lead => (
-                      <LeadCard 
-                        key={lead.id} 
-                        lead={lead} 
-                        onClick={() => setSelectedLead(lead)}
-                        onUpdateStage={(newStage) => updateLeadMutation.mutate({ id: lead.id, data: { stage: newStage }})}
-                      />
-                    ))}
-                    {stageLeads.length === 0 && (
-                      <div className="p-4 border-2 border-dashed rounded-lg text-center text-gray-400 text-sm">
-                        No leads
-                      </div>
-                    )}
-                  </div>
+      {/* Compact Accordion Pipeline View */}
+      <div className="space-y-2">
+        {STAGES.map(stage => {
+          const stageLeads = getLeadsByStage(stage.key);
+          const isExpanded = expandedStages.includes(stage.key);
+          return (
+            <div key={stage.key} className="border border-gray-200 rounded-lg overflow-hidden">
+              {/* Stage Header */}
+              <button
+                onClick={() => toggleStageExpand(stage.key)}
+                className="w-full bg-gray-50 hover:bg-gray-100 px-4 py-3 flex items-center justify-between transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-0' : '-rotate-90'}`} />
+                  <h3 className="font-semibold text-gray-900">{stage.label}</h3>
+                  <Badge className={stage.color}>{stageLeads.length}</Badge>
                 </div>
-              );
-            })}
-          </div>
-        </TabsContent>
+              </button>
 
-        <TabsContent value="list" className="mt-6">
-          <Card>
-            <CardContent className="p-0">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b">
-                  <tr>
-                    <th className="text-left p-4 text-sm font-semibold">Name</th>
-                    <th className="text-left p-4 text-sm font-semibold">Address</th>
-                    <th className="text-left p-4 text-sm font-semibold">Contact</th>
-                    <th className="text-left p-4 text-sm font-semibold">Stage</th>
-                    <th className="text-left p-4 text-sm font-semibold">Status</th>
-                    <th className="text-left p-4 text-sm font-semibold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {leads.map(lead => (
-                    <tr key={lead.id} className="border-b hover:bg-gray-50">
-                      <td className="p-4">
-                        <p className="font-medium">{lead.firstName} {lead.lastName}</p>
-                      </td>
-                      <td className="p-4 text-sm text-gray-600">{lead.serviceAddress}</td>
-                      <td className="p-4 text-sm">
-                        <p>{lead.email}</p>
-                        <p className="text-gray-600">{lead.mobilePhone}</p>
-                      </td>
-                      <td className="p-4">
-                        <Badge className={stages.find(s => s.key === lead.stage)?.color}>
-                          {stages.find(s => s.key === lead.stage)?.label}
-                        </Badge>
-                      </td>
-                      <td className="p-4">
-                        {lead.isEligible ? (
-                          <Badge className="bg-green-100 text-green-800">Eligible</Badge>
-                        ) : (
-                          <Badge className="bg-red-100 text-red-800">Not Eligible</Badge>
-                        )}
-                      </td>
-                      <td className="p-4">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => setSelectedLead(lead)}
-                        >
-                          View
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              {/* Stage Rows */}
+              {isExpanded && (
+                <div className="divide-y divide-gray-100 bg-white">
+                  {stageLeads.length === 0 ? (
+                    <div className="p-4 text-center text-gray-400 text-sm">No leads</div>
+                  ) : (
+                    stageLeads.map(lead => (
+                      <LeadRow
+                        key={lead.id}
+                        lead={lead}
+                        stage={stage}
+                        onAdvance={() => handleAdvance(lead)}
+                        onStageChange={(newStage) => handleStageChange(lead.id, newStage, lead.stage)}
+                        onEdit={() => setSelectedLead(lead)}
+                      />
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
 
       {selectedLead && (
         <LeadDetailModal 
