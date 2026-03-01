@@ -148,22 +148,53 @@ export default function AdminPricingConfig() {
     return <div className="flex items-center justify-center py-12"><p>Loading...</p></div>;
   }
 
+  // Compute summary values
+  const baseTierA = localSettings.baseTierPrices?.tier_a_10_15k || 140;
+  const baseTierD = localSettings.baseTierPrices?.tier_d_30k_plus || 230;
+  const avgBasePrice = ((baseTierA + baseTierD) / 2).toFixed(2);
+  const riskEnabled = localSettings.riskEngine?.points ? 'Enabled' : 'Disabled';
+
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold text-gray-900">Pricing Engine Configuration</h1>
-          <p className="text-gray-600 mt-1">Manage base tiers, additive tokens, risk engine, and frequency logic</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Sticky Header with Action Bar */}
+      <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Pricing Settings</h1>
+          </div>
+          <div className="flex items-center gap-3">
+            {unsaved && (
+              <Badge variant="outline" className="bg-amber-50 border-amber-200 text-amber-800">
+                <AlertCircle className="w-3 h-3 mr-1" />
+                Unsaved changes
+              </Badge>
+            )}
+            <span className="text-sm text-gray-600">
+              Last saved: {formatTimestamp(settings?.updated_date || settings?.created_date)}
+            </span>
+            <Button
+              variant="outline"
+              onClick={() => setShowResetConfirm(true)}
+              disabled={!unsaved || saveSettingsMutation.isPending}
+              size="sm"
+            >
+              <RotateCcw className="w-4 h-4 mr-1" />
+              Reset
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={!unsaved || saveSettingsMutation.isPending}
+              className="bg-teal-600 hover:bg-teal-700"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {saveSettingsMutation.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
         </div>
-        <Button 
-          onClick={handleSave}
-          disabled={saveSettingsMutation.isPending}
-          className="bg-teal-600 hover:bg-teal-700"
-        >
-          <Save className="w-4 h-4 mr-2" />
-          {saveSettingsMutation.isPending ? 'Saving...' : 'Save Changes'}
-        </Button>
       </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
 
       <Tabs defaultValue="tiers" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
