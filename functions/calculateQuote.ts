@@ -321,6 +321,11 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     console.error('calculateQuote error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({
+      error: 'Quote calculation failed',
+      code: 'CALCULATION_ERROR',
+      message: error.message,
+      details: error.toString()
+    }, { status: 500 });
   }
 });
