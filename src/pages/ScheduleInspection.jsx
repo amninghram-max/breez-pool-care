@@ -50,7 +50,12 @@ export default function ScheduleInspection() {
   const [loadingLead, setLoadingLead] = useState(false);
   const [loadError, setLoadError] = useState('');
 
+  const [firstName, setFirstName] = useState('');
   const [phone, setPhone] = useState('');
+  const [street, setStreet] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [zip, setZip] = useState('');
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [loading, setLoading] = useState(false);
