@@ -231,8 +231,9 @@ export default function PublicQuoteWizard({
   const [result, setResult] = useState(null); // { releaseReady, quote?, isRange?, priceSummary? }
   const [error, setError] = useState('');
 
-  // Determine steps dynamically (trees only shown if unscreened)
+  // Determine steps dynamically (trees only shown if unscreened, contact skipped if token present)
   const showTrees = answers.enclosure === 'unscreened';
+  const hasToken = prefillData?.token;
 
   const baseSteps = [
     'poolSize',
@@ -242,7 +243,7 @@ export default function PublicQuoteWizard({
     ...(showTrees ? ['treesOverhead'] : []),
     'petsAccess',
     'poolCondition',
-    'contact',
+    ...(hasToken ? [] : ['contact']),
   ];
 
   const totalSteps = baseSteps.length;
