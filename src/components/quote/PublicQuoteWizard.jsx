@@ -360,8 +360,27 @@ export default function PublicQuoteWizard({
     }
   };
 
-  // ── Render disqualification (DE filter) ──
-  if (disqualified === 'de') {
+  // ── Render disqualification ──
+  if (disqualified === 'pool_type') {
+    return (
+      <div className="space-y-6 text-center">
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-full" style={{ backgroundColor: '#fef3c7' }}>
+          <AlertCircle className="w-7 h-7 text-amber-600" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">We Don't Service This Pool Type</h2>
+          <p className="text-gray-600 leading-relaxed max-w-sm mx-auto">
+            Breez currently services in-ground concrete and plaster pools only. We're unable to service fiberglass, vinyl liner, or above-ground pools at this time.
+          </p>
+        </div>
+        <p className="text-xs text-gray-400">
+          Have questions? Call us at (321) 524-3838
+        </p>
+      </div>
+    );
+  }
+
+  if (disqualified === 'filter_type') {
     return (
       <div className="space-y-6 text-center">
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-full" style={{ backgroundColor: '#fef3c7' }}>
