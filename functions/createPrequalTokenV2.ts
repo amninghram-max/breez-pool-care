@@ -28,14 +28,18 @@ Deno.serve(async (req) => {
     
     console.log('[createPrequalTokenV2] Generated token:', token.slice(0, 8) + '...');
     
+    // Use placeholder email if not provided (required field)
+    const placeholderEmail = 'guest@breezpoolcare.com';
+    console.log('[createPrequalTokenV2] Using email for QuoteRequests: ' + placeholderEmail);
+    
     // Create minimal QuoteRequests record
-    // Fields: email, firstName are null initially; user fills them during form completion
+    // Email is required, so we use a placeholder initially
+    // User will update it with their actual email during form completion
     try {
       const record = await base44.asServiceRole.entities.QuoteRequests.create({
         token: token.trim(),
-        status: 'pending',
-        source: 'prequal_wizard',
-        email: null,
+        status: 'SENT',
+        email: placeholderEmail,
         firstName: null,
         leadId: null
       });
