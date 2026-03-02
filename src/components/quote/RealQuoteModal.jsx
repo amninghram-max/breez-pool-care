@@ -19,17 +19,11 @@ export default function RealQuoteModal({ onClose, initialAnswers = null }) {
 
   const createLeadMutation = useMutation({
     mutationFn: async (formData) => {
-      const serviceAddress = [formData.clientFirstName].filter(Boolean).join(', ');
-      const lead = await base44.entities.Lead.create({
+      const result = await base44.functions.invoke('createLeadFromRealQuote', {
         firstName: formData.clientFirstName,
         lastName: formData.clientLastName,
         email: formData.clientEmail,
         mobilePhone: formData.clientPhone,
-        stage: 'new_lead',
-        isEligible: true,
-        isDeleted: false,
-        quoteGenerated: false,
-        // Pool info from answers
         poolType: formData.poolType,
         poolSurface: formData.poolType === 'in_ground' ? 'concrete' : 'vinyl',
         filterType: formData.filterType,
@@ -42,9 +36,7 @@ export default function RealQuoteModal({ onClose, initialAnswers = null }) {
         poolCondition: formData.poolCondition,
         spaPresent: formData.spaPresent
       });
-      // Mark lead as having a quote
-      await base44.entities.Lead.update(lead.id, { quoteGenerated: true, stage: 'contacted' });
-      return lead;
+      return { id: result.data?.leadId || result.leadId };
     }
   });
 
