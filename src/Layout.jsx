@@ -189,10 +189,10 @@ export default function Layout({ children, currentPageName }) {
                 Reload Page
               </Button>
               <Button
-                onClick={() => window.location.href = createPageUrl('AdminHome')}
+                onClick={() => window.location.href = createPageUrl('Home')}
                 variant="outline"
               >
-                Go Home
+                Go to Root
               </Button>
             </div>
           </CardContent>
@@ -201,10 +201,25 @@ export default function Layout({ children, currentPageName }) {
     );
   }
 
+  // Public pages: PublicHome, PreQualification, QuoteView — allow unauthenticated access
+  const publicPages = ['PublicHome', 'PreQualification', 'QuoteView'];
+  const isPublicPage = publicPages.includes(currentPageName);
+
   // Minimal layout for Activate page - no header/sidebar chrome
   if (currentPageName === 'Activate') {
     return (
       <div className="min-h-screen bg-gray-50">
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
+      </div>
+    );
+  }
+
+  // Minimal layout for public pages - no auth-required sidebar/nav
+  if (isPublicPage) {
+    return (
+      <div className="min-h-screen bg-white">
         <ErrorBoundary>
           {children}
         </ErrorBoundary>
