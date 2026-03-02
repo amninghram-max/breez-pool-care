@@ -136,7 +136,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Update Lead record with inspection scheduled + phone
+    // IDEMPOTENT SIDE EFFECTS: Update Lead record (only if not already scheduled)
+    // This ensures email notifications + stage transitions happen exactly once
+    const previousStage = existingLead?.[0]?.stage || null;
+    const shouldSendNotification = previousStage !== 'inspection_scheduled';
+
     if (leadId) {
       try {
         await base44.asServiceRole.entities.Lead.update(leadId, {
@@ -145,9 +149,11 @@ Deno.serve(async (req) => {
           inspectionEventId: eventCreated.id,
           requestedInspectionDate: requestedDate,
           requestedInspectionTime: requestedTimeSlot,
-          stage: 'inspection_scheduled'
+          stage: 'inspection_scheduled',
+          // Only set notification flag if this is first scheduling
+          ...(shouldSendNotification && { confirmationSentAt: new Date().toISOString() })
         });
-        console.log('SFI_V1_LEAD_UPDATED', { leadId });
+        console.log('SFI_V1_LEAD_UPDATED', { leadId, shouldSendNotification });
       } catch (e) {
         console.warn('SFI_V1_LEAD_UPDATE_FAILED', { error: e.message });
         // Don't fail the response; event is created
