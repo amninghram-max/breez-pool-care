@@ -89,8 +89,6 @@ function ProgressBar({ current, total }) {
 
 function QuoteResultDisplay({ result, firstName, email, leadId }) {
   const { isRange, quote, priceSummary: resultPriceSummary } = result;
-  const [showScheduler, setShowScheduler] = useState(false);
-
   // Prefer priceSummary from result, fallback to quote fields
   const priceSummary = resultPriceSummary || {};
   const priceDisplay = priceSummary.monthlyPrice || (
@@ -106,16 +104,6 @@ function QuoteResultDisplay({ result, firstName, email, leadId }) {
       ? (quote.minOneTimeFees > 0 ? `$${quote.minOneTimeFees}–$${quote.maxOneTimeFees}` : null)
       : quote?.oneTimeFees > 0 ? `$${quote.oneTimeFees}` : null
   );
-
-  if (showScheduler) {
-    return (
-      <PublicScheduler
-        leadId={leadId}
-        clientEmail={email}
-        clientFirstName={firstName}
-      />
-    );
-  }
 
   return (
     <div className="space-y-6">
