@@ -420,9 +420,7 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
                              </>
                            );
                          })()}
-                         <p className="text-xs text-gray-500 mt-3 pt-3 border-t">
-                           Source: <code>{pricingSource}</code> | monthlyRaw: {monthlyPrice ?? 'undefined'}
-                         </p>
+
                        </div>
                      <div className="flex gap-3 pt-4 border-t">
                        {pricingSource === 'LOCKED' ? (
