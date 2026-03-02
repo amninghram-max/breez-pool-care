@@ -160,6 +160,7 @@ function TechnicianGroup({ techName, dayGroups, leadMap, onMarkComplete, onResch
 export default function CalendarListView({ startDate, technicianFilter, searchQuery }) {
   const endDate = addDays(startDate, 30);
   const queryClient = useQueryClient();
+  const [showCancelled, setShowCancelled] = React.useState(false);
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ['calendarEvents', 'list', format(startDate, 'yyyy-MM-dd'), technicianFilter],
@@ -190,10 +191,17 @@ export default function CalendarListView({ startDate, technicianFilter, searchQu
       .filter(ev => {
         if (!ev.scheduledDate) return false;
         if (ev.scheduledDate < startStr || ev.scheduledDate > endStr) return false;
+        
+        // Hide cancelled events unless "Show cancelled" is toggled
+        if (ev.status === 'cancelled' && !showCancelled) return false;
+        
+        // Hide events for deleted leads
+        const lead = leadMap[ev.leadId];
+        if (lead?.isDeleted) return false;
+        
         if (technicianFilter && technicianFilter !== 'all' && ev.assignedTechnician !== technicianFilter) return false;
         if (searchQuery?.trim()) {
           const q = searchQuery.toLowerCase();
-          const lead = leadMap[ev.leadId];
           const name = lead ? `${lead.firstName || ''} ${lead.lastName || ''}`.toLowerCase() : '';
           const addr = (ev.serviceAddress || '').toLowerCase();
           if (!name.includes(q) && !addr.includes(q)) return false;
@@ -205,7 +213,7 @@ export default function CalendarListView({ startDate, technicianFilter, searchQu
         (a.startTime || '').localeCompare(b.startTime || '') ||
         (a.routePosition || 99) - (b.routePosition || 99)
       );
-  }, [events, leads, leadMap, startDate, endDate, technicianFilter, searchQuery]);
+  }, [events, leads, leadMap, startDate, endDate, technicianFilter, searchQuery, showCancelled]);
 
   // Group: technician → date → events[]
   const techGroups = React.useMemo(() => {
@@ -246,6 +254,18 @@ export default function CalendarListView({ startDate, technicianFilter, searchQu
 
   return (
     <div className="space-y-4">
+      {/* Show cancelled toggle */}
+      <div className="flex items-center justify-end">
+        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900">
+          <input
+            type="checkbox"
+            checked={showCancelled}
+            onChange={(e) => setShowCancelled(e.target.checked)}
+            className="rounded border-gray-300"
+          />
+          Show cancelled events
+        </label>
+      </div>
       {Object.entries(techGroups).map(([techName, dayGroups]) => (
         <TechnicianGroup
           key={techName}
