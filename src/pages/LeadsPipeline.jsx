@@ -728,7 +728,11 @@ function LeadDetailModal({ lead, onClose, onUpdate, onSendAcceptance, onRemoved 
                   <div className="flex gap-2">
                     <Button 
                       onClick={() => {
-                        onUpdate({ stage: 'lost', notes: (lead.notes || '') + `\n[LOST REASON] ${lostReason}` });
+                        onUpdate({ 
+                          leadId: lead.id, 
+                          stage: 'lost', 
+                          lostReason 
+                        });
                         setShowLostForm(false);
                         onClose();
                       }}
