@@ -30,6 +30,9 @@ function formatDate(d) {
 }
 
 function toISODate(d) {
+  if (!d || !(d instanceof Date) || !Number.isFinite(d.getTime())) {
+    return null;
+  }
   return d.toISOString().split('T')[0];
 }
 
