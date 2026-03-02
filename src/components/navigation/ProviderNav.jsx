@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import {
   Home, Calendar, Users, MapPin, MessageSquare, Droplet, AlertCircle,
-  Settings, BarChart3, Shield, Activity, ClipboardCheck, ChevronDown, ChevronRight
+  Settings, BarChart3, Shield, Activity, ClipboardCheck, ChevronDown, ChevronRight, Wrench
 } from 'lucide-react';
 
 const SECTION_CONFIG = {
@@ -12,6 +12,7 @@ const SECTION_CONFIG = {
   customers:      { label: 'Customers',       color: 'teal' },
   pricing:        { label: 'Pricing',         color: 'orange' },
   team_analytics: { label: 'Team & Analytics',color: 'orange' },
+  system:         { label: 'System',          color: 'gray' },
   main:           { label: 'Main',            color: 'teal' },
 };
 
@@ -130,19 +131,16 @@ export default function ProviderNav({ userRole }) {
     ]},
     { key: 'customers', items: [
       { name: 'Leads Pipeline',        path: 'LeadsPipeline',        icon: Users },
-      { name: 'Customer Snapshot',     path: 'CustomerTimeline',     icon: Activity },
-      { name: 'Equipment Directory',   path: 'EquipmentProfiles',    icon: Activity },
+      { name: 'Customer Timeline',     path: 'CustomerTimeline',     icon: Activity },
+      { name: 'Customer Equipment',    path: 'EquipmentProfiles',    icon: Wrench },
     ]},
     { key: 'chemistry', items: [
       { name: 'Chemistry Review',      path: 'AdminReviewDashboard', icon: Droplet },
       { name: 'Chemistry Dashboard',   path: 'ChemistryDashboard',   icon: Droplet },
-      { name: 'Chemical Analytics',    path: 'ChemicalAnalytics',    icon: Droplet },
+      { name: 'Chemical Costs (Legacy)', path: 'ChemicalAnalytics',  icon: Droplet },
     ]},
     { key: 'pricing', items: [
-      { name: 'Pricing Dashboard',     path: 'AdminPricingConfig',   icon: Settings },
-      { name: 'Config Setup',          path: 'AdminSettingsSetup',   icon: Settings },
-      { name: 'Release Readiness',     path: 'ReleaseReadiness',     icon: Shield },
-      { name: 'Margin Testing',        path: 'MarginStressTest',     icon: Activity },
+      { name: 'Pricing Config',        path: 'AdminPricingConfig',   icon: Settings },
     ]},
     { key: 'team', items: [
       { name: 'Staff Management',      path: 'StaffManagement',      icon: Users },
@@ -150,6 +148,11 @@ export default function ProviderNav({ userRole }) {
     ]},
     { key: 'support', items: [
       { name: 'Support Inbox',         path: 'AdminMessaging',       icon: MessageSquare },
+    ]},
+    { key: 'system', items: [
+      { name: 'Admin Settings Setup',  path: 'AdminSettingsSetup',   icon: Settings },
+      { name: 'Release Checklist',     path: 'ReleaseReadiness',     icon: Shield },
+      { name: 'Margin Stress Test',    path: 'MarginStressTest',     icon: Activity },
     ]},
   ];
 
