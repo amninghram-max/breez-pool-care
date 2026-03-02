@@ -61,7 +61,7 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
       const r = await fetch(`/api/apps/699a2b2056054b0207cea969/functions/sendQuoteLinkEmailV2`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ leadId: lead.id, firstName: lead.firstName, email })
+        body: JSON.stringify({ leadId: lead.id, firstName: lead.firstName, email, appOrigin: window.location.origin })
       });
       const ct = r.headers.get("content-type");
       const text = await r.text();
