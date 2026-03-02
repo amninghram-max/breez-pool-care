@@ -17,6 +17,7 @@ export default function PreQualification() {
     lastFinalizeResponse: null,
     isFinalizing: false,
     finalizeError: null,
+    finishClickedAt: null,
     currentStep: 0,
     currentStepName: ''
   });
