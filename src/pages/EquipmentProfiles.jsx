@@ -9,10 +9,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Wrench, Search, AlertCircle, Plus, X, Loader2 } from 'lucide-react';
+import { Wrench, Search, AlertCircle, Plus, X, Loader2, Trash2 } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import PartsManagementPanel from '@/components/equipment/PartsManagementPanel';
 
 const TYPE_LABELS = {
@@ -41,6 +42,7 @@ export default function EquipmentProfiles() {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [selectedCatalogItemId, setSelectedCatalogItemId] = useState(null);
+  const [itemToDelete, setItemToDelete] = useState(null);
   
   // Create form state
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -208,6 +210,36 @@ export default function EquipmentProfiles() {
     createMutation.mutate(createFormData);
   };
 
+  // Delete catalog item and associated parts
+  const deleteMutation = useMutation({
+    mutationFn: async (catalogItemId) => {
+      // Delete associated parts first
+      const itemParts = catalogParts.filter(p => p.catalogItemId === catalogItemId);
+      for (const part of itemParts) {
+        await base44.entities.EquipmentCatalogPart.delete(part.id);
+      }
+      // Then delete the item
+      await base44.entities.EquipmentCatalogItem.delete(catalogItemId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipmentCatalogItems'] });
+      queryClient.invalidateQueries({ queryKey: ['equipmentCatalogParts'] });
+      setItemToDelete(null);
+      setSelectedCatalogItemId(null);
+      toast.success('Equipment model and associated parts deleted');
+    },
+    onError: (err) => {
+      toast.error(err.message || 'Failed to delete equipment');
+      setItemToDelete(null);
+    }
+  });
+
+  const handleDeleteConfirm = () => {
+    if (itemToDelete) {
+      deleteMutation.mutate(itemToDelete.id);
+    }
+  };
+
   if (isLoading) {
     return <div className="p-6 text-gray-500">Loading equipment profiles...</div>;
   }
@@ -275,7 +307,15 @@ export default function EquipmentProfiles() {
           </div>
 
           {/* Add Equipment Button */}
-          <Button onClick={() => setShowCreateForm(true)} className="bg-teal-600 hover:bg-teal-700">
+          <Button 
+            onClick={() => {
+              // Pre-fill type based on current filter
+              const prefilledType = typeFilter !== 'all' ? typeFilter : 'pump';
+              setCreateFormData(f => ({ ...f, type: prefilledType }));
+              setShowCreateForm(true);
+            }} 
+            className="bg-teal-600 hover:bg-teal-700"
+          >
             <Plus className="w-4 h-4 mr-2" /> Add Equipment Model
           </Button>
 
@@ -391,31 +431,42 @@ export default function EquipmentProfiles() {
                     </CardHeader>
 
                     {selectedCatalogItemId === item.id && (
-                      <CardContent className="border-t pt-6 space-y-6">
-                        <div>
-                          <h4 className="font-medium text-sm mb-3">Resources</h4>
-                          <div className="flex gap-4 text-sm">
-                            {item.manufacturerUrl && (
-                              <a href={item.manufacturerUrl} target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:underline">
-                                Manufacturer Website
-                              </a>
-                            )}
-                            {item.manualUrl && (
-                              <a href={item.manualUrl} target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:underline">
-                                Manual (External)
-                              </a>
-                            )}
-                            {item.manualPdf && (
-                              <a href={item.manualPdf} target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:underline">
-                                Manual (PDF)
-                              </a>
-                            )}
-                          </div>
-                        </div>
+                       <CardContent className="border-t pt-6 space-y-6">
+                         <div className="flex items-start justify-between">
+                           <div>
+                             <h4 className="font-medium text-sm mb-3">Resources</h4>
+                             <div className="flex gap-4 text-sm">
+                               {item.manufacturerUrl && (
+                                 <a href={item.manufacturerUrl} target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:underline">
+                                   Manufacturer Website
+                                 </a>
+                               )}
+                               {item.manualUrl && (
+                                 <a href={item.manualUrl} target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:underline">
+                                   Manual (External)
+                                 </a>
+                               )}
+                               {item.manualPdf && (
+                                 <a href={item.manualPdf} target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:underline">
+                                   Manual (PDF)
+                                 </a>
+                               )}
+                             </div>
+                           </div>
+                           <Button
+                             size="sm"
+                             variant="ghost"
+                             onClick={() => setItemToDelete(item)}
+                             disabled={deleteMutation.isPending}
+                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                           >
+                             <Trash2 className="w-4 h-4" />
+                           </Button>
+                         </div>
 
-                        <PartsManagementPanel catalogItemId={item.id} />
-                      </CardContent>
-                    )}
+                         <PartsManagementPanel catalogItemId={item.id} typeFilter={typeFilter} />
+                       </CardContent>
+                     )}
                   </Card>
                 </div>
               ))}
@@ -549,6 +600,24 @@ export default function EquipmentProfiles() {
               )}
               </TabsContent>
       </Tabs>
+
+      {/* Delete Confirmation Modal */}
+      <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Equipment Model?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Delete {itemToDelete?.brand} {itemToDelete?.model}? This will also remove all associated parts ({catalogParts.filter(p => p.catalogItemId === itemToDelete?.id).length} part{catalogParts.filter(p => p.catalogItemId === itemToDelete?.id).length !== 1 ? 's' : ''}).
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex gap-3 justify-end mt-4">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} disabled={deleteMutation.isPending} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
