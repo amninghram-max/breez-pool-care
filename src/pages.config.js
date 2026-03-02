@@ -50,7 +50,6 @@
 import AIChat from './pages/AIChat';
 import AccessSetup from './pages/AccessSetup';
 import Activate from './pages/Activate';
-import Admin from './pages/Admin';
 import AdminHome from './pages/AdminHome';
 import AdminMessaging from './pages/AdminMessaging';
 import AdminPricingConfig from './pages/AdminPricingConfig';
@@ -69,7 +68,6 @@ import CustomerMessagingPage from './pages/CustomerMessagingPage';
 import CustomerServiceHistory from './pages/CustomerServiceHistory';
 import CustomerTimeline from './pages/CustomerTimeline';
 import DesignSystem from './pages/DesignSystem';
-import EquipmentProfile from './pages/EquipmentProfile';
 import EquipmentProfileAdmin from './pages/EquipmentProfileAdmin';
 import EquipmentProfiles from './pages/EquipmentProfiles';
 import FAQ from './pages/FAQ';
@@ -106,7 +104,6 @@ export const PAGES = {
     "AIChat": AIChat,
     "AccessSetup": AccessSetup,
     "Activate": Activate,
-    "Admin": Admin,
     "AdminHome": AdminHome,
     "AdminMessaging": AdminMessaging,
     "AdminPricingConfig": AdminPricingConfig,
@@ -125,7 +122,6 @@ export const PAGES = {
     "CustomerServiceHistory": CustomerServiceHistory,
     "CustomerTimeline": CustomerTimeline,
     "DesignSystem": DesignSystem,
-    "EquipmentProfile": EquipmentProfile,
     "EquipmentProfileAdmin": EquipmentProfileAdmin,
     "EquipmentProfiles": EquipmentProfiles,
     "FAQ": FAQ,
@@ -158,7 +154,7 @@ export const PAGES = {
 }
 
 export const pagesConfig = {
-    mainPage: "EquipmentProfile",
+    mainPage: "AIChat",
     Pages: PAGES,
     Layout: __Layout,
 };
