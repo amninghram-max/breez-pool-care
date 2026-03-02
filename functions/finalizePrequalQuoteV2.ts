@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const payload = await req.json();
-    const { token, prequalAnswers } = payload || {};
+    const { token, prequalAnswers, clientFirstName: payloadFirstName, clientEmail: payloadEmail } = payload || {};
 
     // Validate inputs
     if (!token || typeof token !== 'string') {
@@ -154,26 +154,32 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Resolve leadId, firstName, email via token
+    // Use clientFirstName and clientEmail from payload
+    // Fall back to QuoteRequests only if not provided in payload
+    let firstName = payloadFirstName || null;
+    let email = payloadEmail || null;
     let leadId = null;
-    let firstName = null;
-    let email = null;
+
+    // Resolve leadId via token if needed
     try {
       const requests = await base44.asServiceRole.entities.QuoteRequests.filter({ token: token.trim() }, null, 1);
       if (requests && requests.length > 0) {
         leadId = requests[0].leadId;
-        email = requests[0].email;
-        firstName = requests[0].firstName || null;
-        console.log('FPQ_V2_TOKEN_RESOLVED', { token: token.trim().slice(0, 8), leadId, email });
+        // Only use QuoteRequests email if not provided in payload
+        if (!email) email = requests[0].email;
+        // Only use QuoteRequests firstName if not provided in payload
+        if (!firstName) firstName = requests[0].firstName || null;
+        console.log('FPQ_V2_TOKEN_RESOLVED', { token: token.trim().slice(0, 8), leadId, email, fromPayload: !!payloadEmail });
       }
     } catch (e) {
       console.warn('FPQ_V2_TOKEN_RESOLUTION_FAILED', { error: e.message });
     }
 
+    // Validate that email is present
     if (!email) {
       return json200({
         success: false,
-        error: 'Token not found or invalid',
+        error: 'Email is required (from payload or token)',
         build: BUILD
       });
     }
