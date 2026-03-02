@@ -310,6 +310,7 @@ Deno.serve(async (req) => {
         inputEnclosure: prequalAnswers.enclosure,
         inputChlorinationMethod: prequalAnswers.chlorinationMethod,
         inputUseFrequency: prequalAnswers.useFrequency,
+        inputUsageFrequency: prequalAnswers.usageFrequency,
         inputTreesOverhead: prequalAnswers.treesOverhead,
         inputPetsAccess: prequalAnswers.petsAccess === true,
         inputPoolCondition: prequalAnswers.poolCondition,
