@@ -145,30 +145,44 @@ export default function ScheduleInspection() {
     }
 
     setLoading(true);
+    setError('');
     try {
-      const res = await base44.functions.invoke('scheduleFirstInspectionPublicV1', {
-        token: token,
-        firstName: firstName.trim(),
-        phone: phone.trim(),
-        email: leadData?.email,
-        serviceAddress: {
-          street: street.trim(),
-          city: city.trim(),
-          state: state.trim(),
-          zip: zip.trim()
-        },
-        requestedDate: isoDate,
-        requestedTimeSlot: selectedSlot,
-      });
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timed out. Please try again.')), 15000)
+      );
+
+      const res = await Promise.race([
+        base44.functions.invoke('scheduleFirstInspectionPublicV1', {
+          token: token,
+          firstName: firstName.trim(),
+          phone: phone.trim(),
+          email: leadData?.email,
+          serviceAddress: {
+            street: street.trim(),
+            city: city.trim(),
+            state: state.trim(),
+            zip: zip.trim()
+          },
+          requestedDate: isoDate,
+          requestedTimeSlot: selectedSlot,
+        }),
+        timeoutPromise
+      ]);
+      
       const data = res?.data ?? res;
+      console.log('schedule inspection response:', data);
 
       if (data?.success === true) {
+        console.log('Scheduling succeeded', { leadId: leadData?.leadId, eventId: data.eventId });
         setConfirmed(data);
       } else {
-        setError(data?.error || 'Failed to schedule inspection. Please call (321) 524-3838.');
+        const errorMsg = data?.error || 'Failed to schedule inspection. Please call (321) 524-3838.';
+        console.log('Scheduling failed:', { code: data?.code, error: data?.error });
+        setError(errorMsg);
       }
     } catch (e) {
-      setError('Something went wrong. Please call us at (321) 524-3838.');
+      console.error('Schedule submission error:', e);
+      setError(e?.message || 'Something went wrong. Please call us at (321) 524-3838.');
     } finally {
       setLoading(false);
     }
