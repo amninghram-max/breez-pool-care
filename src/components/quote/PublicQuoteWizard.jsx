@@ -220,6 +220,7 @@ export default function PublicQuoteWizard({ prefillData, onDebugStateChange }) {
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [lastFinalizeRequest, setLastFinalizeRequest] = useState(null);
   const [lastFinalizeResponse, setLastFinalizeResponse] = useState(null);
+  const [finishClickedAt, setFinishClickedAt] = useState(null);
 
   // Determine steps dynamically (trees only shown if unscreened)
   const showTrees = answers.enclosure === 'unscreened';
