@@ -197,7 +197,7 @@ export default function PreQualification() {
         fontSize: '10px',
         fontFamily: 'monospace',
         maxWidth: '280px',
-        maxHeight: '220px',
+        maxHeight: '240px',
         overflowY: 'auto',
         border: '1px solid #374151',
         zIndex: 9999,
@@ -209,6 +209,7 @@ export default function PreQualification() {
         <div>token: {token || 'none'}</div>
         <div>step: {debugState.currentStep}/{debugState.currentStepName}</div>
         <div>finalizing: {String(debugState.isFinalizing)}</div>
+        {debugState.finishClickedAt && <div style={{ color: '#fbbf24' }}>finishClickedAt: {new Date(debugState.finishClickedAt).toISOString().slice(11, 19)}</div>}
         {debugState.finalizeError && <div style={{ color: '#ef4444' }}>error: {debugState.finalizeError}</div>}
         {debugState.lastFinalizeRequest && (
           <div style={{ marginTop: '4px', borderTop: '1px solid #374151', paddingTop: '4px' }}>
