@@ -147,16 +147,7 @@ export default function LeadsPipeline() {
             className="border-teal-300 text-teal-700 hover:bg-teal-50"
           >
             <Plus className="w-4 h-4 mr-1" />
-            New Lead
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setShowNewQuote(true)}
-            className="border-indigo-300 text-indigo-700 hover:bg-indigo-50"
-          >
-            <FileText className="w-4 h-4 mr-1" />
-            New Quote
+            Add Lead Manually
           </Button>
           <Button
             size="sm"
