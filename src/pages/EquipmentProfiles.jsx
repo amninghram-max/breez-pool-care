@@ -26,6 +26,7 @@ const TYPE_LABELS = {
 export default function EquipmentProfiles() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCatalogItemId, setSelectedCatalogItemId] = useState(null);
 
   const { data: user } = useQuery({
     queryKey: ['userForEquipmentProfiles'],
@@ -48,6 +49,8 @@ export default function EquipmentProfiles() {
       </Card>
     );
   }
+
+  const isAdmin = user?.role === 'admin';
 
   const { data: equipment = [], isLoading, error: equipmentError } = useQuery({
     queryKey: ['equipmentProfiles'],
