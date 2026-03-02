@@ -254,10 +254,6 @@ Deno.serve(async (req) => {
           expiresAt,
         });
         console.log('QUOTE_PERSISTED', { quoteId: quoteRecord?.id, email: clientEmail });
-        // Update lead with quote reference
-        if (lead) {
-          await base44.asServiceRole.entities.Lead.update(lead.id, { acceptedQuoteId: quoteRecord.id, quoteGenerated: true });
-        }
       } catch (e) {
         console.warn('Quote persist failed (non-blocking):', e.message);
       }
