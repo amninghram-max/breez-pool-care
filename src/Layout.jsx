@@ -205,6 +205,15 @@ export default function Layout({ children, currentPageName }) {
     );
   }
 
+  // Redirect unauthenticated users away from protected pages
+  if (!userIsLoading && !user && !allowedPublicPages.includes(currentPageName)) {
+    // Only navigate if not already at Home (prevent loop)
+    if (currentPageName !== 'Home') {
+      navigate(createPageUrl('Home'), { replace: true });
+    }
+    return null;
+  }
+
   // Public pages: PublicHome, PreQualification, QuoteView — allow unauthenticated access
   const publicPages = ['PublicHome', 'PreQualification', 'QuoteView'];
   const isPublicPage = publicPages.includes(currentPageName);
