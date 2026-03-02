@@ -355,6 +355,12 @@ export default function ServiceVisitEntry() {
         onChemicalsChange={(newChemicalsAdded) =>
           setVisitData({ ...visitData, chemicalsAdded: newChemicalsAdded })
         }
+        propertyId={propertyId}
+        visitReadings={{
+          freeChlorine: visitData.freeChlorine,
+          pH: visitData.pH,
+          totalAlkalinity: visitData.totalAlkalinity
+        }}
       />
 
       {/* Services Performed */}
