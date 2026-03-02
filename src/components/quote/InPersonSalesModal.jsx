@@ -348,6 +348,7 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
                           Back
                         </Button>
                         <Button
+                          type="button"
                           onClick={() => setCurrentStep(3)}
                           className="flex-1 bg-teal-600 hover:bg-teal-700"
                         >
@@ -395,17 +396,18 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
                       </div>
                       {(contactDraft.firstName || contactDraft.email || contactDraft.phone) && (
                         <Button
+                          type="button"
                           onClick={handleSaveContactInfo}
                           disabled={updateSessionMutation.isPending}
                           className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800"
                           size="sm"
                         >
-                          {updateSessionMutation.isPending ? (
-                            <><Loader2 className="w-3 h-3 mr-2 animate-spin" />Saving...</>
-                          ) : (
-                            'Save Contact Info'
-                          )}
-                        </Button>
+                            {updateSessionMutation.isPending ? (
+                              <><Loader2 className="w-3 h-3 mr-2 animate-spin" />Saving...</>
+                            ) : (
+                              'Save Contact Info'
+                            )}
+                          </Button>
                       )}
                     </CardContent>
                   </Card>
