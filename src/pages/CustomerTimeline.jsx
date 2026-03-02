@@ -164,9 +164,9 @@ export default function CustomerTimeline() {
   const params = new URLSearchParams(window.location.search);
   const leadId = params.get('leadId');
 
-  // If no leadId, show customer picker
+  // If no leadId, show active customers directory
   if (!leadId) {
-    return <CustomerPicker />;
+    return <ActiveCustomersDirectory />;
   }
 
   const { data: lead, isLoading: leadLoading } = useQuery({
