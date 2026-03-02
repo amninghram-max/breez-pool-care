@@ -80,6 +80,32 @@ Deno.serve(async (req) => {
       });
     }
 
+    // IDEMPOTENCY CHECK: If this lead already has an inspection scheduled, return cached state
+    let existingLead = null;
+    if (leadId) {
+      try {
+        existingLead = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
+        if (existingLead && existingLead.length > 0) {
+          const lead = existingLead[0];
+          if (lead.inspectionScheduled === true && lead.inspectionEventId) {
+            console.log('SFI_V1_ALREADY_SCHEDULED', { leadId, eventId: lead.inspectionEventId });
+            return json200({
+              success: true,
+              alreadyScheduled: true,
+              scheduledDate: lead.requestedInspectionDate,
+              timeWindow: lead.requestedInspectionTime, // Will be converted to friendly format below
+              email: email,
+              firstName: firstName,
+              build: BUILD
+            });
+          }
+        }
+      } catch (e) {
+        console.warn('SFI_V1_IDEMPOTENCY_CHECK_FAILED', { error: e.message });
+        // Continue with normal flow
+      }
+    }
+
     // Map time slot to time window
     const timeWindowMap = {
       morning: '8:00 AM – 11:00 AM',
