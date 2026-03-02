@@ -258,14 +258,16 @@ export default function PublicQuoteWizard({
     // Clear trees if switching to screened
     if (key === 'enclosure' && value !== 'unscreened') delete newAnswers.treesOverhead;
     setAnswers(newAnswers);
-    // Auto-advance (or auto-submit if last step and token present)
+    // Auto-advance or auto-submit if already on last step
     setTimeout(() => {
-      const nextStep = s => Math.min(totalSteps - 1, s + 1);
-      const nextStepNum = nextStep(step);
-      if (nextStepNum >= totalSteps && hasToken) {
-        // Auto-submit when last step reached with token
+      const nextStepNum = Math.min(totalSteps - 1, step + 1);
+      if (nextStepNum === step && hasToken) {
+        // Already on last step and token present: auto-submit
         handleSubmit();
+      } else if (nextStepNum === step) {
+        // Already on last step without token: do nothing (contact form will handle submit)
       } else {
+        // Advance to next step
         setStep(nextStepNum);
       }
     }, 120);
