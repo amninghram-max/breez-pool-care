@@ -334,6 +334,10 @@ function ChemicalDetailModal({ chemical, onClose }) {
               <p className="text-xs font-semibold text-gray-600 uppercase">Category</p>
               <p className="text-sm text-gray-900">{chemical.category}</p>
             </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-600 uppercase">Logs As</p>
+              <p className="text-sm text-gray-900 font-mono bg-gray-50 px-2 py-1 rounded text-xs">{chemical.serviceVisitKey}</p>
+            </div>
             {chemical.activeIngredient && (
               <div>
                 <p className="text-xs font-semibold text-gray-600 uppercase">Active Ingredient</p>
@@ -581,9 +585,12 @@ export default function ChemicalRegistry() {
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900">{chem.name}</h3>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
                       <Badge variant="secondary" className="text-xs">
                         {CATEGORIES.find(c => c.id === chem.category)?.label}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs font-mono">
+                        {chem.serviceVisitKey}
                       </Badge>
                       {chem.strengthPercent && (
                         <span className="text-xs text-gray-600">{chem.strengthPercent}%</span>
