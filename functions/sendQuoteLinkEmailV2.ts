@@ -102,72 +102,38 @@ Deno.serve(async (req) => {
       return json200({ success: false, error: 'RESEND_API_KEY not configured', build: BUILD });
     }
 
-    // Find or create Quote for this lead
-    let quotes = [];
+    // Create QuoteRequests record for this email
+    const token = generateToken();
+    const requestPayload = {
+      token,
+      leadId,
+      email,
+      status: 'SENT'
+    };
     try {
-      quotes = await base44.asServiceRole.entities.Quote.filter({ leadId });
-    } catch (filterErr) {
-      console.error('V2_QUOTE_FILTER_FAILED', { leadId, error: String(filterErr?.message ?? filterErr) });
+      await base44.asServiceRole.entities.QuoteRequests.create(requestPayload);
+      console.log('V2_QUOTE_REQUEST_CREATED', { token, leadId, email });
+    } catch (createErr) {
+      const errorDetail = createErr?.message ?? String(createErr);
+      const errorStack = createErr?.stack ? String(createErr.stack).slice(0, 300) : undefined;
+      
+      console.error('V2_QUOTE_REQUEST_CREATE_FAILED', {
+        leadId,
+        email,
+        message: errorDetail,
+        stack: errorStack
+      });
+      
       return json200({
         success: false,
-        error: 'Failed to query quotes',
-        detail: String(filterErr?.message ?? filterErr),
+        error: 'Failed to create quote request',
+        detail: errorDetail,
+        stack: errorStack,
         build: BUILD
       });
     }
 
-    let quote = quotes?.[0];
-    let quoteToken = quote?.quoteToken;
-
-    if (!quote) {
-      // Create new Quote shell for this lead
-      quoteToken = generateToken();
-      const createPayload = {
-        leadId,
-        status: 'SENT',
-        quoteToken
-      };
-      try {
-        const newQuote = await base44.asServiceRole.entities.Quote.create(createPayload);
-        quote = newQuote;
-        console.log('V2_QUOTE_CREATED', { quoteId: quote.id, leadId });
-      } catch (createErr) {
-        const errorDetail = createErr?.message ?? String(createErr);
-        const errorStack = createErr?.stack ? String(createErr.stack).slice(0, 300) : undefined;
-        
-        console.error('V2_QUOTE_CREATE_FAILED', {
-          leadId,
-          message: errorDetail,
-          stack: errorStack
-        });
-        
-        return json200({
-          success: false,
-          error: 'Failed to create quote',
-          detail: errorDetail,
-          stack: errorStack,
-          createPayloadKeys: Object.keys(createPayload),
-          build: BUILD
-        });
-      }
-    } else if (!quoteToken) {
-      // Quote exists but has no token; generate and update
-      quoteToken = generateToken();
-      try {
-        await base44.asServiceRole.entities.Quote.update(quote.id, { quoteToken });
-        console.log('V2_TOKEN_GENERATED', { quoteId: quote.id });
-      } catch (tokenErr) {
-        console.error('V2_TOKEN_UPDATE_FAILED', { quoteId: quote.id, error: String(tokenErr?.message ?? tokenErr) });
-        return json200({
-          success: false,
-          error: 'Failed to generate quote token',
-          detail: String(tokenErr?.message ?? tokenErr),
-          build: BUILD
-        });
-      }
-    }
-
-    const link = `${appOrigin}/QuoteView/${encodeURIComponent(quoteToken)}`;
+    const link = `${appOrigin}/PreQualification/${encodeURIComponent(token)}`;
     const publicHomeLink = `${appOrigin}/PublicHome`;
 
     console.log('V2_SEND', { quoteId: quote.id, email, link, build: BUILD });
