@@ -303,6 +303,22 @@ export default function ScheduleInspection() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
+              {/* First name (prefilled from token if available) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={e => setFirstName(e.target.value)}
+                  placeholder="Your first name"
+                  disabled={!!leadData?.firstName}
+                  className={`w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none transition-colors text-gray-900 ${leadData?.firstName ? 'bg-gray-50 opacity-75' : ''}`}
+                  onFocus={e => !leadData?.firstName && (e.target.style.borderColor = TEAL)}
+                  onBlur={e => !leadData?.firstName && (e.target.style.borderColor = '#e5e7eb')}
+                />
+                {leadData?.firstName && <p className="text-xs text-gray-400 mt-1">From your quote request</p>}
+              </div>
+
               {/* Phone number */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
@@ -311,6 +327,50 @@ export default function ScheduleInspection() {
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
                   placeholder="(123) 456-7890"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none transition-colors text-gray-900"
+                  onFocus={e => e.target.style.borderColor = TEAL}
+                  onBlur={e => e.target.style.borderColor = '#e5e7eb'}
+                />
+              </div>
+
+              {/* Service address */}
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-gray-700">Service Address</p>
+                <input
+                  type="text"
+                  value={street}
+                  onChange={e => setStreet(e.target.value)}
+                  placeholder="Street address"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none transition-colors text-gray-900"
+                  onFocus={e => e.target.style.borderColor = TEAL}
+                  onBlur={e => e.target.style.borderColor = '#e5e7eb'}
+                />
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    value={city}
+                    onChange={e => setCity(e.target.value)}
+                    placeholder="City"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none transition-colors text-gray-900"
+                    onFocus={e => e.target.style.borderColor = TEAL}
+                    onBlur={e => e.target.style.borderColor = '#e5e7eb'}
+                  />
+                  <input
+                    type="text"
+                    value={state}
+                    onChange={e => setState(e.target.value.toUpperCase())}
+                    placeholder="State"
+                    maxLength="2"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none transition-colors text-gray-900 text-center"
+                    onFocus={e => e.target.style.borderColor = TEAL}
+                    onBlur={e => e.target.style.borderColor = '#e5e7eb'}
+                  />
+                </div>
+                <input
+                  type="text"
+                  value={zip}
+                  onChange={e => setZip(e.target.value)}
+                  placeholder="ZIP code"
                   className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none transition-colors text-gray-900"
                   onFocus={e => e.target.style.borderColor = TEAL}
                   onBlur={e => e.target.style.borderColor = '#e5e7eb'}
