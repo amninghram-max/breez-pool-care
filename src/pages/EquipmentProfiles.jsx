@@ -479,11 +479,11 @@ export default function EquipmentProfiles() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredLeadIds.map(leadId => {
-              const lead = leadMap[leadId];
-              const items = byLead[leadId];
-              return (
-                <Card key={leadId}>
+              {filteredLeadIds.map(leadId => {
+                const lead = leadMap[leadId];
+                const items = byLead[leadId];
+                return (
+                  <Card key={leadId}>
                   <CardHeader>
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
@@ -543,9 +543,11 @@ export default function EquipmentProfiles() {
                   </CardContent>
                 </Card>
               );
-            })}
-          </div>
-        </TabsContent>
+              })}
+              </div>
+              </>
+              )}
+              </TabsContent>
       </Tabs>
     </div>
   );
