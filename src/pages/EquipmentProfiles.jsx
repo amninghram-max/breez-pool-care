@@ -258,6 +258,10 @@ export default function EquipmentProfiles() {
 
   return (
     <div className="space-y-6">
+      <div className="bg-red-600 text-white px-6 py-4 rounded-lg font-bold text-lg">
+        DEBUG: EquipmentProfiles.js UPDATED — Directory UI should be visible | 2026-03-02 19:15 CT
+      </div>
+
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Equipment Directory & Profiles</h1>
         <p className="text-sm text-gray-600 mt-1">
