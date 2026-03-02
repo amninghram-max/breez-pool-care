@@ -94,6 +94,17 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
     }
   });
 
+  const normalizeSnapshot = (raw) => {
+    if (!raw) return null;
+    // Verify monthly price exists and is numeric
+    const monthlyPrice = raw.finalMonthlyPrice || raw.monthly;
+    if (monthlyPrice === undefined || monthlyPrice === null || typeof monthlyPrice !== 'number') {
+      console.error('[normalizeSnapshot] Missing or invalid monthly price:', { keys: Object.keys(raw), monthly: monthlyPrice });
+      return null;
+    }
+    return raw;
+  };
+
   const lockQuoteMutation = useMutation({
     mutationFn: async () => {
       return await base44.functions.invoke('lockInPersonSalesSessionQuote', {
@@ -101,10 +112,29 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
       });
     },
     onSuccess: (res) => {
-      const snapshot = res.data?.quoteSnapshot || res.quoteSnapshot;
+      // Log raw response shape (no PII)
+      console.log('[lockQuoteMutation] Raw response keys:', Object.keys(res.data || res));
+
+      // Extract snapshot deterministically
+      let snapshot = res.data?.quoteSnapshot || res.quoteSnapshot;
+      if (!snapshot) {
+        console.error('[lockQuoteMutation] No quoteSnapshot in response');
+        toast.error('Lock returned no pricing data');
+        return;
+      }
+
+      // Normalize to ensure valid monthly price
+      snapshot = normalizeSnapshot(snapshot);
+      if (!snapshot) {
+        console.error('[lockQuoteMutation] Snapshot normalization failed');
+        toast.error('Lock returned no monthly price');
+        // Keep estimatePreview displayed
+        return;
+      }
+
+      console.log('[lockQuoteMutation] Locked successfully:', { monthly: snapshot.finalMonthlyPrice || snapshot.monthly });
       setQuoteSnapshot(snapshot);
       setQuoteLocked(true);
-      // Stay on step 2 to show contact form after lock
       toast.success('Quote locked');
     },
     onError: (err) => {
