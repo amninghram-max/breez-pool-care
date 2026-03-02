@@ -47,6 +47,7 @@ Deno.serve(async (req) => {
     // If debugAuth is requested, return diagnostics without running seeding
     if (debugAuth) {
       const diagnostics = {
+        success: true,
         authDebug: true,
         userIdentifier: user?.email || user?.id || 'not-identified',
         userPresent: !!user,
@@ -67,12 +68,15 @@ Deno.serve(async (req) => {
     // 1. Admin/Staff gate (check actual role field)
     if (!user) {
       return Response.json({
+        success: false,
         step: 'auth',
-        errorMessage: 'Forbidden: User not authenticated',
-        userIdentifier: null,
-        observedRole: null,
-        authError
-      }, { status: 403 });
+        errorMessage: 'User not authenticated',
+        auth: {
+          userIdentifier: null,
+          observedRole: null,
+          authError
+        }
+      }, { status: 200 });
     }
 
     // Check for admin/staff role (support both user.role and user.roles array)
@@ -84,24 +88,28 @@ Deno.serve(async (req) => {
 
     if (!hasAdminRole) {
       return Response.json({
+        success: false,
         step: 'auth',
-        errorMessage: `Forbidden: requires admin|staff, got "${user.role}"`,
-        userIdentifier: user.email || user.id || 'unknown',
-        observedRole: user.role,
-        availableRoleFields: {
-          role: user.role,
-          roles: user.roles,
-          isAdmin: user.isAdmin
+        errorMessage: `Requires admin|staff role, got "${user.role}"`,
+        auth: {
+          userIdentifier: user.email || user.id || 'unknown',
+          observedRole: user.role,
+          availableRoleFields: {
+            role: user.role,
+            roles: user.roles,
+            isAdmin: user.isAdmin
+          }
         }
-      }, { status: 403 });
+      }, { status: 200 });
     }
 
     // 2. Validate leadId
     if (!leadId) {
       return Response.json({
-        step: 'validateLeadId',
+        success: false,
+        step: 'validate',
         errorMessage: 'Missing required parameter: leadId'
-      }, { status: 400 });
+      }, { status: 200 });
     }
 
     if (!leadId) {
@@ -115,15 +123,17 @@ Deno.serve(async (req) => {
       lead = leads.find(l => l.id === leadId);
       if (!lead) {
         return Response.json({
+          success: false,
           step: 'readLead',
           errorMessage: `Lead not found: ${leadId}`
-        }, { status: 404 });
+        }, { status: 200 });
       }
     } catch (err) {
       return Response.json({
+        success: false,
         step: 'readLead',
         errorMessage: `Failed to fetch Lead: ${err.message}`
-      }, { status: 500 });
+      }, { status: 200 });
     }
 
     let attemptedServiceVisits = 0;
@@ -158,10 +168,11 @@ Deno.serve(async (req) => {
     } catch (err) {
       console.error('ServiceVisit creation error:', err.message);
       return Response.json({
+        success: false,
         step: 'createServiceVisits',
         errorMessage: err.message,
         attempted: attemptedServiceVisits
-      }, { status: 500 });
+      }, { status: 200 });
     }
 
     // 5. Create CustomerEquipment records (pump + filter)
@@ -196,10 +207,11 @@ Deno.serve(async (req) => {
     } catch (err) {
       console.error('CustomerEquipment creation error:', err.message);
       return Response.json({
+        success: false,
         step: 'createCustomerEquipment',
         errorMessage: err.message,
         attempted: attemptedCustomerEquipment
-      }, { status: 500 });
+      }, { status: 200 });
     }
 
     // 6. Skip ChemistryRiskEvent for now (requires poolId + testRecordId linkage)
@@ -223,6 +235,7 @@ Deno.serve(async (req) => {
 
     // 8. Return summary with both attempted and verified counts
     return Response.json({
+      success: true,
       leadId,
       attemptedServiceVisits,
       attemptedCustomerEquipment,
@@ -230,8 +243,8 @@ Deno.serve(async (req) => {
       verifiedServiceVisitCount,
       verifiedCustomerEquipmentCount,
       verifiedChemistryRiskEventCount: 0,
-      message: 'Test customer data seeded successfully',
-    });
+      message: 'Test customer data seeded successfully'
+    }, { status: 200 });
   } catch (error) {
     console.error('[seedTestCustomerData] Unexpected error:', error);
     return Response.json({
