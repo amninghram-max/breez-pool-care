@@ -248,11 +248,17 @@ export default function PublicQuoteWizard({ prefillData }) {
   };
 
   const handleSubmit = async () => {
+    console.log('DEBUG: Finish clicked');
     setError('');
     setFinalizeError('');
     if (!firstName.trim()) { setError('Please enter your first name.'); return; }
     if (!email.trim() || !email.includes('@')) { setError('Please enter a valid email address.'); return; }
+    
     setLoading(true);
+    setResult(null);
+    setIsFinalizing(false);
+    setFinalizeError(null);
+
     try {
       const payload = {
         questionnaireData: {
@@ -262,45 +268,85 @@ export default function PublicQuoteWizard({ prefillData }) {
           petsAccess: answers.petsAccess === true,
         }
       };
+      console.log('DEBUG: Finish payload', payload);
       const res = await base44.functions.invoke('publicGetQuote', payload);
       const data = res?.data ?? res;
+      console.log('DEBUG: publicGetQuote raw response', res);
+      console.log('DEBUG: publicGetQuote parsed data', data);
+
       if (data?.success !== true) {
         setError(data?.error || 'Failed to generate quote. Please try again.');
+        setLoading(false);
         return;
       }
       
       // If releaseReady and we have a quote, finalize it to ensure priceSummary
       if (data?.releaseReady && data?.quote) {
+        setIsFinalizing(true);
         const finalizePayload = {
           token: prefillData?.token || null,
           leadId: data?.leadId || null,
           prequalAnswers: answers
         };
         console.log('DEBUG: Calling finalize function with', finalizePayload);
-        const finalizeRes = await base44.functions.invoke('finalizePrequalQuoteV1', finalizePayload);
-        console.log('DEBUG: Finalize response', finalizeRes);
-        const finalizeData = finalizeRes?.data ?? finalizeRes;
-        if (finalizeData?.success === true && finalizeData?.priceSummary) {
-          // Merge: use quoteSnapshot as quote, ensure priceSummary is present
-          setResult({
-            ...data,
-            quote: finalizeData.quoteSnapshot || data.quote,
-            priceSummary: finalizeData.priceSummary,
-          });
-        } else {
-          // Finalize failed — show error with build tag
-          setFinalizeError(`${finalizeData?.error || 'Failed to finalize quote'} (${finalizeData?.build || 'unknown'})`);
-          return;
+
+        // Promise.race with timeout
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Finalize request timed out (15s)')), 15000);
+        });
+
+        try {
+          const finalizeRes = await Promise.race([
+            base44.functions.invoke('finalizePrequalQuoteV1', finalizePayload),
+            timeoutPromise
+          ]);
+          console.log('DEBUG: Finalize raw response', finalizeRes);
+          const finalizeData = finalizeRes?.data ?? finalizeRes;
+          console.log('DEBUG: Finalize parsed data', finalizeData);
+
+          if (finalizeData?.success === true && finalizeData?.priceSummary) {
+            // Merge: use quoteSnapshot as quote, ensure priceSummary is present
+            const normalizedResult = {
+              ...data,
+              quote: finalizeData.quoteSnapshot || data.quote,
+              priceSummary: finalizeData.priceSummary,
+            };
+            console.log('DEBUG: Setting result after finalize success', normalizedResult);
+            setResult(normalizedResult);
+            setIsFinalizing(false);
+          } else {
+            // Finalize failed — show error with build tag
+            const errorMsg = `${finalizeData?.error || 'Failed to finalize quote'} (${finalizeData?.build || 'unknown'})`;
+            console.log('DEBUG: Finalize failed', errorMsg);
+            setFinalizeError(errorMsg);
+            setResult({ error: errorMsg });
+            setIsFinalizing(false);
+          }
+        } catch (finErr) {
+          // Timeout or network error
+          const errorMsg = finErr?.message || 'Failed to finalize quote';
+          console.log('DEBUG: Finalize error/timeout', errorMsg);
+          setFinalizeError(errorMsg);
+          setResult({ error: errorMsg });
+          setIsFinalizing(false);
         }
       } else if (data?.releaseReady) {
         // releaseReady but no quote — invalid state, show as not ready
+        console.log('DEBUG: releaseReady but no quote, showing ThankYou');
         setResult(data);
+        setIsFinalizing(false);
       } else {
         // Not ready (will show ThankYouDisplay)
+        console.log('DEBUG: Not ready, showing ThankYou');
         setResult(data);
+        setIsFinalizing(false);
       }
     } catch (e) {
-      setError(e?.message || 'Something went wrong. Please try again or call us at (321) 524-3838.');
+      const errorMsg = e?.message || 'Something went wrong. Please try again or call us at (321) 524-3838.';
+      console.log('DEBUG: Outer catch error', errorMsg);
+      setError(errorMsg);
+      setResult({ error: errorMsg });
+      setIsFinalizing(false);
     } finally {
       setLoading(false);
     }
