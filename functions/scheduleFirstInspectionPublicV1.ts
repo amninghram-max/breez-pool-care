@@ -81,29 +81,30 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Resolve leadId + contact via token
+    // Resolve leadId + contact via token (verify token is valid)
     let leadId = null;
-    let email = null;
-    let firstName = null;
+    let tokenEmail = null;
     try {
       const requests = await base44.asServiceRole.entities.QuoteRequests.filter({ token: token.trim() }, null, 1);
       if (requests && requests.length > 0) {
         leadId = requests[0].leadId;
-        email = requests[0].email;
-        firstName = requests[0].firstName;
+        tokenEmail = requests[0].email;
         console.log('SFI_V1_TOKEN_RESOLVED', { token: token.trim().slice(0, 8), leadId });
       }
     } catch (e) {
       console.warn('SFI_V1_TOKEN_RESOLUTION_FAILED', { error: e.message });
     }
 
-    if (!email) {
+    if (!tokenEmail) {
       return json200({
         success: false,
         error: 'Token not found or invalid',
         build: BUILD
       });
     }
+
+    // Use provided email or fall back to token email
+    const finalEmail = email || tokenEmail;
 
     // IDEMPOTENCY CHECK: If this lead already has an inspection scheduled, return cached state
     let existingLead = null;
