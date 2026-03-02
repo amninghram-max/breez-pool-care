@@ -250,7 +250,9 @@ Deno.serve(async (req) => {
       build: BUILD,
       resendId,
       link: prequalLink,
+      stampField: "quoteLinkEmailSentAt",
       stampUpdated,
+      stampValue,
       stampError
     }), {
       status: 200,
