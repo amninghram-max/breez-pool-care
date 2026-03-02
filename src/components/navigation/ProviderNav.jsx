@@ -130,7 +130,7 @@ export default function ProviderNav({ userRole }) {
     ]},
     { key: 'customers', items: [
       { name: 'Leads Pipeline',        path: 'LeadsPipeline',        icon: Users },
-      { name: 'Customer Timeline',     path: 'CustomerTimeline',     icon: Activity },
+      { name: 'Customer Snapshot',     path: 'CustomerTimeline',     icon: Activity },
       { name: 'Equipment Directory',   path: 'EquipmentProfiles',    icon: Activity },
     ]},
     { key: 'chemistry', items: [
@@ -156,7 +156,7 @@ export default function ProviderNav({ userRole }) {
   const topMobileItems = [
     { name: 'Home',      path: 'AdminHome',       icon: Shield },
     { name: 'Calendar',  path: 'Calendar',        icon: Calendar },
-    { name: 'Timeline',  path: 'CustomerTimeline',icon: Activity },
+    { name: 'Snapshot',  path: 'CustomerTimeline',icon: Activity },
     { name: 'Inbox',     path: 'AdminMessaging',  icon: MessageSquare },
   ];
 
