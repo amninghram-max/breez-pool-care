@@ -22,7 +22,7 @@ const json200 = (data) => new Response(
 const isTestCustomerEmail = (email) => {
   if (!email || typeof email !== 'string') return false;
   const trimmed = email.trim().toLowerCase();
-  return trimmed.startsWith('test.customer') && trimmed.includes('@breezpoolcare.com');
+  return trimmed.startsWith('test.customer') && trimmed.endsWith('@breezpoolcare.com');
 };
 
 Deno.serve(async (req) => {
