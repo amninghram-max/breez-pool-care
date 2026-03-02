@@ -88,19 +88,24 @@ function ProgressBar({ current, total }) {
 // ── Quote result display ─────────────────────────────────────────────────────
 
 function QuoteResultDisplay({ result, firstName, email, leadId }) {
-  const { isRange, quote } = result;
+  const { isRange, quote, priceSummary: resultPriceSummary } = result;
   const [showScheduler, setShowScheduler] = useState(false);
 
-  const priceSummary = result?.priceSummary || {};
-  const priceDisplay = priceSummary.monthlyPrice || (isRange
-    ? `$${quote.minMonthly} – $${quote.maxMonthly}`
-    : `$${quote.finalMonthlyPrice}`);
+  // Prefer priceSummary from result, fallback to quote fields
+  const priceSummary = resultPriceSummary || {};
+  const priceDisplay = priceSummary.monthlyPrice || (
+    isRange && quote
+      ? `$${quote.minMonthly} – $${quote.maxMonthly}`
+      : quote?.finalMonthlyPrice ? `$${quote.finalMonthlyPrice}` : 'Price unavailable'
+  );
 
-  const freqLabel = priceSummary.visitFrequency || (quote.frequency === 'twice_weekly' ? 'Twice Weekly' : 'Weekly');
+  const freqLabel = priceSummary.visitFrequency || (quote?.frequency === 'twice_weekly' ? 'Twice Weekly' : 'Weekly');
 
-  const oneTimeDisplay = priceSummary.oneTimeFees || (isRange
-    ? (quote.minOneTimeFees > 0 ? `$${quote.minOneTimeFees}–$${quote.maxOneTimeFees}` : null)
-    : (quote.oneTimeFees > 0 ? `$${quote.oneTimeFees}` : null));
+  const oneTimeDisplay = priceSummary.oneTimeFees || (
+    isRange && quote
+      ? (quote.minOneTimeFees > 0 ? `$${quote.minOneTimeFees}–$${quote.maxOneTimeFees}` : null)
+      : quote?.oneTimeFees > 0 ? `$${quote.oneTimeFees}` : null
+  );
 
   if (showScheduler) {
     return (
@@ -131,7 +136,7 @@ function QuoteResultDisplay({ result, firstName, email, leadId }) {
           <div className="mt-2 inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-white border" style={{ borderColor: TEAL, color: TEAL }}>
             {freqLabel} Service
           </div>
-          {quote.frequencyAutoRequired && (
+          {quote?.frequencyAutoRequired && (
             <p className="text-xs text-amber-600 mt-2">Based on your pool's profile, twice-weekly service is recommended.</p>
           )}
         </div>
