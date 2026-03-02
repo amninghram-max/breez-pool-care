@@ -23,12 +23,37 @@ const CATEGORIES = [
 
 const DOSE_UNITS = ['gal', 'qt', 'oz', 'lb', 'kg', 'tablet', 'cup'];
 const DOSE_RULE_TYPES = ['per_10k_per_delta', 'lookup_table', 'fixed_recommendation'];
+const SERVICE_VISIT_KEYS = [
+  'liquidChlorine',
+  'chlorineTablets',
+  'acid',
+  'bakingSoda',
+  'stabilizer',
+  'salt',
+  'calcium',
+  'algaecide',
+  'phosphateRemover',
+  'other'
+];
+
+const CATEGORY_TO_KEY_MAP = {
+  chlorine: 'liquidChlorine',
+  acid: 'acid',
+  base: 'bakingSoda',
+  stabilizer: 'stabilizer',
+  calcium: 'calcium',
+  salt: 'salt',
+  algaecide: 'algaecide',
+  phosphate_remover: 'phosphateRemover',
+  other: 'other'
+};
 
 function ChemicalForm({ chemical, onSave, onCancel, isLoading }) {
+  const defaultCategory = 'chlorine';
   const [formData, setFormData] = useState(
     chemical || {
       name: '',
-      category: 'chlorine',
+      category: defaultCategory,
       commonProductForms: '',
       activeIngredient: '',
       strengthPercent: '',
@@ -37,6 +62,7 @@ function ChemicalForm({ chemical, onSave, onCancel, isLoading }) {
       notes: '',
       dosageRuleType: 'per_10k_per_delta',
       dosageRuleJson: '',
+      serviceVisitKey: CATEGORY_TO_KEY_MAP[defaultCategory],
       ppe: '',
       incompatibilities: '',
       warnings: '',
@@ -46,8 +72,19 @@ function ChemicalForm({ chemical, onSave, onCancel, isLoading }) {
   );
   const [tagsInput, setTagsInput] = useState(chemical?.tags?.join(', ') || '');
 
+  const handleCategoryChange = (newCategory) => {
+    setFormData({
+      ...formData,
+      category: newCategory,
+      // Auto-suggest serviceVisitKey based on category if not already set
+      serviceVisitKey: formData.serviceVisitKey === CATEGORY_TO_KEY_MAP[formData.category] 
+        ? CATEGORY_TO_KEY_MAP[newCategory] 
+        : formData.serviceVisitKey
+    });
+  };
+
   const handleSave = () => {
-    if (!formData.name || !formData.category || !formData.defaultDoseUnit || !formData.dosageRuleType) {
+    if (!formData.name || !formData.category || !formData.defaultDoseUnit || !formData.dosageRuleType || !formData.serviceVisitKey) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -91,7 +128,7 @@ function ChemicalForm({ chemical, onSave, onCancel, isLoading }) {
         <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
         <select
           value={formData.category}
-          onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+          onChange={(e) => handleCategoryChange(e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
         >
           {CATEGORIES.map(cat => (
@@ -141,6 +178,20 @@ function ChemicalForm({ chemical, onSave, onCancel, isLoading }) {
             <option key={unit} value={unit}>{unit}</option>
           ))}
         </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Logs As (ServiceVisit Key) *</label>
+        <select
+          value={formData.serviceVisitKey}
+          onChange={(e) => setFormData({ ...formData, serviceVisitKey: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+        >
+          {SERVICE_VISIT_KEYS.map(key => (
+            <option key={key} value={key}>{key}</option>
+          ))}
+        </select>
+        <p className="text-xs text-gray-500 mt-1">Maps to ServiceVisit.chemicalsAdded field</p>
       </div>
 
       <div>
