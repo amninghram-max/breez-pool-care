@@ -292,6 +292,15 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
                 initialAnswers={pricingInputs}
                 onComplete={handleQuoteWizardComplete}
               />
+              <div className="flex gap-3 pt-2 border-t">
+                <Button
+                  onClick={() => setCurrentStep(4)}
+                  variant="outline"
+                  className="flex-1 text-teal-600 border-teal-600 hover:bg-teal-50"
+                >
+                  Convert Now
+                </Button>
+              </div>
             </div>
           ) : currentStep === 2 ? (
             // ── Step 2: Lock Quote ──
@@ -313,6 +322,14 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
                         disabled={lockQuoteMutation.isPending}
                       >
                         Back
+                      </Button>
+                      <Button
+                        onClick={() => setCurrentStep(4)}
+                        variant="outline"
+                        className="flex-1 text-teal-600 border-teal-600 hover:bg-teal-50"
+                        disabled={lockQuoteMutation.isPending}
+                      >
+                        Convert Now
                       </Button>
                       <Button
                         onClick={handleLockQuote}
@@ -346,6 +363,14 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
                       <div className="flex gap-3">
                         <Button onClick={() => setQuoteLocked(false)} variant="outline" className="flex-1">
                           Back
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={() => setCurrentStep(4)}
+                          variant="outline"
+                          className="flex-1 text-teal-600 border-teal-600 hover:bg-teal-50"
+                        >
+                          Convert Now
                         </Button>
                         <Button
                           type="button"
@@ -470,6 +495,14 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
                       disabled={updateSessionMutation.isPending}
                     >
                       Back
+                    </Button>
+                    <Button
+                      onClick={() => setCurrentStep(4)}
+                      variant="outline"
+                      className="flex-1 text-teal-600 border-teal-600 hover:bg-teal-50"
+                      disabled={updateSessionMutation.isPending}
+                    >
+                      Convert Now
                     </Button>
                     <Button
                       onClick={handleContinueToConvert}
