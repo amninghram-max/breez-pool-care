@@ -225,21 +225,20 @@ export default function PublicQuoteWizard({
 
     setError('');
 
-    try {
-      // Use resolved data from prefillData if token present, otherwise use form input
-      const finalFirstName = hasToken ? (prefillData?.firstName || firstName) : firstName;
-      const finalEmail = hasToken ? (prefillData?.email || email) : email;
+    // Use resolved data from prefillData if token present, otherwise use form input
+    const finalFirstName = hasToken ? (prefillData?.firstName || firstName) : firstName;
+    const finalEmail = hasToken ? (prefillData?.email || email) : email;
 
-      // VALIDATION: Show inline error and stay on page
-      const missingFields = [];
-      if (!finalFirstName.trim()) missingFields.push('first name');
-      if (!finalEmail.trim() || !finalEmail.includes('@') || finalEmail.trim() === 'guest@breezpoolcare.com') missingFields.push('email');
-      
-      if (missingFields.length > 0) {
-        const fieldText = missingFields.length === 1 ? missingFields[0] : missingFields.join(' and ');
-        setError(`Please enter your ${fieldText}.`);
-        return;
-      }
+    // VALIDATION: Show inline error and stay on page
+    const missingFields = [];
+    if (!finalFirstName.trim()) missingFields.push('first name');
+    if (!finalEmail.trim() || !finalEmail.includes('@') || finalEmail.trim() === 'guest@breezpoolcare.com') missingFields.push('email');
+    
+    if (missingFields.length > 0) {
+      const fieldText = missingFields.length === 1 ? missingFields[0] : missingFields.join(' and ');
+      setError(`Please enter your ${fieldText}.`);
+      return;
+    }
 
     // MILESTONE: clicked
     setFinalizeState('clicked');
@@ -254,8 +253,6 @@ export default function PublicQuoteWizard({
     setFinalizeState('starting');
 
     try {
-      const finalFirstName = hasToken ? (prefillData?.firstName || firstName) : firstName;
-      const finalEmail = hasToken ? (prefillData?.email || email) : email;
 
       // BUILD PAYLOAD
       const payload = {
