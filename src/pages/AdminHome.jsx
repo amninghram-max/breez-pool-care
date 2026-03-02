@@ -150,6 +150,25 @@ export default function AdminHome() {
         ))}
       </div>
 
+      {/* 7. Tools (Admin/Dev) Section */}
+      {user?.role && ['admin', 'staff'].includes(user.role) && (
+        <div className="space-y-3 pt-4 border-t border-gray-200">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-1">Tools (Admin/Dev)</h3>
+            <p className="text-xs text-gray-500 mb-3">Internal calculators and test utilities</p>
+          </div>
+          <Button
+            onClick={() => setShowDemo(true)}
+            size="sm"
+            variant="outline"
+            className="border-amber-400 text-amber-800 hover:bg-amber-50"
+          >
+            <Zap className="w-4 h-4 mr-1.5" />
+            Demo Quote
+          </Button>
+        </div>
+      )}
+
       {/* Modals */}
       {showDemo && (
         <DemoQuoteModal
