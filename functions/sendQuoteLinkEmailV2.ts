@@ -104,19 +104,34 @@ Deno.serve(async (req) => {
 
     let quote = quotes?.[0];
     if (!quote) {
-      console.warn('V2_NO_QUOTE_FOR_LEAD', { leadId });
-      return json200({ success: false, error: 'No quote found for this lead', build: BUILD });
-    }
-
-    let quoteToken = quote?.quoteToken;
-    if (!quoteToken) {
-      quoteToken = generateToken();
+      // Create new Quote shell for this lead
+      const quoteToken = generateToken();
       try {
-        await base44.asServiceRole.entities.Quote.update(quote.id, { quoteToken });
-        console.log('V2_TOKEN_GENERATED', { quoteId: quote.id, quoteToken });
-      } catch (tokenErr) {
-        console.error('V2_TOKEN_UPDATE_FAILED', { quoteId: quote.id, error: String(tokenErr?.message ?? tokenErr) });
-        return json200({ success: false, error: 'Failed to generate quote token', build: BUILD });
+        const newQuote = await base44.asServiceRole.entities.Quote.create({
+          leadId,
+          clientEmail: email,
+          clientFirstName: firstName || '',
+          status: 'SENT',
+          quoteToken
+        });
+        quote = newQuote;
+        console.log('V2_QUOTE_CREATED', { quoteId: quote.id, leadId, quoteToken });
+      } catch (createErr) {
+        console.error('V2_QUOTE_CREATE_FAILED', { leadId, error: String(createErr?.message ?? createErr) });
+        return json200({ success: false, error: 'Failed to create quote', build: BUILD });
+      }
+    } else {
+      // Quote exists; ensure quoteToken is set
+      let quoteToken = quote?.quoteToken;
+      if (!quoteToken) {
+        quoteToken = generateToken();
+        try {
+          await base44.asServiceRole.entities.Quote.update(quote.id, { quoteToken });
+          console.log('V2_TOKEN_GENERATED', { quoteId: quote.id, quoteToken });
+        } catch (tokenErr) {
+          console.error('V2_TOKEN_UPDATE_FAILED', { quoteId: quote.id, error: String(tokenErr?.message ?? tokenErr) });
+          return json200({ success: false, error: 'Failed to generate quote token', build: BUILD });
+        }
       }
     }
 
