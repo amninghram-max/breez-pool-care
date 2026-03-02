@@ -1,10 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Loader2, AlertCircle, Clock } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, AlertCircle } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import QuoteResultDisplay from '../components/quote/QuoteResultDisplay';
 
 const STATUS_COLORS = {
   SENT: 'bg-blue-100 text-blue-800',
