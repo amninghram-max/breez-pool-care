@@ -226,8 +226,7 @@ Deno.serve(async (req) => {
     const stampTs = new Date().toISOString();
     try {
       await base44.asServiceRole.entities.Lead.update(leadId, {
-        confirmationSentAt: stampTs,
-        quoteLinkEmailResendId: emailData.id || null
+        confirmationSentAt: stampTs
       });
       stampUpdated = true;
       console.log('STAMP_OK', { leadId, confirmationSentAt: stampTs });
