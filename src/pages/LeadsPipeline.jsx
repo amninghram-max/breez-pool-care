@@ -287,32 +287,9 @@ function LeadRow({ lead, stage, onAdvance, onStageChange, onEdit, onUpdate, quer
     queryClient?.invalidateQueries({ queryKey: ['leads'] });
   };
 
-  const handleDeleteLead = async () => {
-    setIsDeleting(true);
-    const payload = { leadId: lead.id, reason: 'admin_removed_lead' };
-    console.log('🔴 DELETE_BEFORE_INVOKE', { leadId: lead.id, payload });
-    try {
-      const res = await base44.functions.invoke('softDeleteLeadV2', payload);
-      console.log('🔴 DELETE_RES_FULL', res);
-      console.log('🔴 DELETE_RES_STATUS', res?.status);
-      console.log('🔴 DELETE_RES_DATA', res?.data);
-      if (res.data.success) {
-        toast.success('Lead removed');
-        queryClient?.invalidateQueries({ queryKey: ['leads'] });
-        queryClient?.invalidateQueries({ queryKey: ['calendarEvents'] });
-        queryClient?.invalidateQueries({ queryKey: ['inspections'] });
-      } else {
-        toast.error(res.data.error || 'Failed to remove lead');
-      }
-    } catch (e) {
-      console.log('🔴 DELETE_ERROR_MESSAGE', e?.message);
-      console.log('🔴 DELETE_ERROR_RESPONSE_STATUS', e?.response?.status);
-      console.log('🔴 DELETE_ERROR_RESPONSE_DATA', e?.response?.data);
-      toast.error('Error removing lead');
-    } finally {
-      setIsDeleting(false);
-      setShowDeleteConfirm(false);
-    }
+  const handleRemoveSuccess = () => {
+    setShowRemovePanel(false);
+    queryClient?.invalidateQueries({ queryKey: ['leads'] });
   };
 
   return (
