@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Execute deletions
+    // Execute deletions (cascade logic inlined - no function-to-function calls)
     let deletedCount = 0;
     let skippedCount = 0;
     const deletedIds = [];
@@ -101,29 +101,75 @@ Deno.serve(async (req) => {
       }
 
       try {
-        const deleteRes = await base44.asServiceRole.functions.invoke('softDeleteLeadV2', {
-          leadId: lead.id,
-          reason: 'test_data_cleanup'
+        const now = new Date().toISOString();
+
+        // 1. Soft-delete the Lead
+        await base44.asServiceRole.entities.Lead.update(lead.id, {
+          isDeleted: true,
+          deletedAt: now,
+          deletedBy: user?.email || 'system',
+          deleteReason: 'test_data_cleanup'
         });
 
-        const deleteData = deleteRes?.data ?? deleteRes;
-        if (deleteData?.success === true) {
-          deletedCount++;
-          deletedIds.push(lead.id);
-          console.log('BULK_DELETE_TEST_LEADS_V1_DELETED', {
+        // 2. Cancel all non-cancelled InspectionRecords for this lead
+        let inspectionsCancelled = 0;
+        try {
+          const inspections = await base44.asServiceRole.entities.InspectionRecord.filter(
+            { leadId: lead.id },
+            null,
+            100
+          );
+          for (const inspection of inspections) {
+            if (inspection.appointmentStatus !== 'cancelled') {
+              await base44.asServiceRole.entities.InspectionRecord.update(inspection.id, {
+                appointmentStatus: 'cancelled',
+                cancelledAt: now,
+                cancelReason: 'lead_deleted'
+              });
+              inspectionsCancelled++;
+            }
+          }
+        } catch (e) {
+          console.warn('BULK_DELETE_TEST_LEADS_V1_INSPECTIONS_CANCEL_FAILED', {
             leadId: lead.id,
-            email: lead.email,
-            inspectionsCancelled: deleteData.inspectionsCancelled,
-            eventsCancelled: deleteData.eventsCancelled
+            error: e.message
           });
-        } else {
-          console.warn('BULK_DELETE_TEST_LEADS_V1_DELETE_FAILED', {
-            leadId: lead.id,
-            email: lead.email,
-            error: deleteData?.error
-          });
-          skippedCount++;
         }
+
+        // 3. Cancel all non-cancelled CalendarEvents for this lead
+        let eventsCancelled = 0;
+        try {
+          const events = await base44.asServiceRole.entities.CalendarEvent.filter(
+            { leadId: lead.id },
+            null,
+            100
+          );
+          for (const event of events) {
+            if (event.status !== 'cancelled') {
+              await base44.asServiceRole.entities.CalendarEvent.update(event.id, {
+                status: 'cancelled',
+                cancelledAt: now,
+                cancelReason: 'lead_deleted'
+              });
+              eventsCancelled++;
+            }
+          }
+        } catch (e) {
+          console.warn('BULK_DELETE_TEST_LEADS_V1_EVENTS_CANCEL_FAILED', {
+            leadId: lead.id,
+            error: e.message
+          });
+        }
+
+        deletedCount++;
+        deletedIds.push(lead.id);
+        console.log('BULK_DELETE_TEST_LEADS_V1_DELETED', {
+          leadId: lead.id,
+          email: lead.email,
+          inspectionsCancelled,
+          eventsCancelled
+        });
+
       } catch (e) {
         console.error('BULK_DELETE_TEST_LEADS_V1_DELETE_CRASH', {
           leadId: lead.id,
