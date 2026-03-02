@@ -108,45 +108,58 @@ Deno.serve(async (req) => {
       quotes = await base44.asServiceRole.entities.Quote.filter({ leadId });
     } catch (filterErr) {
       console.error('V2_QUOTE_FILTER_FAILED', { leadId, error: String(filterErr?.message ?? filterErr) });
+      return json200({
+        success: false,
+        error: 'Failed to query quotes',
+        detail: String(filterErr?.message ?? filterErr),
+        build: BUILD
+      });
     }
 
     let quote = quotes?.[0];
+    let quoteToken = quote?.quoteToken;
+
     if (!quote) {
       // Create new Quote shell for this lead
-      const quoteToken = generateToken();
+      quoteToken = generateToken();
       try {
         const newQuote = await base44.asServiceRole.entities.Quote.create({
           leadId,
-          clientEmail: email,
-          clientFirstName: firstName || '',
           status: 'SENT',
           quoteToken
         });
         quote = newQuote;
-        console.log('V2_QUOTE_CREATED', { quoteId: quote.id, leadId, quoteToken });
+        console.log('V2_QUOTE_CREATED', { quoteId: quote.id, leadId });
       } catch (createErr) {
         console.error('V2_QUOTE_CREATE_FAILED', { leadId, error: String(createErr?.message ?? createErr) });
-        return json200({ success: false, error: 'Failed to create quote', build: BUILD });
+        return json200({
+          success: false,
+          error: 'Failed to create quote',
+          detail: String(createErr?.message ?? createErr),
+          build: BUILD
+        });
       }
-    } else {
-      // Quote exists; ensure quoteToken is set
-      let quoteToken = quote?.quoteToken;
-      if (!quoteToken) {
-        quoteToken = generateToken();
-        try {
-          await base44.asServiceRole.entities.Quote.update(quote.id, { quoteToken });
-          console.log('V2_TOKEN_GENERATED', { quoteId: quote.id, quoteToken });
-        } catch (tokenErr) {
-          console.error('V2_TOKEN_UPDATE_FAILED', { quoteId: quote.id, error: String(tokenErr?.message ?? tokenErr) });
-          return json200({ success: false, error: 'Failed to generate quote token', build: BUILD });
-        }
+    } else if (!quoteToken) {
+      // Quote exists but has no token; generate and update
+      quoteToken = generateToken();
+      try {
+        await base44.asServiceRole.entities.Quote.update(quote.id, { quoteToken });
+        console.log('V2_TOKEN_GENERATED', { quoteId: quote.id });
+      } catch (tokenErr) {
+        console.error('V2_TOKEN_UPDATE_FAILED', { quoteId: quote.id, error: String(tokenErr?.message ?? tokenErr) });
+        return json200({
+          success: false,
+          error: 'Failed to generate quote token',
+          detail: String(tokenErr?.message ?? tokenErr),
+          build: BUILD
+        });
       }
     }
 
     const link = `${appOrigin}/QuoteView/${encodeURIComponent(quoteToken)}`;
     const publicHomeLink = `${appOrigin}/PublicHome`;
 
-    console.log('V2_SEND', { quoteId, email, link, build: BUILD });
+    console.log('V2_SEND', { quoteId: quote.id, email, link, build: BUILD });
 
     const htmlBody = `<!DOCTYPE html>
 <html>
