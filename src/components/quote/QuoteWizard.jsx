@@ -161,9 +161,7 @@ export default function QuoteWizard({ persistQuote = true, initialAnswers = null
 
   // Estimate mode: show result when ready
   if (!persistQuote && quoteResult) {
-    const normalized = normalizeEstimate(quoteResult);
-    const monthlyPrice = normalized.monthly || 0;
-    const showMappingWarning = (!monthlyPrice || monthlyPrice === 0) && Object.keys(normalized.debug.numericCandidates).length > 0;
+    const monthlyPrice = quoteResult.monthly || 0;
 
     return (
       <div className="max-w-2xl mx-auto space-y-5">
