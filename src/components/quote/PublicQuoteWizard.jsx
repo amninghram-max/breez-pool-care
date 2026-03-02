@@ -190,9 +190,14 @@ export default function PublicQuoteWizard({
   const goBack = () => setStep(s => Math.max(0, s - 1));
 
   const handleSelect = (key, value) => {
-    // Check for DE filter disqualification
+    // Check for pool type disqualification (non-concrete/plaster)
+    if (key === 'poolType' && ['fiberglass', 'vinyl', 'above_ground'].includes(value)) {
+      setDisqualified('pool_type');
+      return;
+    }
+    // Check for filter type disqualification (DE filters)
     if (key === 'filterType' && value === 'de') {
-      setDisqualified('de');
+      setDisqualified('filter_type');
       return;
     }
 
