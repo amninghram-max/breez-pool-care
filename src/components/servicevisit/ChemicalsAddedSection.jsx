@@ -244,7 +244,7 @@ function ChemicalDoseModal({ isOpen, onClose, onAddDose, chemicals = [], propert
   );
 }
 
-export default function ChemicalsAddedSection({ chemicalsAdded, onChemicalsChange }) {
+export default function ChemicalsAddedSection({ chemicalsAdded, onChemicalsChange, propertyId, visitReadings }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [bucketUnits, setBucketUnits] = useState({});
 
@@ -321,6 +321,8 @@ export default function ChemicalsAddedSection({ chemicalsAdded, onChemicalsChang
             onClose={() => setIsModalOpen(false)}
             onAddDose={handleAddDose}
             chemicals={chemicals}
+            propertyId={propertyId}
+            visitReadings={visitReadings}
           />
           <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
             <DialogTrigger asChild>
