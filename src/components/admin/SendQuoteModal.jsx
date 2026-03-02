@@ -99,6 +99,7 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
         toast.error(msg);
       }
     } catch (err) {
+      console.log("SEND_QUOTE_LINK_HANDLER_CATCH", err);
       console.error('Send quote link error:', err);
       const errorMsg = getErrMsg(err);
       setError(errorMsg);
