@@ -160,21 +160,7 @@ Deno.serve(async (req) => {
     const resendId = emailData.id ?? null;
     console.log('V2_SENT', { resendId, email, build: BUILD });
 
-    const stampValue = new Date().toISOString();
-    let stampUpdated = false;
-    let stampError = null;
-    try {
-      await base44.asServiceRole.entities.Lead.update(leadId, {
-        quoteLinkEmailSentAt: stampValue,
-        quoteLinkEmailResendId: resendId
-      });
-      stampUpdated = true;
-    } catch (stampErr) {
-      stampError = String(stampErr?.message ?? stampErr);
-    }
-    console.log('V2_STAMP', { stampUpdated, stampError });
-
-    return json200({ success: true, quoteUrl: link, build: BUILD, resendId, stampUpdated, stampValue, stampError });
+    return json200({ success: true, quoteUrl: link, build: BUILD, resendId });
 
   } catch (error) {
     console.error('V2 crash:', error);
