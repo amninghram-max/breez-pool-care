@@ -170,6 +170,7 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
       setSessionId(newId);
       setCurrentStep(1);
       setPricingInputs(null);
+      setEstimatePreview(null);
       setQuoteSnapshot(null);
       setContactDraft({ firstName: '', email: '', phone: '' });
       setActivationLink(null);
