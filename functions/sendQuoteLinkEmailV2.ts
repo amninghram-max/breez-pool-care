@@ -124,7 +124,7 @@ Deno.serve(async (req) => {
 
     if (!emailRes.ok) {
       console.error('V2 Resend error:', emailRes.status, resendText.slice(0, 200));
-      return json({ success: false, error: 'Resend failed', status: emailRes.status, body: resendText.slice(0, 300), build: BUILD });
+      return json200({ success: false, error: 'Resend failed', status: emailRes.status, body: resendText.slice(0, 300), build: BUILD });
     }
 
     const resendId = emailData.id ?? null;
