@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
 
 Thanks for requesting your pool service quote from Breez.
 
-Here's your recommended plan:
+Here's your recommended plan: 
 
 Monthly Service: $${quote.estimatedMonthlyPrice.toFixed(2)}
 Per Visit: $${quote.estimatedPerVisitPrice.toFixed(2)}
