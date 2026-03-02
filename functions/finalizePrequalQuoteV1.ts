@@ -241,12 +241,15 @@ Deno.serve(async (req) => {
       frequencyAutoRequired: quoteResult.frequencyAutoRequired
     };
 
-    return json200({
+    const response = {
       success: true,
       priceSummary,
       quoteSnapshot: quoteResult,
       build: BUILD
-    });
+    };
+    console.log('DEBUG: Final response object being returned to frontend', response);
+
+    return json200(response);
 
   } catch (error) {
     console.error('FPQ_CRASH', { error: error?.message, stack: error?.stack?.slice(0, 300) });
