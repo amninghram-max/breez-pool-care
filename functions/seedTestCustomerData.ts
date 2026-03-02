@@ -23,16 +23,78 @@ function daysAgo(n) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-
-    // 1. Admin/Staff only
-    if (!user || !['admin', 'staff'].includes(user.role)) {
-      return Response.json({ error: 'Forbidden: Admin/Staff only' }, { status: 403 });
+    
+    // Parse request body FIRST to check for debugAuth flag
+    let body = {};
+    try {
+      body = await req.json();
+    } catch (err) {
+      console.error('Failed to parse request body:', err.message);
     }
 
-    // 2. Parse request body
-    const body = await req.json();
-    const { leadId, daysBack = 30, visitsCount = 6 } = body;
+    const { leadId, daysBack = 30, visitsCount = 6, debugAuth = false } = body;
+
+    // Read current user context
+    let user = null;
+    let authError = null;
+    try {
+      user = await base44.auth.me();
+    } catch (err) {
+      authError = err.message;
+      console.error('Auth read error:', authError);
+    }
+
+    // If debugAuth is requested, return diagnostics without running seeding
+    if (debugAuth) {
+      const diagnostics = {
+        authDebug: true,
+        userIdentifier: user?.email || user?.id || 'not-identified',
+        userPresent: !!user,
+        availableRoleFields: user ? {
+          role: user.role,
+          roles: user.roles,
+          isAdmin: user.isAdmin,
+          permissions: user.permissions,
+          claims: user.claims
+        } : null,
+        authError,
+        expectedAdminGate: 'admin|staff',
+        observedRole: user?.role || 'undefined'
+      };
+      return Response.json(diagnostics, { status: 200 });
+    }
+
+    // 1. Admin/Staff gate (check actual role field)
+    if (!user) {
+      return Response.json({
+        step: 'auth',
+        errorMessage: 'User not authenticated',
+        observedRole: null,
+        authError
+      }, { status: 403 });
+    }
+
+    // Check for admin/staff role (support both user.role and user.roles array)
+    const hasAdminRole = 
+      user.role === 'admin' || 
+      user.role === 'staff' ||
+      (Array.isArray(user.roles) && (user.roles.includes('admin') || user.roles.includes('staff'))) ||
+      user.isAdmin === true;
+
+    if (!hasAdminRole) {
+      return Response.json({
+        step: 'auth',
+        errorMessage: `User role "${user.role}" does not have admin/staff access`,
+        observedRole: user.role,
+        availableRoles: user.roles,
+        isAdmin: user.isAdmin
+      }, { status: 403 });
+    }
+
+    // 2. Validate leadId
+    if (!leadId) {
+      return Response.json({ error: 'leadId is required' }, { status: 400 });
+    }
 
     if (!leadId) {
       return Response.json({ error: 'leadId is required' }, { status: 400 });
@@ -47,7 +109,10 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Lead not found' }, { status: 404 });
       }
     } catch (err) {
-      return Response.json({ error: `Failed to fetch Lead: ${err.message}` }, { status: 500 });
+      return Response.json({ 
+        step: 'readLead',
+        error: `Failed to fetch Lead: ${err.message}` 
+      }, { status: 500 });
     }
 
     let attemptedServiceVisits = 0;
