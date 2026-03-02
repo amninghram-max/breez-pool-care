@@ -122,20 +122,21 @@ Deno.serve(async (req) => {
     const token = generateToken();
     const requestPayload = {
       token,
-      leadId,
-      email,
+      leadId: leadId.trim(),
+      email: email.trim(),
+      ...(firstName && { firstName }),
       status: 'SENT'
     };
     try {
       await base44.asServiceRole.entities.QuoteRequests.create(requestPayload);
-      console.log('V2_QUOTE_REQUEST_CREATED', { token, leadId, email });
+      console.log('V2_QUOTE_REQUEST_CREATED', { token, leadId: leadId.trim(), email: email.trim(), firstName });
     } catch (createErr) {
       const errorDetail = createErr?.message ?? String(createErr);
       const errorStack = createErr?.stack ? String(createErr.stack).slice(0, 300) : undefined;
       
       console.error('V2_QUOTE_REQUEST_CREATE_FAILED', {
-        leadId,
-        email,
+        leadId: leadId.trim(),
+        email: email.trim(),
         message: errorDetail,
         stack: errorStack
       });
