@@ -127,6 +127,41 @@ export default function QuoteWizard({ persistQuote = true, initialAnswers = null
   // Persist (persistQuote=true): 3 steps (pool + features + contact)
   const totalSteps = persistQuote ? 3 : 2;
 
+  // Estimate mode: show result when ready
+  if (!persistQuote && quoteResult) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-5">
+        <Card>
+          <CardHeader>
+            <CardTitle>Your Estimate</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
+              <p className="text-sm text-teal-700 mb-3">Monthly Service Price:</p>
+              <p className="text-3xl font-bold text-teal-900">${(quoteResult.finalMonthlyPrice || quoteResult.estimatedMonthlyPrice || 0).toFixed(2)}</p>
+              {quoteResult.estimatedPerVisitPrice && (
+                <p className="text-xs text-teal-600 mt-2">Per visit: ${quoteResult.estimatedPerVisitPrice.toFixed(2)}</p>
+              )}
+              {quoteResult.estimatedOneTimeFees && quoteResult.estimatedOneTimeFees > 0 && (
+                <p className="text-xs text-teal-600 mt-1">One-time fees: ${quoteResult.estimatedOneTimeFees.toFixed(2)}</p>
+              )}
+            </div>
+            <Button
+              onClick={() => {
+                setQuoteResult(null);
+                setStep(1);
+              }}
+              variant="outline"
+              className="w-full"
+            >
+              Generate Another Estimate
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl mx-auto space-y-5">
       {hasSavedAnswers && step === 1 && (
@@ -142,10 +177,10 @@ export default function QuoteWizard({ persistQuote = true, initialAnswers = null
         ))}
       </div>
 
-      {calculateMutation.isError && (
+      {(calculateMutation.isError || estimateError) && (
         <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-800">
           <AlertCircle className="w-4 h-4" />
-          {calculateMutation.error?.message || 'Failed to calculate quote. Please try again.'}
+          {estimateError || calculateMutation.error?.message || 'Failed to calculate quote. Please try again.'}
         </div>
       )}
 
