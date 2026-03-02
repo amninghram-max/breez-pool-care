@@ -144,10 +144,10 @@ Deno.serve(async (req) => {
     }
     console.log('V2_STAMP', { stampUpdated, stampError });
 
-    return json({ success: true, build: BUILD, link, resendId, stampUpdated, stampValue, stampError });
+    return json200({ success: true, quoteUrl: link, build: BUILD, resendId, stampUpdated, stampValue, stampError });
 
   } catch (error) {
     console.error('V2 crash:', error);
-    return json({ success: false, error: 'sendQuoteLinkEmailV2 crashed', message: String(error?.message ?? error), build: BUILD });
+    return json200({ success: false, error: 'sendQuoteLinkEmailV2 crashed', message: String(error?.message ?? error), build: BUILD });
   }
 });
