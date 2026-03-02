@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, Plus, Search, Wrench, MessageSquare } from 'lucide-react';
+import { ChevronLeft, Plus, Search, Wrench, MessageSquare, AlertCircle, Activity, Mail, Phone } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
