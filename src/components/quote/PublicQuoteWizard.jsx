@@ -312,6 +312,7 @@ export default function PublicQuoteWizard({ prefillData, onDebugStateChange }) {
         });
 
         try {
+          setLastFinalizeRequest(finalizePayload);
           const finalizeRes = await Promise.race([
             base44.functions.invoke('finalizePrequalQuoteV1', finalizePayload),
             timeoutPromise
@@ -319,6 +320,7 @@ export default function PublicQuoteWizard({ prefillData, onDebugStateChange }) {
           console.log('DEBUG: Finalize raw response', finalizeRes);
           const finalizeData = finalizeRes?.data ?? finalizeRes;
           console.log('DEBUG: Finalize parsed data', finalizeData);
+          setLastFinalizeResponse(finalizeData);
 
           if (finalizeData?.success === true && finalizeData?.priceSummary) {
             // Merge: use quoteSnapshot as quote, ensure priceSummary is present
@@ -343,6 +345,7 @@ export default function PublicQuoteWizard({ prefillData, onDebugStateChange }) {
           const errorMsg = finErr?.message || 'Failed to finalize quote';
           console.log('DEBUG: Finalize error/timeout', errorMsg);
           setFinalizeError(errorMsg);
+          setLastFinalizeResponse({ error: errorMsg });
           setResult({ error: errorMsg });
           setIsFinalizing(false);
         }
