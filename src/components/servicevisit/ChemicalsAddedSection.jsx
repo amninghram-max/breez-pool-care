@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,13 +8,16 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, X, Search } from 'lucide-react';
 import { toast } from 'sonner';
+import RetestPrompt from './RetestPrompt';
+import { getRetestEligibility } from './retestHeuristics';
 
-function ChemicalDoseModal({ isOpen, onClose, onAddDose, chemicals = [], propertyId, visitReadings }) {
+function ChemicalDoseModal({ isOpen, onClose, onAddDose, chemicals = [], propertyId, visitReadings, onDoseApplied }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedChemicalId, setSelectedChemicalId] = useState('');
   const [amount, setAmount] = useState('');
   const [suggestion, setSuggestion] = useState(null);
   const [loadingSuggestion, setLoadingSuggestion] = useState(false);
+  const [wasSuggestionUsed, setWasSuggestionUsed] = useState(false);
 
   const filteredChemicals = useMemo(() => {
     if (!searchQuery.trim()) return chemicals;
@@ -78,6 +81,7 @@ function ChemicalDoseModal({ isOpen, onClose, onAddDose, chemicals = [], propert
   const handleUseSuggestion = () => {
     if (suggestion) {
       setAmount(suggestion.amount.toString());
+      setWasSuggestionUsed(true);
     }
   };
 
@@ -93,19 +97,27 @@ function ChemicalDoseModal({ isOpen, onClose, onAddDose, chemicals = [], propert
       return;
     }
 
-    onAddDose({
+    const dose = {
       chemicalId: selectedChemicalId,
       chemicalName: selectedChemical.name,
       serviceVisitKey: selectedChemical.serviceVisitKey,
       amount: amountNum,
       unit: selectedChemical.defaultDoseUnit
-    });
+    };
+
+    onAddDose(dose);
+
+    // Signal to parent to check retest eligibility
+    if (onDoseApplied) {
+      onDoseApplied(dose, wasSuggestionUsed, suggestion?.reason);
+    }
 
     // Reset
     setSearchQuery('');
     setSelectedChemicalId('');
     setAmount('');
     setSuggestion(null);
+    setWasSuggestionUsed(false);
     onClose();
   };
 
@@ -244,13 +256,29 @@ function ChemicalDoseModal({ isOpen, onClose, onAddDose, chemicals = [], propert
   );
 }
 
-export default function ChemicalsAddedSection({ chemicalsAdded, onChemicalsChange, propertyId, visitReadings }) {
+export default function ChemicalsAddedSection({ chemicalsAdded, onChemicalsChange, propertyId, visitReadings, technicianId }) {
+  const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [bucketUnits, setBucketUnits] = useState({});
+  const [retestPromptOpen, setRetestPromptOpen] = useState(false);
+  const [retestDetails, setRetestDetails] = useState(null);
+  const [dismissRetestPrompt, setDismissRetestPrompt] = useState(false);
 
   const { data: chemicals = [] } = useQuery({
     queryKey: ['chemicalCatalogForService'],
     queryFn: () => base44.entities.ChemicalCatalogItem.list('-updated_date', 100)
+  });
+
+  const createRetestMutation = useMutation({
+    mutationFn: async (retestData) => {
+      return base44.entities.RetestRecord.create(retestData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['retestRecords'] });
+      toast.success(`Retest reminder set for ${retestDetails.minutes} minutes.`);
+      setRetestPromptOpen(false);
+      setRetestDetails(null);
+    }
   });
 
   const handleAddDose = (dose) => {
@@ -295,6 +323,43 @@ export default function ChemicalsAddedSection({ chemicalsAdded, onChemicalsChang
     setBucketUnits(newUnits);
   };
 
+  const handleDoseApplied = (dose, wasSuggested, suggestionReason) => {
+    if (dismissRetestPrompt) return;
+
+    const eligibility = getRetestEligibility(dose, wasSuggested, suggestionReason);
+    if (eligibility.eligible) {
+      setRetestDetails({
+        dose,
+        minutes: eligibility.minutes,
+        reason: eligibility.reason
+      });
+      setRetestPromptOpen(true);
+    }
+  };
+
+  const handleRetestSelection = (minutes, dontAskAgain) => {
+    if (dontAskAgain) {
+      setDismissRetestPrompt(true);
+    }
+
+    if (minutes) {
+      const now = new Date();
+      const retestDate = new Date(now.getTime() + minutes * 60000);
+
+      createRetestMutation.mutate({
+        leadId: propertyId,
+        poolId: propertyId,
+        originalTestId: 'pending', // Placeholder until actual test is saved
+        retestDate: retestDate.toISOString(),
+        technicianId: technicianId || 'unknown',
+        reasonForRetest: 'post_treatment'
+      });
+    } else {
+      setRetestPromptOpen(false);
+      setRetestDetails(null);
+    }
+  };
+
   // Build display list: group chemicals by serviceVisitKey, show which registry items map to it
   const displayItems = useMemo(() => {
     const items = [];
@@ -323,6 +388,7 @@ export default function ChemicalsAddedSection({ chemicalsAdded, onChemicalsChang
             chemicals={chemicals}
             propertyId={propertyId}
             visitReadings={visitReadings}
+            onDoseApplied={handleDoseApplied}
           />
           <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
             <DialogTrigger asChild>
