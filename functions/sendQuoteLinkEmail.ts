@@ -221,17 +221,22 @@ Deno.serve(async (req) => {
     console.log('✅ Quote link email sent via Resend:', { id: emailData.id, to: email, link: quoteLink, build: BUILD });
 
     // Stamp the Lead so frontend can verify success even if SDK parse fails
+    let stampUpdated = false;
+    let stampError = null;
+    const stampTs = new Date().toISOString();
     try {
       await base44.asServiceRole.entities.Lead.update(leadId, {
-        quoteLinkEmailSentAt: new Date().toISOString(),
+        quoteLinkEmailSentAt: stampTs,
         quoteLinkEmailResendId: emailData.id || null
       });
-      console.log('✅ Lead quoteLinkEmailSentAt stamped');
+      stampUpdated = true;
+      console.log('STAMP_OK', { leadId, quoteLinkEmailSentAt: stampTs });
     } catch (stampErr) {
-      console.error('⚠️ Failed to stamp Lead quoteLinkEmailSentAt:', stampErr.message);
+      stampError = stampErr?.message || String(stampErr);
+      console.error('STAMP_FAIL', { leadId, error: stampError });
     }
 
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({ success: true, stampUpdated, stampError }), {
       status: 200,
       headers: { "content-type": "application/json; charset=utf-8" }
     });
