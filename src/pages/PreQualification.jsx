@@ -35,9 +35,10 @@ export default function PreQualification() {
   const [user, setUser] = useState(undefined); // undefined = loading, null = guest
   const [quoteResult, setQuoteResult] = useState(null);
   const [answeredFormData, setAnsweredFormData] = useState(null);
-  const [prefillData, setPrefillData] = useState(null); // { email, leadId }
+  const [prefillData, setPrefillData] = useState(null); // { email, leadId, token }
   const [prefillError, setPrefillError] = useState('');
   const [loadingPrefill, setLoadingPrefill] = useState(false);
+  const [existingQuote, setExistingQuote] = useState(null); // persisted quote snapshot
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => setUser(null));
@@ -50,6 +51,24 @@ export default function PreQualification() {
     const loadPrefill = async () => {
       setLoadingPrefill(true);
       try {
+        // First try to load existing quote snapshot
+        const quoteRes = await base44.functions.invoke('getQuoteByTokenPublicV1', { token });
+        const quoteData = quoteRes?.data ?? quoteRes;
+        
+        if (quoteData?.success === true && quoteData.quote) {
+          // Quote exists, show it immediately
+          setExistingQuote(quoteData.quote);
+          setPrefillData({
+            token,
+            email: quoteData.quote.clientEmail,
+            firstName: quoteData.quote.clientFirstName,
+            leadId: quoteData.quote.leadId
+          });
+          setLoadingPrefill(false);
+          return;
+        }
+
+        // No existing quote, load quote request to fill form
         const res = await base44.functions.invoke('getQuoteRequestPublicV1', { token });
         const data = res?.data ?? res;
         if (data?.success === true && data.request) {
@@ -185,30 +204,66 @@ export default function PreQualification() {
         <a href="tel:3215243838" className="text-sm text-gray-500 hover:text-gray-700">(321) 524-3838</a>
       </header>
 
-      {/* Wizard card */}
-      <div className="flex-1 flex items-start justify-center px-4 py-10">
-        <div className="w-full max-w-lg bg-white rounded-2xl shadow-lg p-8">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Get Your Free Instant Quote</h1>
-            <p className="text-gray-500 text-sm mt-1">1 question at a time. Takes about 2 minutes.</p>
+      {/* Show existing quote if found */}
+      {existingQuote ? (
+        <div className="flex-1 flex items-start justify-center px-4 py-10">
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-lg p-8">
+            <div className="space-y-6">
+              <div className="text-center">
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome back, {existingQuote.clientFirstName}!</h1>
+                <p className="text-gray-500 text-sm">Here's your saved quote</p>
+              </div>
+
+              <div className="rounded-2xl border-2 border-teal-600 p-6 bg-blue-50">
+                <div className="text-center mb-4">
+                  <div className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Estimated Monthly Service</div>
+                  <div className="text-4xl font-bold text-teal-600">{existingQuote.priceSummary?.monthlyPrice || 'TBD'}</div>
+                  <div className="mt-2 inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-white border border-teal-600 text-teal-600">
+                    {existingQuote.priceSummary?.visitFrequency} Service
+                  </div>
+                  {existingQuote.priceSummary?.oneTimeFees && (
+                    <div className="border-t pt-4 mt-4 text-center">
+                      <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">One-Time Initial Fee</div>
+                      <div className="text-xl font-bold text-gray-800">{existingQuote.priceSummary.oneTimeFees}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <button
+                onClick={() => setExistingQuote(null)}
+                className="w-full py-3 px-4 rounded-xl text-white text-sm font-semibold bg-teal-600 hover:bg-teal-700 transition-all"
+              >
+                Schedule Your Free Inspection
+              </button>
+            </div>
           </div>
-          <PublicQuoteWizard 
-            prefillData={prefillData}
-            finalizing={finalizing}
-            setFinalizing={setFinalizing}
-            finalizeState={finalizeState}
-            setFinalizeState={setFinalizeState}
-            finalizeError={finalizeError}
-            setFinalizeError={setFinalizeError}
-            lastFinalizeRequest={lastFinalizeRequest}
-            setLastFinalizeRequest={setLastFinalizeRequest}
-            lastFinalizeResponse={lastFinalizeResponse}
-            setLastFinalizeResponse={setLastFinalizeResponse}
-            finishClickedAt={finishClickedAt}
-            setFinishClickedAt={setFinishClickedAt}
-          />
         </div>
-      </div>
+      ) : (
+        <div className="flex-1 flex items-start justify-center px-4 py-10">
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-lg p-8">
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold text-gray-900">Get Your Free Instant Quote</h1>
+              <p className="text-gray-500 text-sm mt-1">1 question at a time. Takes about 2 minutes.</p>
+            </div>
+            <PublicQuoteWizard 
+              prefillData={prefillData}
+              finalizing={finalizing}
+              setFinalizing={setFinalizing}
+              finalizeState={finalizeState}
+              setFinalizeState={setFinalizeState}
+              finalizeError={finalizeError}
+              setFinalizeError={setFinalizeError}
+              lastFinalizeRequest={lastFinalizeRequest}
+              setLastFinalizeRequest={setLastFinalizeRequest}
+              lastFinalizeResponse={lastFinalizeResponse}
+              setLastFinalizeResponse={setLastFinalizeResponse}
+              finishClickedAt={finishClickedAt}
+              setFinishClickedAt={setFinishClickedAt}
+            />
+          </div>
+        </div>
+      )}
 
       {/* DEBUG PANEL - Fixed bottom-right */}
       <div style={{
