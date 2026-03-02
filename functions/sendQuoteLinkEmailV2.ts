@@ -48,18 +48,26 @@ function validateAppOrigin(appOrigin) {
 }
 
 Deno.serve(async (req) => {
-  const base44 = createClientFromRequest(req);
-
-  const raw = await req.text();
-  let payload = null;
-  try { payload = raw ? JSON.parse(raw) : null; } catch {}
-
-  // Force probe
-  if (payload?.__force === "1") {
-    return json200({ success: false, build: BUILD, note: "force reached V2" });
-  }
-
   try {
+    const base44 = createClientFromRequest(req);
+
+    const raw = await req.text();
+    let payload = null;
+    try {
+      payload = raw ? JSON.parse(raw) : null;
+    } catch (jsonErr) {
+      return json200({
+        success: false,
+        error: 'Invalid JSON body',
+        detail: String(jsonErr?.message ?? jsonErr),
+        build: BUILD
+      });
+    }
+
+    // Force probe
+    if (payload?.__force === "1") {
+      return json200({ success: false, build: BUILD, note: "force reached V2" });
+    }
     const { leadId, email, appOrigin: appOriginRaw, origin: originFallback, firstName } = payload || {};
 
     // Validate required fields
