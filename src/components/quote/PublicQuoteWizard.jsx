@@ -390,12 +390,13 @@ export default function PublicQuoteWizard({ prefillData }) {
               value={firstName}
               onChange={e => setFirstName(e.target.value)}
               placeholder="Your first name"
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none transition-colors text-gray-900"
+              className={`w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none transition-colors text-gray-900`}
               style={{ '--tw-ring-color': TEAL }}
               onFocus={e => e.target.style.borderColor = TEAL}
               onBlur={e => e.target.style.borderColor = '#e5e7eb'}
               autoComplete="given-name"
             />
+            {prefillData?.firstName && <p className="text-xs text-gray-400 mt-1">From your request</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
