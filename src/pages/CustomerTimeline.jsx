@@ -11,6 +11,9 @@ import { ChevronLeft, Plus, Search, Wrench, MessageSquare, AlertCircle, Activity
 import { createPageUrl } from '@/utils';
 import { Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
+import QuickActionsBar from '../components/customer/QuickActionsBar';
+import SendAlertModal from '../components/customer/SendAlertModal';
+import AlertsActionBar from '../components/customer/AlertsActionBar';
 
 function ActiveCustomersDirectory() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -317,7 +320,10 @@ export default function CustomerTimeline() {
           <Badge className="bg-green-100 text-green-800">Active</Badge>
         </div>
         
-        {/* Quick Action Buttons */}
+        {/* Quick Contact Actions */}
+        <QuickActionsBar lead={lead} />
+
+        {/* Service & Management Buttons */}
         <div className="flex flex-wrap gap-2">
           <Link to={createPageUrl('ServiceVisitEntry') + `?leadId=${leadId}`}>
             <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
@@ -337,7 +343,9 @@ export default function CustomerTimeline() {
               Messages
             </Button>
           </Link>
-
+          {user && ['admin', 'staff'].includes(user.role) && (
+            <SendAlertModal leadId={leadId} />
+          )}
         </div>
       </div>
 
@@ -509,32 +517,35 @@ export default function CustomerTimeline() {
 
       {/* Alerts Summary */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Alerts & Incidents</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          {openFecalCount > 0 && (
-            <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded">
-              <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-medium text-red-900">{openFecalCount} Open Fecal Incident{openFecalCount !== 1 ? 's' : ''}</p>
-                <p className="text-xs text-red-700">Requires immediate attention</p>
-              </div>
-            </div>
-          )}
-          {activeRiskCount > 0 && (
-            <div className="flex items-start gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded">
-              <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-medium text-yellow-900">{activeRiskCount} Active Chemistry Risk Event{activeRiskCount !== 1 ? 's' : ''}</p>
-                <p className="text-xs text-yellow-700">Monitor chemical levels</p>
-              </div>
-            </div>
-          )}
-          {openFecalCount === 0 && activeRiskCount === 0 && (
-            <p className="text-gray-600">No active alerts.</p>
-          )}
-        </CardContent>
+       <CardHeader>
+         <div className="flex items-center justify-between">
+           <CardTitle className="text-base">Alerts & Incidents</CardTitle>
+           <AlertsActionBar leadId={leadId} user={user} />
+         </div>
+       </CardHeader>
+       <CardContent className="space-y-3 text-sm">
+         {openFecalCount > 0 && (
+           <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded">
+             <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+             <div>
+               <p className="font-medium text-red-900">{openFecalCount} Open Fecal Incident{openFecalCount !== 1 ? 's' : ''}</p>
+               <p className="text-xs text-red-700">Requires immediate attention</p>
+             </div>
+           </div>
+         )}
+         {activeRiskCount > 0 && (
+           <div className="flex items-start gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded">
+             <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+             <div>
+               <p className="font-medium text-yellow-900">{activeRiskCount} Active Chemistry Risk Event{activeRiskCount !== 1 ? 's' : ''}</p>
+               <p className="text-xs text-yellow-700">Monitor chemical levels</p>
+             </div>
+           </div>
+         )}
+         {openFecalCount === 0 && activeRiskCount === 0 && (
+           <p className="text-gray-600">No active alerts.</p>
+         )}
+       </CardContent>
       </Card>
 
       {/* Older Visits Dropdown */}
