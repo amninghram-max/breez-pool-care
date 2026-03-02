@@ -204,30 +204,32 @@ export default function CustomerTimeline() {
     },
     onSuccess: (data) => {
       // Store full response for display
-      setSeedResponse({ success: true, data });
+      setSeedResponse(data);
       
-      // Invalidate all relevant query keys to refetch
-      queryClient.invalidateQueries({ queryKey: ['recentVisits', leadId] });
-      queryClient.invalidateQueries({ queryKey: ['allVisitsForDropdown', leadId] });
-      queryClient.invalidateQueries({ queryKey: ['customerEquipment', leadId] });
-      queryClient.invalidateQueries({ queryKey: ['messageThreads', leadId] });
-      queryClient.invalidateQueries({ queryKey: ['chemistryRiskEvents', leadId] });
-      
-      toast.success(
-        `✓ Verified: ${data.verifiedServiceVisitCount} visits, ${data.verifiedCustomerEquipmentCount} equipment, ${data.verifiedChemistryRiskEventCount} alerts`
-      );
+      // Only refresh queries if seeding succeeded
+      if (data.success === true) {
+        queryClient.invalidateQueries({ queryKey: ['recentVisits', leadId] });
+        queryClient.invalidateQueries({ queryKey: ['allVisitsForDropdown', leadId] });
+        queryClient.invalidateQueries({ queryKey: ['customerEquipment', leadId] });
+        queryClient.invalidateQueries({ queryKey: ['messageThreads', leadId] });
+        queryClient.invalidateQueries({ queryKey: ['chemistryRiskEvents', leadId] });
+        
+        toast.success(
+          `✓ Verified: ${data.verifiedServiceVisitCount} visits, ${data.verifiedCustomerEquipmentCount} equipment`
+        );
+      } else {
+        toast.error(`Seed failed at step "${data.step}": ${data.errorMessage}`);
+      }
     },
     onError: (err) => {
-      // Capture axios error response data
+      // HTTP network error (shouldn't happen with always-200, but keep as fallback)
       const errorData = {
         success: false,
-        errorMessage: err.message,
-        status: err.response?.status,
-        responseData: err.response?.data,
-        requestId: err.response?.headers?.['x-request-id']
+        step: 'http',
+        errorMessage: err.message || 'Network error'
       };
       setSeedResponse(errorData);
-      toast.error(`Failed to seed data: ${err.message || 'Unknown error'}`);
+      toast.error(`Network error: ${err.message || 'Unknown'}`);
     }
   });
 
