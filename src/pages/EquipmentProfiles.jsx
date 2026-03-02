@@ -1,27 +1,37 @@
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Wrench, Search, AlertCircle } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Wrench, Search, AlertCircle, Plus, X, Loader2 } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link, useNavigate } from 'react-router-dom';
-import EquipmentCatalogPanel from '@/components/equipment/EquipmentCatalogPanel';
+import { toast } from 'sonner';
 import PartsManagementPanel from '@/components/equipment/PartsManagementPanel';
 
 const TYPE_LABELS = {
   pump: 'Pump',
   filter: 'Filter',
   heater: 'Heater',
+  chlorinator: 'Chlorinator',
   solar_heater: 'Solar Heater',
   automation: 'Automation',
   salt_cell: 'Salt Cell',
   other: 'Other'
 };
+
+const EQUIPMENT_TYPES = [
+  { value: 'pump', label: 'Pumps' },
+  { value: 'filter', label: 'Filters' },
+  { value: 'heater', label: 'Heaters' },
+  { value: 'chlorinator', label: 'Chlorinators' }
+];
 
 export default function EquipmentProfiles() {
   const navigate = useNavigate();
