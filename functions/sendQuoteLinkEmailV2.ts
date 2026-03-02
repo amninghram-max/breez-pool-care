@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
       return json({ success: false, error: 'RESEND_API_KEY not configured', build: BUILD });
     }
 
-    const link = `${appOrigin}/PreQualification?leadId=${encodeURIComponent(leadId)}`;
+    const link = `${appOrigin}/activate?leadId=${encodeURIComponent(leadId)}`;
     const publicHomeLink = `${appOrigin}/PublicHome`;
 
     console.log('V2_SEND', { leadId, email, link, build: BUILD });
