@@ -24,6 +24,13 @@ const ENCLOSURE_OPTIONS = [
   { value: 'unscreened',     label: 'Unscreened / Open Air', sub: 'No enclosure or partial coverage' },
 ];
 
+const FILTER_TYPE_OPTIONS = [
+  { value: 'cartridge', label: 'Cartridge', sub: 'Cartridge filter system' },
+  { value: 'sand',      label: 'Sand',      sub: 'Sand filter system' },
+  { value: 'de',        label: 'DE (Diatomaceous Earth)', sub: 'DE filter system' },
+  { value: 'unknown',   label: 'Not Sure',  sub: "We'll determine at inspection" },
+];
+
 const CHLORINATION_OPTIONS = [
   { value: 'saltwater',    label: 'Saltwater System', sub: 'Salt chlorine generator' },
   { value: 'traditional',  label: 'Traditional Chlorine', sub: 'Tablets, liquid, or inline feeder' },
