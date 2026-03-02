@@ -580,6 +580,17 @@ export default function PublicQuoteWizard({
         </div>
       )
     },
+    usageFrequency: {
+      title: 'How often do you use your pool?',
+      sub: 'Helps us understand your service and planning needs.',
+      render: () => (
+        <div className="space-y-3">
+          {USAGE_FREQUENCY_OPTIONS.map(o => (
+            <OptionCard key={o.value} option={o} selected={answers.usageFrequency} onSelect={v => handleSelect('usageFrequency', v)} />
+          ))}
+        </div>
+      )
+    },
     treesOverhead: {
       title: 'Are there trees hanging over or near your pool?',
       sub: 'Overhead trees increase debris and affect chemistry.',
