@@ -127,10 +127,79 @@ export default function QuoteWizard({ persistQuote = true, initialAnswers = null
   // Persist (persistQuote=true): 3 steps (pool + features + contact)
   const totalSteps = persistQuote ? 3 : 2;
 
+  // Normalize estimate response to extract monthly/perVisit/oneTime
+  const normalizeEstimate = (raw) => {
+    // Try to find monthly in common shapes
+    let monthly = null;
+    let perVisit = null;
+    let oneTime = null;
+    const candidateKeys = [];
+    const candidateValues = {};
+
+    // Check direct keys
+    const directCandidates = [
+      'finalMonthlyPrice',
+      'finalMonthlyServiceAmount',
+      'monthlyServiceAmount',
+      'estimatedMonthlyPrice',
+      'monthly',
+      'monthlyPrice'
+    ];
+    directCandidates.forEach(key => {
+      if (raw[key] !== undefined && raw[key] !== null) {
+        candidateValues[key] = raw[key];
+        if (typeof raw[key] === 'number' && !monthly) {
+          monthly = raw[key];
+        }
+      }
+    });
+
+    // Check nested shapes
+    const nestedShapes = [raw.data, raw.quote, raw.pricing];
+    nestedShapes.forEach(shape => {
+      if (shape && typeof shape === 'object') {
+        directCandidates.forEach(key => {
+          if (shape[key] !== undefined && shape[key] !== null && typeof shape[key] === 'number') {
+            candidateValues[`nested.${key}`] = shape[key];
+            if (!monthly) monthly = shape[key];
+          }
+        });
+      }
+    });
+
+    // Extract other pricing fields
+    perVisit = raw.estimatedPerVisitPrice || raw.perVisitPrice || (raw.data?.estimatedPerVisitPrice) || (raw.quote?.estimatedPerVisitPrice);
+    oneTime = raw.estimatedOneTimeFees || raw.oneTimeFees || (raw.data?.estimatedOneTimeFees) || (raw.quote?.estimatedOneTimeFees);
+
+    // Debug logging
+    const numericCandidates = Object.fromEntries(
+      Object.entries(candidateValues).filter(([, v]) => typeof v === 'number')
+    );
+    console.log('[normalizeEstimate] candidates found:', numericCandidates);
+    console.log('[normalizeEstimate] normalized:', { monthly, perVisit, oneTime });
+
+    return { monthly, perVisit, oneTime, raw, debug: { numericCandidates, allKeys: Object.keys(raw) } };
+  };
+
   // Estimate mode: show result when ready
   if (!persistQuote && quoteResult) {
+    const normalized = normalizeEstimate(quoteResult);
+    const monthlyPrice = normalized.monthly || 0;
+    const showMappingWarning = (!monthlyPrice || monthlyPrice === 0) && Object.keys(normalized.debug.numericCandidates).length > 0;
+
     return (
       <div className="max-w-2xl mx-auto space-y-5">
+        {showMappingWarning && (
+          <div className="bg-yellow-50 border border-yellow-300 rounded-lg px-4 py-3 text-xs text-yellow-800">
+            <p className="font-semibold mb-2">⚠️ Estimate mapping mismatch — monthly not found</p>
+            <p className="mb-1">Numeric candidates checked:</p>
+            <code className="block bg-white p-2 rounded text-xs overflow-x-auto">
+              {JSON.stringify(normalized.debug.numericCandidates, null, 2)}
+            </code>
+            <p className="mt-2 text-xs">Top-level keys: {normalized.debug.allKeys.join(', ')}</p>
+          </div>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle>Your Estimate</CardTitle>
@@ -138,24 +207,34 @@ export default function QuoteWizard({ persistQuote = true, initialAnswers = null
           <CardContent className="space-y-4">
             <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
               <p className="text-sm text-teal-700 mb-3">Monthly Service Price:</p>
-              <p className="text-3xl font-bold text-teal-900">${(quoteResult.finalMonthlyPrice || quoteResult.estimatedMonthlyPrice || 0).toFixed(2)}</p>
-              {quoteResult.estimatedPerVisitPrice && (
-                <p className="text-xs text-teal-600 mt-2">Per visit: ${quoteResult.estimatedPerVisitPrice.toFixed(2)}</p>
+              <p className="text-3xl font-bold text-teal-900">${monthlyPrice.toFixed(2)}</p>
+              {normalized.perVisit && (
+                <p className="text-xs text-teal-600 mt-2">Per visit: ${normalized.perVisit.toFixed(2)}</p>
               )}
-              {quoteResult.estimatedOneTimeFees && quoteResult.estimatedOneTimeFees > 0 && (
-                <p className="text-xs text-teal-600 mt-1">One-time fees: ${quoteResult.estimatedOneTimeFees.toFixed(2)}</p>
+              {normalized.oneTime && normalized.oneTime > 0 && (
+                <p className="text-xs text-teal-600 mt-1">One-time fees: ${normalized.oneTime.toFixed(2)}</p>
               )}
             </div>
-            <Button
-              onClick={() => {
-                setQuoteResult(null);
-                setStep(1);
-              }}
-              variant="outline"
-              className="w-full"
-            >
-              Generate Another Estimate
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => {
+                  if (onComplete) onComplete(normalized, formData);
+                }}
+                className="flex-1 bg-teal-600 hover:bg-teal-700"
+              >
+                Continue to Inspection
+              </Button>
+              <Button
+                onClick={() => {
+                  setQuoteResult(null);
+                  setStep(1);
+                }}
+                variant="outline"
+                className="flex-1"
+              >
+                Generate Another
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
