@@ -134,22 +134,18 @@ Deno.serve(async (req) => {
       } catch (createErr) {
         const errorDetail = createErr?.message ?? String(createErr);
         const errorStack = createErr?.stack ? String(createErr.stack).slice(0, 300) : undefined;
-        const errorCause = createErr?.cause ? String(createErr.cause) : undefined;
-        const errorErrors = createErr?.errors ? JSON.stringify(createErr.errors) : undefined;
         
         console.error('V2_QUOTE_CREATE_FAILED', {
           leadId,
           message: errorDetail,
-          cause: errorCause,
-          errors: errorErrors
+          stack: errorStack
         });
         
         return json200({
           success: false,
           error: 'Failed to create quote',
           detail: errorDetail,
-          cause: errorCause,
-          errors: errorErrors,
+          stack: errorStack,
           createPayloadKeys: Object.keys(createPayload),
           build: BUILD
         });
