@@ -184,38 +184,23 @@ Deno.serve(async (req) => {
       console.error('QUOTE_READINESS_ERROR', { error: e.message });
     }
 
-    // ── 2. Create/upsert Lead record ──
-    let lead = null;
+    // ── 2. Submit PublicQuoteRequest (no Lead write) ──
+    let requestId = null;
     try {
-      const existing = await base44.asServiceRole.entities.Lead.filter({ email: clientEmail }, '-created_date', 1);
-      const leadData = {
-        firstName: clientFirstName,
+      const submitRes = await base44.asServiceRole.functions.invoke('publicSubmitQuoteRequest', {
         email: clientEmail,
-        poolType: questionnaireData.poolType || undefined,
-        filterType: questionnaireData.filterType || undefined,
-        screenedArea: questionnaireData.enclosure === 'unscreened' ? 'unscreened' : (questionnaireData.enclosure === 'fully_screened' ? 'fully_screened' : undefined),
-        treesOverhead: questionnaireData.treesOverhead || undefined,
-        usageFrequency: questionnaireData.useFrequency || undefined,
-        sanitizerType: questionnaireData.chlorinationMethod === 'saltwater' ? 'saltwater' : (questionnaireData.chlorinationMethod === 'traditional' ? 'tablets' : undefined),
-        poolCondition: (() => {
-          const c = questionnaireData.poolCondition;
-          if (c === 'clear') return 'clear';
-          if (c === 'slightly_cloudy') return 'slightly_cloudy';
-          if (c === 'green' || c === 'dark_algae') return 'green';
-          return undefined;
-        })(),
-        hasPets: questionnaireData.petsAccess || false,
-        petsSwimInPool: questionnaireData.petsAccess || false,
-        quoteGenerated: false,
-        stage: 'new_lead',
-      };
-      if (existing.length > 0) {
-        lead = await base44.asServiceRole.entities.Lead.update(existing[0].id, { ...leadData, quoteGenerated: true });
+        firstName: clientFirstName,
+        source: 'public_quote_wizard',
+        questionnaireData,
+      });
+      if (submitRes.data?.success) {
+        requestId = submitRes.data.requestId;
+        console.log('QUOTE_REQUEST_SUBMITTED', { requestId, email: clientEmail });
       } else {
-        lead = await base44.asServiceRole.entities.Lead.create({ ...leadData, quoteGenerated: true });
+        console.warn('PublicQuoteRequest submit failed:', submitRes.data?.error);
       }
     } catch (e) {
-      console.warn('Lead upsert failed (non-blocking):', e.message);
+      console.warn('PublicQuoteRequest invoke failed (non-blocking):', e.message);
     }
 
     // ── 3. If ready: calculate quote and persist ──
