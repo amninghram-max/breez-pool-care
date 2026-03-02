@@ -359,23 +359,59 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
           ) : currentStep === 2 ? (
            // ── Step 2: Lock Quote ──
            <div className="space-y-4">
-             {quoteSnapshot ? (
-               // ── Already locked: show locked summary ──
-               <>
-                 <Card>
-                   <CardHeader>
-                     <CardTitle>Locked Quote Summary</CardTitle>
-                   </CardHeader>
-                   <CardContent className="space-y-4">
-                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                       <p className="text-sm text-green-700 mb-2">Monthly: <strong>${(quoteSnapshot.finalMonthlyPrice || quoteSnapshot.monthly || 0).toFixed(2)}</strong></p>
-                       {quoteSnapshot.estimatedPerVisitPrice && (
-                         <p className="text-sm text-green-700">Per visit: ${quoteSnapshot.estimatedPerVisitPrice.toFixed(2)}</p>
-                       )}
-                       {quoteSnapshot.estimatedOneTimeFees && quoteSnapshot.estimatedOneTimeFees > 0 && (
-                         <p className="text-sm text-green-700">One-time fees: ${quoteSnapshot.estimatedOneTimeFees.toFixed(2)}</p>
-                       )}
-                     </div>
+             {(() => {
+               // Derived pricing state for display — eliminates all $0 defaults
+               const pricingForDisplay = quoteSnapshot ?? estimatePreview ?? null;
+               const pricingSource = quoteSnapshot ? 'LOCKED' : estimatePreview ? 'PREVIEW' : 'NONE';
+               const monthlyPrice = pricingForDisplay?.finalMonthlyPrice ?? pricingForDisplay?.monthly;
+
+               if (!pricingForDisplay) {
+                 return (
+                   <Card>
+                     <CardHeader>
+                       <CardTitle>No Estimate Available</CardTitle>
+                     </CardHeader>
+                     <CardContent className="space-y-4">
+                       <p className="text-sm text-gray-600">
+                         Please go back and generate an estimate first.
+                       </p>
+                       <Button
+                         onClick={handleBackToPricing}
+                         variant="outline"
+                         className="w-full"
+                       >
+                         Back to Pricing
+                       </Button>
+                     </CardContent>
+                   </Card>
+                 );
+               }
+
+               return (
+                 <>
+                   <Card>
+                     <CardHeader>
+                       <CardTitle>{pricingSource === 'LOCKED' ? 'Locked Quote Summary' : 'Estimate Preview'}</CardTitle>
+                     </CardHeader>
+                     <CardContent className="space-y-4">
+                       <div className={`rounded-lg p-4 ${pricingSource === 'LOCKED' ? 'bg-green-50 border border-green-200' : 'bg-teal-50 border border-teal-200'}`}>
+                         <p className={`text-sm ${pricingSource === 'LOCKED' ? 'text-green-700' : 'text-teal-700'} mb-2`}>
+                           Monthly: <strong>${(monthlyPrice ?? 0).toFixed(2)}</strong>
+                         </p>
+                         {pricingForDisplay.estimatedPerVisitPrice && (
+                           <p className={`text-sm ${pricingSource === 'LOCKED' ? 'text-green-700' : 'text-teal-700'}`}>
+                             Per visit: ${pricingForDisplay.estimatedPerVisitPrice.toFixed(2)}
+                           </p>
+                         )}
+                         {pricingForDisplay.estimatedOneTimeFees && pricingForDisplay.estimatedOneTimeFees > 0 && (
+                           <p className={`text-sm ${pricingSource === 'LOCKED' ? 'text-green-700' : 'text-teal-700'}`}>
+                             One-time fees: ${pricingForDisplay.estimatedOneTimeFees.toFixed(2)}
+                           </p>
+                         )}
+                         <p className="text-xs text-gray-500 mt-3 pt-3 border-t">
+                           Source: <code>{pricingSource}</code> | monthlyRaw: {monthlyPrice ?? 'undefined'}
+                         </p>
+                       </div>
                      <div className="flex gap-3 pt-4 border-t">
                        <Button onClick={() => setCurrentStep(3)} className="flex-1 bg-teal-600 hover:bg-teal-700">
                          Continue to Inspection
