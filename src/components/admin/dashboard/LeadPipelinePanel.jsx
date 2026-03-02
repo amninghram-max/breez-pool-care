@@ -18,7 +18,7 @@ const STAGES = [
 export default function LeadPipelinePanel({ leads }) {
   const counts = STAGES.map(s => ({
     ...s,
-    count: leads.filter(l => l.stage === s.key).length
+    count: leads.filter(l => !l.isDeleted && l.stage === s.key).length
   }));
 
   return (

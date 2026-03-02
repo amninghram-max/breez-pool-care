@@ -37,7 +37,7 @@ export default function AdminHome() {
 
   const { data: leads = [] } = useQuery({
     queryKey: ['leads'],
-    queryFn: () => base44.entities.Lead.list('-created_date', 500)
+    queryFn: () => base44.entities.Lead.filter({ isDeleted: false }, '-created_date', 500)
   });
 
   const { data: events = [] } = useQuery({
@@ -49,7 +49,7 @@ export default function AdminHome() {
   const todayEvents = events.filter(e => e.scheduledDate === today);
   const inspectionsToday = todayEvents.filter(e => e.eventType === 'inspection').length;
   const openLeads = leads.filter(l =>
-    ['new_lead', 'contacted', 'inspection_scheduled', 'inspection_confirmed', 'quote_sent'].includes(l.stage)
+    !l.isDeleted && ['new_lead', 'contacted', 'inspection_scheduled', 'inspection_confirmed', 'quote_sent'].includes(l.stage)
   ).length;
 
   // "View as Technician" mode — renders TechnicianHome in a sandboxed view
