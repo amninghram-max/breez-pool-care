@@ -8,7 +8,6 @@ import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 
-import DemoQuoteModal from '../components/quote/DemoQuoteModal';
 import InPersonSalesModal from '../components/quote/InPersonSalesModal';
 import TopActionsBar from '../components/admin/dashboard/TopActionsBar';
 import NextUpCard from '../components/admin/dashboard/NextUpCard';
@@ -26,7 +25,6 @@ import QuoteRequestQueuePanel from '../components/admin/dashboard/QuoteRequestQu
 import TechnicianHome from './TechnicianHome';
 
 export default function AdminHome() {
-  const [showDemo, setShowDemo] = useState(false);
   const [showInPerson, setShowInPerson] = useState(false);
   const [viewAsTech, setViewAsTech] = useState(false);
 
@@ -150,31 +148,7 @@ export default function AdminHome() {
         ))}
       </div>
 
-      {/* 7. Tools (Admin/Dev) Section */}
-      {user?.role && ['admin', 'staff'].includes(user.role) && (
-        <div className="space-y-3 pt-4 border-t border-gray-200">
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-1">Tools (Admin/Dev)</h3>
-            <p className="text-xs text-gray-500 mb-3">Internal calculators and test utilities</p>
-          </div>
-          <Button
-            onClick={() => setShowDemo(true)}
-            size="sm"
-            variant="outline"
-            className="border-amber-400 text-amber-800 hover:bg-amber-50"
-          >
-            <Zap className="w-4 h-4 mr-1.5" />
-            Demo Quote
-          </Button>
-        </div>
-      )}
-
       {/* Modals */}
-      {showDemo && (
-        <DemoQuoteModal
-          onClose={() => setShowDemo(false)}
-        />
-      )}
       <InPersonSalesModal open={showInPerson} onOpenChange={setShowInPerson} />
     </div>
   );
