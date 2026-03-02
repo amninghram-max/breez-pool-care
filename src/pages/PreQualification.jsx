@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import PublicQuoteWizard from '../components/quote/PublicQuoteWizard';
 import QuoteWizard from '../components/quote/QuoteWizard';
 import QuoteResult from '../components/quote/QuoteResult';
+import QuoteResultDisplay from '../components/quote/QuoteResultDisplay';
 import { base44 } from '@/api/base44Client';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
