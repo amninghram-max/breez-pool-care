@@ -9,6 +9,11 @@ import { ROLES, PAGE_ACCESS, getHomePageForRole, canAccessPage } from '../auth/r
 export default function RoleGuard({ pageName, children }) {
   const navigate = useNavigate();
   
+  // Check if this is a public page by looking at PAGE_ACCESS
+  const allowedRoles = PAGE_ACCESS[pageName];
+  const isPublic = allowedRoles?.includes('public');
+  
+  // For public pages, skip auth.me() query entirely
   const { data: user, isLoading } = useQuery({
     queryKey: ['user'],
     queryFn: async () => {
@@ -18,6 +23,7 @@ export default function RoleGuard({ pageName, children }) {
         return null;
       }
     },
+    enabled: !isPublic, // Don't run auth.me() for public pages
   });
 
   useEffect(() => {
