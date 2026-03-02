@@ -595,6 +595,168 @@ export default function ChemicalAnalytics() {
           </TabsContent>
           </>}
 
+          {/* Compare: Legacy vs Persisted */}
+          <TabsContent value="compare">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-purple-600" />
+                  Legacy vs Persisted Costs
+                </CardTitle>
+                <CardDescription>
+                  Estimate comparison: hardcoded legacy analytics vs actual persisted ServiceVisit costs
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Date Range Filter for Comparison */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="compareDateFrom">Date From</Label>
+                    <Input
+                      id="compareDateFrom"
+                      type="date"
+                      value={costDateFrom}
+                      onChange={(e) => setCostDateFrom(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="compareDateTo">Date To</Label>
+                    <Input
+                      id="compareDateTo"
+                      type="date"
+                      value={costDateTo}
+                      onChange={(e) => setCostDateTo(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex items-end pt-2">
+                    <p className="text-xs text-gray-500">
+                      Legacy = global; Persisted = filtered to date range
+                    </p>
+                  </div>
+                </div>
+
+                {/* Loading States */}
+                {(costSummaryLoading || legacyAnalyticsLoading) && (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+                  </div>
+                )}
+
+                {/* Error States */}
+                {(costSummaryError || legacyAnalyticsError) && (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      {costSummaryError?.message || legacyAnalyticsError?.message || 'Failed to load comparison data'}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {/* Comparison Cards */}
+                {costSummaryData && legacyAnalyticsData && costSummaryData.success && (
+                  <>
+                    {(() => {
+                      // Calculate legacy total: sum(bracket.count * bracket.avgChemicalCost)
+                      // This represents an estimate across all pools using hardcoded prices
+                      let legacyTotalChemicalCostDollars = 0;
+                      if (legacyAnalyticsData.analytics && legacyAnalyticsData.analytics.byRiskBracket) {
+                        Object.values(legacyAnalyticsData.analytics.byRiskBracket).forEach((bracket) => {
+                          legacyTotalChemicalCostDollars += bracket.count * bracket.avgChemicalCost;
+                        });
+                      }
+                      const legacyTotalChemicalCostCents = Math.round(legacyTotalChemicalCostDollars * 100);
+
+                      // Persisted total (already in cents)
+                      const persistedTotalChemicalCostCents = costSummaryData.summary.totalChemicalCostCents || 0;
+
+                      // Calculate difference
+                      const diffCents = persistedTotalChemicalCostCents - legacyTotalChemicalCostCents;
+                      const diffPct = legacyTotalChemicalCostCents > 0
+                        ? ((diffCents / legacyTotalChemicalCostCents) * 100).toFixed(1)
+                        : 0;
+
+                      return (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <Card className="bg-orange-50 border-orange-200">
+                            <CardContent className="pt-6">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm text-orange-700">Legacy Estimate</p>
+                                  <p className="text-2xl font-bold text-orange-900">
+                                    {formatCentsToDollars(legacyTotalChemicalCostCents)}
+                                  </p>
+                                  <p className="text-xs text-orange-600 mt-2">
+                                    (hardcoded prices, {legacyAnalyticsData.totalPools} pools)
+                                  </p>
+                                </div>
+                                <DollarSign className="w-8 h-8 text-orange-500" />
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          <Card className="bg-green-50 border-green-200">
+                            <CardContent className="pt-6">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm text-green-700">Persisted Actual</p>
+                                  <p className="text-2xl font-bold text-green-900">
+                                    {formatCentsToDollars(persistedTotalChemicalCostCents)}
+                                  </p>
+                                  <p className="text-xs text-green-600 mt-2">
+                                    ({costSummaryData.summary.totalVisits} visits, {costDateFrom} to {costDateTo})
+                                  </p>
+                                </div>
+                                <Receipt className="w-8 h-8 text-green-500" />
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          <Card className={diffCents >= 0 ? "bg-red-50 border-red-200" : "bg-blue-50 border-blue-200"}>
+                            <CardContent className="pt-6">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className={`text-sm ${diffCents >= 0 ? "text-red-700" : "text-blue-700"}`}>
+                                    Difference
+                                  </p>
+                                  <p className={`text-2xl font-bold ${diffCents >= 0 ? "text-red-900" : "text-blue-900"}`}>
+                                    {formatCentsToDollars(Math.abs(diffCents))}
+                                  </p>
+                                  <p className={`text-xs mt-2 ${diffCents >= 0 ? "text-red-600" : "text-blue-600"}`}>
+                                    {diffCents >= 0 ? "Persisted higher by " : "Legacy higher by "}
+                                    {Math.abs(diffPct)}%
+                                  </p>
+                                </div>
+                                <TrendingUp className={`w-8 h-8 ${diffCents >= 0 ? "text-red-500" : "text-blue-500"}`} />
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Method Documentation */}
+                    <Alert className="bg-blue-50 border-blue-200">
+                      <AlertDescription className="text-xs text-blue-900">
+                        <strong>Calculation:</strong> Legacy total = sum across all risk brackets (bracket.count × bracket.avgChemicalCost).
+                        This is a global estimate using hardcoded chemical prices. Persisted total is actual
+                        ServiceVisit.chemicalCostCents filtered to the selected date range. Note: Legacy scope is global; 
+                        Persisted is date-filtered, so a perfect apples-to-apples comparison requires the same date range in both datasets.
+                      </AlertDescription>
+                    </Alert>
+                  </>
+                )}
+
+                {/* No Data State */}
+                {!legacyAnalyticsData && !costSummaryLoading && (
+                  <p className="text-center text-gray-500 py-8">No legacy analytics data available.</p>
+                )}
+                {costSummaryData && !costSummaryData.success && (
+                  <p className="text-center text-gray-500 py-8">No persisted cost data for selected date range.</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Costs (Persisted) - uses getChemicalCostSummary */}
           <TabsContent value="costs-persisted">
             <Card>
