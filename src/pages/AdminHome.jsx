@@ -22,6 +22,7 @@ import SystemHealthPanel from '../components/admin/dashboard/SystemHealthPanel';
 import TechnicianPermissionsPanel from '../components/admin/dashboard/TechnicianPermissionsPanel';
 import EquipmentManualPanel from '../components/admin/dashboard/EquipmentManualPanel';
 import RecurringMessagesAdminPanel from '../components/admin/dashboard/RecurringMessagesAdminPanel';
+import QuoteRequestQueuePanel from '../components/admin/dashboard/QuoteRequestQueuePanel';
 import TechnicianHome from './TechnicianHome';
 
 export default function AdminHome() {
@@ -122,10 +123,11 @@ export default function AdminHome() {
         <SafetyPanel />
       </div>
 
-      {/* 4. Payment Status + System Health */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* 4. Payment Status + System Health + Quote Requests */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <PaymentStatusPanel leads={leads} />
         <SystemHealthPanel />
+        <QuoteRequestQueuePanel />
       </div>
 
       {/* 5. Admin Actions Row */}
