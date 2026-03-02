@@ -41,8 +41,8 @@ Deno.serve(async (req) => {
     // 3. Read the Lead
     let lead;
     try {
-      lead = await base44.asServiceRole.entities.Lead.list();
-      lead = lead.find(l => l.id === leadId);
+      const leads = await base44.entities.Lead.list();
+      lead = leads.find(l => l.id === leadId);
       if (!lead) {
         return Response.json({ error: 'Lead not found' }, { status: 404 });
       }
@@ -50,9 +50,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: `Failed to fetch Lead: ${err.message}` }, { status: 500 });
     }
 
-    let serviceVisitsCreated = 0;
-    let customerEquipmentCreated = 0;
-    let chemistryRiskEventsCreated = 0;
+    let attemptedServiceVisits = 0;
+    let attemptedCustomerEquipment = 0;
+    let attemptedChemistryRiskEvents = 0;
 
     // 4. Create ServiceVisit records (spread across daysBack)
     try {
@@ -77,12 +77,20 @@ Deno.serve(async (req) => {
           notes: `Test service visit ${i + 1} for dashboard validation`,
         };
 
-        await base44.asServiceRole.entities.ServiceVisit.create(visitData);
-        serviceVisitsCreated++;
+        await base44.entities.ServiceVisit.create(visitData);
+        attemptedServiceVisits++;
       }
     } catch (err) {
       console.error('ServiceVisit creation error:', err.message);
-      return Response.json({ error: `Failed to create ServiceVisit: ${err.message}` }, { status: 500 });
+      return Response.json({
+        error: {
+          step: 'createServiceVisits',
+          errorMessage: err.message,
+          errorCode: err.code || 'UNKNOWN',
+          statusCode: err.status || 500,
+          attempted: attemptedServiceVisits
+        }
+      }, { status: err.status || 500 });
     }
 
     // 5. Create CustomerEquipment records (pump + filter)
@@ -95,11 +103,11 @@ Deno.serve(async (req) => {
         customModel: 'SuperFlo Variable Speed',
         customNotes: 'Test pump for validation',
         serialNumber: `TST-PUMP-${Date.now()}`,
-        installDate: new Date(2024, 5, 15).toISOString().split('T')[0], // June 15, 2024
+        installDate: new Date(2024, 5, 15).toISOString().split('T')[0],
       };
 
-      await base44.asServiceRole.entities.CustomerEquipment.create(pump);
-      customerEquipmentCreated++;
+      await base44.entities.CustomerEquipment.create(pump);
+      attemptedCustomerEquipment++;
 
       const filter = {
         customerId: leadId,
@@ -109,30 +117,35 @@ Deno.serve(async (req) => {
         customModel: 'Pro-Series Sand',
         customNotes: 'Test filter for validation',
         serialNumber: `TST-FILTER-${Date.now()}`,
-        installDate: new Date(2023, 7, 20).toISOString().split('T')[0], // August 20, 2023
+        installDate: new Date(2023, 7, 20).toISOString().split('T')[0],
       };
 
-      await base44.asServiceRole.entities.CustomerEquipment.create(filter);
-      customerEquipmentCreated++;
+      await base44.entities.CustomerEquipment.create(filter);
+      attemptedCustomerEquipment++;
     } catch (err) {
       console.error('CustomerEquipment creation error:', err.message);
-      return Response.json({ error: `Failed to create CustomerEquipment: ${err.message}` }, { status: 500 });
+      return Response.json({
+        error: {
+          step: 'createCustomerEquipment',
+          errorMessage: err.message,
+          errorCode: err.code || 'UNKNOWN',
+          statusCode: err.status || 500,
+          attempted: attemptedCustomerEquipment
+        }
+      }, { status: err.status || 500 });
     }
 
     // 6. Create ChemistryRiskEvent records (open + resolved)
-    // Note: ChemistryRiskEvent requires poolId, leadId, testRecordId, eventType, severityPoints, triggerValue, thresholdValue, createdDate, expiresAt
-    // We'll create minimal test records with dummy testRecordId
     try {
       const now = new Date();
       const thirtyDaysFromNow = new Date(now);
       thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 
-      // Open risk event (high severity, won't expire for 30 days)
       const openRiskEvent = {
-        poolId: leadId, // Use leadId as poolId (may need Pool entity to exist)
+        poolId: leadId,
         leadId: leadId,
         testRecordId: `TST-RECORD-${Date.now()}`,
-        eventType: 'LOW_FC_CRITICAL', // Low free chlorine critical
+        eventType: 'LOW_FC_CRITICAL',
         severityPoints: 5,
         triggerValue: 0.5,
         thresholdValue: 1.0,
@@ -141,10 +154,9 @@ Deno.serve(async (req) => {
         notes: 'Test open risk event for dashboard',
       };
 
-      await base44.asServiceRole.entities.ChemistryRiskEvent.create(openRiskEvent);
-      chemistryRiskEventsCreated++;
+      await base44.entities.ChemistryRiskEvent.create(openRiskEvent);
+      attemptedChemistryRiskEvents++;
 
-      // Resolved risk event (low severity, already expired)
       const pastDate = new Date();
       pastDate.setDate(pastDate.getDate() - 35);
       const expiredDate = new Date(pastDate);
@@ -154,7 +166,7 @@ Deno.serve(async (req) => {
         poolId: leadId,
         leadId: leadId,
         testRecordId: `TST-RECORD-${Date.now() + 1}`,
-        eventType: 'HIGH_PH', // High pH (low severity)
+        eventType: 'HIGH_PH',
         severityPoints: 2,
         triggerValue: 8.2,
         thresholdValue: 7.8,
@@ -163,23 +175,58 @@ Deno.serve(async (req) => {
         notes: 'Test resolved risk event for dashboard',
       };
 
-      await base44.asServiceRole.entities.ChemistryRiskEvent.create(resolvedRiskEvent);
-      chemistryRiskEventsCreated++;
+      await base44.entities.ChemistryRiskEvent.create(resolvedRiskEvent);
+      attemptedChemistryRiskEvents++;
     } catch (err) {
       console.error('ChemistryRiskEvent creation error:', err.message);
-      return Response.json({ error: `Failed to create ChemistryRiskEvent: ${err.message}` }, { status: 500 });
+      return Response.json({
+        error: {
+          step: 'createChemistryRiskEvents',
+          errorMessage: err.message,
+          errorCode: err.code || 'UNKNOWN',
+          statusCode: err.status || 500,
+          attempted: attemptedChemistryRiskEvents
+        }
+      }, { status: err.status || 500 });
     }
 
-    // 7. Return summary
+    // 7. Verification read-back
+    let verifiedServiceVisitCount = 0;
+    let verifiedCustomerEquipmentCount = 0;
+    let verifiedChemistryRiskEventCount = 0;
+
+    try {
+      const allVisits = await base44.entities.ServiceVisit.list('-visitDate', 500);
+      verifiedServiceVisitCount = allVisits.filter(v => v.propertyId === leadId).length;
+
+      const allEquipment = await base44.entities.CustomerEquipment.list();
+      verifiedCustomerEquipmentCount = allEquipment.filter(e => e.customerId === leadId).length;
+
+      const allRiskEvents = await base44.entities.ChemistryRiskEvent.list();
+      verifiedChemistryRiskEventCount = allRiskEvents.filter(e => e.leadId === leadId).length;
+    } catch (err) {
+      console.error('Verification read-back error:', err.message);
+      // Continue despite verification error—creations may have succeeded
+    }
+
+    // 8. Return summary with both attempted and verified counts
     return Response.json({
       leadId,
-      serviceVisitsCreated,
-      customerEquipmentCreated,
-      chemistryRiskEventsCreated,
+      attemptedServiceVisits,
+      attemptedCustomerEquipment,
+      attemptedChemistryRiskEvents,
+      verifiedServiceVisitCount,
+      verifiedCustomerEquipmentCount,
+      verifiedChemistryRiskEventCount,
       message: 'Test customer data seeded successfully',
     });
   } catch (error) {
     console.error('[seedTestCustomerData] Unexpected error:', error);
-    return Response.json({ error: error.message || 'Internal server error' }, { status: 500 });
+    return Response.json({
+      error: {
+        step: 'initialization',
+        errorMessage: error.message || 'Internal server error'
+      }
+    }, { status: 500 });
   }
 });
