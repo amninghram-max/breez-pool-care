@@ -227,7 +227,6 @@ export default function LeadsPipeline() {
       )}
 
       {showNewLead && <NewLeadModal onClose={() => setShowNewLead(false)} />}
-      {showNewQuote && <NewQuoteFlow onClose={() => setShowNewQuote(false)} />}
     </div>
   );
 }
