@@ -289,9 +289,36 @@ export default function PublicQuoteWizard({ prefillData }) {
     }
   };
 
+  // ── Render finalize error ──
+  if (finalizeError && step === baseSteps.length - 1) {
+    return (
+      <div className="space-y-4 text-center">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100">
+          <AlertCircle className="w-6 h-6 text-red-600" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">Unable to Complete Quote</h2>
+          <p className="text-sm text-gray-600 mt-1">{finalizeError}</p>
+        </div>
+        <button
+          onClick={() => { setStep(0); setFinalizeError(''); }}
+          className="w-full py-3 px-4 rounded-xl text-white text-sm font-semibold"
+          style={{ backgroundColor: TEAL }}
+        >
+          Start Over
+        </button>
+        <p className="text-xs text-gray-400">Support: (321) 524-3838</p>
+      </div>
+    );
+  }
+
   // ── Render result or error ──
   if (result) {
+    if (result.releaseReady && result.priceSummary) {
+      return <QuoteResultDisplay result={result} firstName={firstName} email={email} leadId={result.leadId} />;
+    }
     if (result.releaseReady) {
+      // Should not happen with finalization, but fallback
       return <QuoteResultDisplay result={result} firstName={firstName} email={email} leadId={result.leadId} />;
     }
     return <ThankYouDisplay firstName={firstName} email={email} leadId={result.leadId} />;
