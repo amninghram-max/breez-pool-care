@@ -269,41 +269,37 @@ export default function CustomerTimeline() {
   const [seedClickCount, setSeedClickCount] = useState(0);
   const [seedDebugText, setSeedDebugText] = useState('idle');
   const [serviceVisitCreateResult, setServiceVisitCreateResult] = useState(null);
+  const [isCreatingTestVisit, setIsCreatingTestVisit] = useState(false);
 
-  // TEMP: Test direct ServiceVisit.create
-  const testServiceVisitCreateMutation = useMutation({
-    mutationFn: async () => {
-      try {
-        const result = await base44.entities.ServiceVisit.create({
-          propertyId: leadId,
-          visitDate: new Date().toISOString(),
-          technicianName: 'Test Tech',
-          freeChlorine: 2.0,
-          pH: 7.5,
-          totalAlkalinity: 100
-        });
-        setServiceVisitCreateResult({
-          success: true,
-          id: result?.id,
-          createdRecord: result
-        });
-        return result;
-      } catch (err) {
-        setServiceVisitCreateResult({
-          success: false,
-          message: err?.message,
-          code: err?.code,
-          status: err?.response?.status,
-          data: err?.response?.data,
-          fullError: String(err)
-        });
-        throw err;
-      }
-    },
-    onError: () => {
-      // Error already captured above
+  // TEMP: Direct handler for test ServiceVisit create
+  const handleTestServiceVisitCreate = async () => {
+    try {
+      setIsCreatingTestVisit(true);
+      setServiceVisitCreateResult({ phase: 'start' });
+      
+      const result = await base44.entities.ServiceVisit.create({
+        propertyId: leadId,
+        visitDate: new Date().toISOString(),
+        technicianName: 'Test Tech',
+        servicesPerformed: 'TEMP test create',
+        freeChlorine: 2.5,
+        pH: 7.5
+      });
+      
+      setServiceVisitCreateResult({
+        phase: 'success',
+        record: result
+      });
+    } catch (err) {
+      setServiceVisitCreateResult({
+        phase: 'error',
+        message: err?.message,
+        error: err
+      });
+    } finally {
+      setIsCreatingTestVisit(false);
     }
-  });
+  };
 
   // Load only recent 4 visits on initial render
   const { data: recentVisits = [] } = useQuery({
@@ -484,11 +480,12 @@ export default function CustomerTimeline() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => testServiceVisitCreateMutation.mutate()}
-                disabled={testServiceVisitCreateMutation.isPending}
+                onClick={handleTestServiceVisitCreate}
+                disabled={isCreatingTestVisit}
                 className="text-blue-600 hover:bg-blue-50"
+                title="TEMP: direct create handler active"
               >
-                {testServiceVisitCreateMutation.isPending ? (
+                {isCreatingTestVisit ? (
                   <><Loader2 className="w-3 h-3 mr-1 animate-spin" />Creating...</>
                 ) : (
                   <>🧪 Create Test ServiceVisit</>
@@ -778,7 +775,7 @@ export default function CustomerTimeline() {
       {user && ['admin', 'staff'].includes(user.role) && (
         <Card className="bg-blue-50 border-blue-200">
           <CardHeader>
-            <CardTitle className="text-xs font-mono text-blue-900">TEMP: Create ServiceVisit Test</CardTitle>
+            <CardTitle className="text-xs font-mono text-blue-900">TEMP: Create ServiceVisit Test (direct handler)</CardTitle>
           </CardHeader>
           <CardContent className="text-xs font-mono">
             {serviceVisitCreateResult === null ? (
