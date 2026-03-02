@@ -156,16 +156,17 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
     // Estimate mode: store normalized estimate and advance to lock step
     if (!data.raw) {
       // Already normalized (from estimate path)
-      console.log('[InPersonSalesModal] Estimate completed, advancing to lock step');
+      console.log('[InPersonSalesModal] Estimate completed, advancing to lock step', { monthly: data.monthly });
+      setEstimatePreview(data);
+      
       try {
-        // Optionally store estimate snapshot in session
+        // Best-effort: store estimate in session draftData
         await updateSessionMutation.mutateAsync({
           currentStep: 2,
-          pricingInputs: formData,
-          quoteSnapshot: JSON.stringify(data)
+          pricingInputs: formData
         });
       } catch (e) {
-        console.warn('Failed to save estimate snapshot (best-effort):', e);
+        console.warn('Failed to update session (best-effort):', e);
       }
       setCurrentStep(2);
       return;
