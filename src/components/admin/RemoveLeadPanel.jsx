@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Trash2, AlertTriangle, Shield } from 'lucide-react';
+import { toast } from 'sonner';
 
 const DOWNSTREAM_CHECKS = [
   { entity: 'Quote', label: 'Quotes', filterKey: 'clientEmail' },
@@ -54,18 +55,26 @@ export default function RemoveLeadPanel({ lead, onClose, onRemoved }) {
 
   const softDeleteMutation = useMutation({
     mutationFn: async () => {
-      const user = await base44.auth.me();
-      return base44.entities.Lead.update(lead.id, {
-        isDeleted: true,
-        deletedAt: new Date().toISOString(),
-        deletedBy: user.email,
-        deleteReason: reason || undefined
+      const response = await base44.functions.invoke('softDeleteLeadV2', {
+        leadId: lead.id,
+        reason: reason || undefined
       });
+      return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
-      if (onRemoved) onRemoved();
-      onClose();
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success(`Lead removed: ${data.leadId}`);
+        queryClient.invalidateQueries({ queryKey: ['leads'] });
+        queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
+        queryClient.invalidateQueries({ queryKey: ['inspections'] });
+        if (onRemoved) onRemoved();
+        onClose();
+      } else {
+        toast.error(data.error || 'Failed to remove lead');
+      }
+    },
+    onError: (error) => {
+      toast.error(`Error: ${error.message || 'Failed to remove lead'}`);
     }
   });
 
