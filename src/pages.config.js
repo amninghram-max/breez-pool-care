@@ -97,7 +97,6 @@ import TechnicianHome from './pages/TechnicianHome';
 import TechnicianRoute from './pages/TechnicianRoute';
 import TestDashboard from './pages/TestDashboard';
 import QuoteView from './pages/QuoteView';
-import q from './pages/q';
 import __Layout from './Layout.jsx';
 
 
@@ -152,7 +151,6 @@ export const PAGES = {
     "TechnicianRoute": TechnicianRoute,
     "TestDashboard": TestDashboard,
     "QuoteView": QuoteView,
-    "q": q,
 }
 
 export const pagesConfig = {
