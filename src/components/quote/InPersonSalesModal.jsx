@@ -55,6 +55,7 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
         setSessionId(res.data?.sessionId || res.sessionId);
         setCurrentStep(1);
         setPricingInputs(null);
+        setEstimatePreview(null);
         setQuoteSnapshot(null);
         setContactDraft({ firstName: '', email: '', phone: '' });
         setInspectionDraft({ notes: '', photosLinks: '', eligible: true, needsFollowup: false });
