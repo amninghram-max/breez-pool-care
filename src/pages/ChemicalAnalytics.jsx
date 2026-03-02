@@ -228,6 +228,10 @@ export default function ChemicalAnalytics() {
             <Receipt className="w-3 h-3" />
             Costs (Persisted)
           </TabsTrigger>
+          <TabsTrigger value="compare" className="flex items-center gap-1">
+            <BarChart3 className="w-3 h-3" />
+            Compare
+          </TabsTrigger>
         </TabsList>
 
           {analytics && <>
