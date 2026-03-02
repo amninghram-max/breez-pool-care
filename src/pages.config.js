@@ -97,6 +97,7 @@ import TechnicianHome from './pages/TechnicianHome';
 import TechnicianRoute from './pages/TechnicianRoute';
 import TestDashboard from './pages/TestDashboard';
 import QuoteView from './pages/QuoteView';
+import qQuotetoken from './pages/q[quoteToken]';
 import __Layout from './Layout.jsx';
 
 
@@ -151,6 +152,7 @@ export const PAGES = {
     "TechnicianRoute": TechnicianRoute,
     "TestDashboard": TestDashboard,
     "QuoteView": QuoteView,
+    "q[quoteToken]": qQuotetoken,
 }
 
 export const pagesConfig = {
