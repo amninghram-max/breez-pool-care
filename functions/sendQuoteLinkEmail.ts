@@ -20,6 +20,7 @@ const BUILD = "SQLE-2026-03-01-A";
  */
 
 Deno.serve(async (req) => {
+  const base44 = createClientFromRequest(req);
   try {
     // Capture diagnostics immediately
     const method = req.method;
