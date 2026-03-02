@@ -116,9 +116,10 @@ Deno.serve(async (req) => {
       });
     }
     
-    const quoteLink = `${appOrigin}/PreQualification?leadId=${encodeURIComponent(leadId)}`;
+    const prequalLink = `${appOrigin}/PreQualification?leadId=${encodeURIComponent(leadId)}`;
+    const publicHomeLink = `${appOrigin}/PublicHome`;
 
-    console.log('📧 sendQuoteLinkEmail:', { leadId, email, quoteLink, resendFrom: 'info@breezpoolcare.com' });
+    console.log('📧 sendQuoteLinkEmail:', { leadId, email, prequalLink, publicHomeLink, resendFrom: 'info@breezpoolcare.com' });
 
     // Send HTML email with branded CTA button via Resend (supports external emails)
     const htmlBody = `
@@ -146,17 +147,23 @@ Deno.serve(async (req) => {
       Click the button below to complete your pool questionnaire and get a personalized service quote in just a few minutes.
     </p>
     
-    <!-- CTA Button -->
-    <div style="text-align: center; margin-bottom: 30px;">
-      <a href="${quoteLink}" style="display: inline-block; background-color: #1B9B9F; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px; transition: background-color 200ms ease;">
-        Get Your Free Quote
+    <!-- Primary CTA Button -->
+    <div style="text-align: center; margin-bottom: 20px;">
+      <a href="${prequalLink}" style="display: inline-block; background-color: #1B9B9F; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">
+        Start Your Quote
       </a>
     </div>
-    
-    <!-- Fallback Link -->
-    <p style="font-size: 13px; text-align: center; color: #666; margin-bottom: 30px;">
+
+    <!-- Deep link copy -->
+    <p style="font-size: 13px; text-align: center; color: #666; margin-bottom: 20px;">
       Or copy and paste this link in your browser:<br>
-      <span style="color: #1B9B9F; word-break: break-all;"><a href="${quoteLink}" style="color: #1B9B9F; text-decoration: underline;">${quoteLink}</a></span>
+      <a href="${prequalLink}" style="color: #1B9B9F; word-break: break-all; text-decoration: underline;">${prequalLink}</a>
+    </p>
+
+    <!-- Homepage fallback -->
+    <p style="font-size: 13px; text-align: center; color: #666; margin-bottom: 30px;">
+      Having trouble with the link above?<br>
+      <a href="${publicHomeLink}" style="color: #1B9B9F; text-decoration: underline;">Or visit our homepage</a>
     </p>
     
     <!-- Footer -->
