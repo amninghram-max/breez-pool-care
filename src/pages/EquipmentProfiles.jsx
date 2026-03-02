@@ -55,7 +55,19 @@ export default function EquipmentProfiles() {
     manualUrl: '',
     manualFile: null,
     tags: '',
-    notes: ''
+    notes: '',
+    // Filter fields
+    filterAreaSqFt: '',
+    filterFlowRateGpm: '',
+    // Pump fields
+    pumpThp: '',
+    pumpWef: '',
+    pumpMaxInputVoltage: '',
+    pumpFrequencyHz: '',
+    pumpFullLoadAmps: '',
+    pumpPortSizeNpt: '',
+    // Heater fields
+    heaterGasType: ''
   });
 
   const { data: user } = useQuery({
@@ -177,6 +189,21 @@ export default function EquipmentProfiles() {
         isActive: true
       };
       
+      // Add type-specific fields
+      if (formData.type === 'filter') {
+        if (formData.filterAreaSqFt) createData.filterAreaSqFt = parseFloat(formData.filterAreaSqFt);
+        if (formData.filterFlowRateGpm) createData.filterFlowRateGpm = parseFloat(formData.filterFlowRateGpm);
+      } else if (formData.type === 'pump') {
+        if (formData.pumpThp) createData.pumpThp = parseFloat(formData.pumpThp);
+        if (formData.pumpWef) createData.pumpWef = parseFloat(formData.pumpWef);
+        if (formData.pumpMaxInputVoltage) createData.pumpMaxInputVoltage = parseFloat(formData.pumpMaxInputVoltage);
+        if (formData.pumpFrequencyHz) createData.pumpFrequencyHz = parseFloat(formData.pumpFrequencyHz);
+        if (formData.pumpFullLoadAmps) createData.pumpFullLoadAmps = parseFloat(formData.pumpFullLoadAmps);
+        if (formData.pumpPortSizeNpt) createData.pumpPortSizeNpt = formData.pumpPortSizeNpt;
+      } else if (formData.type === 'heater') {
+        if (formData.heaterGasType) createData.heaterGasType = formData.heaterGasType;
+      }
+      
       return base44.entities.EquipmentCatalogItem.create(createData);
     },
     onSuccess: () => {
@@ -191,7 +218,16 @@ export default function EquipmentProfiles() {
         manualUrl: '',
         manualFile: null,
         tags: '',
-        notes: ''
+        notes: '',
+        filterAreaSqFt: '',
+        filterFlowRateGpm: '',
+        pumpThp: '',
+        pumpWef: '',
+        pumpMaxInputVoltage: '',
+        pumpFrequencyHz: '',
+        pumpFullLoadAmps: '',
+        pumpPortSizeNpt: '',
+        heaterGasType: ''
       });
       toast.success('Equipment model created');
     },
@@ -387,6 +423,128 @@ export default function EquipmentProfiles() {
                   <Textarea value={createFormData.notes} onChange={(e) => setCreateFormData(f => ({ ...f, notes: e.target.value }))} placeholder="Internal notes..." rows={3} />
                 </div>
 
+                {/* FILTER TYPE FIELDS */}
+                {createFormData.type === 'filter' && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4 pt-4 border-t mt-4">
+                      <div>
+                        <label className="text-sm font-medium block mb-1">Filter Area (SQ.FT.)</label>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          min="0"
+                          value={createFormData.filterAreaSqFt} 
+                          onChange={(e) => setCreateFormData(f => ({ ...f, filterAreaSqFt: e.target.value }))} 
+                          placeholder="e.g., 168" 
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium block mb-1">Flow Rate (GPM)</label>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          min="0"
+                          value={createFormData.filterFlowRateGpm} 
+                          onChange={(e) => setCreateFormData(f => ({ ...f, filterFlowRateGpm: e.target.value }))} 
+                          placeholder="e.g., 40" 
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* PUMP TYPE FIELDS */}
+                {createFormData.type === 'pump' && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4 pt-4 border-t mt-4">
+                      <div>
+                        <label className="text-sm font-medium block mb-1">THP</label>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          min="0"
+                          value={createFormData.pumpThp} 
+                          onChange={(e) => setCreateFormData(f => ({ ...f, pumpThp: e.target.value }))} 
+                          placeholder="e.g., 20" 
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium block mb-1">WEF</label>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          min="0"
+                          value={createFormData.pumpWef} 
+                          onChange={(e) => setCreateFormData(f => ({ ...f, pumpWef: e.target.value }))} 
+                          placeholder="e.g., 1.5" 
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium block mb-1">Max Input Voltage</label>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          min="0"
+                          value={createFormData.pumpMaxInputVoltage} 
+                          onChange={(e) => setCreateFormData(f => ({ ...f, pumpMaxInputVoltage: e.target.value }))} 
+                          placeholder="e.g., 240" 
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium block mb-1">Frequency (Hz)</label>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          min="0"
+                          value={createFormData.pumpFrequencyHz} 
+                          onChange={(e) => setCreateFormData(f => ({ ...f, pumpFrequencyHz: e.target.value }))} 
+                          placeholder="e.g., 60" 
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium block mb-1">Full Load Amps</label>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          min="0"
+                          value={createFormData.pumpFullLoadAmps} 
+                          onChange={(e) => setCreateFormData(f => ({ ...f, pumpFullLoadAmps: e.target.value }))} 
+                          placeholder="e.g., 8.5" 
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium block mb-1">Port Size (NPT)</label>
+                        <Input 
+                          type="text"
+                          value={createFormData.pumpPortSizeNpt} 
+                          onChange={(e) => setCreateFormData(f => ({ ...f, pumpPortSizeNpt: e.target.value }))} 
+                          placeholder='e.g., 1.5"' 
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* HEATER TYPE FIELDS */}
+                {createFormData.type === 'heater' && (
+                  <>
+                    <div className="grid grid-cols-1 gap-4 pt-4 border-t mt-4">
+                      <div>
+                        <label className="text-sm font-medium block mb-1">Gas Type</label>
+                        <Select value={createFormData.heaterGasType} onValueChange={(v) => setCreateFormData(f => ({ ...f, heaterGasType: v }))}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select gas type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="natural_gas">Natural Gas</SelectItem>
+                            <SelectItem value="propane">Propane</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </>
+                )}
+
                 <div className="flex gap-3 justify-end pt-4 border-t">
                   <Button onClick={() => setShowCreateForm(false)} variant="outline">Cancel</Button>
                   <Button onClick={handleCreateSubmit} disabled={createMutation.isPending} className="bg-teal-600 hover:bg-teal-700">
@@ -463,6 +621,42 @@ export default function EquipmentProfiles() {
                              <Trash2 className="w-4 h-4" />
                            </Button>
                          </div>
+
+                         {/* FILTER SPECS */}
+                         {item.type === 'filter' && (item.filterAreaSqFt || item.filterFlowRateGpm) && (
+                           <div>
+                             <h4 className="font-medium text-sm mb-3">Filter Specifications</h4>
+                             <div className="space-y-1 text-sm text-gray-700">
+                               {item.filterAreaSqFt && <p>Filter Area: {item.filterAreaSqFt} SQ.FT.</p>}
+                               {item.filterFlowRateGpm && <p>Flow Rate: {item.filterFlowRateGpm} GPM</p>}
+                             </div>
+                           </div>
+                         )}
+
+                         {/* PUMP SPECS */}
+                         {item.type === 'pump' && (item.pumpThp || item.pumpWef || item.pumpMaxInputVoltage || item.pumpFrequencyHz || item.pumpFullLoadAmps || item.pumpPortSizeNpt) && (
+                           <div>
+                             <h4 className="font-medium text-sm mb-3">Pump Specifications</h4>
+                             <div className="space-y-1 text-sm text-gray-700">
+                               {item.pumpThp && <p>THP: {item.pumpThp}</p>}
+                               {item.pumpWef && <p>WEF: {item.pumpWef}</p>}
+                               {item.pumpMaxInputVoltage && <p>Max Input Voltage: {item.pumpMaxInputVoltage}V</p>}
+                               {item.pumpFrequencyHz && <p>Frequency: {item.pumpFrequencyHz} Hz</p>}
+                               {item.pumpFullLoadAmps && <p>Full Load Amps: {item.pumpFullLoadAmps}</p>}
+                               {item.pumpPortSizeNpt && <p>Port Size (NPT): {item.pumpPortSizeNpt}</p>}
+                             </div>
+                           </div>
+                         )}
+
+                         {/* HEATER SPECS */}
+                         {item.type === 'heater' && item.heaterGasType && (
+                           <div>
+                             <h4 className="font-medium text-sm mb-3">Heater Specifications</h4>
+                             <div className="space-y-1 text-sm text-gray-700">
+                               <p>Gas Type: {item.heaterGasType === 'natural_gas' ? 'Natural Gas' : 'Propane'}</p>
+                             </div>
+                           </div>
+                         )}
 
                          <PartsManagementPanel catalogItemId={item.id} typeFilter={typeFilter} />
                        </CardContent>
