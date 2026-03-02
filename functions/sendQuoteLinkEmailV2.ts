@@ -47,11 +47,11 @@ Deno.serve(async (req) => {
 
   // Force probe
   if (payload?.__force === "1") {
-    return json({ success: false, build: BUILD, note: "force reached V2" });
+    return json200({ success: false, build: BUILD, note: "force reached V2" });
   }
 
   try {
-    const { leadId, firstName, email } = payload || {};
+    const { leadId, firstName, email, appOrigin: appOriginRaw } = payload || {};
 
     const missingFields = [];
     if (!leadId || typeof leadId !== 'string' || !leadId.trim()) missingFields.push('leadId');
@@ -59,24 +59,15 @@ Deno.serve(async (req) => {
     if (!email || typeof email !== 'string' || !email.trim()) missingFields.push('email');
 
     if (missingFields.length > 0) {
-      return json({ success: false, error: 'Missing or invalid required fields', missingFields, build: BUILD });
+      return json200({ success: false, error: 'Missing or invalid required fields', missingFields, build: BUILD });
     }
 
-    const appOrigin = getAppOrigin(req);
-    if (!appOrigin) {
-      console.error('V2 getAppOrigin: no valid origin found', {
-        url: req.url,
-        host: req.headers.get("host"),
-        xfHost: req.headers.get("x-forwarded-host"),
-        xfProto: req.headers.get("x-forwarded-proto")
-      });
-      return json({
-        success: false,
-        error: 'Could not determine application URL',
-        detail: `req.url=${req.url} host=${req.headers.get("host")} xfHost=${req.headers.get("x-forwarded-host")}`,
-        build: BUILD
-      });
+    const originCheck = validateAppOrigin(appOriginRaw);
+    if (!originCheck.valid) {
+      console.error('V2_ORIGIN_INVALID', { appOriginRaw, reason: originCheck.reason });
+      return json200({ success: false, error: originCheck.reason, build: BUILD });
     }
+    const appOrigin = originCheck.origin;
 
     console.log('V2_ORIGIN_RESOLVED', { appOrigin, build: BUILD });
 
