@@ -153,11 +153,17 @@ Deno.serve(async (req) => {
 
       for (let i = 0; i < visitsCount; i++) {
         const daysAgoVal = Math.floor((daysBack * (i + 1)) / (visitsCount + 1));
+        const chemistry = getRandomChemistry();
         const visitData = {
           propertyId: leadId,
           visitDate: daysAgo(daysAgoVal),
           technicianName: technicianNames[i % technicianNames.length],
-          ...getRandomChemistry(),
+          freeChlorine: chemistry.freeChlorine,
+          pH: chemistry.pH,
+          totalAlkalinity: chemistry.totalAlkalinity,
+          cyanuricAcid: chemistry.cyanuricAcid,
+          calciumHardness: chemistry.calciumHardness,
+          waterTemp: chemistry.waterTemp,
           servicesPerformed: servicesOptions[i % servicesOptions.length],
           notes: `Test service visit ${i + 1} for dashboard validation`,
         };
