@@ -464,7 +464,7 @@ export default function PublicQuoteWizard({
   }
 
   // If finalizing, show loading state
-  if (isFinalizing) {
+  if (finalizing) {
     return (
       <div className="space-y-4 text-center">
         <Loader2 className="w-8 h-8 animate-spin mx-auto" style={{ color: TEAL }} />
