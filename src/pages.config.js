@@ -86,6 +86,7 @@ import PaymentSetup from './pages/PaymentSetup';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PreQualification from './pages/PreQualification';
 import PublicHome from './pages/PublicHome';
+import QuoteView from './pages/QuoteView';
 import ReleaseReadiness from './pages/ReleaseReadiness';
 import ScheduleInspection from './pages/ScheduleInspection';
 import ServiceReinstatement from './pages/ServiceReinstatement';
@@ -96,7 +97,6 @@ import StaffManagement from './pages/StaffManagement';
 import TechnicianHome from './pages/TechnicianHome';
 import TechnicianRoute from './pages/TechnicianRoute';
 import TestDashboard from './pages/TestDashboard';
-import QuoteView from './pages/QuoteView';
 import __Layout from './Layout.jsx';
 
 
@@ -140,6 +140,7 @@ export const PAGES = {
     "PaymentSuccess": PaymentSuccess,
     "PreQualification": PreQualification,
     "PublicHome": PublicHome,
+    "QuoteView": QuoteView,
     "ReleaseReadiness": ReleaseReadiness,
     "ScheduleInspection": ScheduleInspection,
     "ServiceReinstatement": ServiceReinstatement,
@@ -150,7 +151,6 @@ export const PAGES = {
     "TechnicianHome": TechnicianHome,
     "TechnicianRoute": TechnicianRoute,
     "TestDashboard": TestDashboard,
-    "QuoteView": QuoteView,
 }
 
 export const pagesConfig = {

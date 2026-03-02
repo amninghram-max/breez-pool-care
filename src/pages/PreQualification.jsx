@@ -1,19 +1,52 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import PublicQuoteWizard from '../components/quote/PublicQuoteWizard';
 import QuoteWizard from '../components/quote/QuoteWizard';
 import QuoteResult from '../components/quote/QuoteResult';
 import { base44 } from '@/api/base44Client';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 export default function PreQualification() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
+  
   const [user, setUser] = useState(undefined); // undefined = loading, null = guest
   const [quoteResult, setQuoteResult] = useState(null);
   const [answeredFormData, setAnsweredFormData] = useState(null);
+  const [prefillData, setPrefillData] = useState(null); // { email, leadId }
+  const [prefillError, setPrefillError] = useState('');
+  const [loadingPrefill, setLoadingPrefill] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => setUser(null));
   }, []);
+
+  // Load prefill data from token if present
+  useEffect(() => {
+    if (!token) return;
+    
+    const loadPrefill = async () => {
+      setLoadingPrefill(true);
+      try {
+        const res = await base44.functions.invoke('getQuoteRequestPublicV1', { token });
+        const data = res?.data ?? res;
+        if (data?.success === true && data.request) {
+          setPrefillData({ email: data.request.email, leadId: data.request.leadId });
+        } else {
+          setPrefillError(data?.error || 'Invalid or expired link');
+        }
+      } catch (err) {
+        setPrefillError(err?.message || 'Failed to load quote request');
+      } finally {
+        setLoadingPrefill(false);
+      }
+    };
+    
+    loadPrefill();
+  }, [token]);
 
   const handleComplete = (data, formData) => {
     setQuoteResult(data);
