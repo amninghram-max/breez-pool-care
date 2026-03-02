@@ -236,8 +236,7 @@ function LeadRow({ lead, stage, onAdvance, onStageChange, onEdit, onUpdate, quer
   const [validationError, setValidationError] = React.useState(null);
   const [showSendQuoteModal, setShowSendQuoteModal] = React.useState(false);
   const [showSendInspectionModal, setShowSendInspectionModal] = React.useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
-  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [showRemovePanel, setShowRemovePanel] = React.useState(false);
   
   const { data: user } = useQuery({
     queryKey: ['user'],
