@@ -248,8 +248,8 @@ export default function PublicQuoteWizard({
         setFinalizing(false);
         return;
       }
-      if (!finalEmail.trim() || !finalEmail.includes('@')) {
-        setFinalizeError('Please enter a valid email address.');
+      if (!finalEmail.trim() || !finalEmail.includes('@') || finalEmail.trim() === 'guest@breezpoolcare.com') {
+        setFinalizeError('Please enter your actual email address.');
         setFinalizeState('done_error');
         setFinalizing(false);
         return;
