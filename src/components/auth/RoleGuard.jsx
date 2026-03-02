@@ -39,7 +39,12 @@ export default function RoleGuard({ pageName, children }) {
     }
   }, [user, isLoading, pageName, navigate]);
 
-  // Show nothing while checking
+  // Public pages render immediately, no loading state or auth check
+  if (isPublic) {
+    return children;
+  }
+
+  // Show nothing while checking auth (protected pages only)
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
