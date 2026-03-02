@@ -244,6 +244,7 @@ export default function PublicQuoteWizard({ prefillData, onDebugStateChange }) {
   React.useEffect(() => {
     if (onDebugStateChange) {
       onDebugStateChange({
+        finalizeState,
         lastFinalizeRequest,
         lastFinalizeResponse,
         isFinalizing,
@@ -253,7 +254,7 @@ export default function PublicQuoteWizard({ prefillData, onDebugStateChange }) {
         currentStepName: currentKey
       });
     }
-  }, [step, isFinalizing, finalizeError, lastFinalizeRequest, lastFinalizeResponse, finishClickedAt, currentKey, onDebugStateChange]);
+  }, [step, finalizeState, isFinalizing, finalizeError, lastFinalizeRequest, lastFinalizeResponse, finishClickedAt, currentKey, onDebugStateChange]);
 
   const goBack = () => setStep(s => Math.max(0, s - 1));
 
