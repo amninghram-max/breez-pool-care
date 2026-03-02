@@ -214,11 +214,6 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Debug Build Chip */}
-      <div className="fixed top-4 right-4 bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold z-[9999] shadow-lg">
-        BUILD DEBUG 2026-03-02-A
-      </div>
-
       <style>{`
         :root {
           --color-primary: #1B9B9F;
