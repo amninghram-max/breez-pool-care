@@ -140,7 +140,10 @@ Deno.serve(async (req) => {
     };
     const timeWindow = timeWindowMap[requestedTimeSlot];
 
-    // Create CalendarEvent (service inspection)
+    // Build service address string
+    const serviceAddressStr = `${street.trim()}, ${city.trim()}, ${state.trim()} ${zip.trim()}`;
+
+    // Create CalendarEvent (service inspection) with all contact fields
     let eventCreated = null;
     try {
       eventCreated = await base44.asServiceRole.entities.CalendarEvent.create({
@@ -149,9 +152,10 @@ Deno.serve(async (req) => {
         scheduledDate: requestedDate,
         timeWindow: timeWindow,
         status: 'scheduled',
-        serviceAddress: 'TBD', // Will be updated after lead confirmation
+        serviceAddress: serviceAddressStr,
+        customerNotes: `Name: ${firstName.trim()}\nPhone: ${phone.trim()}\nEmail: ${finalEmail || 'N/A'}`,
       });
-      console.log('SFI_V1_EVENT_CREATED', { eventId: eventCreated.id, leadId });
+      console.log('SFI_V1_EVENT_CREATED', { eventId: eventCreated.id, leadId, serviceAddress: serviceAddressStr });
     } catch (e) {
       console.error('SFI_V1_EVENT_CREATION_FAILED', { error: e.message });
       return json200({
