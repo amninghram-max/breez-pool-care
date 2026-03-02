@@ -300,6 +300,15 @@ export default function PublicQuoteWizard({ prefillData, onDebugStateChange }) {
       };
       console.log('DEBUG: Finish payload', payload);
 
+      // Validate payload has no invalid dates
+      const hasInvalidDates = Object.values(payload.questionnaireData || {}).some(
+        v => v instanceof Date && !Number.isFinite(v.getTime())
+      );
+      if (hasInvalidDates) {
+        setFinalizeError('Invalid data in form. Please refresh and try again.');
+        return;
+      }
+
       // STEP 1: Call publicGetQuote
       const res = await base44.functions.invoke('publicGetQuote', payload);
       const data = res?.data ?? res;
