@@ -22,7 +22,7 @@ function generateToken() {
  * - a valid URL
  * - origin-only (pathname === "/", no search, no hash)
  * - protocol https
- * - hostname ends with .base44.app
+ * - hostname ends with .base44.app OR is breezpoolcare.com (production domain)
  * Returns { valid: true, origin } or { valid: false, reason }
  */
 function validateAppOrigin(appOrigin) {
@@ -38,8 +38,10 @@ function validateAppOrigin(appOrigin) {
   if (u.protocol !== 'https:') {
     return { valid: false, reason: `appOrigin must use https, got: ${u.protocol}` };
   }
-  if (!u.hostname.endsWith('.base44.app')) {
-    return { valid: false, reason: `appOrigin hostname must end with .base44.app, got: ${u.hostname}` };
+  const isBase44 = u.hostname.endsWith('.base44.app');
+  const isProduction = u.hostname === 'breezpoolcare.com' || u.hostname.startsWith('breezpoolcare.');
+  if (!isBase44 && !isProduction) {
+    return { valid: false, reason: `appOrigin hostname must be .base44.app or breezpoolcare.com, got: ${u.hostname}` };
   }
   if (u.pathname !== '/' || u.search || u.hash) {
     return { valid: false, reason: `appOrigin must be origin-only (no path/search/hash), got: ${appOrigin}` };
