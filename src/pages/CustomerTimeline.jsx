@@ -285,55 +285,86 @@ export default function CustomerTimeline() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link to={createPageUrl('AdminHome')}>
-            <Button variant="outline" size="icon">
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {lead.firstName} {lead.lastName || ''}
-            </h1>
-            {lead.serviceAddress && (
-              <p className="text-sm text-gray-600">{lead.serviceAddress}</p>
-            )}
+      {/* Header with Status & Quick Actions */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <Link to={createPageUrl('CustomerTimeline')}>
+              <Button variant="outline" size="icon">
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {lead.firstName} {lead.lastName || ''}
+              </h1>
+              {lead.serviceAddress && (
+                <p className="text-sm text-gray-600">{lead.serviceAddress}</p>
+              )}
+            </div>
           </div>
+          <Badge className="bg-green-100 text-green-800">Active</Badge>
         </div>
-      </div>
-
-      {/* Next Actions */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardHeader>
-          <CardTitle className="text-base">Next Actions</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-3">
+        
+        {/* Quick Action Buttons */}
+        <div className="flex flex-wrap gap-2">
           <Link to={createPageUrl('ServiceVisitEntry') + `?leadId=${leadId}`}>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="w-4 h-4 mr-2" />
+            <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="w-3 h-3 mr-1" />
               Log Service
             </Button>
           </Link>
-          <Link to={createPageUrl('InspectionSubmit') + `?leadId=${leadId}`}>
-            <Button className="bg-green-600 hover:bg-green-700">
-              <Plus className="w-4 h-4 mr-2" />
-              Submit Inspection
-            </Button>
-          </Link>
           <Link to={createPageUrl('EquipmentProfileAdmin') + `?leadId=${leadId}`}>
-            <Button variant="outline">
-              <Wrench className="w-4 h-4 mr-2" />
+            <Button size="sm" variant="outline">
+              <Wrench className="w-3 h-3 mr-1" />
               Equipment
             </Button>
           </Link>
           <Link to={createPageUrl('AdminMessaging') + `?leadId=${leadId}`}>
-            <Button variant="outline">
-              <MessageSquare className="w-4 h-4 mr-2" />
+            <Button size="sm" variant="outline">
+              <MessageSquare className="w-3 h-3 mr-1" />
               Messages
             </Button>
           </Link>
+        </div>
+      </div>
+
+      {/* Contact & Personal Info Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Contact Information</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-4 text-sm">
+          {lead.email && (
+            <div className="flex items-start gap-2">
+              <Mail className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-xs text-gray-600">Email</p>
+                <p className="text-gray-900 break-all">{lead.email}</p>
+              </div>
+            </div>
+          )}
+          {lead.mobilePhone && (
+            <div className="flex items-start gap-2">
+              <Phone className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-xs text-gray-600">Phone</p>
+                <p className="text-gray-900">{lead.mobilePhone}</p>
+              </div>
+            </div>
+          )}
+          {lead.preferredContact && (
+            <div>
+              <p className="text-xs text-gray-600">Preferred Contact</p>
+              <p className="text-gray-900 capitalize">{lead.preferredContact}</p>
+            </div>
+          )}
+          {lead.gateCode && (
+            <div>
+              <p className="text-xs text-gray-600">Gate Code</p>
+              <p className="text-gray-900 font-mono">{lead.gateCode}</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
