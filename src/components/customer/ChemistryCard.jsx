@@ -16,23 +16,47 @@ const isOutOfRange = (key, value) => {
   return value < RANGES[key].min || value > RANGES[key].max;
 };
 
-const ChemistryRow = ({ label, value, unit = '', dataKey = null }) => {
+const getTrendArrow = (currentValue, previousValue) => {
+  if (previousValue === null || previousValue === undefined) {
+    return null;
+  }
+  if (currentValue > previousValue) return '↑';
+  if (currentValue < previousValue) return '↓';
+  return '→';
+};
+
+const ChemistryRow = ({ label, value, unit = '', dataKey = null, allVisits = [], currentVisitIndex = 0 }) => {
   if (value === null || value === undefined) return null;
+
+  // Find previous non-null value for this metric
+  let previousValue = null;
+  if (allVisits && currentVisitIndex >= 0) {
+    for (let i = currentVisitIndex + 1; i < allVisits.length; i++) {
+      if (allVisits[i][dataKey] !== null && allVisits[i][dataKey] !== undefined) {
+        previousValue = allVisits[i][dataKey];
+        break;
+      }
+    }
+  }
 
   const outOfRange = dataKey ? isOutOfRange(dataKey, value) : false;
   const textColor = outOfRange ? 'text-red-600 font-semibold' : 'text-gray-700';
+  const trend = dataKey ? getTrendArrow(value, previousValue) : null;
 
   return (
     <div className="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-b-0">
       <span className="text-sm text-gray-600">{label}</span>
-      <span className={`text-sm font-medium ${textColor}`}>
-        {value}{unit && ` ${unit}`}
-      </span>
+      <div className="flex items-center gap-1">
+        <span className={`text-sm font-medium ${textColor}`}>
+          {value}{unit && ` ${unit}`}
+        </span>
+        {trend && <span className="text-xs text-gray-500">{trend}</span>}
+      </div>
     </div>
   );
 };
 
-export default function ChemistryCard({ visit }) {
+export default function ChemistryCard({ visit, allVisits = [], visitIndex = 0 }) {
   const daysAgo = formatDistance(new Date(visit.visitDate), new Date(), { addSuffix: true });
 
   const chemistryFields = [
@@ -79,6 +103,8 @@ export default function ChemistryCard({ visit }) {
             label={field.label}
             value={field.value}
             dataKey={field.dataKey}
+            allVisits={allVisits}
+            currentVisitIndex={visitIndex}
           />
         ))}
       </div>
