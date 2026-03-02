@@ -122,20 +122,35 @@ Deno.serve(async (req) => {
     if (!quote) {
       // Create new Quote shell for this lead
       quoteToken = generateToken();
+      const createPayload = {
+        leadId,
+        status: 'SENT',
+        quoteToken
+      };
       try {
-        const newQuote = await base44.asServiceRole.entities.Quote.create({
-          leadId,
-          status: 'SENT',
-          quoteToken
-        });
+        const newQuote = await base44.asServiceRole.entities.Quote.create(createPayload);
         quote = newQuote;
         console.log('V2_QUOTE_CREATED', { quoteId: quote.id, leadId });
       } catch (createErr) {
-        console.error('V2_QUOTE_CREATE_FAILED', { leadId, error: String(createErr?.message ?? createErr) });
+        const errorDetail = createErr?.message ?? String(createErr);
+        const errorStack = createErr?.stack ? String(createErr.stack).slice(0, 300) : undefined;
+        const errorCause = createErr?.cause ? String(createErr.cause) : undefined;
+        const errorErrors = createErr?.errors ? JSON.stringify(createErr.errors) : undefined;
+        
+        console.error('V2_QUOTE_CREATE_FAILED', {
+          leadId,
+          message: errorDetail,
+          cause: errorCause,
+          errors: errorErrors
+        });
+        
         return json200({
           success: false,
           error: 'Failed to create quote',
-          detail: String(createErr?.message ?? createErr),
+          detail: errorDetail,
+          cause: errorCause,
+          errors: errorErrors,
+          createPayloadKeys: Object.keys(createPayload),
           build: BUILD
         });
       }
