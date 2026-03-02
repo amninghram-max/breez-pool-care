@@ -1,9 +1,18 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { getAppOrigin } from "./_getAppOrigin.js";
 
-const BUILD = "SQLE-RUNTIME-MAPPED-2026-03-01-E";
+const BUILD = "SQLE-FORCE-RESPONSE-2026-03-01-D";
 
 Deno.serve(async (req) => {
+  const FORCE = "SQLE-FORCE-DEPLOY-2026-03-01-F";
+  if (new URL(req.url).searchParams.get("force") === "1") {
+    return new Response(JSON.stringify({
+      success: false,
+      build: FORCE,
+      note: "This is a forced deploy proof response"
+    }), { status: 200, headers: { "content-type": "application/json; charset=utf-8" } });
+  }
+
   const base44 = createClientFromRequest(req);
   try {
     const method = req.method;
