@@ -1,0 +1,81 @@
+import React from 'react';
+import { Calendar, CheckCircle2 } from 'lucide-react';
+
+const TEAL = '#1B9B9F';
+
+export default function QuoteResultDisplay({ result, firstName, email, leadId, quoteToken }) {
+  const { isRange, quote, priceSummary: resultPriceSummary } = result;
+  // Prefer priceSummary from result, fallback to quote fields
+  const priceSummary = resultPriceSummary || {};
+  const priceDisplay = priceSummary.monthlyPrice || (
+    isRange && quote
+      ? `$${quote.minMonthly} – $${quote.maxMonthly}`
+      : quote?.finalMonthlyPrice ? `$${quote.finalMonthlyPrice}` : 'Price unavailable'
+  );
+
+  const freqLabel = priceSummary.visitFrequency || (quote?.frequency === 'twice_weekly' ? 'Twice Weekly' : 'Weekly');
+
+  const oneTimeDisplay = priceSummary.oneTimeFees || (
+    isRange && quote
+      ? (quote.minOneTimeFees > 0 ? `$${quote.minOneTimeFees}–$${quote.maxOneTimeFees}` : null)
+      : quote?.oneTimeFees > 0 ? `$${quote.oneTimeFees}` : null
+  );
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-full mb-4" style={{ backgroundColor: '#e8f8f9' }}>
+          <CheckCircle2 className="w-7 h-7" style={{ color: TEAL }} />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-1">Your Quote is Ready, {firstName}!</h2>
+        <p className="text-gray-500 text-sm">A copy has been sent to your email.</p>
+      </div>
+
+      {/* Price card */}
+      <div className="rounded-2xl border-2 p-6" style={{ borderColor: TEAL, backgroundColor: '#f0fdfd' }}>
+        <div className="text-center mb-4">
+          <div className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Estimated Monthly Service</div>
+          <div className="text-4xl font-bold" style={{ color: TEAL }}>{priceDisplay}<span className="text-lg font-normal text-gray-500">/mo*</span></div>
+          {isRange && <div className="text-xs text-gray-400 mt-1">Range reflects pool size uncertainty</div>}
+          <div className="mt-2 inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-white border" style={{ borderColor: TEAL, color: TEAL }}>
+            {freqLabel} Service
+          </div>
+          {quote?.frequencyAutoRequired && (
+            <p className="text-xs text-amber-600 mt-2">Based on your pool's profile, twice-weekly service is recommended.</p>
+          )}
+        </div>
+        {oneTimeDisplay && (
+          <div className="border-t pt-4 text-center">
+            <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">One-Time Initial Fee</div>
+            <div className="text-xl font-bold text-gray-800">{oneTimeDisplay}</div>
+            <div className="text-xs text-gray-400">(Based on current pool condition)</div>
+          </div>
+        )}
+      </div>
+
+      {/* Asterisk note */}
+      <p className="text-xs text-gray-400 leading-relaxed text-center px-2">
+        *Final pricing is based on confirmation of pool size, condition, and equipment during inspection to ensure accuracy and consistency.
+      </p>
+
+      {/* CTA */}
+      <div className="space-y-3">
+        <button
+          type="button"
+          onClick={() => {
+            if (quoteToken) {
+              console.log('Navigating to ScheduleInspection with token:', quoteToken);
+              window.location.href = `/ScheduleInspection?token=${encodeURIComponent(quoteToken)}`;
+            }
+          }}
+          className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-white text-base font-semibold shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5"
+          style={{ backgroundColor: TEAL }}
+        >
+          <Calendar className="w-5 h-5" />
+          Schedule Your Free Inspection
+        </button>
+        <p className="text-xs text-center text-gray-400">No obligation. Homeowner or designated caretaker must be present.</p>
+      </div>
+    </div>
+  );
+}
