@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import QuoteWizard from './QuoteWizard';
 import { toast } from 'sonner';
 
@@ -13,16 +15,19 @@ import { toast } from 'sonner';
  * InPersonSalesModal — Staff in-person sales flow.
  * 
  * Steps:
- * 1. Pricing: QuoteWizard (steps 1-2 from pool questions)
- * 2. Lock Quote: "Lock Quote" button → lockInPersonSalesSessionQuote
- * 3. Convert: Contact form (firstName, email, phone) → convertInPersonSalesSessionToLead
+ * 1. Pricing: QuoteWizard (pool questions)
+ * 2. Lock Quote + Contact: lockInPersonSalesSessionQuote, then collect firstName, email, phone
+ * 3. Inspection: Draft notes, photosLinks, eligible flag, needsFollowup flag
+ * 4. Convert: convertInPersonSalesSessionToLead using stored contactDraft
  * 
  * State:
  * - sessionId: created on mount
- * - currentStep: 1=pricing, 2=lock, 3=convert
+ * - currentStep: 1=pricing, 2=lock+contact, 3=inspection, 4=convert
  * - pricingInputs: from QuoteWizard
  * - quoteSnapshot: from lockInPersonSalesSessionQuote
  * - contactDraft: firstName, email, phone
+ * - inspectionDraft: notes, photosLinks, eligible, needsFollowup
+ * - quoteLocked: flag to prevent pricing edits after lock
  */
 
 export default function InPersonSalesModal({ open, onOpenChange }) {
@@ -31,7 +36,9 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
   const [pricingInputs, setPricingInputs] = useState(null);
   const [quoteSnapshot, setQuoteSnapshot] = useState(null);
   const [contactDraft, setContactDraft] = useState({ firstName: '', email: '', phone: '' });
+  const [inspectionDraft, setInspectionDraft] = useState({ notes: '', photosLinks: '', eligible: true, needsFollowup: false });
   const [activationLink, setActivationLink] = useState(null);
+  const [quoteLocked, setQuoteLocked] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // ── Create session on modal open ──
@@ -49,7 +56,9 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
         setPricingInputs(null);
         setQuoteSnapshot(null);
         setContactDraft({ firstName: '', email: '', phone: '' });
+        setInspectionDraft({ notes: '', photosLinks: '', eligible: true, needsFollowup: false });
         setActivationLink(null);
+        setQuoteLocked(false);
       } catch (e) {
         console.error('Failed to create session:', e);
         toast.error('Failed to start in-person flow');
@@ -92,7 +101,8 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
     onSuccess: (res) => {
       const snapshot = res.data?.quoteSnapshot || res.quoteSnapshot;
       setQuoteSnapshot(snapshot);
-      setCurrentStep(3);
+      setQuoteLocked(true);
+      // Stay on step 2 to show contact form after lock
       toast.success('Quote locked');
     },
     onError: (err) => {
@@ -155,17 +165,49 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
     lockQuoteMutation.mutate();
   };
 
-  const handleConvert = async (e) => {
-    e.preventDefault();
+  const handleContinueToInspection = async () => {
     if (!contactDraft.firstName || !contactDraft.email) {
       toast.error('First name and email required');
       return;
     }
+    try {
+      await updateSessionMutation.mutateAsync({
+        currentStep: 3,
+        contactDraft
+      });
+      setCurrentStep(3);
+    } catch (e) {
+      toast.error('Failed to save contact info');
+    }
+  };
+
+  const handleContinueToConvert = async () => {
+    try {
+      await updateSessionMutation.mutateAsync({
+        currentStep: 4,
+        inspectionDraft
+      });
+      setCurrentStep(4);
+    } catch (e) {
+      toast.error('Failed to save inspection data');
+    }
+  };
+
+  const handleConvert = async (e) => {
+    e.preventDefault();
     convertMutation.mutate();
   };
 
   const handleStartNew = () => {
     startNewMutation.mutate();
+  };
+
+  const handleBackToPricing = () => {
+    if (quoteLocked) {
+      toast.info('Quote is locked. Pricing cannot be edited.');
+      return;
+    }
+    setCurrentStep(1);
   };
 
   if (!open) return null;
@@ -221,59 +263,47 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
                 </Button>
               </div>
             </div>
-          ) : currentStep === 1 ? (
-            // ── Step 1: Pricing (QuoteWizard) ──
-            <div className="space-y-4">
-              <QuoteWizard
-                mode="demo"
-                initialAnswers={pricingInputs}
-                onComplete={handleQuoteWizardComplete}
-              />
-            </div>
           ) : currentStep === 2 ? (
-            // ── Step 2: Lock Quote ──
+            // ── Step 2: Lock Quote + Contact Info ──
             <div className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Lock Quote</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-gray-600">
-                    Once locked, the quote will be finalized and customer pricing cannot be adjusted. Proceed to contact info collection.
-                  </p>
-                  <div className="flex gap-3">
-                    <Button
-                      onClick={() => setCurrentStep(1)}
-                      variant="outline"
-                      className="flex-1"
-                      disabled={lockQuoteMutation.isPending}
-                    >
-                      Back
-                    </Button>
-                    <Button
-                      onClick={handleLockQuote}
-                      className="flex-1 bg-teal-600 hover:bg-teal-700"
-                      disabled={lockQuoteMutation.isPending}
-                    >
-                      {lockQuoteMutation.isPending ? (
-                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Locking...</>
-                      ) : (
-                        'Lock Quote'
-                      )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-            // ── Step 3: Convert (Contact Info) ──
-            <div className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Customer Information</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleConvert} className="space-y-4">
+              {!quoteLocked ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Lock Quote</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                      Once locked, the quote will be finalized. You'll then collect customer information.
+                    </p>
+                    <div className="flex gap-3">
+                      <Button
+                        onClick={handleBackToPricing}
+                        variant="outline"
+                        className="flex-1"
+                        disabled={lockQuoteMutation.isPending}
+                      >
+                        Back
+                      </Button>
+                      <Button
+                        onClick={handleLockQuote}
+                        className="flex-1 bg-teal-600 hover:bg-teal-700"
+                        disabled={lockQuoteMutation.isPending}
+                      >
+                        {lockQuoteMutation.isPending ? (
+                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Locking...</>
+                        ) : (
+                          'Lock Quote'
+                        )}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Customer Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label>First Name *</Label>
@@ -307,41 +337,144 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
                         className="mt-1.5"
                       />
                     </div>
-
-                    {convertMutation.isError && (
-                      <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-800">
-                        <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                        {convertMutation.error?.message || 'Failed to convert'}
-                      </div>
-                    )}
-
                     <div className="flex gap-3 pt-4 border-t">
-                      <Button
-                        type="button"
-                        onClick={() => setCurrentStep(2)}
-                        variant="outline"
-                        className="flex-1"
-                        disabled={convertMutation.isPending}
-                      >
+                      <Button onClick={() => setQuoteLocked(false)} variant="outline" className="flex-1">
                         Back
                       </Button>
                       <Button
-                        type="submit"
+                        onClick={handleContinueToInspection}
+                        disabled={updateSessionMutation.isPending}
                         className="flex-1 bg-teal-600 hover:bg-teal-700"
-                        disabled={convertMutation.isPending}
                       >
-                        {convertMutation.isPending ? (
-                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Converting...</>
+                        {updateSessionMutation.isPending ? (
+                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
                         ) : (
-                          'Convert to Lead'
+                          'Continue to Inspection'
                         )}
                       </Button>
                     </div>
-                  </form>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          ) : currentStep === 3 ? (
+            // ── Step 3: Inspection ──
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Inspection Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Notes</Label>
+                    <Textarea
+                      value={inspectionDraft.notes}
+                      onChange={e => setInspectionDraft(d => ({ ...d, notes: e.target.value }))}
+                      placeholder="Inspection observations..."
+                      className="mt-1.5 h-20"
+                    />
+                  </div>
+                  <div>
+                    <Label>Photo Links (comma-separated, optional)</Label>
+                    <Input
+                      value={inspectionDraft.photosLinks}
+                      onChange={e => setInspectionDraft(d => ({ ...d, photosLinks: e.target.value }))}
+                      placeholder="https://example.com/photo1.jpg, https://example.com/photo2.jpg"
+                      className="mt-1.5"
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="eligible"
+                        checked={inspectionDraft.eligible}
+                        onCheckedChange={v => setInspectionDraft(d => ({ ...d, eligible: v }))}
+                      />
+                      <Label htmlFor="eligible" className="cursor-pointer font-normal">
+                        Property is eligible for service
+                      </Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="followup"
+                        checked={inspectionDraft.needsFollowup}
+                        onCheckedChange={v => setInspectionDraft(d => ({ ...d, needsFollowup: v }))}
+                      />
+                      <Label htmlFor="followup" className="cursor-pointer font-normal">
+                        Needs follow-up
+                      </Label>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 pt-4 border-t">
+                    <Button
+                      onClick={() => setCurrentStep(2)}
+                      variant="outline"
+                      className="flex-1"
+                      disabled={updateSessionMutation.isPending}
+                    >
+                      Back
+                    </Button>
+                    <Button
+                      onClick={handleContinueToConvert}
+                      disabled={updateSessionMutation.isPending}
+                      className="flex-1 bg-teal-600 hover:bg-teal-700"
+                    >
+                      {updateSessionMutation.isPending ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
+                      ) : (
+                        'Continue to Convert'
+                      )}
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </div>
-          )}
+          ) : currentStep === 4 ? (
+            // ── Step 4: Convert ──
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Review & Convert</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="bg-gray-50 p-4 rounded-lg space-y-2 text-sm">
+                    <p><strong>Name:</strong> {contactDraft.firstName}</p>
+                    <p><strong>Email:</strong> {contactDraft.email}</p>
+                    {contactDraft.phone && <p><strong>Phone:</strong> {contactDraft.phone}</p>}
+                  </div>
+
+                  {convertMutation.isError && (
+                    <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-800">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                      {convertMutation.error?.message || 'Failed to convert'}
+                    </div>
+                  )}
+
+                  <div className="flex gap-3 pt-4 border-t">
+                    <Button
+                      onClick={() => setCurrentStep(3)}
+                      variant="outline"
+                      className="flex-1"
+                      disabled={convertMutation.isPending}
+                    >
+                      Back
+                    </Button>
+                    <Button
+                      onClick={handleConvert}
+                      className="flex-1 bg-teal-600 hover:bg-teal-700"
+                      disabled={convertMutation.isPending}
+                    >
+                      {convertMutation.isPending ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Converting...</>
+                      ) : (
+                        'Convert to Lead'
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ) : null
         </div>
       </div>
     </div>
