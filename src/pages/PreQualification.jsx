@@ -34,7 +34,11 @@ export default function PreQualification() {
         const res = await base44.functions.invoke('getQuoteRequestPublicV1', { token });
         const data = res?.data ?? res;
         if (data?.success === true && data.request) {
-          setPrefillData({ email: data.request.email, leadId: data.request.leadId });
+          setPrefillData({ 
+            email: data.request.email, 
+            firstName: data.request.firstName || null,
+            leadId: data.request.leadId 
+          });
         } else {
           setPrefillError(data?.error || 'Invalid or expired link');
         }
