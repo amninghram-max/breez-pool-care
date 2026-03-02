@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar } from 'lucide-react';
 
 export default function WeekView({ startDate, technicianFilter }) {
+  const [showCancelled, setShowCancelled] = React.useState(false);
+
   // Generate 7 days starting from startDate
   const days = Array.from({ length: 7 }, (_, i) => {
     const date = new Date(startDate);
@@ -29,6 +31,17 @@ export default function WeekView({ startDate, technicianFilter }) {
     }
   });
 
+  const { data: leads = [] } = useQuery({
+    queryKey: ['leads-slim'],
+    queryFn: () => base44.entities.Lead.list('-created_date', 200),
+  });
+
+  const leadMap = React.useMemo(() => {
+    const m = {};
+    for (const l of leads) m[l.id] = l;
+    return m;
+  }, [leads]);
+
   if (isLoading) {
     return (
       <Card>
@@ -40,11 +53,33 @@ export default function WeekView({ startDate, technicianFilter }) {
   }
 
   return (
-    <div className="grid grid-cols-6 gap-4">
-      {days.map(day => {
-        const dateStr = day.toISOString().split('T')[0];
-        const dayEvents = allEvents.filter(e => e.scheduledDate === dateStr);
-        const isToday = dateStr === new Date().toISOString().split('T')[0];
+    <div className="space-y-4">
+      {/* Show cancelled toggle */}
+      <div className="flex items-center justify-end">
+        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900">
+          <input
+            type="checkbox"
+            checked={showCancelled}
+            onChange={(e) => setShowCancelled(e.target.checked)}
+            className="rounded border-gray-300"
+          />
+          Show cancelled events
+        </label>
+      </div>
+
+      <div className="grid grid-cols-6 gap-4">
+        {days.map(day => {
+          const dateStr = day.toISOString().split('T')[0];
+          const dayEvents = allEvents.filter(e => {
+            if (e.scheduledDate !== dateStr) return false;
+            // Skip cancelled unless toggled
+            if (e.status === 'cancelled' && !showCancelled) return false;
+            // Skip deleted leads
+            const lead = leadMap[e.leadId];
+            if (lead?.isDeleted) return false;
+            return true;
+          });
+          const isToday = dateStr === new Date().toISOString().split('T')[0];
 
         return (
           <Card key={dateStr} className={isToday ? 'border-teal-500 border-2' : ''}>
@@ -84,7 +119,8 @@ export default function WeekView({ startDate, technicianFilter }) {
             </CardContent>
           </Card>
         );
-      })}
+        })}
+      </div>
     </div>
   );
 }
