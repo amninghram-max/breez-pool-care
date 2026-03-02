@@ -1,204 +1,188 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { ChevronLeft, Loader2, CheckCircle2, AlertCircle, Calendar, Clock } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { createPageUrl } from '@/utils';
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import PublicScheduler from '../components/quote/PublicScheduler';
+
+const TEAL = '#1B9B9F';
+
+// Generate next 14 available days (Mon–Sat only)
+function getAvailableDates() {
+  const dates = [];
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  while (dates.length < 14) {
+    const day = d.getDay();
+    if (day !== 0) {
+      dates.push(new Date(d));
+    }
+    d.setDate(d.getDate() + 1);
+  }
+  return dates;
+}
+
+const TIME_SLOTS = [
+  { value: 'morning', label: 'Morning', sub: '8:00 AM – 11:00 AM' },
+  { value: 'midday', label: 'Midday', sub: '11:00 AM – 2:00 PM' },
+  { value: 'afternoon', label: 'Afternoon', sub: '2:00 PM – 5:00 PM' },
+];
+
+function formatDate(d) {
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function toISODate(d) {
+  if (!d || !(d instanceof Date) || !Number.isFinite(d.getTime())) {
+    return null;
+  }
+  return d.toISOString().split('T')[0];
+}
 
 export default function ScheduleInspection() {
-  const [token, setToken] = useState('');
-  const [submitted, setSubmitted] = useState(false);
-  const [submitError, setSubmitError] = useState('');
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
 
-  // Extract token from URL
+  const [leadData, setLeadData] = useState(null);
+  const [loadingLead, setLoadingLead] = useState(false);
+  const [loadError, setLoadError] = useState('');
+
+  const [phone, setPhone] = useState('');
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [confirmed, setConfirmed] = useState(null);
+
+  const dates = getAvailableDates();
+
+  // Load lead data from token
   useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const t = searchParams.get('token');
-    if (!t) {
-      setToken(null);
-    } else {
-      setToken(t);
+    if (!token) {
+      setLoadError('No token provided');
+      return;
     }
-  }, []);
 
-  // Validate token
-  const {
-    data: validationResult,
-    isLoading: validating,
-    error: validationError
-  } = useQuery({
-    queryKey: ['scheduleToken', token],
-    queryFn: async () => {
-      if (!token) return null;
-      const response = await base44.functions.invoke('validateScheduleToken', {
-        scheduleToken: token
-      });
-      return response.data;
-    },
-    enabled: !!token,
-    retry: false
-  });
-
-  // Handle scheduling submission
-  const handleScheduleSubmit = async (selectedDate, selectedTimeWindow) => {
-    setSubmitError('');
-    try {
-      const response = await base44.functions.invoke('scheduleInspectionByToken', {
-        scheduleToken: token,
-        requestedDate: selectedDate,
-        requestedTimeSlot: selectedTimeWindow
-      });
-
-      if (response.data?.success) {
-        setSubmitted(true);
-      } else {
-        setSubmitError(response.data?.error || 'Failed to schedule inspection');
+    const loadLead = async () => {
+      setLoadingLead(true);
+      try {
+        const res = await base44.functions.invoke('getQuoteRequestPublicV1', { token });
+        const data = res?.data ?? res;
+        if (data?.success === true && data.request) {
+          setLeadData({
+            leadId: data.request.leadId,
+            email: data.request.email,
+            firstName: data.request.firstName || null,
+            token: token
+          });
+        } else {
+          setLoadError(data?.error || 'Invalid or expired token');
+        }
+      } catch (err) {
+        setLoadError(err?.message || 'Failed to load request');
+      } finally {
+        setLoadingLead(false);
       }
-    } catch (error) {
-      setSubmitError(error.message || 'An error occurred while scheduling');
+    };
+
+    loadLead();
+  }, [token]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    // Validation
+    if (!phone.trim()) {
+      setError('Phone number is required.');
+      return;
+    }
+    if (!selectedDate || !selectedSlot) {
+      setError('Please select a date and time window.');
+      return;
+    }
+
+    const isoDate = toISODate(selectedDate);
+    if (!isoDate) {
+      setError('Invalid date selected. Please try again.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await base44.functions.invoke('scheduleFirstInspectionPublicV1', {
+        token: token,
+        phone: phone.trim(),
+        requestedDate: isoDate,
+        requestedTimeSlot: selectedSlot,
+      });
+      const data = res?.data ?? res;
+
+      if (data?.success === true) {
+        setConfirmed(data);
+      } else {
+        setError(data?.error || 'Failed to schedule inspection. Please call (321) 524-3838.');
+      }
+    } catch (e) {
+      setError('Something went wrong. Please call us at (321) 524-3838.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Error state: no token provided
-  if (token === null) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
-        <Card className="border-red-200 bg-red-50 max-w-md">
-          <CardHeader>
-            <CardTitle className="text-red-900 flex items-center gap-2">
-              <AlertCircle className="w-5 h-5" />
-              Invalid Link
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-red-700">
-              This scheduling link is missing the required token. Please check the link in your email and try again.
-            </p>
-            <Button
-              onClick={() => window.location.href = createPageUrl('PublicHome')}
-              className="w-full bg-blue-600 hover:bg-blue-700"
-            >
-              Go Back Home
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   // Loading state
-  if (validating) {
+  if (loadingLead) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardContent className="pt-6">
-            <div className="text-center space-y-4">
-              <div className="animate-spin w-8 h-8 border-4 border-gray-300 border-t-blue-600 rounded-full mx-auto" />
-              <p className="text-gray-600">Loading scheduling options...</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Error state: token invalid/expired
-  if (validationError || (validationResult && !validationResult.success)) {
-    const errorMsg = validationError?.message || validationResult?.error || 'Invalid or expired scheduling link';
-    return (
-      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
-        <Card className="border-red-200 bg-red-50 max-w-md">
-          <CardHeader>
-            <CardTitle className="text-red-900 flex items-center gap-2">
-              <AlertCircle className="w-5 h-5" />
-              Link Expired or Invalid
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-red-700">
-              {errorMsg}
-            </p>
-            <p className="text-sm text-gray-600">
-              Please request a new quote to get a fresh scheduling link.
-            </p>
-            <Button
-              onClick={() => window.location.href = createPageUrl('PublicHome')}
-              className="w-full bg-blue-600 hover:bg-blue-700"
-            >
-              Go Back Home
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Success state: inspection scheduled
-  if (submitted) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
-        <Card className="border-green-200 bg-green-50 max-w-md">
-          <CardHeader>
-            <CardTitle className="text-green-900 flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5" />
-              Inspection Scheduled!
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-green-700">
-              Your free pool inspection has been scheduled. We'll send you a confirmation email with the details shortly.
-            </p>
-            <div className="bg-white rounded p-3 text-sm text-gray-600">
-              <p className="font-semibold text-gray-900 mb-1">What's next:</p>
-              <ul className="space-y-1 ml-4 list-disc text-xs">
-                <li>Check your email for confirmation</li>
-                <li>Our inspector will assess your pool</li>
-                <li>Receive a customized service plan</li>
-              </ul>
-            </div>
-            <Button
-              onClick={() => window.location.href = createPageUrl('PublicHome')}
-              className="w-full bg-blue-600 hover:bg-blue-700"
-            >
-              Return Home
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Main state: render scheduler
-  if (validationResult?.success && validationResult.quote) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Schedule Your Free Inspection</h1>
-            <p className="text-gray-600">
-              Hi {validationResult.quote.clientFirstName || 'there'}! Let's find a time that works for you.
-            </p>
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <header className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
+          <img
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/0b0c31666_Breez2.png"
+            alt="Breez Pool Care"
+            className="h-10 w-auto cursor-pointer"
+            onClick={() => navigate('/')}
+          />
+          <a href="tel:3215243838" className="text-sm text-gray-500 hover:text-gray-700">(321) 524-3838</a>
+        </header>
+        <div className="flex-1 flex items-center justify-center px-4">
+          <div className="flex flex-col items-center gap-3 text-gray-500">
+            <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+            <p className="text-sm">Loading…</p>
           </div>
+        </div>
+      </div>
+    );
+  }
 
-          {submitError && (
-            <Card className="border-red-200 bg-red-50 mb-6">
-              <CardContent className="pt-6">
-                <div className="flex gap-3">
-                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-red-700">{submitError}</p>
+  // Error state
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <header className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
+          <img
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/0b0c31666_Breez2.png"
+            alt="Breez Pool Care"
+            className="h-10 w-auto cursor-pointer"
+            onClick={() => navigate('/')}
+          />
+          <a href="tel:3215243838" className="text-sm text-gray-500 hover:text-gray-700">(321) 524-3838</a>
+        </header>
+        <div className="flex-1 flex items-center justify-center px-4 py-10">
+          <Card className="max-w-md w-full border-red-200">
+            <CardContent className="pt-6 flex flex-col gap-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-gray-900">Unable to Load</p>
+                  <p className="text-sm text-gray-600 mt-1">{loadError}</p>
                 </div>
-              </CardContent>
-            </Card>
-          )}
-
-          <Card>
-            <CardContent className="pt-6">
-              <PublicScheduler
-                onSuccess={handleScheduleSubmit}
-                clientFirstName={validationResult.quote.clientFirstName}
-              />
+              </div>
+              <Button
+                onClick={() => navigate('/')}
+                className="w-full bg-teal-600 hover:bg-teal-700 text-white"
+              >
+                Go Home
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -206,5 +190,170 @@ export default function ScheduleInspection() {
     );
   }
 
-  return null;
+  // Confirmation state
+  if (confirmed) {
+    const slotLabels = { morning: '8:00 AM – 11:00 AM', midday: '11:00 AM – 2:00 PM', afternoon: '2:00 PM – 5:00 PM' };
+    const [year, month, day] = confirmed.scheduledDate.split('-').map(Number);
+    const dateObj = new Date(Date.UTC(year, month - 1, day));
+    const formattedDate = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(dateObj);
+
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <header className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
+          <img
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/0b0c31666_Breez2.png"
+            alt="Breez Pool Care"
+            className="h-10 w-auto cursor-pointer"
+            onClick={() => navigate('/')}
+          />
+          <a href="tel:3215243838" className="text-sm text-gray-500 hover:text-gray-700">(321) 524-3838</a>
+        </header>
+        <div className="flex-1 flex items-start justify-center px-4 py-10">
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-lg p-8">
+            <div className="space-y-5 text-center">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full" style={{ backgroundColor: '#e8f8f9' }}>
+                <CheckCircle2 className="w-7 h-7" style={{ color: TEAL }} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Inspection Confirmed!</h2>
+                <p className="text-gray-500 text-sm mt-1">A confirmation has been sent to {leadData?.email}.</p>
+              </div>
+              <div className="rounded-2xl border-2 p-5 text-left space-y-3" style={{ borderColor: TEAL, backgroundColor: '#f0fdfd' }}>
+                <div className="flex items-center gap-3">
+                  <Calendar className="w-5 h-5 shrink-0" style={{ color: TEAL }} />
+                  <div>
+                    <div className="text-xs text-gray-400 uppercase tracking-wide">Date</div>
+                    <div className="font-semibold text-gray-900">{formattedDate}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Clock className="w-5 h-5 shrink-0" style={{ color: TEAL }} />
+                  <div>
+                    <div className="text-xs text-gray-400 uppercase tracking-wide">Time Window</div>
+                    <div className="font-semibold text-gray-900">{slotLabels[selectedSlot]}</div>
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-xl bg-gray-50 p-4 text-left text-sm text-gray-600 space-y-2">
+                <p className="font-semibold text-gray-800">What to expect:</p>
+                <ul className="space-y-1 list-disc list-inside">
+                  <li>We'll call approximately one hour before arrival.</li>
+                  <li>Inspection typically takes 20–30 minutes.</li>
+                  <li>We'll test water chemistry, inspect equipment, and answer questions.</li>
+                  <li>No obligation.</li>
+                </ul>
+              </div>
+              <Button
+                onClick={() => navigate('/')}
+                className="w-full bg-teal-600 hover:bg-teal-700 text-white"
+              >
+                Back Home
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Form state
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <header className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
+        <img
+          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/0b0c31666_Breez2.png"
+          alt="Breez Pool Care"
+          className="h-10 w-auto cursor-pointer"
+          onClick={() => navigate('/')}
+        />
+        <a href="tel:3215243838" className="text-sm text-gray-500 hover:text-gray-700">(321) 524-3838</a>
+      </header>
+
+      <div className="flex-1 flex items-start justify-center px-4 py-10">
+        <div className="w-full max-w-lg bg-white rounded-2xl shadow-lg p-8">
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Schedule Your Free Inspection</h1>
+              <p className="text-gray-500 text-sm mt-1">No obligation. Homeowner or caretaker must be present.</p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Phone number */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  placeholder="(123) 456-7890"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none transition-colors text-gray-900"
+                  onFocus={e => e.target.style.borderColor = TEAL}
+                  onBlur={e => e.target.style.borderColor = '#e5e7eb'}
+                />
+              </div>
+
+              {/* Date picker */}
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Select a date</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {dates.map((d) => {
+                    const iso = toISODate(d);
+                    const isSelected = selectedDate && toISODate(selectedDate) === iso;
+                    return (
+                      <button
+                        key={iso}
+                        type="button"
+                        onClick={() => setSelectedDate(d)}
+                        className={`py-3 px-4 rounded-xl border-2 text-sm font-medium transition-all ${isSelected ? 'shadow-sm' : 'border-gray-200 hover:border-gray-300'}`}
+                        style={isSelected ? { borderColor: TEAL, backgroundColor: '#f0fdfd', color: TEAL } : {}}
+                      >
+                        {formatDate(d)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Time slot */}
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Select a time window</p>
+                <div className="space-y-2">
+                  {TIME_SLOTS.map((slot) => {
+                    const isSelected = selectedSlot === slot.value;
+                    return (
+                      <button
+                        key={slot.value}
+                        type="button"
+                        onClick={() => setSelectedSlot(slot.value)}
+                        className={`w-full text-left px-5 py-4 rounded-xl border-2 transition-all ${isSelected ? 'shadow-sm' : 'border-gray-200 hover:border-gray-300'}`}
+                        style={isSelected ? { borderColor: TEAL, backgroundColor: '#f0fdfd' } : {}}
+                      >
+                        <div className="font-semibold text-gray-900">{slot.label}</div>
+                        <div className="text-sm text-gray-500">{slot.sub}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {error && <p className="text-red-500 text-sm">{error}</p>}
+
+              <Button
+                type="submit"
+                disabled={loading || !phone.trim()}
+                className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-white text-base font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-50"
+                style={{ backgroundColor: TEAL }}
+              >
+                {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Scheduling...</> : 'Confirm Inspection'}
+              </Button>
+
+              <p className="text-xs text-center text-gray-400">
+                Need to change plans? Call (321) 524-3838 · Mon–Sat 8am–6pm
+              </p>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
