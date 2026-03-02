@@ -271,23 +271,31 @@ export default function PublicQuoteWizard({ prefillData, onDebugStateChange }) {
     if (e?.preventDefault) e.preventDefault();
     console.log('DEBUG: Finish clicked');
 
-    // STATE RESET: clear all previous state unconditionally first
+    // MILESTONE: clicked
+    setFinalizeState('clicked');
     setFinishClickedAt(new Date().toLocaleTimeString());
     setFinalizeError(null);
     setLastFinalizeRequest(null);
     setLastFinalizeResponse(null);
-    setFinalizing(true);
     setError('');
     setResult(null);
+    setFinalizing(true);
+
+    // MILESTONE: starting
+    setFinalizeState('starting');
 
     try {
-      // VALIDATION: capture errors but don't return early
+      // VALIDATION: capture errors and set state milestone before returning
       if (!firstName.trim()) {
         setFinalizeError('Please enter your first name.');
+        setFinalizeState('done_error');
+        setFinalizing(false);
         return;
       }
       if (!email.trim() || !email.includes('@')) {
         setFinalizeError('Please enter a valid email address.');
+        setFinalizeState('done_error');
+        setFinalizing(false);
         return;
       }
 
@@ -308,8 +316,15 @@ export default function PublicQuoteWizard({ prefillData, onDebugStateChange }) {
       );
       if (hasInvalidDates) {
         setFinalizeError('Invalid data in form. Please refresh and try again.');
+        setFinalizeState('done_error');
+        setFinalizing(false);
         return;
       }
+
+      setLastFinalizeRequest(payload);
+
+      // MILESTONE: invoking
+      setFinalizeState('invoking');
 
       // STEP 1: Call publicGetQuote
       const res = await base44.functions.invoke('publicGetQuote', payload);
@@ -319,6 +334,9 @@ export default function PublicQuoteWizard({ prefillData, onDebugStateChange }) {
 
       if (data?.success !== true) {
         setFinalizeError(data?.error || 'Failed to generate quote. Please try again.');
+        setLastFinalizeResponse(data);
+        setFinalizeState('done_error');
+        setFinalizing(false);
         return;
       }
 
@@ -345,6 +363,9 @@ export default function PublicQuoteWizard({ prefillData, onDebugStateChange }) {
         console.log('DEBUG: Finalize parsed data', finalizeData);
         setLastFinalizeResponse(finalizeData);
 
+        // MILESTONE: response_received
+        setFinalizeState('response_received');
+
         if (finalizeData?.success === true && finalizeData?.priceSummary) {
           const normalizedResult = {
             ...data,
@@ -353,17 +374,23 @@ export default function PublicQuoteWizard({ prefillData, onDebugStateChange }) {
           };
           console.log('DEBUG: Setting result after finalize success', normalizedResult);
           setResult(normalizedResult);
+          setFinalizeState('done_success');
         } else {
           const errorMsg = `${finalizeData?.error || 'Failed to finalize quote'} (${finalizeData?.build || 'unknown'})`;
           console.log('DEBUG: Finalize failed', errorMsg);
           setFinalizeError(errorMsg);
           setResult({ error: errorMsg });
+          setFinalizeState('done_error');
         }
       } else if (data?.releaseReady) {
         console.log('DEBUG: releaseReady but no quote, showing ThankYou');
+        setLastFinalizeResponse(data);
+        setFinalizeState('done_success');
         setResult(data);
       } else {
         console.log('DEBUG: Not ready, showing ThankYou');
+        setLastFinalizeResponse(data);
+        setFinalizeState('done_success');
         setResult(data);
       }
     } catch (err) {
@@ -371,6 +398,7 @@ export default function PublicQuoteWizard({ prefillData, onDebugStateChange }) {
       console.log('DEBUG: Outer catch error', errorMsg);
       setFinalizeError(errorMsg);
       setResult({ error: errorMsg });
+      setFinalizeState('done_error');
     } finally {
       setFinalizing(false);
     }
