@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
       if (requests && requests.length > 0) {
         leadId = requests[0].leadId;
         tokenEmail = requests[0].email;
-        console.log('SFI_V1_TOKEN_RESOLVED', { token: token.trim().slice(0, 8), leadId });
+        console.log('SFI_V1_TOKEN_RESOLVED', { token: token.trim().slice(0, 8), leadId, hasLeadId: !!leadId });
       }
     } catch (e) {
       console.warn('SFI_V1_TOKEN_RESOLUTION_FAILED', { error: e.message });
@@ -99,6 +99,17 @@ Deno.serve(async (req) => {
       return json200({
         success: false,
         error: 'Token not found or invalid',
+        build: BUILD
+      });
+    }
+
+    // Do NOT create a new lead if token does not resolve to a leadId
+    if (!leadId) {
+      console.warn('SFI_V1_NO_LEADID', { token: token.trim().slice(0, 8) });
+      return json200({
+        success: false,
+        code: 'NO_LEADID',
+        error: 'Quote token does not have an associated lead ID',
         build: BUILD
       });
     }
