@@ -38,10 +38,19 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
   const hasData = hasQuestionnaireData(lead);
 
   const handleSendQuoteLink = async () => {
+    console.log("SEND_QUOTE_LINK_HANDLER_ENTER", { leadId: lead?.id, stage: lead?.stage, email });
     setError('');
 
-    if (!email.trim()) { setError('Email is required'); return; }
-    if (!isValidEmail(email)) { setError('Please enter a valid email address'); return; }
+    if (!email.trim()) {
+      console.log("SEND_QUOTE_LINK_EARLY_RETURN", { reason: "email empty" });
+      setError('Email is required');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      console.log("SEND_QUOTE_LINK_EARLY_RETURN", { reason: "invalid email" });
+      setError('Please enter a valid email address');
+      return;
+    }
 
     setLoading(true);
     try {
