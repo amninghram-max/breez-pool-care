@@ -222,6 +222,14 @@ Deno.serve(async (req) => {
       }
     }
 
+    console.log('SFI_V1_SUCCESS', {
+      leadId,
+      eventId: eventCreated?.id,
+      createdNewLead: false,
+      scheduledDate: requestedDate,
+      timeWindow: requestedTimeSlot
+    });
+
     return json200({
       success: true,
       scheduledDate: requestedDate,
