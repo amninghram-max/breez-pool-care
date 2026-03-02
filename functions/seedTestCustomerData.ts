@@ -158,14 +158,10 @@ Deno.serve(async (req) => {
     } catch (err) {
       console.error('ServiceVisit creation error:', err.message);
       return Response.json({
-        error: {
-          step: 'createServiceVisits',
-          errorMessage: err.message,
-          errorCode: err.code || 'UNKNOWN',
-          statusCode: err.status || 500,
-          attempted: attemptedServiceVisits
-        }
-      }, { status: err.status || 500 });
+        step: 'createServiceVisits',
+        errorMessage: err.message,
+        attempted: attemptedServiceVisits
+      }, { status: 500 });
     }
 
     // 5. Create CustomerEquipment records (pump + filter)
@@ -200,14 +196,10 @@ Deno.serve(async (req) => {
     } catch (err) {
       console.error('CustomerEquipment creation error:', err.message);
       return Response.json({
-        error: {
-          step: 'createCustomerEquipment',
-          errorMessage: err.message,
-          errorCode: err.code || 'UNKNOWN',
-          statusCode: err.status || 500,
-          attempted: attemptedCustomerEquipment
-        }
-      }, { status: err.status || 500 });
+        step: 'createCustomerEquipment',
+        errorMessage: err.message,
+        attempted: attemptedCustomerEquipment
+      }, { status: 500 });
     }
 
     // 6. Skip ChemistryRiskEvent for now (requires poolId + testRecordId linkage)
