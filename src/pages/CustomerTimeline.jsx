@@ -218,7 +218,15 @@ export default function CustomerTimeline() {
       );
     },
     onError: (err) => {
-      setSeedResponse({ success: false, error: err.message || 'Unknown error', details: err });
+      // Capture axios error response data
+      const errorData = {
+        success: false,
+        errorMessage: err.message,
+        status: err.response?.status,
+        responseData: err.response?.data,
+        requestId: err.response?.headers?.['x-request-id']
+      };
+      setSeedResponse(errorData);
       toast.error(`Failed to seed data: ${err.message || 'Unknown error'}`);
     }
   });
