@@ -62,10 +62,20 @@ export default function LeadsPipeline() {
     }
   });
 
-  const updateLeadMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Lead.update(id, data),
+  const updateLeadStageMutation = useMutation({
+    mutationFn: ({ leadId, stage, notes, lostReason }) => 
+      base44.functions.invoke('updateLeadStageV1', {
+        leadId,
+        newStage: stage,
+        notes,
+        lostReason
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
+      toast.success('Lead updated');
+    },
+    onError: (err) => {
+      toast.error(err.message || 'Failed to update lead');
     }
   });
 
