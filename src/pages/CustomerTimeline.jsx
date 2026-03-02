@@ -305,6 +305,33 @@ export default function CustomerTimeline() {
     return chemistryRiskEvents.filter(e => new Date(e.expiresAt) > new Date()).length;
   }, [chemistryRiskEvents]);
 
+  // TEMP: Data diagnostics to confirm linkage keys
+  const { data: diagnosticsData = {} } = useQuery({
+    queryKey: ['diagnostics', leadId],
+    queryFn: async () => {
+      try {
+        const allVisits = await base44.entities.ServiceVisit.list('-visitDate', 100);
+        const visitsByPropertyId = allVisits.filter(v => v.propertyId === leadId).length;
+        const visitsByLeadId = allVisits.filter(v => v.leadId === leadId).length;
+
+        const allEquipment = await base44.entities.CustomerEquipment.list();
+        const equipmentByCustomerId = allEquipment.filter(e => e.customerId === leadId).length;
+        const equipmentByLeadId = allEquipment.filter(e => e.leadId === leadId).length;
+
+        return {
+          visitsByPropertyId,
+          visitsByLeadId,
+          equipmentByCustomerId,
+          equipmentByLeadId
+        };
+      } catch (err) {
+        console.error('Diagnostics query error:', err);
+        return { error: err.message };
+      }
+    },
+    enabled: !!leadId && user && ['admin', 'staff'].includes(user.role)
+  });
+
 
 
 
@@ -644,6 +671,22 @@ export default function CustomerTimeline() {
                 )}
               </div>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* TEMP: Data Diagnostics */}
+      {user && ['admin', 'staff'].includes(user.role) && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardHeader>
+            <CardTitle className="text-xs font-mono text-blue-900">TEMP: Data Diagnostics</CardTitle>
+          </CardHeader>
+          <CardContent className="text-xs font-mono text-gray-700 space-y-1">
+            <div>ServiceVisit where propertyId = leadId: <span className="font-bold text-blue-800">{diagnosticsData.visitsByPropertyId || 0}</span></div>
+            <div>ServiceVisit where leadId = leadId: <span className="text-gray-500">{diagnosticsData.visitsByLeadId ? diagnosticsData.visitsByLeadId : 'field not present'}</span></div>
+            <div>CustomerEquipment where customerId = leadId: <span className="font-bold text-blue-800">{diagnosticsData.equipmentByCustomerId || 0}</span></div>
+            <div>CustomerEquipment where leadId = leadId: <span className="text-gray-500">{diagnosticsData.equipmentByLeadId ? diagnosticsData.equipmentByLeadId : 'field not present'}</span></div>
+            {diagnosticsData.error && <div className="text-red-600 mt-2">Error: {diagnosticsData.error}</div>}
           </CardContent>
         </Card>
       )}
