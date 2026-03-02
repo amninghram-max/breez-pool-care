@@ -330,85 +330,87 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
            <div className="space-y-4">
              {quoteSnapshot ? (
                // ── Already locked: show locked summary ──
-               <Card>
-                 <CardHeader>
-                   <CardTitle>Locked Quote Summary</CardTitle>
-                 </CardHeader>
-                 <CardContent className="space-y-4">
-                   <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                     <p className="text-sm text-green-700 mb-2">Monthly: <strong>${(quoteSnapshot.finalMonthlyPrice || quoteSnapshot.monthly || 0).toFixed(2)}</strong></p>
-                     {quoteSnapshot.estimatedPerVisitPrice && (
-                       <p className="text-sm text-green-700">Per visit: ${quoteSnapshot.estimatedPerVisitPrice.toFixed(2)}</p>
-                     )}
-                     {quoteSnapshot.estimatedOneTimeFees && quoteSnapshot.estimatedOneTimeFees > 0 && (
-                       <p className="text-sm text-green-700">One-time fees: ${quoteSnapshot.estimatedOneTimeFees.toFixed(2)}</p>
-                     )}
-                   </div>
-                   <div className="flex gap-3 pt-4 border-t">
-                     <Button onClick={() => setCurrentStep(3)} className="flex-1 bg-teal-600 hover:bg-teal-700">
-                       Continue to Inspection
-                     </Button>
-                     <Button onClick={() => setCurrentStep(4)} variant="outline" className="flex-1 text-teal-600 border-teal-600 hover:bg-teal-50">
-                       Convert Now
-                     </Button>
-                   </div>
-                   </CardContent>
-                   </Card>
-
-                   <Card>
+               <>
+                 <Card>
                    <CardHeader>
-                   <CardTitle className="text-base">Add Contact Info (Optional)</CardTitle>
+                     <CardTitle>Locked Quote Summary</CardTitle>
                    </CardHeader>
                    <CardContent className="space-y-4">
-                   <div className="grid grid-cols-2 gap-4">
-                     <div>
-                       <Label>First Name</Label>
-                       <Input
-                         value={contactDraft.firstName}
-                         onChange={e => setContactDraft(d => ({ ...d, firstName: e.target.value }))}
-                         placeholder="John"
-                         className="mt-1.5"
-                       />
-                     </div>
-                     <div>
-                       <Label>Email</Label>
-                       <Input
-                         type="email"
-                         value={contactDraft.email}
-                         onChange={e => setContactDraft(d => ({ ...d, email: e.target.value }))}
-                         placeholder="john@example.com"
-                         className="mt-1.5"
-                       />
-                     </div>
-                   </div>
-                   <div>
-                     <Label>Phone (Optional)</Label>
-                     <Input
-                       type="tel"
-                       value={contactDraft.phone}
-                       onChange={e => setContactDraft(d => ({ ...d, phone: e.target.value }))}
-                       placeholder="(555) 000-0000"
-                       className="mt-1.5"
-                     />
-                   </div>
-                   {(contactDraft.firstName || contactDraft.email || contactDraft.phone) && (
-                     <Button
-                       type="button"
-                       onClick={handleSaveContactInfo}
-                       disabled={updateSessionMutation.isPending}
-                       className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800"
-                       size="sm"
-                     >
-                       {updateSessionMutation.isPending ? (
-                         <><Loader2 className="w-3 h-3 mr-2 animate-spin" />Saving...</>
-                       ) : (
-                         'Save Contact Info'
+                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                       <p className="text-sm text-green-700 mb-2">Monthly: <strong>${(quoteSnapshot.finalMonthlyPrice || quoteSnapshot.monthly || 0).toFixed(2)}</strong></p>
+                       {quoteSnapshot.estimatedPerVisitPrice && (
+                         <p className="text-sm text-green-700">Per visit: ${quoteSnapshot.estimatedPerVisitPrice.toFixed(2)}</p>
                        )}
-                     </Button>
-                   )}
+                       {quoteSnapshot.estimatedOneTimeFees && quoteSnapshot.estimatedOneTimeFees > 0 && (
+                         <p className="text-sm text-green-700">One-time fees: ${quoteSnapshot.estimatedOneTimeFees.toFixed(2)}</p>
+                       )}
+                     </div>
+                     <div className="flex gap-3 pt-4 border-t">
+                       <Button onClick={() => setCurrentStep(3)} className="flex-1 bg-teal-600 hover:bg-teal-700">
+                         Continue to Inspection
+                       </Button>
+                       <Button onClick={() => setCurrentStep(4)} variant="outline" className="flex-1 text-teal-600 border-teal-600 hover:bg-teal-50">
+                         Convert Now
+                       </Button>
+                     </div>
                    </CardContent>
-                   </Card>
-                   ) : estimatePreview ? (
+                 </Card>
+
+                 <Card>
+                   <CardHeader>
+                     <CardTitle className="text-base">Add Contact Info (Optional)</CardTitle>
+                   </CardHeader>
+                   <CardContent className="space-y-4">
+                     <div className="grid grid-cols-2 gap-4">
+                       <div>
+                         <Label>First Name</Label>
+                         <Input
+                           value={contactDraft.firstName}
+                           onChange={e => setContactDraft(d => ({ ...d, firstName: e.target.value }))}
+                           placeholder="John"
+                           className="mt-1.5"
+                         />
+                       </div>
+                       <div>
+                         <Label>Email</Label>
+                         <Input
+                           type="email"
+                           value={contactDraft.email}
+                           onChange={e => setContactDraft(d => ({ ...d, email: e.target.value }))}
+                           placeholder="john@example.com"
+                           className="mt-1.5"
+                         />
+                       </div>
+                     </div>
+                     <div>
+                       <Label>Phone (Optional)</Label>
+                       <Input
+                         type="tel"
+                         value={contactDraft.phone}
+                         onChange={e => setContactDraft(d => ({ ...d, phone: e.target.value }))}
+                         placeholder="(555) 000-0000"
+                         className="mt-1.5"
+                       />
+                     </div>
+                     {(contactDraft.firstName || contactDraft.email || contactDraft.phone) && (
+                       <Button
+                         type="button"
+                         onClick={handleSaveContactInfo}
+                         disabled={updateSessionMutation.isPending}
+                         className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800"
+                         size="sm"
+                       >
+                         {updateSessionMutation.isPending ? (
+                           <><Loader2 className="w-3 h-3 mr-2 animate-spin" />Saving...</>
+                         ) : (
+                           'Save Contact Info'
+                         )}
+                       </Button>
+                     )}
+                   </CardContent>
+                 </Card>
+               </>
+             ) : estimatePreview ? (
                // ── Estimate preview: show and allow locking ──
                <>
                  <Card>
