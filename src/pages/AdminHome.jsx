@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 
 import DemoQuoteModal from '../components/quote/DemoQuoteModal';
 import RealQuoteModal from '../components/quote/RealQuoteModal';
+import InPersonSalesModal from '../components/quote/InPersonSalesModal';
 import TopActionsBar from '../components/admin/dashboard/TopActionsBar';
 import NextUpCard from '../components/admin/dashboard/NextUpCard';
 import TodayOverview from '../components/admin/dashboard/TodayOverview';
@@ -28,6 +29,7 @@ import TechnicianHome from './TechnicianHome';
 export default function AdminHome() {
   const [showDemo, setShowDemo] = useState(false);
   const [showReal, setShowReal] = useState(false);
+  const [showInPerson, setShowInPerson] = useState(false);
   const [convertAnswers, setConvertAnswers] = useState(null);
   const [viewAsTech, setViewAsTech] = useState(false);
 
@@ -99,7 +101,7 @@ export default function AdminHome() {
       </div>
 
       {/* Top Actions Bar */}
-      <TopActionsBar onNewQuote={() => setShowReal(true)} />
+      <TopActionsBar onNewQuote={() => setShowReal(true)} onOpenInPerson={() => setShowInPerson(true)} />
 
       {/* Next Up — priority blockers */}
       <NextUpCard />
@@ -168,6 +170,7 @@ export default function AdminHome() {
           initialAnswers={convertAnswers}
         />
       )}
+      <InPersonSalesModal open={showInPerson} onOpenChange={setShowInPerson} />
     </div>
   );
 }
