@@ -203,6 +203,9 @@ export default function CustomerTimeline() {
       return res.data;
     },
     onSuccess: (data) => {
+      // Store full response for display
+      setSeedResponse({ success: true, data });
+      
       // Invalidate all relevant query keys to refetch
       queryClient.invalidateQueries({ queryKey: ['recentVisits', leadId] });
       queryClient.invalidateQueries({ queryKey: ['allVisitsForDropdown', leadId] });
@@ -211,15 +214,17 @@ export default function CustomerTimeline() {
       queryClient.invalidateQueries({ queryKey: ['chemistryRiskEvents', leadId] });
       
       toast.success(
-        `✓ Seeded ${data.serviceVisitsCreated} visits, ${data.customerEquipmentCreated} equipment, ${data.chemistryRiskEventsCreated} alerts`
+        `✓ Verified: ${data.verifiedServiceVisitCount} visits, ${data.verifiedCustomerEquipmentCount} equipment, ${data.verifiedChemistryRiskEventCount} alerts`
       );
     },
     onError: (err) => {
+      setSeedResponse({ success: false, error: err.message || 'Unknown error', details: err });
       toast.error(`Failed to seed data: ${err.message || 'Unknown error'}`);
     }
   });
 
   const [selectedOldVisitId, setSelectedOldVisitId] = useState(null);
+  const [seedResponse, setSeedResponse] = useState(null);
 
   // Load only recent 4 visits on initial render
   const { data: recentVisits = [] } = useQuery({
@@ -671,6 +676,20 @@ export default function CustomerTimeline() {
                 )}
               </div>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* TEMP: Seed Response */}
+      {user && ['admin', 'staff'].includes(user.role) && seedResponse && (
+        <Card className={seedResponse.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}>
+          <CardHeader>
+            <CardTitle className="text-xs font-mono">TEMP: Seed Response</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <pre className="text-xs font-mono bg-gray-50 p-3 rounded border border-gray-300 overflow-x-auto max-h-96 overflow-y-auto whitespace-pre-wrap break-words">
+              {JSON.stringify(seedResponse.success ? seedResponse.data : { error: seedResponse.error, details: seedResponse.details }, null, 2)}
+            </pre>
           </CardContent>
         </Card>
       )}
