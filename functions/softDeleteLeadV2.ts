@@ -66,17 +66,17 @@ Deno.serve(async (req) => {
     let inspectionsCancelled = 0;
     let eventsCancelled = 0;
 
-    // Cancel all InspectionRecords for this lead
+    // Cancel all InspectionRecords for this lead (service role bypasses RLS)
     try {
-      const inspections = await base44.asServiceRole.entities.InspectionRecord.filter(
+      const inspections = await serviceBase44.asServiceRole.entities.InspectionRecord.filter(
         { leadId, appointmentStatus: { $ne: 'cancelled' } },
         null,
         100
       );
-      if (inspections) {
+      if (inspections && inspections.length > 0) {
         for (const inspection of inspections) {
           try {
-            await base44.asServiceRole.entities.InspectionRecord.update(inspection.id, {
+            await serviceBase44.asServiceRole.entities.InspectionRecord.update(inspection.id, {
               appointmentStatus: 'cancelled',
               cancelledAt: new Date().toISOString(),
               cancelReason: 'lead_deleted'
