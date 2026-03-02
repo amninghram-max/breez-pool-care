@@ -304,12 +304,19 @@ Owner/Operator: Matt Inghram`;
         console.warn('Quote email failed (non-blocking):', e.message);
       }
 
+      console.log('QUOTE_SUCCESS', { releaseReady: true, email: clientEmail });
       return new Response(JSON.stringify({
         success: true,
         releaseReady: true,
         quoteId: quoteRecord?.id || null,
         isRange: isNotSure,
         quote: quoteResult,
+        priceSummary: {
+          monthlyPrice: isNotSure ? `$${quoteResult.minMonthly}–$${quoteResult.maxMonthly}` : `$${quoteResult.finalMonthlyPrice}`,
+          visitFrequency: quoteResult.frequency === 'weekly' ? 'Weekly' : 'Twice Weekly',
+          planName: isNotSure ? 'Estimated' : 'Your Quote',
+          oneTimeFees: isNotSure ? (quoteResult.minOneTimeFees > 0 ? `$${quoteResult.minOneTimeFees}–$${quoteResult.maxOneTimeFees}` : null) : (quoteResult.oneTimeFees > 0 ? `$${quoteResult.oneTimeFees}` : null),
+        }
       }), { status: 200, headers });
     }
 
@@ -340,6 +347,7 @@ Owner/Operator: Matt Inghram`;
       console.warn('Follow-up email failed (non-blocking):', e.message);
     }
 
+    console.log('QUOTE_NOT_READY', { releaseReady: false, blockers: releaseBlockers.length, email: clientEmail });
     return new Response(JSON.stringify({
       success: true,
       releaseReady: false,
@@ -347,7 +355,7 @@ Owner/Operator: Matt Inghram`;
     }), { status: 200, headers });
 
   } catch (error) {
-    console.error('publicGetQuote error:', error.message, error.stack);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
+    console.error('QUOTE_CRASH', { error: error?.message, stack: error?.stack?.slice(0, 300) });
+    return new Response(JSON.stringify({ success: false, error: 'Quote generation failed', detail: error?.message }), { status: 200, headers });
   }
 });
