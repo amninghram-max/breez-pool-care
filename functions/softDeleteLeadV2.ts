@@ -49,9 +49,9 @@ Deno.serve(async (req) => {
       return json200({ success: false, error: 'Failed to fetch Lead', detail: e.message, build: BUILD });
     }
 
-    // Mark Lead as deleted
+    // Mark Lead as deleted (service role bypasses RLS)
     try {
-      await base44.asServiceRole.entities.Lead.update(leadId, {
+      await serviceBase44.asServiceRole.entities.Lead.update(leadId, {
         isDeleted: true,
         deletedAt: new Date().toISOString(),
         deletedBy: user.email,
@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
       });
       console.log('SOFT_DELETE_LEAD_V2_MARKED', { leadId, deletedBy: user.email });
     } catch (e) {
-      console.error('SOFT_DELETE_LEAD_V2_MARK_FAILED', { error: e.message });
+      console.error('SOFT_DELETE_LEAD_V2_MARK_FAILED', { error: e.message, detail: e?.response?.data });
       return json200({ success: false, error: 'Failed to mark Lead as deleted', detail: e.message, build: BUILD });
     }
 
