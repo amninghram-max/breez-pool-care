@@ -247,11 +247,12 @@ export default function PublicQuoteWizard({ prefillData, onDebugStateChange }) {
         lastFinalizeResponse,
         isFinalizing,
         finalizeError,
+        finishClickedAt,
         currentStep: step,
         currentStepName: currentKey
       });
     }
-  }, [step, isFinalizing, finalizeError, lastFinalizeRequest, lastFinalizeResponse, currentKey, onDebugStateChange]);
+  }, [step, isFinalizing, finalizeError, lastFinalizeRequest, lastFinalizeResponse, finishClickedAt, currentKey, onDebugStateChange]);
 
   const goBack = () => setStep(s => Math.max(0, s - 1));
 
