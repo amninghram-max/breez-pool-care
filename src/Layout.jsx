@@ -86,8 +86,12 @@ class ErrorBoundary extends React.Component {
 }
 
 export default function Layout({ children, currentPageName }) {
+  const navigate = useNavigate();
   const location = useLocation();
   const [layoutTimedOut, setLayoutTimedOut] = useState(false);
+
+  // Public pages that do NOT require authentication
+  const allowedPublicPages = ['Home', 'PublicHome', 'PreQualification', 'QuoteView', 'Activate'];
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
