@@ -60,20 +60,29 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { quoteId, firstName, email, appOrigin: appOriginRaw } = payload || {};
+    const { leadId, email, appOrigin: appOriginRaw, origin: originFallback, firstName } = payload || {};
 
-    const missingFields = [];
-    if (!quoteId || typeof quoteId !== 'string' || !quoteId.trim()) missingFields.push('quoteId');
-    if (!firstName || typeof firstName !== 'string' || !firstName.trim()) missingFields.push('firstName');
-    if (!email || typeof email !== 'string' || !email.trim()) missingFields.push('email');
+    // Validate required fields
+    const missing = {
+      leadId: !leadId || typeof leadId !== 'string' || !leadId.trim(),
+      email: !email || typeof email !== 'string' || !email.trim(),
+      appOrigin: !appOriginRaw && !originFallback
+    };
 
-    if (missingFields.length > 0) {
-      return json200({ success: false, error: 'Missing or invalid required fields', missingFields, build: BUILD });
+    if (missing.leadId || missing.email || missing.appOrigin) {
+      return json200({
+        success: false,
+        error: 'Missing or invalid required fields',
+        missing,
+        receivedKeys: Object.keys(payload || {}),
+        build: BUILD
+      });
     }
 
-    const originCheck = validateAppOrigin(appOriginRaw);
+    const appOriginRawToValidate = appOriginRaw || originFallback;
+    const originCheck = validateAppOrigin(appOriginRawToValidate);
     if (!originCheck.valid) {
-      console.error('V2_ORIGIN_INVALID', { appOriginRaw, reason: originCheck.reason });
+      console.error('V2_ORIGIN_INVALID', { appOriginRaw: appOriginRawToValidate, reason: originCheck.reason });
       return json200({ success: false, error: originCheck.reason, build: BUILD });
     }
     const appOrigin = originCheck.origin;
@@ -85,23 +94,28 @@ Deno.serve(async (req) => {
       return json200({ success: false, error: 'RESEND_API_KEY not configured', build: BUILD });
     }
 
-    // Fetch quote and check/generate quoteToken
-    let quote = null;
+    // Find or create Quote for this lead
+    let quotes = [];
     try {
-      quote = await base44.asServiceRole.entities.Quote.get(quoteId);
-    } catch (getErr) {
-      console.error('V2_QUOTE_GET_FAILED', { quoteId, error: String(getErr?.message ?? getErr) });
-      return json200({ success: false, error: 'Quote not found', build: BUILD });
+      quotes = await base44.asServiceRole.entities.Quote.filter({ leadId });
+    } catch (filterErr) {
+      console.error('V2_QUOTE_FILTER_FAILED', { leadId, error: String(filterErr?.message ?? filterErr) });
+    }
+
+    let quote = quotes?.[0];
+    if (!quote) {
+      console.warn('V2_NO_QUOTE_FOR_LEAD', { leadId });
+      return json200({ success: false, error: 'No quote found for this lead', build: BUILD });
     }
 
     let quoteToken = quote?.quoteToken;
     if (!quoteToken) {
       quoteToken = generateToken();
       try {
-        await base44.asServiceRole.entities.Quote.update(quoteId, { quoteToken });
-        console.log('V2_TOKEN_GENERATED', { quoteId, quoteToken });
+        await base44.asServiceRole.entities.Quote.update(quote.id, { quoteToken });
+        console.log('V2_TOKEN_GENERATED', { quoteId: quote.id, quoteToken });
       } catch (tokenErr) {
-        console.error('V2_TOKEN_UPDATE_FAILED', { quoteId, error: String(tokenErr?.message ?? tokenErr) });
+        console.error('V2_TOKEN_UPDATE_FAILED', { quoteId: quote.id, error: String(tokenErr?.message ?? tokenErr) });
         return json200({ success: false, error: 'Failed to generate quote token', build: BUILD });
       }
     }
