@@ -81,10 +81,24 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ── Log response shape for debugging ──
+    console.log('[lockInPersonSalesSessionQuote] calculateQuoteOnly response keys:', Object.keys(quoteResult || {}));
+
     // ── Validate quote result ──
     if (!quoteResult || !quoteResult.pricingEngineVersion) {
+      console.error('[lockInPersonSalesSessionQuote] Missing pricingEngineVersion in response:', { keys: Object.keys(quoteResult || {}) });
       return Response.json(
         { success: false, error: 'Quote calculation did not return valid pricingEngineVersion' },
+        { status: 500 }
+      );
+    }
+
+    // ── Verify monthly price exists ──
+    const monthlyPrice = quoteResult.finalMonthlyPrice || quoteResult.monthly;
+    if (monthlyPrice === undefined || monthlyPrice === null || typeof monthlyPrice !== 'number') {
+      console.error('[lockInPersonSalesSessionQuote] Invalid or missing monthly price:', { monthly: monthlyPrice, keys: Object.keys(quoteResult) });
+      return Response.json(
+        { success: false, error: 'Quote calculation returned no monthly price' },
         { status: 500 }
       );
     }
