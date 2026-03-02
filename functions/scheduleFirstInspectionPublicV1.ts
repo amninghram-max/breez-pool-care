@@ -181,11 +181,25 @@ Deno.serve(async (req) => {
           requestedInspectionDate: requestedDate,
           requestedInspectionTime: requestedTimeSlot,
           serviceAddress: serviceAddressStr,
-          stage: 'inspection_scheduled',
           // Only set notification flag if this is first scheduling
           ...(shouldSendNotification && { confirmationSentAt: new Date().toISOString() })
         });
         console.log('SFI_V1_LEAD_UPDATED', { leadId, shouldSendNotification, serviceAddress: serviceAddressStr });
+
+        // Auto-stage progression: update to 'inspection_scheduled' via public function
+        if (shouldSendNotification) {
+          try {
+            await base44.functions.invoke('updateLeadStagePublicV1', {
+              token: token.trim(),
+              newStage: 'inspection_scheduled',
+              context: 'schedule-success'
+            });
+            console.log('SFI_V1_STAGE_PROGRESSED', { leadId, newStage: 'inspection_scheduled' });
+          } catch (stageErr) {
+            console.warn('SFI_V1_STAGE_UPDATE_FAILED', { error: stageErr.message });
+            // Non-fatal: continue even if stage update fails
+          }
+        }
       } catch (e) {
         console.warn('SFI_V1_LEAD_UPDATE_FAILED', { error: e.message });
         // Don't fail the response; event is created
