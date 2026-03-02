@@ -51,6 +51,8 @@ Deno.serve(async (req) => {
     }
 
     // Mark Lead as deleted (service role bypasses RLS)
+    console.log('DEBUG_DELETE_TARGET', { leadId });
+    console.log('DEBUG_DELETE_UPDATE_PATH', { path: 'serviceBase44.asServiceRole.entities.Lead.update' });
     try {
       await serviceBase44.asServiceRole.entities.Lead.update(leadId, {
         isDeleted: true,
