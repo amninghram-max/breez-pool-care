@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +22,14 @@ const EQUIPMENT_TYPES = [
 ];
 
 export default function EquipmentProfileAdmin() {
+  const navigate = useNavigate();
+
+  // Redirect to Equipment Directory
+  useEffect(() => {
+    console.log('DEBUG: legacy EquipmentProfileAdmin hit; redirecting to directory');
+    navigate(createPageUrl('EquipmentProfiles'));
+  }, [navigate]);
+
   const params = new URLSearchParams(window.location.search);
   const leadId = params.get('leadId');
 
