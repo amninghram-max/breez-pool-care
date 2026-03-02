@@ -135,7 +135,7 @@ async function sendEmail(base44, { to, subject, body }) {
 }
 
 Deno.serve(async (req) => {
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = { 'Content-Type': 'application/json; charset=utf-8' };
   try {
     const base44 = createClientFromRequest(req);
     const payload = await req.json();
@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
 
     const { clientFirstName, clientEmail, poolSize } = questionnaireData;
     if (!clientEmail || !clientFirstName) {
-      return new Response(JSON.stringify({ error: 'clientFirstName and clientEmail are required' }), { status: 400, headers });
+      return new Response(JSON.stringify({ success: false, error: 'clientFirstName and clientEmail are required' }), { status: 200, headers });
     }
 
     // ── 1. Inline readiness check ──
@@ -163,12 +163,17 @@ Deno.serve(async (req) => {
         const baseTiersOk = baseTiers?.tier_a_10_15k > 0 && baseTiers?.absolute_floor > 0;
         const tokensOk = Object.keys(tokens).length >= 10;
         releaseReady = bracketsOk && multipliersOk && baseTiersOk && tokensOk;
-        if (!releaseReady) releaseBlockers.push('AdminSettings config integrity check failed');
+        if (!releaseReady) {
+          releaseBlockers.push('AdminSettings config integrity check failed');
+          console.warn('QUOTE_READINESS_GATING', { blocker: 'config_check_fail', brackets: brackets?.length, multipliers: riskEngine?.size_multipliers ? Object.keys(riskEngine.size_multipliers).length : 0, baseTiers: !!baseTiers?.tier_a_10_15k, tokens: Object.keys(tokens).length });
+        }
       } else {
         releaseBlockers.push('AdminSettings not found in DB');
+        console.warn('QUOTE_READINESS_GATING', { blocker: 'no_admin_settings' });
       }
     } catch (e) {
       releaseBlockers.push('AdminSettings load error: ' + e.message);
+      console.error('QUOTE_READINESS_ERROR', { error: e.message });
     }
 
     // ── 2. Create/upsert Lead record ──
