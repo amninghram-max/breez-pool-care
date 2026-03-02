@@ -68,7 +68,8 @@ Deno.serve(async (req) => {
     if (!user) {
       return Response.json({
         step: 'auth',
-        errorMessage: 'User not authenticated',
+        errorMessage: 'Forbidden: User not authenticated',
+        userIdentifier: null,
         observedRole: null,
         authError
       }, { status: 403 });
@@ -84,16 +85,23 @@ Deno.serve(async (req) => {
     if (!hasAdminRole) {
       return Response.json({
         step: 'auth',
-        errorMessage: `User role "${user.role}" does not have admin/staff access`,
+        errorMessage: `Forbidden: requires admin|staff, got "${user.role}"`,
+        userIdentifier: user.email || user.id || 'unknown',
         observedRole: user.role,
-        availableRoles: user.roles,
-        isAdmin: user.isAdmin
+        availableRoleFields: {
+          role: user.role,
+          roles: user.roles,
+          isAdmin: user.isAdmin
+        }
       }, { status: 403 });
     }
 
     // 2. Validate leadId
     if (!leadId) {
-      return Response.json({ error: 'leadId is required' }, { status: 400 });
+      return Response.json({
+        step: 'validateLeadId',
+        errorMessage: 'Missing required parameter: leadId'
+      }, { status: 400 });
     }
 
     if (!leadId) {
@@ -106,12 +114,15 @@ Deno.serve(async (req) => {
       const leads = await base44.entities.Lead.list();
       lead = leads.find(l => l.id === leadId);
       if (!lead) {
-        return Response.json({ error: 'Lead not found' }, { status: 404 });
+        return Response.json({
+          step: 'readLead',
+          errorMessage: `Lead not found: ${leadId}`
+        }, { status: 404 });
       }
     } catch (err) {
-      return Response.json({ 
+      return Response.json({
         step: 'readLead',
-        error: `Failed to fetch Lead: ${err.message}` 
+        errorMessage: `Failed to fetch Lead: ${err.message}`
       }, { status: 500 });
     }
 
