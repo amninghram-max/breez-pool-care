@@ -126,12 +126,16 @@ Deno.serve(async (req) => {
         if (existingLead && existingLead.length > 0) {
           const lead = existingLead[0];
           if (lead.inspectionScheduled === true && lead.inspectionEventId) {
-            console.log('SFI_V1_ALREADY_SCHEDULED', { leadId, eventId: lead.inspectionEventId });
+            console.log('SFI_V1_ALREADY_SCHEDULED', { 
+              leadId, 
+              eventId: lead.inspectionEventId,
+              createdNewLead: false 
+            });
             return json200({
               success: true,
               alreadyScheduled: true,
               scheduledDate: lead.requestedInspectionDate,
-              timeWindow: lead.requestedInspectionTime, // Will be converted to friendly format below
+              timeWindow: lead.requestedInspectionTime,
               email: finalEmail,
               firstName: lead.firstName || firstName,
               build: BUILD
