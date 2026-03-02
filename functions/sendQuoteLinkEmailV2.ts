@@ -2,58 +2,40 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 const BUILD = "SQLE-V2-2026-03-01-H";
 
-const json = (data) => new Response(
+// All responses: HTTP 200, application/json; charset=utf-8
+const json200 = (data) => new Response(
   JSON.stringify(data),
   { status: 200, headers: { "content-type": "application/json; charset=utf-8" } }
 );
 
-function isValidOrigin(origin) {
+/**
+ * Validates that appOrigin sent from the client (window.location.origin) is:
+ * - a valid URL
+ * - origin-only (pathname === "/", no search, no hash)
+ * - protocol https
+ * - hostname ends with .base44.app
+ * Returns { valid: true, origin } or { valid: false, reason }
+ */
+function validateAppOrigin(appOrigin) {
+  if (!appOrigin || typeof appOrigin !== 'string') {
+    return { valid: false, reason: 'appOrigin is required in request body' };
+  }
+  let u;
   try {
-    const u = new URL(origin);
-    if (u.protocol !== "http:" && u.protocol !== "https:") return false;
-    if (!u.host) return false;
-    if (u.host.endsWith(".deno.dev") || u.host.includes("deno.dev")) return false;
-    return true;
+    u = new URL(appOrigin);
   } catch {
-    return false;
+    return { valid: false, reason: `appOrigin is not a valid URL: ${appOrigin}` };
   }
-}
-
-function getAppOrigin(req) {
-  // A) req.url first
-  try {
-    const reqUrl = new URL(req.url);
-    const candidate = `${reqUrl.protocol}//${reqUrl.host}`;
-    if (isValidOrigin(candidate)) return candidate;
-  } catch {}
-
-  // B) headers
-  const xfProto = (req.headers.get("x-forwarded-proto") || "").split(",")[0].trim();
-  const xfHost = (req.headers.get("x-forwarded-host") || "").split(",")[0].trim();
-  const host = (req.headers.get("host") || "").split(",")[0].trim();
-
-  if (xfHost) {
-    const proto = xfProto || "https";
-    const candidate = `${proto}://${xfHost}`;
-    if (isValidOrigin(candidate)) return candidate;
+  if (u.protocol !== 'https:') {
+    return { valid: false, reason: `appOrigin must use https, got: ${u.protocol}` };
   }
-  if (host) {
-    const proto = xfProto || "https";
-    const candidate = `${proto}://${host}`;
-    if (isValidOrigin(candidate)) return candidate;
+  if (!u.hostname.endsWith('.base44.app')) {
+    return { valid: false, reason: `appOrigin hostname must end with .base44.app, got: ${u.hostname}` };
   }
-
-  // C) env var
-  const envUrl = (Deno.env.get("PUBLIC_APP_URL") || "").trim();
-  if (envUrl) {
-    try {
-      const u = new URL(envUrl);
-      const candidate = u.origin;
-      if (isValidOrigin(candidate)) return candidate;
-    } catch {}
+  if (u.pathname !== '/' || u.search || u.hash) {
+    return { valid: false, reason: `appOrigin must be origin-only (no path/search/hash), got: ${appOrigin}` };
   }
-
-  return null;
+  return { valid: true, origin: `${u.protocol}//${u.host}` };
 }
 
 Deno.serve(async (req) => {
