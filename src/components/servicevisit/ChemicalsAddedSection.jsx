@@ -254,7 +254,7 @@ export default function ChemicalsAddedSection({ chemicalsAdded, onChemicalsChang
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="font-semibold text-gray-900">
-                        {item.value} {item.registryItems[0]?.defaultDoseUnit || item.key}
+                        {item.value} <span className="font-mono text-sm text-gray-600">{bucketUnits[item.key] || item.registryItems[0]?.defaultDoseUnit || '?'}</span>
                       </span>
                       <Badge variant="outline" className="text-xs font-mono">
                         {item.key}
