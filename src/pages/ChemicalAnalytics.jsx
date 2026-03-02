@@ -19,7 +19,8 @@ import {
   Clock,
   Target,
   Settings,
-  Receipt
+  Receipt,
+  BarChart3
 } from 'lucide-react';
 
 // Helper: format cents to dollars
