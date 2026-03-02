@@ -291,15 +291,20 @@ function LeadRow({ lead, stage, onAdvance, onStageChange, onEdit, onUpdate, quer
   const handleDeleteLead = async () => {
     setIsDeleting(true);
     try {
-      const res = await base44.functions.invoke('deleteNewLeadPermanently', { leadId: lead.id });
-      if (res.data?.success) {
-        toast.success('Lead deleted');
+      const res = await base44.functions.invoke('softDeleteLeadV2', { 
+        leadId: lead.id,
+        reason: 'admin_removed_lead'
+      });
+      if (res.data.success) {
+        toast.success('Lead removed');
         queryClient?.invalidateQueries({ queryKey: ['leads'] });
+        queryClient?.invalidateQueries({ queryKey: ['calendarEvents'] });
+        queryClient?.invalidateQueries({ queryKey: ['inspections'] });
       } else {
-        toast.error(res.data?.message || 'Failed to delete lead');
+        toast.error(res.data.error || 'Failed to remove lead');
       }
     } catch (e) {
-      toast.error('Failed to delete lead');
+      toast.error('Error removing lead');
     } finally {
       setIsDeleting(false);
       setShowDeleteConfirm(false);
