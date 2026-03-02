@@ -141,56 +141,22 @@ export default function QuoteWizard({ persistQuote = true, initialAnswers = null
 
   // Normalize estimate response to extract monthly/perVisit/oneTime
   const normalizeEstimate = (raw) => {
-    // Try to find monthly in common shapes
-    let monthly = null;
-    let perVisit = null;
-    let oneTime = null;
-    const candidateKeys = [];
-    const candidateValues = {};
+    // Extract quote from nested data structure (Axios response wraps in .data)
+    const quoteData = raw?.data?.quote || raw?.quote || raw;
+    
+    // Canonical monthly extraction: prefer finalMonthlyPrice, fallback to estimatedMonthlyPrice
+    const monthly = quoteData?.finalMonthlyPrice ?? quoteData?.estimatedMonthlyPrice ?? quoteData?.monthly;
+    const perVisit = quoteData?.estimatedPerVisitPrice;
+    const oneTime = quoteData?.estimatedOneTimeFees;
 
-    // Check direct keys
-    const directCandidates = [
-      'finalMonthlyPrice',
-      'finalMonthlyServiceAmount',
-      'monthlyServiceAmount',
-      'estimatedMonthlyPrice',
-      'monthly',
-      'monthlyPrice'
-    ];
-    directCandidates.forEach(key => {
-      if (raw[key] !== undefined && raw[key] !== null) {
-        candidateValues[key] = raw[key];
-        if (typeof raw[key] === 'number' && !monthly) {
-          monthly = raw[key];
-        }
-      }
-    });
+    // Validate monthly is a valid number
+    if (!monthly || typeof monthly !== 'number') {
+      console.error('[normalizeEstimate] Invalid monthly price:', { monthly, keys: Object.keys(quoteData || {}) });
+      return { monthly: null, perVisit: null, oneTime: null };
+    }
 
-    // Check nested shapes
-    const nestedShapes = [raw.data, raw.quote, raw.pricing];
-    nestedShapes.forEach(shape => {
-      if (shape && typeof shape === 'object') {
-        directCandidates.forEach(key => {
-          if (shape[key] !== undefined && shape[key] !== null && typeof shape[key] === 'number') {
-            candidateValues[`nested.${key}`] = shape[key];
-            if (!monthly) monthly = shape[key];
-          }
-        });
-      }
-    });
-
-    // Extract other pricing fields
-    perVisit = raw.estimatedPerVisitPrice || raw.perVisitPrice || (raw.data?.estimatedPerVisitPrice) || (raw.quote?.estimatedPerVisitPrice);
-    oneTime = raw.estimatedOneTimeFees || raw.oneTimeFees || (raw.data?.estimatedOneTimeFees) || (raw.quote?.estimatedOneTimeFees);
-
-    // Debug logging
-    const numericCandidates = Object.fromEntries(
-      Object.entries(candidateValues).filter(([, v]) => typeof v === 'number')
-    );
-    console.log('[normalizeEstimate] candidates found:', numericCandidates);
-    console.log('[normalizeEstimate] normalized:', { monthly, perVisit, oneTime });
-
-    return { monthly, perVisit, oneTime, raw, debug: { numericCandidates, allKeys: Object.keys(raw) } };
+    console.log('[normalizeEstimate] Canonical shape created:', { monthly, perVisit, oneTime });
+    return { monthly, perVisit, oneTime };
   };
 
   // Estimate mode: show result when ready
