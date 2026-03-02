@@ -1,4 +1,4 @@
-export const AI_BOOTSTRAP_CONTEXT = `# AI_BOOTSTRAP_CONTEXT — Breez Pool Care App
+export default `# AI_BOOTSTRAP_CONTEXT — Breez Pool Care App
 
 > ⚠️ **Non-negotiable invariants for all code generation. Do not deviate.**
 
