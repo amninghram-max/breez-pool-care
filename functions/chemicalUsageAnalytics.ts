@@ -17,8 +17,55 @@ Deno.serve(async (req) => {
 
     console.log('📊 Analyzing chemical usage and margins...');
 
-    // Fetch all service visits with chemical data
-    const serviceVisits = await base44.asServiceRole.entities.ServiceVisit.list();
+    // Parse optional date range filter
+    let body = {};
+    try {
+      body = await req.json();
+    } catch (e) {
+      // No body is fine; proceed with defaults
+    }
+
+    const { dateFrom, dateTo } = body;
+    let visitDateFilter = {};
+
+    // Validate and apply date range if provided
+    if (dateFrom || dateTo) {
+      if (!dateFrom || !dateTo) {
+        return Response.json({
+          success: false,
+          error: 'Both dateFrom and dateTo required if filtering by date'
+        }, { status: 400 });
+      }
+
+      const from = new Date(dateFrom);
+      const to = new Date(dateTo);
+
+      if (isNaN(from.getTime()) || isNaN(to.getTime())) {
+        return Response.json({
+          success: false,
+          error: 'dateFrom and dateTo must be valid ISO dates or datetimes'
+        }, { status: 400 });
+      }
+
+      if (from > to) {
+        return Response.json({
+          success: false,
+          error: 'dateFrom must be <= dateTo'
+        }, { status: 400 });
+      }
+
+      visitDateFilter = {
+        visitDate: {
+          $gte: dateFrom,
+          $lt: dateTo
+        }
+      };
+    }
+
+    // Fetch service visits (optionally filtered by date range)
+    const serviceVisits = await base44.asServiceRole.entities.ServiceVisit.filter(
+      visitDateFilter.visitDate ? { visitDate: visitDateFilter.visitDate } : {}
+    );
     
     // Fetch all leads with pool details
     const leads = await base44.asServiceRole.entities.Lead.list();
