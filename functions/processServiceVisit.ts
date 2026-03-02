@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { computeChemicalCostLines } from './_shared/chemicalCosting.js';
 
 Deno.serve(async (req) => {
   try {
@@ -41,7 +42,52 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Create service visit record
+    // Compute chemical costs (non-fatal errors; visits save even if costing partially fails)
+    let chemicalCostCents = 0;
+    let chemicalCostLines = [];
+    const chemicalCostVersion = 'v1_canonical';
+
+    if (visitData.chemicalsAdded && Object.keys(visitData.chemicalsAdded).length > 0) {
+      try {
+        // Fetch all active chemical catalog items
+        const allChemicals = await base44.asServiceRole.entities.ChemicalCatalogItem.filter(
+          { isActive: true },
+          '-updated_date',
+          200
+        );
+
+        // Build lookup maps
+        const byServiceVisitKey = new Map(
+          allChemicals.map(c => [c.serviceVisitKey, c])
+        );
+        const byName = new Map(
+          allChemicals.map(c => [c.name, c])
+        );
+
+        // Compute cost lines
+        const { totalCostCents, lines } = computeChemicalCostLines(
+          visitData.chemicalsAdded,
+          byServiceVisitKey,
+          byName
+        );
+
+        chemicalCostCents = totalCostCents;
+        chemicalCostLines = lines;
+
+        if (lines.length > 0) {
+          console.info(
+            `[processServiceVisit] Cost computed: ${chemicalCostCents} cents from ${lines.length} line(s)`
+          );
+        }
+      } catch (costingError) {
+        // Non-fatal: log but don't crash the visit save
+        console.error('[processServiceVisit] Chemical costing error:', costingError.message);
+        chemicalCostCents = 0;
+        chemicalCostLines = [];
+      }
+    }
+
+    // Create service visit record with costing data
     const visit = await base44.asServiceRole.entities.ServiceVisit.create({
       ...visitData,
       outOfRange,
@@ -52,13 +98,17 @@ Deno.serve(async (req) => {
       calciumHardness: visitData.calciumHardness ? parseFloat(visitData.calciumHardness) : undefined,
       salt: visitData.salt ? parseFloat(visitData.salt) : undefined,
       waterTemp: visitData.waterTemp ? parseFloat(visitData.waterTemp) : undefined,
-      phosphates: visitData.phosphates ? parseFloat(visitData.phosphates) : undefined
+      phosphates: visitData.phosphates ? parseFloat(visitData.phosphates) : undefined,
+      chemicalCostCents,
+      chemicalCostVersion,
+      chemicalCostLines: JSON.stringify(chemicalCostLines)
     });
 
     return Response.json({
       success: true,
       visitId: visit.id,
-      outOfRange
+      outOfRange,
+      chemicalCostCents
     });
   } catch (error) {
     console.error('Process service visit error:', error);
