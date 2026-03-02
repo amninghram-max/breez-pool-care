@@ -51,11 +51,14 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
 
       const payload = { leadId: lead.id, firstName: lead.firstName, email };
 
-      // Invoke — tolerate SDK JSON parse errors; real signal is Lead.quoteLinkEmailSentAt
+      // Invoke — tolerate SDK JSON parse errors; real signal is Lead.confirmationSentAt
       let invokeErr = null;
       try {
         const res = await base44.functions.invoke("sendQuoteLinkEmail", payload);
-        console.log("SEND_QUOTE_LINK_INVOKE", res?.data);
+        console.log("SEND_QUOTE_LINK_INVOKE_RAW", res);
+        console.log("SEND_QUOTE_LINK_INVOKE_DATA", res?.data);
+        const data = (res && typeof res === "object" && "data" in res) ? res.data : res;
+        console.log("SEND_QUOTE_LINK_INVOKE_NORMALIZED", data);
       } catch (err) {
         if (err?.message?.includes('Unexpected end of JSON') || err?.message?.includes('JSON')) {
           console.warn('SDK parse error (non-fatal), verifying via Lead refetch:', err.message);
