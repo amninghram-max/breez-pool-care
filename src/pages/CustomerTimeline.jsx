@@ -724,15 +724,25 @@ export default function CustomerTimeline() {
       )}
 
       {/* TEMP: Seed Response */}
-      {user && ['admin', 'staff'].includes(user.role) && seedResponse && (
-        <Card className={seedResponse.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}>
+      {user && ['admin', 'staff'].includes(user.role) && (
+        <Card className="bg-purple-50 border-purple-200">
           <CardHeader>
-            <CardTitle className="text-xs font-mono">TEMP: Seed Response</CardTitle>
+            <CardTitle className="text-xs font-mono text-purple-900">TEMP: Seed Response Debug</CardTitle>
           </CardHeader>
-          <CardContent>
-            <pre className="text-xs font-mono bg-gray-50 p-3 rounded border border-gray-300 overflow-x-auto max-h-96 overflow-y-auto whitespace-pre-wrap break-words">
-              {JSON.stringify(seedResponse.success ? seedResponse.data : { error: seedResponse.error, details: seedResponse.details }, null, 2)}
-            </pre>
+          <CardContent className="space-y-3 text-xs font-mono">
+            <div>Seed Debug: <span className="font-bold text-purple-700">{seedDebugText}</span></div>
+            <div>Seed Clicks: <span className="font-bold text-purple-700">{seedClickCount}</span></div>
+            <div>SeedResponse Type: <span className="font-bold text-purple-700">{typeof seedResponse}</span></div>
+            
+            <div className="border-t border-purple-200 pt-3">
+              {seedResponse === null || seedResponse === undefined ? (
+                <div className="text-gray-600">(seedResponse is empty)</div>
+              ) : (
+                <pre className="bg-gray-900 text-green-400 p-3 rounded border border-gray-700 overflow-x-auto max-h-96 overflow-y-auto whitespace-pre-wrap break-words">
+                  {JSON.stringify(seedResponse, null, 2)}
+                </pre>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
