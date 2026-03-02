@@ -9,10 +9,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, X, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
-function ChemicalDoseModal({ isOpen, onClose, onAddDose, chemicals = [] }) {
+function ChemicalDoseModal({ isOpen, onClose, onAddDose, chemicals = [], propertyId, visitReadings }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedChemicalId, setSelectedChemicalId] = useState('');
   const [amount, setAmount] = useState('');
+  const [suggestion, setSuggestion] = useState(null);
+  const [loadingSuggestion, setLoadingSuggestion] = useState(false);
 
   const filteredChemicals = useMemo(() => {
     if (!searchQuery.trim()) return chemicals;
@@ -26,6 +28,58 @@ function ChemicalDoseModal({ isOpen, onClose, onAddDose, chemicals = [] }) {
   }, [chemicals, searchQuery]);
 
   const selectedChemical = chemicals.find(c => c.id === selectedChemicalId);
+
+  // Fetch suggestion when chemical is selected
+  React.useEffect(() => {
+    setSuggestion(null);
+    setLoadingSuggestion(false);
+
+    if (!selectedChemicalId || !propertyId || !visitReadings?.freeChlorine || !visitReadings?.pH || !visitReadings?.totalAlkalinity) {
+      return;
+    }
+
+    const fetchSuggestion = async () => {
+      try {
+        setLoadingSuggestion(true);
+        const response = await base44.functions.invoke('calculateChemicalSuggestions', {
+          propertyId,
+          readings: {
+            freeChlorine: parseFloat(visitReadings.freeChlorine),
+            pH: parseFloat(visitReadings.pH),
+            totalAlkalinity: parseFloat(visitReadings.totalAlkalinity)
+          }
+        });
+
+        if (response.data && response.data.adjustments) {
+          // Find suggestion matching this chemical's serviceVisitKey
+          const chemical = selectedChemical;
+          const match = response.data.adjustments.find(
+            adj => adj.chemical?.toLowerCase() === chemical.serviceVisitKey.replace(/([A-Z])/g, ' $1').toLowerCase().trim()
+          );
+
+          if (match) {
+            setSuggestion({
+              amount: match.amount,
+              unit: match.unit,
+              reason: match.reason
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching suggestion:', error);
+      } finally {
+        setLoadingSuggestion(false);
+      }
+    };
+
+    fetchSuggestion();
+  }, [selectedChemicalId, propertyId, visitReadings]);
+
+  const handleUseSuggestion = () => {
+    if (suggestion) {
+      setAmount(suggestion.amount.toString());
+    }
+  };
 
   const handleSave = () => {
     if (!selectedChemicalId || !amount) {
@@ -51,6 +105,7 @@ function ChemicalDoseModal({ isOpen, onClose, onAddDose, chemicals = [] }) {
     setSearchQuery('');
     setSelectedChemicalId('');
     setAmount('');
+    setSuggestion(null);
     onClose();
   };
 
@@ -102,20 +157,55 @@ function ChemicalDoseModal({ isOpen, onClose, onAddDose, chemicals = [] }) {
             )}
           </div>
 
-          {/* Selected Chemical Info */}
+          {/* Selected Chemical Info & Suggestion */}
           {selectedChemical && (
-            <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg text-sm">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <p className="font-semibold text-gray-900">{selectedChemical.name}</p>
-                  <p className="text-xs text-gray-600 mt-1">
-                    <span className="font-semibold">Logs as:</span> {selectedChemical.serviceVisitKey}
-                  </p>
+            <div className="space-y-3">
+              <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg text-sm">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <p className="font-semibold text-gray-900">{selectedChemical.name}</p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      <span className="font-semibold">Logs as:</span> {selectedChemical.serviceVisitKey}
+                    </p>
+                  </div>
                 </div>
+                <p className="text-xs text-gray-600">
+                  <span className="font-semibold">Default unit:</span> {selectedChemical.defaultDoseUnit}
+                </p>
               </div>
-              <p className="text-xs text-gray-600">
-                <span className="font-semibold">Default unit:</span> {selectedChemical.defaultDoseUnit}
-              </p>
+
+              {/* Suggested Dose */}
+              {loadingSuggestion ? (
+                <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg text-sm">
+                  <p className="text-xs text-amber-700">Calculating suggestion...</p>
+                </div>
+              ) : suggestion ? (
+                <div className="bg-green-50 border border-green-200 p-3 rounded-lg text-sm space-y-2">
+                  <div>
+                    <p className="font-semibold text-green-900">Suggested Dose</p>
+                    <p className="text-xs text-green-700 mt-1">{suggestion.reason}</p>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-green-900">
+                      {suggestion.amount} {suggestion.unit}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleUseSuggestion}
+                      className="text-xs border-green-300 hover:bg-green-100"
+                    >
+                      Use Suggested
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                !loadingSuggestion && (
+                  <div className="bg-gray-50 border border-gray-200 p-3 rounded-lg text-sm">
+                    <p className="text-xs text-gray-600">No suggestion available for this chemical.</p>
+                  </div>
+                )
+              )}
             </div>
           )}
 
