@@ -9,19 +9,14 @@ import { Button } from '@/components/ui/button';
  * onNewQuote: opens the RealQuoteModal (passed from parent)
  * onOpenInPerson: opens the InPersonSalesModal (passed from parent)
  */
-export default function TopActionsBar({ onNewQuote, onOpenInPerson }) {
+export default function TopActionsBar({ onOpenInPerson }) {
   return (
     <div className="flex items-center gap-2 flex-wrap bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm">
       <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider mr-1 hidden sm:inline">Quick Actions</span>
 
-      <Button size="sm" onClick={onNewQuote} className="bg-teal-600 hover:bg-teal-700 text-white gap-1.5">
+      <Button size="sm" onClick={onOpenInPerson} className="bg-teal-600 hover:bg-teal-700 text-white gap-1.5">
         <FileText className="w-3.5 h-3.5" />
-        New Quote
-      </Button>
-
-      <Button size="sm" onClick={onOpenInPerson} variant="outline" className="gap-1.5">
-        <FileText className="w-3.5 h-3.5" />
-        In-Person Flow
+        Field Sales
       </Button>
 
       <Link to={createPageUrl('LeadsPipeline')}>
