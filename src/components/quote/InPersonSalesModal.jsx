@@ -150,6 +150,26 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
 
   const handleQuoteWizardComplete = async (data, formData) => {
     setPricingInputs(formData);
+    
+    // Estimate mode: store normalized estimate and advance to lock step
+    if (!data.raw) {
+      // Already normalized (from estimate path)
+      console.log('[InPersonSalesModal] Estimate completed, advancing to lock step');
+      try {
+        // Optionally store estimate snapshot in session
+        await updateSessionMutation.mutateAsync({
+          currentStep: 2,
+          pricingInputs: formData,
+          quoteSnapshot: JSON.stringify(data)
+        });
+      } catch (e) {
+        console.warn('Failed to save estimate snapshot (best-effort):', e);
+      }
+      setCurrentStep(2);
+      return;
+    }
+
+    // Persist mode: advance normally
     try {
       await updateSessionMutation.mutateAsync({
         currentStep: 2,
