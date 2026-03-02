@@ -57,35 +57,18 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
         await base44.entities.Lead.update(lead.id, { email });
       }
 
-      // Send quote link via direct fetch
+      // Send quote link via SDK invoke
       const payload = { leadId: lead.id, firstName: lead.firstName, email };
       
-      const url = new URL("/api/functions/sendQuoteLinkEmail", window.location.origin).toString();
-      const r = await fetch(url, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      const res = await base44.functions.invoke("sendQuoteLinkEmail", payload);
+      const data = res?.data;
 
-      console.log("SEND_QUOTE_LINK_FETCH", { status: r.status, ct: r.headers.get("content-type") });
-
-      const status = r.status;
-      const text = await r.text();
-      
-      console.log("SEND_QUOTE_LINK_BODYLEN", { len: text.length, preview: text.slice(0, 120) });
-      console.log("SEND_QUOTE_LINK_RAW", { status, ct: r.headers.get("content-type"), len: text.length, preview: text.slice(0, 120) });
-      
-      let data = null;
-      try {
-        data = text ? JSON.parse(text) : null;
-      } catch {}
-      
-      console.log("SEND_QUOTE_LINK_PARSED", data);
+      console.log("SEND_QUOTE_LINK_INVOKE", data);
 
       if (!data?.success) {
-        console.error('sendQuoteLinkEmail failure', { status, textPreview: text.slice(0, 300), data });
-        const msg = data?.error || data?.message || (text ? text.slice(0, 300) : 'Empty response');
-        throw new Error(`sendQuoteLinkEmail failed (status ${status}): ${msg}`);
+        console.error('sendQuoteLinkEmail failure', { data });
+        const msg = data?.error || data?.message || 'Failed to send quote link email';
+        throw new Error(`sendQuoteLinkEmail failed: ${msg}`);
       }
 
       console.log("SEND_QUOTE_LINK_SUCCESS_PATH");
