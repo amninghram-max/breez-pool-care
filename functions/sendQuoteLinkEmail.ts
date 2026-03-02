@@ -226,14 +226,14 @@ Deno.serve(async (req) => {
     const stampTs = new Date().toISOString();
     try {
       await base44.asServiceRole.entities.Lead.update(leadId, {
-        quoteLinkEmailSentAt: stampTs,
+        confirmationSentAt: stampTs,
         quoteLinkEmailResendId: emailData.id || null
       });
       stampUpdated = true;
-      console.log('STAMP_OK', { leadId, quoteLinkEmailSentAt: stampTs });
+      console.log('STAMP_OK', { leadId, confirmationSentAt: stampTs });
     } catch (stampErr) {
       stampError = stampErr?.message || String(stampErr);
-      console.error('STAMP_FAIL', { leadId, error: stampError });
+      console.warn('STAMP_FAIL (best-effort, email already sent)', { leadId, error: stampError });
     }
 
     return new Response(JSON.stringify({ success: true, stampUpdated, stampError }), {
