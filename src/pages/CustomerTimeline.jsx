@@ -1,12 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, Plus, Search, Wrench, MessageSquare, AlertCircle, Activity, Mail, Phone } from 'lucide-react';
+import { ChevronLeft, Plus, Search, Wrench, MessageSquare, AlertCircle, Activity, Mail, Phone, Loader2 } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -163,11 +164,23 @@ function ActiveCustomersDirectory() {
 export default function CustomerTimeline() {
   const params = new URLSearchParams(window.location.search);
   const leadId = params.get('leadId');
+  const queryClient = useQueryClient();
 
   // If no leadId, show active customers directory
   if (!leadId) {
     return <ActiveCustomersDirectory />;
   }
+
+  const { data: user } = useQuery({
+    queryKey: ['userForCustomerTimeline'],
+    queryFn: async () => {
+      try {
+        return await base44.auth.me();
+      } catch {
+        return null;
+      }
+    }
+  });
 
   const { data: lead, isLoading: leadLoading } = useQuery({
     queryKey: ['leadDetail', leadId],
@@ -177,6 +190,33 @@ export default function CustomerTimeline() {
       return leads?.find(l => l.id === leadId) || null;
     },
     enabled: !!leadId
+  });
+
+  // TEMP: remove after testing
+  const seedTestDataMutation = useMutation({
+    mutationFn: async () => {
+      const res = await base44.functions.invoke('seedTestCustomerData', {
+        leadId,
+        daysBack: 30,
+        visitsCount: 6
+      });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      // Invalidate all relevant query keys to refetch
+      queryClient.invalidateQueries({ queryKey: ['recentVisits', leadId] });
+      queryClient.invalidateQueries({ queryKey: ['allVisitsForDropdown', leadId] });
+      queryClient.invalidateQueries({ queryKey: ['customerEquipment', leadId] });
+      queryClient.invalidateQueries({ queryKey: ['messageThreads', leadId] });
+      queryClient.invalidateQueries({ queryKey: ['chemistryRiskEvents', leadId] });
+      
+      toast.success(
+        `✓ Seeded ${data.serviceVisitsCreated} visits, ${data.customerEquipmentCreated} equipment, ${data.chemistryRiskEventsCreated} alerts`
+      );
+    },
+    onError: (err) => {
+      toast.error(`Failed to seed data: ${err.message || 'Unknown error'}`);
+    }
   });
 
   const [selectedOldVisitId, setSelectedOldVisitId] = useState(null);
@@ -326,6 +366,23 @@ export default function CustomerTimeline() {
               Messages
             </Button>
           </Link>
+          
+          {/* TEMP: remove after testing */}
+          {user && ['admin', 'staff'].includes(user.role) && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => seedTestDataMutation.mutate()}
+              disabled={seedTestDataMutation.isPending}
+              className="text-purple-600 hover:bg-purple-50"
+            >
+              {seedTestDataMutation.isPending ? (
+                <><Loader2 className="w-3 h-3 mr-1 animate-spin" />Seeding...</>
+              ) : (
+                <>📊 Seed Test Data</>
+              )}
+            </Button>
+          )}
         </div>
       </div>
 
