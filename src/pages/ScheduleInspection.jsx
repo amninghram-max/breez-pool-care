@@ -69,37 +69,41 @@ export default function ScheduleInspection() {
     
     if (!token) {
       setLoadError('Missing token. Please follow the link from your quote email.');
+      setLoadingLead(false);
       return;
     }
 
     const loadLead = async () => {
       setLoadingLead(true);
+      setLoadError('');
       try {
         const timeoutPromise = new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Request timed out. Please try again.')), 10000)
         );
         
         const res = await Promise.race([
-          base44.functions.invoke('getQuoteRequestPublicV1', { token }),
+          base44.functions.invoke('resolveQuoteTokenPublicV1', { token }),
           timeoutPromise
         ]);
         
         const data = res?.data ?? res;
-        console.log('schedule options response:', data);
+        console.log('resolve token response:', data);
         
-        if (data?.success === true && data.request) {
+        if (data?.success === true && data.leadId && data.email) {
           setLeadData({
-            leadId: data.request.leadId,
-            email: data.request.email,
-            firstName: data.request.firstName || null,
+            leadId: data.leadId,
+            email: data.email,
+            firstName: data.firstName || null,
             token: token
           });
           // Prefill firstName if available
-          if (data.request.firstName) {
-            setFirstName(data.request.firstName);
+          if (data.firstName) {
+            setFirstName(data.firstName);
           }
         } else {
-          setLoadError(data?.error || 'Invalid or expired token');
+          const errorMsg = data?.error || data?.code || 'Invalid or expired token';
+          console.log('Token resolution failed:', { code: data?.code, error: data?.error });
+          setLoadError(errorMsg);
         }
       } catch (err) {
         console.error('ScheduleInspection load error:', err);
