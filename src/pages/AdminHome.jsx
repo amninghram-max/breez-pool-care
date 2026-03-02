@@ -90,10 +90,6 @@ export default function AdminHome() {
             <Eye className="w-4 h-4 mr-1.5" />
             View as Technician
           </Button>
-          <Button onClick={() => setShowDemo(true)} size="sm" variant="outline" className="border-amber-400 text-amber-800 hover:bg-amber-50">
-            <Zap className="w-4 h-4 mr-1.5" />
-            Demo Quote
-          </Button>
         </div>
       </div>
 
