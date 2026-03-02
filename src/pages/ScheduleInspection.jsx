@@ -49,8 +49,6 @@ export default function ScheduleInspection() {
   const [leadData, setLeadData] = useState(null);
   const [loadingLead, setLoadingLead] = useState(false);
   const [loadError, setLoadError] = useState('');
-
-  const [firstName, setFirstName] = useState('');
   const [phone, setPhone] = useState('');
   const [street, setStreet] = useState('');
   const [city, setCity] = useState('');
@@ -83,6 +81,10 @@ export default function ScheduleInspection() {
             firstName: data.request.firstName || null,
             token: token
           });
+          // Prefill firstName if available
+          if (data.request.firstName) {
+            setFirstName(data.request.firstName);
+          }
         } else {
           setLoadError(data?.error || 'Invalid or expired token');
         }
