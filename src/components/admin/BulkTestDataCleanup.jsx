@@ -70,8 +70,11 @@ export default function BulkTestDataCleanup() {
     setLoading(true);
     setStep('deleting');
     try {
-      const res = await base44.functions.invoke('bulkSoftDeleteTestLeadsV1', {
-        dryRun: false
+      // Execute deletion with explicit leadIds from dry run
+      const res = await base44.functions.invoke('bulkSoftDeleteTestLeadsV2', {
+        dryRun: false,
+        data_env: 'dev',
+        leadIds: dryRunResult.leadIds
       });
       const data = res?.data ?? res;
 
