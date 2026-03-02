@@ -217,6 +217,7 @@ export default function PublicQuoteWizard({ prefillData, onDebugStateChange }) {
   const [result, setResult] = useState(null); // { releaseReady, quote?, isRange?, priceSummary? }
   const [error, setError] = useState('');
   const [finalizeError, setFinalizeError] = useState('');
+  const [finalizeState, setFinalizeState] = useState('idle'); // milestone tracker
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [lastFinalizeRequest, setLastFinalizeRequest] = useState(null);
   const [lastFinalizeResponse, setLastFinalizeResponse] = useState(null);
