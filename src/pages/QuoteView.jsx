@@ -122,13 +122,18 @@ export default function QuoteView() {
       </header>
       <div className="flex-1 flex items-start justify-center px-4 py-10">
         <div className="w-full max-w-lg bg-white rounded-2xl shadow-lg p-8">
-          <QuoteResultDisplay
-            result={{ quote: quote.quoteSnapshot, priceSummary: quote.quoteSnapshot }}
-            firstName={quote.clientFirstName || 'Guest'}
-            email={quote.clientEmail}
-            leadId={quote.leadId}
-            quoteToken={quoteToken}
-          />
+          {(() => {
+            console.log('[QuoteView] Rendering full QuoteResultDisplay for token:', quoteToken);
+            return (
+              <QuoteResultDisplay
+                result={{ quote: quote.quoteSnapshot, priceSummary: quote.priceSummary }}
+                firstName={quote.clientFirstName || 'Guest'}
+                email={quote.clientEmail}
+                leadId={quote.leadId}
+                quoteToken={quoteToken}
+              />
+            );
+          })()}
         </div>
       </div>
       <footer className="text-center text-xs text-gray-400 py-4 pb-8">
