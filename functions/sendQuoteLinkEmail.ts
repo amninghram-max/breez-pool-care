@@ -190,7 +190,7 @@ Deno.serve(async (req) => {
         to: [email],
         subject: 'Get Your Breez Pool Service Quote',
         html: htmlBody,
-        text: `Hi ${firstName},\n\nThank you for your interest in Breez Pool Care! Click here to get your quote:\n${quoteLink}`
+        text: `Hi ${firstName},\n\nThank you for your interest in Breez Pool Care! Click here to start your quote:\n${prequalLink}\n\nOr visit our homepage: ${publicHomeLink}`
       })
     });
 
