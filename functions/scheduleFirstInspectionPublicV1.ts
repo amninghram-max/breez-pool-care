@@ -81,21 +81,33 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Resolve leadId + contact via token (verify token is valid)
+    // Resolve leadId + contact via token using versioned resolver
     let leadId = null;
     let tokenEmail = null;
     try {
-      const requests = await base44.asServiceRole.entities.QuoteRequests.filter({ token: token.trim() }, null, 1);
-      if (requests && requests.length > 0) {
-        leadId = requests[0].leadId;
-        tokenEmail = requests[0].email;
-        console.log('SFI_V1_TOKEN_RESOLVED', { token: token.trim().slice(0, 8), leadId });
+      const resolveRes = await base44.asServiceRole.functions.invoke('resolveQuoteTokenPublicV1', { token: token.trim() });
+      const resolveData = resolveRes?.data ?? resolveRes;
+      
+      if (resolveData?.success === true && resolveData.leadId && resolveData.email) {
+        leadId = resolveData.leadId;
+        tokenEmail = resolveData.email;
+        console.log('SFI_V1_TOKEN_RESOLVED', { 
+          token: token.trim().slice(0, 8), 
+          leadId,
+          hasFirstName: !!resolveData.firstName,
+          hasPhone: !!resolveData.phone 
+        });
+      } else {
+        console.warn('SFI_V1_TOKEN_RESOLUTION_FAILED', { 
+          code: resolveData?.code,
+          error: resolveData?.error 
+        });
       }
     } catch (e) {
-      console.warn('SFI_V1_TOKEN_RESOLUTION_FAILED', { error: e.message });
+      console.error('SFI_V1_TOKEN_RESOLUTION_CRASHED', { error: e.message });
     }
 
-    if (!tokenEmail) {
+    if (!leadId || !tokenEmail) {
       return json200({
         success: false,
         error: 'Token not found or invalid',
