@@ -60,6 +60,21 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
 
       const payload = { leadId: lead.id, firstName: lead.firstName, email };
 
+      // V2 REACHABILITY PROBE — remove after confirming
+      console.log("V2_PROBE_START");
+      try {
+        const r = await fetch("/api/functions/sendQuoteLinkEmailV2", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ "__force": "1" })
+        });
+        const text = await r.text();
+        console.log("V2_PROBE_RESULT", { status: r.status, ct: r.headers.get("content-type"), len: text.length, preview: text.slice(0, 200) });
+      } catch (e) {
+        console.log("V2_PROBE_ERROR", String(e?.stack ?? e?.message ?? e));
+      }
+      return; // STOP — remove after probe confirmed
+
       const FN = "sendQuoteLinkEmailV2";
       console.log("SEND_QUOTE_LINK_BEFORE_INVOKE", { fn: FN, ...payload });
 
