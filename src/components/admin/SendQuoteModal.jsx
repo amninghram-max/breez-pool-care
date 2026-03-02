@@ -54,8 +54,17 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
 
     setLoading(true);
     try {
-      if (email !== lead.email) {
-        await base44.entities.Lead.update(lead.id, { email });
+      if (email !== lead.email || true) {
+        // Always log, even if email unchanged
+        const res = await base44.functions.invoke('updateLeadMeta', {
+          leadId: lead.id,
+          email: email !== lead.email ? email : undefined,
+          noteTag: 'QUOTE_EMAIL_SENT',
+          noteText: `sent to ${email}`
+        });
+        if (!res.data?.success) {
+          throw new Error(res.data?.error || 'Failed to update lead metadata');
+        }
       }
 
       const r = await fetch(`/api/apps/699a2b2056054b0207cea969/functions/sendQuoteLinkEmailV2`, {
