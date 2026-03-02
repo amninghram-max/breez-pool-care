@@ -55,86 +55,85 @@ export default function QuoteView() {
     return () => { cancelled = true; };
   }, [quoteToken]); // stable ref value — fires exactly once
 
+  // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center gap-3 text-gray-500">
-          <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
-          <p className="text-sm">Loading quote…</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-        <Card className="max-w-md w-full border-red-200">
-          <CardContent className="pt-6 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-semibold text-gray-900">Quote Unavailable</p>
-              <p className="text-sm text-gray-600 mt-1">{error}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4">
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="text-center">
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <header className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
           <img
             src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/0b0c31666_Breez2.png"
             alt="Breez Pool Care"
-            className="h-12 w-auto mx-auto mb-4"
+            className="h-10 w-auto cursor-pointer"
+            onClick={() => navigate('/')}
           />
-          <h1 className="text-2xl font-bold text-gray-900">Your Quote</h1>
-        </div>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-semibold text-gray-700">Quote Status</CardTitle>
-              <Badge className={STATUS_COLORS[quote.status] || 'bg-gray-100 text-gray-600'}>
-                {quote.status}
-              </Badge>
-            </div>
-          </CardHeader>
-        </Card>
-
-        {quote.quoteSnapshot ? (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base font-semibold text-gray-700">Quote Details</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <pre className="text-xs text-gray-700 bg-gray-50 rounded p-4 overflow-auto whitespace-pre-wrap border border-gray-200">
-                {JSON.stringify(quote.quoteSnapshot, null, 2)}
-              </pre>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="border-dashed">
-            <CardContent className="pt-6 flex items-center gap-3 text-gray-400">
-              <Clock className="w-4 h-4 flex-shrink-0" />
-              <p className="text-sm">Quote details will appear here once generated.</p>
-            </CardContent>
-          </Card>
-        )}
-
-        <div className="text-center">
-          <Button
-            disabled
-            className="bg-teal-600 hover:bg-teal-700 text-white opacity-50 cursor-not-allowed"
-          >
-            Schedule Inspection (Step 2)
-          </Button>
-          <p className="text-xs text-gray-400 mt-2">Scheduling coming soon.</p>
+          <a href="tel:3215243838" className="text-sm text-gray-500 hover:text-gray-700">(321) 524-3838</a>
+        </header>
+        <div className="flex-1 flex items-center justify-center px-4">
+          <div className="flex flex-col items-center gap-3 text-gray-500">
+            <Loader2 className="w-8 h-8 animate-spin" style={{ color: TEAL }} />
+            <p className="text-sm">Loading quote…</p>
+          </div>
         </div>
       </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <header className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
+          <img
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/0b0c31666_Breez2.png"
+            alt="Breez Pool Care"
+            className="h-10 w-auto cursor-pointer"
+            onClick={() => navigate('/')}
+          />
+          <a href="tel:3215243838" className="text-sm text-gray-500 hover:text-gray-700">(321) 524-3838</a>
+        </header>
+        <div className="flex-1 flex items-center justify-center px-4 py-10">
+          <Card className="max-w-md w-full border-red-200">
+            <CardContent className="pt-6 flex flex-col gap-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-gray-900">Quote Unavailable</p>
+                  <p className="text-sm text-gray-600 mt-1">{error}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Render full quote result using unified component
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <header className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
+        <img
+          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/0b0c31666_Breez2.png"
+          alt="Breez Pool Care"
+          className="h-10 w-auto cursor-pointer"
+          onClick={() => navigate('/')}
+        />
+        <a href="tel:3215243838" className="text-sm text-gray-500 hover:text-gray-700">(321) 524-3838</a>
+      </header>
+      <div className="flex-1 flex items-start justify-center px-4 py-10">
+        <div className="w-full max-w-lg bg-white rounded-2xl shadow-lg p-8">
+          <QuoteResultDisplay
+            result={{ quote: quote.quoteSnapshot, priceSummary: quote.quoteSnapshot }}
+            firstName={quote.clientFirstName || 'Guest'}
+            email={quote.clientEmail}
+            leadId={quote.leadId}
+            quoteToken={quoteToken}
+          />
+        </div>
+      </div>
+      <footer className="text-center text-xs text-gray-400 py-4 pb-8">
+        Breez Pool Care LLC · Melbourne, FL · (321) 524-3838
+      </footer>
     </div>
   );
 }
