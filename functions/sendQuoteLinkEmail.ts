@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { getAppOrigin } from "./_getAppOrigin.js";
 
-const BUILD = "SQLE-STAMP-CONFIRM-2026-03-01-B";
+const BUILD = "SQLE-STAMP-LEAD-2026-03-01-C";
 
 /**
  * sendQuoteLinkEmail
