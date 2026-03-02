@@ -165,17 +165,6 @@ export default function QuoteWizard({ persistQuote = true, initialAnswers = null
 
     return (
       <div className="max-w-2xl mx-auto space-y-5">
-        {showMappingWarning && (
-          <div className="bg-yellow-50 border border-yellow-300 rounded-lg px-4 py-3 text-xs text-yellow-800">
-            <p className="font-semibold mb-2">⚠️ Estimate mapping mismatch — monthly not found</p>
-            <p className="mb-1">Numeric candidates checked:</p>
-            <code className="block bg-white p-2 rounded text-xs overflow-x-auto">
-              {JSON.stringify(normalized.debug.numericCandidates, null, 2)}
-            </code>
-            <p className="mt-2 text-xs">Top-level keys: {normalized.debug.allKeys.join(', ')}</p>
-          </div>
-        )}
-
         <Card>
           <CardHeader>
             <CardTitle>Your Estimate</CardTitle>
