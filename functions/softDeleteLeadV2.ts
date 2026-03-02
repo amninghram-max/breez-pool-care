@@ -21,6 +21,7 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
+    console.log('DEBUG_USER_CONTEXT', { email: user?.email, role: user?.role });
 
     // Admin-only
     if (user?.role !== 'admin') {
