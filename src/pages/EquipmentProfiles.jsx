@@ -276,33 +276,186 @@ export default function EquipmentProfiles() {
 
       <Tabs defaultValue="catalog" className="w-full">
         <TabsList>
-          <TabsTrigger value="catalog">Equipment Catalog {isAdmin && <span className="ml-2 text-xs bg-teal-100 text-teal-800 px-2 py-1 rounded">Admin</span>}</TabsTrigger>
+          <TabsTrigger value="catalog">Equipment Catalog</TabsTrigger>
           <TabsTrigger value="customer">Customer Equipment</TabsTrigger>
         </TabsList>
 
-        {/* CATALOG TAB — Admin Only */}
+        {/* CATALOG TAB */}
         <TabsContent value="catalog" className="space-y-6">
-          {!isAdmin ? (
-            <Card className="border-amber-200 bg-amber-50">
-              <CardContent className="pt-6">
-                <p className="text-amber-800">Only admins can manage the equipment catalog.</p>
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+            <Input
+              placeholder="Search by brand, model, part number, or description…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          {/* Type Filter Tabs */}
+          <div className="flex gap-2 flex-wrap">
+            {['all', ...EQUIPMENT_TYPES.map(t => t.value)].map(type => (
+              <button
+                key={type}
+                onClick={() => setTypeFilter(type)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  typeFilter === type
+                    ? 'bg-teal-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {type === 'all' ? 'All' : TYPE_LABELS[type]}
+              </button>
+            ))}
+          </div>
+
+          {/* Add Equipment Button */}
+          <Button onClick={() => setShowCreateForm(true)} className="bg-teal-600 hover:bg-teal-700">
+            <Plus className="w-4 h-4 mr-2" /> Add Equipment Model
+          </Button>
+
+          {/* Create Form */}
+          {showCreateForm && (
+            <Card className="border-teal-200 bg-teal-50">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">New Equipment Model</CardTitle>
+                  <button onClick={() => setShowCreateForm(false)} className="text-gray-500 hover:text-gray-700">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium block mb-1">Type *</label>
+                    <Select value={createFormData.type} onValueChange={(v) => setCreateFormData(f => ({ ...f, type: v }))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pump">Pump</SelectItem>
+                        <SelectItem value="filter">Filter</SelectItem>
+                        <SelectItem value="heater">Heater</SelectItem>
+                        <SelectItem value="chlorinator">Chlorinator</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium block mb-1">Brand *</label>
+                    <Input value={createFormData.brand} onChange={(e) => setCreateFormData(f => ({ ...f, brand: e.target.value }))} placeholder="e.g., Pentair" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium block mb-1">Model *</label>
+                    <Input value={createFormData.model} onChange={(e) => setCreateFormData(f => ({ ...f, model: e.target.value }))} placeholder="e.g., EQ-1000" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium block mb-1">Variant</label>
+                    <Input value={createFormData.variant} onChange={(e) => setCreateFormData(f => ({ ...f, variant: e.target.value }))} placeholder="e.g., 1HP" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium block mb-1">Manual URL OR PDF Upload *</label>
+                  <Input value={createFormData.manualUrl} onChange={(e) => setCreateFormData(f => ({ ...f, manualUrl: e.target.value }))} placeholder="https://example.com/manual.pdf" className="mb-2" />
+                  <div className="text-xs text-gray-600 mb-2">OR upload PDF:</div>
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    onChange={(e) => setCreateFormData(f => ({ ...f, manualFile: e.target.files?.[0] || null }))}
+                    className="block w-full text-sm text-gray-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium block mb-1">Manufacturer URL</label>
+                  <Input value={createFormData.manufacturerUrl} onChange={(e) => setCreateFormData(f => ({ ...f, manufacturerUrl: e.target.value }))} placeholder="https://..." />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium block mb-1">Tags (comma-separated)</label>
+                  <Input value={createFormData.tags} onChange={(e) => setCreateFormData(f => ({ ...f, tags: e.target.value }))} placeholder="e.g., single-speed, variable, energy-efficient" />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium block mb-1">Notes</label>
+                  <Textarea value={createFormData.notes} onChange={(e) => setCreateFormData(f => ({ ...f, notes: e.target.value }))} placeholder="Internal notes..." rows={3} />
+                </div>
+
+                <div className="flex gap-3 justify-end pt-4 border-t">
+                  <Button onClick={() => setShowCreateForm(false)} variant="outline">Cancel</Button>
+                  <Button onClick={handleCreateSubmit} disabled={createMutation.isPending} className="bg-teal-600 hover:bg-teal-700">
+                    {createMutation.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : 'Create'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Results */}
+          {filteredCatalogItems.length === 0 ? (
+            <Card className="bg-gray-50 border-gray-200">
+              <CardContent className="pt-6 text-center text-gray-500">
+                {searchQuery || typeFilter !== 'all' ? 'No equipment found matching your search.' : 'No equipment in catalog yet.'}
               </CardContent>
             </Card>
           ) : (
-            <>
-              <EquipmentCatalogPanel />
-              
-              {selectedCatalogItemId && (
-                <Card className="border-blue-200 bg-blue-50">
-                  <CardHeader>
-                    <CardTitle className="text-base">Manage Parts for Selected Item</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <PartsManagementPanel catalogItemId={selectedCatalogItemId} />
-                  </CardContent>
-                </Card>
-              )}
-            </>
+            <div className="grid gap-4">
+              {filteredCatalogItems.map(item => (
+                <div key={item.id}>
+                  <Card className={selectedCatalogItemId === item.id ? 'border-teal-400' : ''}>
+                    <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => setSelectedCatalogItemId(selectedCatalogItemId === item.id ? null : item.id)}>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-3">
+                            <CardTitle className="text-base">{item.brand} {item.model}</CardTitle>
+                            <Badge>{TYPE_LABELS[item.type]}</Badge>
+                          </div>
+                          {item.variant && <p className="text-sm text-gray-600 mt-1">Variant: {item.variant}</p>}
+                          {item.tags && item.tags.length > 0 && (
+                            <div className="flex gap-2 mt-2 flex-wrap">
+                              {item.tags.map(tag => (
+                                <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
+                              ))}
+                            </div>
+                          )}
+                          {item.notes && <p className="text-sm text-gray-600 mt-2">{item.notes}</p>}
+                        </div>
+                        <div className="text-xs text-gray-500">{selectedCatalogItemId === item.id ? '▼' : '▶'}</div>
+                      </div>
+                    </CardHeader>
+
+                    {selectedCatalogItemId === item.id && (
+                      <CardContent className="border-t pt-6 space-y-6">
+                        <div>
+                          <h4 className="font-medium text-sm mb-3">Resources</h4>
+                          <div className="flex gap-4 text-sm">
+                            {item.manufacturerUrl && (
+                              <a href={item.manufacturerUrl} target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:underline">
+                                Manufacturer Website
+                              </a>
+                            )}
+                            {item.manualUrl && (
+                              <a href={item.manualUrl} target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:underline">
+                                Manual (External)
+                              </a>
+                            )}
+                            {item.manualPdf && (
+                              <a href={item.manualPdf} target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:underline">
+                                Manual (PDF)
+                              </a>
+                            )}
+                          </div>
+                        </div>
+
+                        <PartsManagementPanel catalogItemId={item.id} />
+                      </CardContent>
+                    )}
+                  </Card>
+                </div>
+              ))}
+            </div>
           )}
         </TabsContent>
 
