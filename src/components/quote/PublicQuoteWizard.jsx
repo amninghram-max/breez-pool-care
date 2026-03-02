@@ -52,6 +52,15 @@ const FREQUENCY_OPTIONS = [
   { value: 'daily',        label: 'Daily', sub: 'Almost every day' },
 ];
 
+const USAGE_FREQUENCY_OPTIONS = [
+  { value: 'daily', label: 'Daily / Almost Daily', sub: 'Every day or nearly every day' },
+  { value: 'few_times_week', label: 'A Few Times Per Week', sub: '3–5 times per week' },
+  { value: 'weekly', label: 'Weekly', sub: 'About once per week' },
+  { value: 'few_times_month', label: 'A Few Times Per Month', sub: 'A few times per month' },
+  { value: 'rarely', label: 'Rarely / Seasonal', sub: 'Just a few times a year' },
+  { value: 'not_sure', label: 'Not Sure', sub: "We'll assess at inspection" },
+];
+
 const TREES_OPTIONS = [
   { value: 'yes', label: 'Yes', sub: 'Trees hang over or near the pool' },
   { value: 'no',  label: 'No',  sub: 'No trees overhead' },
