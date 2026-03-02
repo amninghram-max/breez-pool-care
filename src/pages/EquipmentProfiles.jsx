@@ -78,6 +78,20 @@ export default function EquipmentProfiles() {
     );
   }
 
+  // Catalog items and parts for search
+  const { data: catalogItems = [] } = useQuery({
+    queryKey: ['equipmentCatalogItems'],
+    queryFn: () => base44.entities.EquipmentCatalogItem.list('-created_date', 500),
+    enabled: !!user && ['admin', 'staff', 'technician'].includes(user?.role)
+  });
+
+  const { data: catalogParts = [] } = useQuery({
+    queryKey: ['equipmentCatalogParts'],
+    queryFn: () => base44.entities.EquipmentCatalogPart.list('-created_date', 1000),
+    enabled: !!user && ['admin', 'staff', 'technician'].includes(user?.role)
+  });
+
+  // Customer equipment
   const { data: equipment = [], isLoading, error: equipmentError } = useQuery({
     queryKey: ['equipmentProfiles'],
     queryFn: () => base44.entities.PoolEquipment.filter({ isActive: true }, 'equipmentType'),
