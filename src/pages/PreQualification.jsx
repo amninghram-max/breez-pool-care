@@ -54,6 +54,7 @@ export default function PreQualification() {
         const data = res?.data ?? res;
         if (data?.success === true && data.request) {
           setPrefillData({ 
+            token,
             email: data.request.email, 
             firstName: data.request.firstName || null,
             leadId: data.request.leadId 
