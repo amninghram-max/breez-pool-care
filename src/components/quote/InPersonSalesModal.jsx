@@ -34,6 +34,7 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
   const [sessionId, setSessionId] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [pricingInputs, setPricingInputs] = useState(null);
+  const [estimatePreview, setEstimatePreview] = useState(null);
   const [quoteSnapshot, setQuoteSnapshot] = useState(null);
   const [contactDraft, setContactDraft] = useState({ firstName: '', email: '', phone: '' });
   const [inspectionDraft, setInspectionDraft] = useState({ notes: '', photosLinks: '', eligible: true, needsFollowup: false });
