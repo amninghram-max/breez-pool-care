@@ -11,7 +11,6 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import UnstickLeadPanel from '@/components/admin/UnstickLeadPanel';
 import NewLeadModal from '@/components/admin/NewLeadModal';
-import NewQuoteFlow from '@/components/admin/NewQuoteFlow';
 import RemoveLeadPanel from '@/components/admin/RemoveLeadPanel';
 import LinkUserToLeadPanel from '@/components/admin/LinkUserToLeadPanel';
 import StageActionButton from '@/components/admin/StageActionButton';
