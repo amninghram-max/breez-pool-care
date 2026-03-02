@@ -58,62 +58,28 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
         await base44.entities.Lead.update(lead.id, { email });
       }
 
-      const payload = { leadId: lead.id, firstName: lead.firstName, email };
+      const r = await fetch(`/api/apps/699a2b2056054b0207cea969/functions/sendQuoteLinkEmailV2`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ leadId: lead.id, firstName: lead.firstName, email })
+      });
+      const ct = r.headers.get("content-type");
+      const text = await r.text();
+      console.log("V2_SEND_FETCH", { status: r.status, ct });
+      console.log("V2_SEND_BODYLEN", { len: text.length, preview: text.slice(0, 200) });
 
-      // V2 REACHABILITY PROBE — remove after confirming
-      console.log("V2_PROBE_START");
-      try {
-        const r = await fetch(`/api/apps/699a2b2056054b0207cea969/functions/sendQuoteLinkEmailV2`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ "__force": "1" })
-        });
-        const text = await r.text();
-        console.log("V2_PROBE_RESULT", { status: r.status, ct: r.headers.get("content-type"), len: text.length, preview: text.slice(0, 200) });
-      } catch (e) {
-        console.log("V2_PROBE_ERROR", String(e?.stack ?? e?.message ?? e));
-      }
-      return; // STOP — remove after probe confirmed
+      let data = null;
+      try { data = text ? JSON.parse(text) : null; } catch {}
+      console.log("V2_SEND_PARSED", { data });
 
-      const FN = "sendQuoteLinkEmailV2";
-      console.log("SEND_QUOTE_LINK_BEFORE_INVOKE", { fn: FN, ...payload });
-
-      let invokeRes = null;
-      let invokeErr = null;
-
-      try {
-        invokeRes = await base44.functions.invoke(FN, payload);
-        console.log("SEND_QUOTE_LINK_AFTER_INVOKE", { fn: FN, status: invokeRes?.status });
-        console.log("SEND_QUOTE_LINK_AFTER_INVOKE_DATA", invokeRes?.data);
-      } catch (e) {
-        invokeErr = e;
-        console.log("SEND_QUOTE_LINK_INVOKE_THROW", { fn: FN, err: e });
-      }
-
-      const normalized = invokeRes?.data ?? invokeRes ?? null;
-      console.log("SEND_QUOTE_LINK_INVOKE_NORMALIZED", normalized);
-
-      // Verify success by checking Lead.quoteLinkEmailSentAt was stamped recently
-      const leads = await base44.entities.Lead.filter({ id: lead.id });
-      const updatedLead = leads?.[0] ?? null;
-      console.log("LEAD_REFETCH", { id: lead.id, confirmationSentAt: updatedLead?.confirmationSentAt });
-      console.log("LEAD_KEYS", Object.keys(updatedLead || {}));
-      const tsKeys = Object.keys(updatedLead || {}).filter(k => /at$|date$|time$|sent$|stamp$/i.test(k));
-      console.log("LEAD_TIMESTAMP_KEYS", tsKeys.reduce((acc, k) => { acc[k] = updatedLead[k]; return acc; }, {}));
-
-      const sentAtMs = updatedLead?.quoteLinkEmailSentAt ? Date.parse(updatedLead.quoteLinkEmailSentAt) : NaN;
-      const isRecent = Number.isFinite(sentAtMs) && (Date.now() - sentAtMs) < 3 * 60 * 1000;
-
-      if (isRecent) {
-        toast.success('Quote link email sent');
+      if (data?.success === true) {
+        toast.success('Quote link sent');
         onSuccess?.();
         onClose();
-      } else {
-        const msg = 'Lead stamp missing';
-        console.log("SEND_QUOTE_LINK_STAMP_MISSING", { invokeNormalized: normalized, invokeErr });
-        setError(msg);
-        toast.error(msg);
+        return;
       }
+
+      throw new Error(data?.error || data?.message || 'Failed to send quote link email');
     } catch (err) {
       console.log("SEND_QUOTE_LINK_HANDLER_CATCH", err);
       console.error('Send quote link error:', err);
