@@ -258,8 +258,17 @@ export default function PublicQuoteWizard({
     // Clear trees if switching to screened
     if (key === 'enclosure' && value !== 'unscreened') delete newAnswers.treesOverhead;
     setAnswers(newAnswers);
-    // Auto-advance
-    setTimeout(() => setStep(s => Math.min(totalSteps - 1, s + 1)), 120);
+    // Auto-advance (or auto-submit if last step and token present)
+    setTimeout(() => {
+      const nextStep = s => Math.min(totalSteps - 1, s + 1);
+      const nextStepNum = nextStep(step);
+      if (nextStepNum >= totalSteps && hasToken) {
+        // Auto-submit when last step reached with token
+        handleSubmit();
+      } else {
+        setStep(nextStepNum);
+      }
+    }, 120);
   };
 
   const handleSubmit = async (e) => {
