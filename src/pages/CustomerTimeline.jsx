@@ -11,18 +11,41 @@ import { createPageUrl } from '@/utils';
 import { Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 
-function CustomerPicker() {
+function ActiveCustomersDirectory() {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const navigate = useNavigate();
 
   const { data: leads = [] } = useQuery({
-    queryKey: ['leadsForPicker'],
-    queryFn: () => base44.entities.Lead.list('-created_date', 200)
+    queryKey: ['activeCustomersDirectory'],
+    queryFn: () => base44.entities.Lead.list('-updated_date', 500)
   });
 
-  // Filter to converted customers only
-  const convertedLeads = leads.filter(l => l.stage === 'converted');
+  // Filter to active customers only
+  const activeCustomers = useMemo(() => {
+    return leads.filter(l => 
+      l.stage === 'converted' && 
+      l.accountStatus === 'active' && 
+      !l.isDeleted
+    );
+  }, [leads]);
+
+  // Fetch recent visits in one batch to avoid N+1
+  const { data: allVisits = [] } = useQuery({
+    queryKey: ['recentVisitsForDirectory'],
+    queryFn: () => base44.entities.ServiceVisit.list('-visitDate', 500),
+    enabled: activeCustomers.length > 0
+  });
+
+  // Build map of leadId -> most recent visit
+  const lastVisitByLead = useMemo(() => {
+    const map = {};
+    allVisits.forEach(visit => {
+      if (!map[visit.propertyId] || new Date(visit.visitDate) > new Date(map[visit.propertyId].visitDate)) {
+        map[visit.propertyId] = visit;
+      }
+    });
+    return map;
+  }, [allVisits]);
 
   // Debounce search input
   React.useEffect(() => {
@@ -30,23 +53,30 @@ function CustomerPicker() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const filteredLeads = useMemo(() => {
-    if (!debouncedSearch.trim()) return convertedLeads;
+  // Filter customers by search
+  const filteredCustomers = useMemo(() => {
+    if (!debouncedSearch.trim()) return activeCustomers;
     const q = debouncedSearch.toLowerCase();
-    return convertedLeads.filter(l => {
+    return activeCustomers.filter(l => {
       const fullName = `${l.firstName || ''} ${l.lastName || ''}`.toLowerCase();
       const email = (l.email || '').toLowerCase();
       const phone = (l.mobilePhone || '').toLowerCase();
       const address = (l.serviceAddress || '').toLowerCase();
       return fullName.includes(q) || email.includes(q) || phone.includes(q) || address.includes(q);
     });
-  }, [debouncedSearch, convertedLeads]);
+  }, [debouncedSearch, activeCustomers]);
+
+  const handleRowClick = (leadId) => {
+    window.location.href = `/CustomerTimeline?leadId=${leadId}`;
+  };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 p-6">
+    <div className="max-w-6xl mx-auto space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Customer Timeline</h1>
-        <p className="text-sm text-gray-600 mt-1">Select a customer to view their activity timeline</p>
+        <h1 className="text-2xl font-bold text-gray-900">Active Customers Directory</h1>
+        <p className="text-sm text-gray-600 mt-1">
+          {activeCustomers.length} active customer{activeCustomers.length !== 1 ? 's' : ''} in service
+        </p>
       </div>
 
       {/* Search Input */}
@@ -61,59 +91,71 @@ function CustomerPicker() {
         />
       </div>
 
-      {/* Customer List */}
-      {convertedLeads.length === 0 ? (
+      {/* Directory */}
+      {activeCustomers.length === 0 ? (
         <Card className="bg-amber-50 border-amber-200">
           <CardContent className="pt-6">
-            <p className="text-amber-800 mb-3">No converted customers found.</p>
+            <p className="text-amber-800 mb-3">No active customers found.</p>
             <Link to={createPageUrl('LeadsPipeline')}>
               <Button variant="outline">Go to Leads Pipeline</Button>
             </Link>
           </CardContent>
         </Card>
       ) : (
-        <div className="border border-gray-200 rounded-lg divide-y divide-gray-200 overflow-hidden">
-          {filteredLeads.length === 0 ? (
-            <p className="text-gray-500 text-center py-4 text-sm">No customers match "{searchQuery}".</p>
-          ) : (
-            <>
-              {filteredLeads.slice(0, 30).map(lead => (
-                <button
-                  key={lead.id}
-                  type="button"
-                  onClick={() => {
-                    window.location.href = `/CustomerTimeline?leadId=${lead.id}`;
-                  }}
-                  className="w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors cursor-pointer flex items-center justify-between text-sm"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 truncate">
-                      {lead.firstName} {lead.lastName || ''}
-                    </p>
-                    {lead.serviceAddress && (
-                      <p className="text-xs text-gray-600 truncate">{lead.serviceAddress}</p>
-                    )}
-                  </div>
-                  <ChevronLeft className="w-4 h-4 text-gray-400 rotate-180 flex-shrink-0 ml-2" />
-                </button>
-              ))}
-              {filteredLeads.length > 30 && (
-                <div className="px-4 py-2 bg-gray-50 text-xs text-gray-600 text-center">
-                  Showing 30 of {filteredLeads.length} matches
-                </div>
+        <div className="overflow-x-auto">
+          <table className="w-full border border-gray-200 rounded-lg overflow-hidden">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Name</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Address</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Last Service</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Contact</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredCustomers.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="px-4 py-6 text-center text-sm text-gray-500">
+                    No customers match "{searchQuery}".
+                  </td>
+                </tr>
+              ) : (
+                filteredCustomers.map(lead => {
+                  const lastVisit = lastVisitByLead[lead.id];
+                  const lastServiceDate = lastVisit ? format(new Date(lastVisit.visitDate), 'MMM d, yyyy') : '—';
+                  return (
+                    <tr
+                      key={lead.id}
+                      onClick={() => handleRowClick(lead.id)}
+                      className="hover:bg-gray-50 transition-colors cursor-pointer"
+                    >
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                        {lead.firstName} {lead.lastName || ''}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {lead.serviceAddress || '—'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {lastServiceDate}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <Badge className="bg-green-100 text-green-800">Active</Badge>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        <div className="text-xs">
+                          {lead.email && <div>{lead.email}</div>}
+                          {lead.mobilePhone && <div>{lead.mobilePhone}</div>}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
-            </>
-          )}
+            </tbody>
+          </table>
         </div>
       )}
-
-      {/* Help Link */}
-      <div className="pt-4 border-t border-gray-200 text-center">
-        <p className="text-sm text-gray-600 mb-3">Looking for a non-converted lead?</p>
-        <Link to={createPageUrl('LeadsPipeline')}>
-          <Button variant="outline" className="w-full">Go to Leads Pipeline</Button>
-        </Link>
-      </div>
     </div>
   );
 }
