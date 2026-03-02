@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Droplet, Camera, AlertCircle, Check, TrendingUp } from 'lucide-react';
+import ChemicalsAddedSection from '../components/servicevisit/ChemicalsAddedSection';
 
 export default function ServiceVisitEntry() {
   const queryClient = useQueryClient();
@@ -348,76 +349,13 @@ export default function ServiceVisitEntry() {
         </Card>
       )}
 
-      {/* Chemicals Added */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Chemicals Added</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label>Liquid Chlorine (gallons)</Label>
-              <Input
-                type="number"
-                step="0.1"
-                value={visitData.chemicalsAdded.liquidChlorine}
-                onChange={(e) => handleChemicalChange('liquidChlorine', e.target.value)}
-                className="mt-2"
-              />
-            </div>
-            <div>
-              <Label>Chlorine Tablets (lbs)</Label>
-              <Input
-                type="number"
-                step="0.1"
-                value={visitData.chemicalsAdded.chlorineTablets}
-                onChange={(e) => handleChemicalChange('chlorineTablets', e.target.value)}
-                className="mt-2"
-              />
-            </div>
-            <div>
-              <Label>Acid (gallons)</Label>
-              <Input
-                type="number"
-                step="0.1"
-                value={visitData.chemicalsAdded.acid}
-                onChange={(e) => handleChemicalChange('acid', e.target.value)}
-                className="mt-2"
-              />
-            </div>
-            <div>
-              <Label>Baking Soda (lbs)</Label>
-              <Input
-                type="number"
-                step="0.1"
-                value={visitData.chemicalsAdded.bakingSoda}
-                onChange={(e) => handleChemicalChange('bakingSoda', e.target.value)}
-                className="mt-2"
-              />
-            </div>
-            <div>
-              <Label>Stabilizer (lbs)</Label>
-              <Input
-                type="number"
-                step="0.1"
-                value={visitData.chemicalsAdded.stabilizer}
-                onChange={(e) => handleChemicalChange('stabilizer', e.target.value)}
-                className="mt-2"
-              />
-            </div>
-            <div>
-              <Label>Salt (lbs)</Label>
-              <Input
-                type="number"
-                step="1"
-                value={visitData.chemicalsAdded.salt}
-                onChange={(e) => handleChemicalChange('salt', e.target.value)}
-                className="mt-2"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Chemicals Added - Using Registry */}
+      <ChemicalsAddedSection
+        chemicalsAdded={visitData.chemicalsAdded}
+        onChemicalsChange={(newChemicalsAdded) =>
+          setVisitData({ ...visitData, chemicalsAdded: newChemicalsAdded })
+        }
+      />
 
       {/* Services Performed */}
       <Card>
