@@ -209,8 +209,9 @@ export default function PublicQuoteWizard({ prefillData }) {
   const [firstName, setFirstName] = useState(prefillData?.firstName || '');
   const [email, setEmail] = useState(prefillData?.email || '');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null); // { releaseReady, quote?, isRange? }
+  const [result, setResult] = useState(null); // { releaseReady, quote?, isRange?, priceSummary? }
   const [error, setError] = useState('');
+  const [finalizeError, setFinalizeError] = useState('');
 
   // Determine steps dynamically (trees only shown if unscreened)
   const showTrees = answers.enclosure === 'unscreened';
