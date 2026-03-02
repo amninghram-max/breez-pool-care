@@ -153,23 +153,31 @@ Deno.serve(async (req) => {
     try {
       const rows = await base44.asServiceRole.entities.AdminSettings.list('-created_date', 1);
       settings = rows[0] || null;
-      if (settings) {
-        const riskEngine = JSON.parse(settings.riskEngine);
-        const baseTiers = JSON.parse(settings.baseTierPrices);
-        const tokens = JSON.parse(settings.additiveTokens);
-        const brackets = riskEngine?.escalation_brackets;
-        const bracketsOk = Array.isArray(brackets) && brackets.length >= 5;
-        const multipliersOk = riskEngine?.size_multipliers && Object.keys(riskEngine.size_multipliers).length >= 4;
-        const baseTiersOk = baseTiers?.tier_a_10_15k > 0 && baseTiers?.absolute_floor > 0;
-        const tokensOk = Object.keys(tokens).length >= 10;
-        releaseReady = bracketsOk && multipliersOk && baseTiersOk && tokensOk;
-        if (!releaseReady) {
-          releaseBlockers.push('AdminSettings config integrity check failed');
-          console.warn('QUOTE_READINESS_GATING', { blocker: 'config_check_fail', brackets: brackets?.length, multipliers: riskEngine?.size_multipliers ? Object.keys(riskEngine.size_multipliers).length : 0, baseTiers: !!baseTiers?.tier_a_10_15k, tokens: Object.keys(tokens).length });
-        }
-      } else {
+      if (!settings) {
         releaseBlockers.push('AdminSettings not found in DB');
         console.warn('QUOTE_READINESS_GATING', { blocker: 'no_admin_settings' });
+      } else if (!settings.riskEngine || !settings.baseTierPrices || !settings.additiveTokens) {
+        releaseBlockers.push('AdminSettings missing pricing config');
+        console.warn('QUOTE_READINESS_GATING', { blocker: 'config_incomplete', riskEngine: !!settings.riskEngine, baseTierPrices: !!settings.baseTierPrices, additiveTokens: !!settings.additiveTokens });
+      } else {
+        try {
+          const riskEngine = JSON.parse(settings.riskEngine);
+          const baseTiers = JSON.parse(settings.baseTierPrices);
+          const tokens = JSON.parse(settings.additiveTokens);
+          const brackets = riskEngine?.escalation_brackets;
+          const bracketsOk = Array.isArray(brackets) && brackets.length >= 5;
+          const multipliersOk = riskEngine?.size_multipliers && Object.keys(riskEngine.size_multipliers).length >= 4;
+          const baseTiersOk = baseTiers?.tier_a_10_15k > 0 && baseTiers?.absolute_floor > 0;
+          const tokensOk = Object.keys(tokens).length >= 10;
+          releaseReady = bracketsOk && multipliersOk && baseTiersOk && tokensOk;
+          if (!releaseReady) {
+            releaseBlockers.push('AdminSettings config integrity check failed');
+            console.warn('QUOTE_READINESS_GATING', { blocker: 'config_check_fail', brackets: brackets?.length, multipliers: riskEngine?.size_multipliers ? Object.keys(riskEngine.size_multipliers).length : 0, baseTiers: !!baseTiers?.tier_a_10_15k, tokens: Object.keys(tokens).length });
+          }
+        } catch (parseErr) {
+          releaseBlockers.push('AdminSettings JSON parse error: ' + parseErr.message);
+          console.error('QUOTE_READINESS_PARSE_ERROR', { error: parseErr.message });
+        }
       }
     } catch (e) {
       releaseBlockers.push('AdminSettings load error: ' + e.message);
