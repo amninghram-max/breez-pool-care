@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
 
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     if (!resendApiKey) {
-      return json({ success: false, error: 'RESEND_API_KEY not configured', build: BUILD });
+      return json200({ success: false, error: 'RESEND_API_KEY not configured', build: BUILD });
     }
 
     const link = `${appOrigin}/activate?leadId=${encodeURIComponent(leadId)}`;
