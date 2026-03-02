@@ -165,17 +165,12 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
     lockQuoteMutation.mutate();
   };
 
-  const handleContinueToInspection = async () => {
-    if (!contactDraft.firstName || !contactDraft.email) {
-      toast.error('First name and email required');
-      return;
-    }
+  const handleSaveContactInfo = async () => {
     try {
       await updateSessionMutation.mutateAsync({
-        currentStep: 3,
         contactDraft
       });
-      setCurrentStep(3);
+      toast.success('Contact info saved');
     } catch (e) {
       toast.error('Failed to save contact info');
     }
@@ -194,7 +189,20 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
   };
 
   const handleConvert = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
+
+    // Save contact info if not yet saved, then convert
+    if ((contactDraft.firstName || contactDraft.email || contactDraft.phone) && !contactDraft.isSaved) {
+      try {
+        await updateSessionMutation.mutateAsync({
+          contactDraft
+        });
+      } catch (err) {
+        toast.error('Failed to save contact info');
+        return;
+      }
+    }
+
     convertMutation.mutate();
   };
 
@@ -275,7 +283,7 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
               />
             </div>
           ) : currentStep === 2 ? (
-            // ── Step 2: Lock Quote + Contact Info ──
+            // ── Step 2: Lock Quote ──
             <div className="space-y-4">
               {!quoteLocked ? (
                 <Card>
@@ -284,7 +292,7 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <p className="text-sm text-gray-600">
-                      Once locked, the quote will be finalized. You'll then collect customer information.
+                      Once locked, the quote will be finalized. Contact information can be added later.
                     </p>
                     <div className="flex gap-3">
                       <Button
@@ -310,62 +318,87 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
                   </CardContent>
                 </Card>
               ) : (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Customer Information</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>First Name *</Label>
-                        <Input
-                          value={contactDraft.firstName}
-                          onChange={e => setContactDraft(d => ({ ...d, firstName: e.target.value }))}
-                          placeholder="John"
-                          className="mt-1.5"
-                          required
-                        />
+                <>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Quote Locked</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <p className="text-sm text-green-800">
+                          <strong>Session Code:</strong> <code className="font-mono bg-white px-2 py-1 rounded">{sessionId?.slice(-8)}</code>
+                        </p>
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        Proceed to inspection or optionally add customer contact information.
+                      </p>
+                      <div className="flex gap-3">
+                        <Button onClick={() => setQuoteLocked(false)} variant="outline" className="flex-1">
+                          Back
+                        </Button>
+                        <Button
+                          onClick={() => setCurrentStep(3)}
+                          className="flex-1 bg-teal-600 hover:bg-teal-700"
+                        >
+                          Continue to Inspection
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Add Contact Info (Optional)</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>First Name</Label>
+                          <Input
+                            value={contactDraft.firstName}
+                            onChange={e => setContactDraft(d => ({ ...d, firstName: e.target.value }))}
+                            placeholder="John"
+                            className="mt-1.5"
+                          />
+                        </div>
+                        <div>
+                          <Label>Email</Label>
+                          <Input
+                            type="email"
+                            value={contactDraft.email}
+                            onChange={e => setContactDraft(d => ({ ...d, email: e.target.value }))}
+                            placeholder="john@example.com"
+                            className="mt-1.5"
+                          />
+                        </div>
                       </div>
                       <div>
-                        <Label>Email *</Label>
+                        <Label>Phone (Optional)</Label>
                         <Input
-                          type="email"
-                          value={contactDraft.email}
-                          onChange={e => setContactDraft(d => ({ ...d, email: e.target.value }))}
-                          placeholder="john@example.com"
+                          type="tel"
+                          value={contactDraft.phone}
+                          onChange={e => setContactDraft(d => ({ ...d, phone: e.target.value }))}
+                          placeholder="(555) 000-0000"
                           className="mt-1.5"
-                          required
                         />
                       </div>
-                    </div>
-                    <div>
-                      <Label>Phone (Optional)</Label>
-                      <Input
-                        type="tel"
-                        value={contactDraft.phone}
-                        onChange={e => setContactDraft(d => ({ ...d, phone: e.target.value }))}
-                        placeholder="(555) 000-0000"
-                        className="mt-1.5"
-                      />
-                    </div>
-                    <div className="flex gap-3 pt-4 border-t">
-                      <Button onClick={() => setQuoteLocked(false)} variant="outline" className="flex-1">
-                        Back
-                      </Button>
-                      <Button
-                        onClick={handleContinueToInspection}
-                        disabled={updateSessionMutation.isPending}
-                        className="flex-1 bg-teal-600 hover:bg-teal-700"
-                      >
-                        {updateSessionMutation.isPending ? (
-                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
-                        ) : (
-                          'Continue to Inspection'
-                        )}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                      {(contactDraft.firstName || contactDraft.email || contactDraft.phone) && (
+                        <Button
+                          onClick={handleSaveContactInfo}
+                          disabled={updateSessionMutation.isPending}
+                          className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800"
+                          size="sm"
+                        >
+                          {updateSessionMutation.isPending ? (
+                            <><Loader2 className="w-3 h-3 mr-2 animate-spin" />Saving...</>
+                          ) : (
+                            'Save Contact Info'
+                          )}
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                </>
               )}
             </div>
           ) : currentStep === 3 ? (
@@ -443,47 +476,122 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
           ) : currentStep === 4 ? (
             // ── Step 4: Convert ──
             <div className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Review & Convert</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="bg-gray-50 p-4 rounded-lg space-y-2 text-sm">
-                    <p><strong>Name:</strong> {contactDraft.firstName}</p>
-                    <p><strong>Email:</strong> {contactDraft.email}</p>
-                    {contactDraft.phone && <p><strong>Phone:</strong> {contactDraft.phone}</p>}
-                  </div>
-
-                  {convertMutation.isError && (
-                    <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-800">
-                      <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                      {convertMutation.error?.message || 'Failed to convert'}
+              {contactDraft.firstName && contactDraft.email ? (
+                // Contact info already provided
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Review & Convert</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="bg-gray-50 p-4 rounded-lg space-y-2 text-sm">
+                      <p><strong>Name:</strong> {contactDraft.firstName}</p>
+                      <p><strong>Email:</strong> {contactDraft.email}</p>
+                      {contactDraft.phone && <p><strong>Phone:</strong> {contactDraft.phone}</p>}
                     </div>
-                  )}
 
-                  <div className="flex gap-3 pt-4 border-t">
-                    <Button
-                      onClick={() => setCurrentStep(3)}
-                      variant="outline"
-                      className="flex-1"
-                      disabled={convertMutation.isPending}
-                    >
-                      Back
-                    </Button>
-                    <Button
-                      onClick={handleConvert}
-                      className="flex-1 bg-teal-600 hover:bg-teal-700"
-                      disabled={convertMutation.isPending}
-                    >
-                      {convertMutation.isPending ? (
-                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Converting...</>
-                      ) : (
-                        'Convert to Lead'
-                      )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                    {convertMutation.isError && (
+                      <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-800">
+                        <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                        {convertMutation.error?.message || 'Failed to convert'}
+                      </div>
+                    )}
+
+                    <div className="flex gap-3 pt-4 border-t">
+                      <Button
+                        onClick={() => setCurrentStep(3)}
+                        variant="outline"
+                        className="flex-1"
+                        disabled={convertMutation.isPending}
+                      >
+                        Back
+                      </Button>
+                      <Button
+                        onClick={handleConvert}
+                        className="flex-1 bg-teal-600 hover:bg-teal-700"
+                        disabled={convertMutation.isPending}
+                      >
+                        {convertMutation.isPending ? (
+                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Converting...</>
+                        ) : (
+                          'Convert to Lead'
+                        )}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                // Require contact info at conversion
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Customer Information Required</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                      To convert this session to a lead, we need the customer's contact information.
+                    </p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>First Name *</Label>
+                        <Input
+                          value={contactDraft.firstName}
+                          onChange={e => setContactDraft(d => ({ ...d, firstName: e.target.value }))}
+                          placeholder="John"
+                          className="mt-1.5"
+                        />
+                      </div>
+                      <div>
+                        <Label>Email *</Label>
+                        <Input
+                          type="email"
+                          value={contactDraft.email}
+                          onChange={e => setContactDraft(d => ({ ...d, email: e.target.value }))}
+                          placeholder="john@example.com"
+                          className="mt-1.5"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Phone (Optional)</Label>
+                      <Input
+                        type="tel"
+                        value={contactDraft.phone}
+                        onChange={e => setContactDraft(d => ({ ...d, phone: e.target.value }))}
+                        placeholder="(555) 000-0000"
+                        className="mt-1.5"
+                      />
+                    </div>
+
+                    {convertMutation.isError && (
+                      <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-800">
+                        <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                        {convertMutation.error?.message || 'Failed to convert'}
+                      </div>
+                    )}
+
+                    <div className="flex gap-3 pt-4 border-t">
+                      <Button
+                        onClick={() => setCurrentStep(3)}
+                        variant="outline"
+                        className="flex-1"
+                        disabled={convertMutation.isPending}
+                      >
+                        Back
+                      </Button>
+                      <Button
+                        onClick={handleConvert}
+                        disabled={!contactDraft.firstName || !contactDraft.email || convertMutation.isPending}
+                        className="flex-1 bg-teal-600 hover:bg-teal-700"
+                      >
+                        {convertMutation.isPending ? (
+                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Converting...</>
+                        ) : (
+                          'Convert to Lead'
+                        )}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
             ) : null}
             </div>
