@@ -72,13 +72,14 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log('GQRP_SUCCESS', { token: token.trim(), leadId: request.leadId, email: request.email });
+    console.log('GQRP_SUCCESS', { token: token.trim(), leadId: request.leadId, email: request.email, firstName: request.firstName });
 
     return json200({
       success: true,
       request: {
         leadId: request.leadId,
         email: request.email,
+        firstName: request.firstName || null,
         status: request.status
       },
       build: BUILD
