@@ -157,7 +157,11 @@ function QuoteResultDisplay({ result, firstName, email, leadId }) {
       {/* CTA */}
       <div className="space-y-3">
         <button
-          onClick={() => setShowScheduler(true)}
+          onClick={() => {
+            if (quoteToken) {
+              window.location.href = `/ScheduleInspection?token=${encodeURIComponent(quoteToken)}`;
+            }
+          }}
           className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-white text-base font-semibold shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5"
           style={{ backgroundColor: TEAL }}
         >
