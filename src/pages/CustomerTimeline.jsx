@@ -195,41 +195,64 @@ export default function CustomerTimeline() {
   // TEMP: remove after testing
   const seedTestDataMutation = useMutation({
     mutationFn: async () => {
-      const res = await base44.functions.invoke('seedTestCustomerData', {
-        leadId,
-        daysBack: 30,
-        visitsCount: 6
-      });
-      return res.data;
-    },
-    onSuccess: (data) => {
-      // Store full response for display
-      setSeedResponse(data);
+      const payload = { leadId, daysBack: 30, visitsCount: 6 };
       
-      // Only refresh queries if seeding succeeded
-      if (data.success === true) {
-        queryClient.invalidateQueries({ queryKey: ['recentVisits', leadId] });
-        queryClient.invalidateQueries({ queryKey: ['allVisitsForDropdown', leadId] });
-        queryClient.invalidateQueries({ queryKey: ['customerEquipment', leadId] });
-        queryClient.invalidateQueries({ queryKey: ['messageThreads', leadId] });
-        queryClient.invalidateQueries({ queryKey: ['chemistryRiskEvents', leadId] });
+      try {
+        const raw = await base44.functions.invoke('seedTestCustomerData', payload);
         
-        toast.success(
-          `✓ Verified: ${data.verifiedServiceVisitCount} visits, ${data.verifiedCustomerEquipmentCount} equipment`
-        );
-      } else {
-        toast.error(`Seed failed at step "${data.step}": ${data.errorMessage}`);
+        // Normalize response from various wrapper levels
+        const normalized =
+          raw?.success !== undefined ? raw :
+          raw?.data?.success !== undefined ? raw.data :
+          raw?.result?.success !== undefined ? raw.result :
+          raw;
+        
+        // Store comprehensive debug info
+        setSeedResponse({
+          phase: 'try',
+          payload,
+          rawType: typeof raw,
+          rawKeys: raw && typeof raw === 'object' ? Object.keys(raw) : null,
+          raw,
+          normalizedType: typeof normalized,
+          normalizedKeys: normalized && typeof normalized === 'object' ? Object.keys(normalized) : null,
+          normalized
+        });
+        
+        // Only invalidate/refresh queries if seeding succeeded
+        if (normalized?.success === true) {
+          queryClient.invalidateQueries({ queryKey: ['recentVisits', leadId] });
+          queryClient.invalidateQueries({ queryKey: ['allVisitsForDropdown', leadId] });
+          queryClient.invalidateQueries({ queryKey: ['customerEquipment', leadId] });
+          queryClient.invalidateQueries({ queryKey: ['messageThreads', leadId] });
+          queryClient.invalidateQueries({ queryKey: ['chemistryRiskEvents', leadId] });
+          
+          toast.success(
+            `✓ Verified: ${normalized.verifiedServiceVisitCount} visits, ${normalized.verifiedCustomerEquipmentCount} equipment`
+          );
+        } else if (normalized?.step && normalized?.errorMessage) {
+          toast.error(`Seed failed at step "${normalized.step}": ${normalized.errorMessage}`);
+        }
+        
+        return normalized;
+      } catch (err) {
+        // Capture error details
+        setSeedResponse({
+          phase: 'catch',
+          payload,
+          message: err?.message,
+          name: err?.name,
+          status: err?.response?.status,
+          responseData: err?.response?.data,
+          errorKeys: err && typeof err === 'object' ? Object.keys(err) : null
+        });
+        
+        toast.error(`Error: ${err?.message || 'Unknown error'}`);
+        throw err;
       }
     },
-    onError: (err) => {
-      // HTTP network error (shouldn't happen with always-200, but keep as fallback)
-      const errorData = {
-        success: false,
-        step: 'http',
-        errorMessage: err.message || 'Network error'
-      };
-      setSeedResponse(errorData);
-      toast.error(`Network error: ${err.message || 'Unknown'}`);
+    onError: () => {
+      // Error already captured in try/catch above
     }
   });
 
