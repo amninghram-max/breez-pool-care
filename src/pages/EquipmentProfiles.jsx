@@ -225,10 +225,13 @@ export default function EquipmentProfiles() {
     );
   }
 
-  // Empty state
+  // Empty state (legacy PoolEquipment - now skipped; directory shows catalog regardless)
   if (equipment.length === 0) {
     return (
       <div className="space-y-6">
+        <div className="bg-purple-600 text-white px-6 py-4 rounded-lg font-bold text-lg">
+          DEBUG: Rendering pages/EquipmentProfiles.jsx (empty equipment state)
+        </div>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Equipment Profiles</h1>
           <p className="text-sm text-gray-600 mt-1">0 PoolEquipment records found</p>
