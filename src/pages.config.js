@@ -87,6 +87,7 @@ import PaymentSuccess from './pages/PaymentSuccess';
 import PreQualification from './pages/PreQualification';
 import PublicHome from './pages/PublicHome';
 import ReleaseReadiness from './pages/ReleaseReadiness';
+import ScheduleInspection from './pages/ScheduleInspection';
 import ServiceReinstatement from './pages/ServiceReinstatement';
 import ServiceVisitEntry from './pages/ServiceVisitEntry';
 import ServiceVisitFlow from './pages/ServiceVisitFlow';
@@ -95,7 +96,7 @@ import StaffManagement from './pages/StaffManagement';
 import TechnicianHome from './pages/TechnicianHome';
 import TechnicianRoute from './pages/TechnicianRoute';
 import TestDashboard from './pages/TestDashboard';
-import ScheduleInspection from './pages/ScheduleInspection';
+import QuoteView from './pages/QuoteView';
 import __Layout from './Layout.jsx';
 
 
@@ -140,6 +141,7 @@ export const PAGES = {
     "PreQualification": PreQualification,
     "PublicHome": PublicHome,
     "ReleaseReadiness": ReleaseReadiness,
+    "ScheduleInspection": ScheduleInspection,
     "ServiceReinstatement": ServiceReinstatement,
     "ServiceVisitEntry": ServiceVisitEntry,
     "ServiceVisitFlow": ServiceVisitFlow,
@@ -148,7 +150,7 @@ export const PAGES = {
     "TechnicianHome": TechnicianHome,
     "TechnicianRoute": TechnicianRoute,
     "TestDashboard": TestDashboard,
-    "ScheduleInspection": ScheduleInspection,
+    "QuoteView": QuoteView,
 }
 
 export const pagesConfig = {
