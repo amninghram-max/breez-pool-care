@@ -223,13 +223,30 @@ export default function PublicQuoteWizard({
     if (e?.preventDefault) e.preventDefault();
     console.log('DEBUG: Finish clicked');
 
+    setError('');
+
+    try {
+      // Use resolved data from prefillData if token present, otherwise use form input
+      const finalFirstName = hasToken ? (prefillData?.firstName || firstName) : firstName;
+      const finalEmail = hasToken ? (prefillData?.email || email) : email;
+
+      // VALIDATION: Show inline error and stay on page
+      const missingFields = [];
+      if (!finalFirstName.trim()) missingFields.push('first name');
+      if (!finalEmail.trim() || !finalEmail.includes('@') || finalEmail.trim() === 'guest@breezpoolcare.com') missingFields.push('email');
+      
+      if (missingFields.length > 0) {
+        const fieldText = missingFields.length === 1 ? missingFields[0] : missingFields.join(' and ');
+        setError(`Please enter your ${fieldText}.`);
+        return;
+      }
+
     // MILESTONE: clicked
     setFinalizeState('clicked');
     setFinishClickedAt(new Date().toLocaleTimeString());
     setFinalizeError(null);
     setLastFinalizeRequest(null);
     setLastFinalizeResponse(null);
-    setError('');
     setResult(null);
     setFinalizing(true);
 
@@ -237,22 +254,8 @@ export default function PublicQuoteWizard({
     setFinalizeState('starting');
 
     try {
-      // Use resolved data from prefillData if token present, otherwise use form input
       const finalFirstName = hasToken ? (prefillData?.firstName || firstName) : firstName;
       const finalEmail = hasToken ? (prefillData?.email || email) : email;
-
-      // VALIDATION: capture errors and set state milestone before returning
-      const missingFields = [];
-      if (!finalFirstName.trim()) missingFields.push('first name');
-      if (!finalEmail.trim() || !finalEmail.includes('@') || finalEmail.trim() === 'guest@breezpoolcare.com') missingFields.push('email');
-      
-      if (missingFields.length > 0) {
-        const fieldText = missingFields.length === 1 ? missingFields[0] : missingFields.join(' and ');
-        setFinalizeError(`Please enter your ${fieldText}.`);
-        setFinalizeState('done_error');
-        setFinalizing(false);
-        return;
-      }
 
       // BUILD PAYLOAD
       const payload = {
