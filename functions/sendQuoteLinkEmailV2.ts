@@ -187,9 +187,9 @@ Deno.serve(async (req) => {
     }
 
     const resendId = emailData.id ?? null;
-    console.log('V2_SENT', { resendId, email, build: BUILD });
+    console.log('V2_SENT', { resendId, email, quoteId: quote.id, build: BUILD });
 
-    return json200({ success: true, quoteUrl: link, build: BUILD, resendId });
+    return json200({ success: true, quoteUrl: link, quoteId: quote.id, build: BUILD, resendId });
 
   } catch (error) {
     console.error('V2 crash:', error);
