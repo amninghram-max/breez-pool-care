@@ -2,12 +2,13 @@ import React, { useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { createPageUrl } from '@/utils';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { getHomePageForRole } from '../components/auth/roleCapabilities';
 import PublicHome from './PublicHome';
 
 export default function Home() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['user'],
@@ -20,12 +21,16 @@ export default function Home() {
     },
   });
 
-  // If authenticated, redirect to role-specific home
+  // If authenticated, redirect to role-specific home (prevent loop)
   useEffect(() => {
     if (userLoading || !user) return;
     const homePage = getHomePageForRole(user.role || 'customer');
-    navigate(createPageUrl(homePage), { replace: true });
-  }, [user, userLoading, navigate]);
+    const targetPath = createPageUrl(homePage);
+    // Prevent redirect loop: only navigate if not already at target
+    if (location.pathname !== targetPath) {
+      navigate(targetPath, { replace: true });
+    }
+  }, [user, userLoading, navigate, location.pathname]);
 
   // While checking auth, show nothing; once resolved render public landing if not authed
   if (userLoading) return null;

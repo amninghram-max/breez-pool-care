@@ -61,6 +61,7 @@ import Analytics from './pages/Analytics';
 import Billing from './pages/Billing';
 import Calendar from './pages/Calendar';
 import ChemicalAnalytics from './pages/ChemicalAnalytics';
+import ChemicalRegistry from './pages/ChemicalRegistry';
 import ChemistryDashboard from './pages/ChemistryDashboard';
 import ClientHome from './pages/ClientHome';
 import CustomerEquipment from './pages/CustomerEquipment';
@@ -97,7 +98,6 @@ import TechnicianHome from './pages/TechnicianHome';
 import TechnicianRoute from './pages/TechnicianRoute';
 import TestDashboard from './pages/TestDashboard';
 import architectureContext from './pages/_ARCHITECTURE_CONTEXT';
-import ChemicalRegistry from './pages/ChemicalRegistry';
 import __Layout from './Layout.jsx';
 
 
@@ -116,6 +116,7 @@ export const PAGES = {
     "Billing": Billing,
     "Calendar": Calendar,
     "ChemicalAnalytics": ChemicalAnalytics,
+    "ChemicalRegistry": ChemicalRegistry,
     "ChemistryDashboard": ChemistryDashboard,
     "ClientHome": ClientHome,
     "CustomerEquipment": CustomerEquipment,
@@ -152,7 +153,6 @@ export const PAGES = {
     "TechnicianRoute": TechnicianRoute,
     "TestDashboard": TestDashboard,
     "_ARCHITECTURE_CONTEXT": architectureContext,
-    "ChemicalRegistry": ChemicalRegistry,
 }
 
 export const pagesConfig = {
