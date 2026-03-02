@@ -195,10 +195,19 @@ export default function CustomerTimeline() {
   // TEMP: remove after testing
   const seedTestDataMutation = useMutation({
     mutationFn: async () => {
+      // Mark the start
+      setSeedClickCount(c => c + 1);
+      setSeedDebugText('clicked: starting invoke');
+      setSeedResponse({ marker: 'pre-invoke', time: Date.now() });
+      
       const payload = { leadId, daysBack: 30, visitsCount: 6 };
       
       try {
         const raw = await base44.functions.invoke('seedTestCustomerData', payload);
+        
+        // Immediately mark invoke returned
+        setSeedDebugText('try: invoke returned');
+        setSeedResponse({ marker: 'try', raw: raw ?? null });
         
         // Normalize response from various wrapper levels
         const normalized =
@@ -209,6 +218,7 @@ export default function CustomerTimeline() {
         
         // Store comprehensive debug info
         setSeedResponse({
+          marker: 'try-normalized',
           phase: 'try',
           payload,
           rawType: typeof raw,
@@ -237,14 +247,12 @@ export default function CustomerTimeline() {
         return normalized;
       } catch (err) {
         // Capture error details
+        setSeedDebugText('catch: invoke threw');
         setSeedResponse({
-          phase: 'catch',
-          payload,
-          message: err?.message,
-          name: err?.name,
-          status: err?.response?.status,
-          responseData: err?.response?.data,
-          errorKeys: err && typeof err === 'object' ? Object.keys(err) : null
+          marker: 'catch',
+          message: err?.message ?? String(err),
+          status: err?.response?.status ?? null,
+          responseData: err?.response?.data ?? null
         });
         
         toast.error(`Error: ${err?.message || 'Unknown error'}`);
@@ -258,6 +266,8 @@ export default function CustomerTimeline() {
 
   const [selectedOldVisitId, setSelectedOldVisitId] = useState(null);
   const [seedResponse, setSeedResponse] = useState(null);
+  const [seedClickCount, setSeedClickCount] = useState(0);
+  const [seedDebugText, setSeedDebugText] = useState('idle');
 
   // Load only recent 4 visits on initial render
   const { data: recentVisits = [] } = useQuery({
