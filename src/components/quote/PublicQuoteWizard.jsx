@@ -158,7 +158,7 @@ export default function PublicQuoteWizard({
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
   const [firstName, setFirstName] = useState(prefillData?.firstName || '');
-  const [email, setEmail] = useState(prefillData?.email || '');
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null); // { releaseReady, quote?, isRange?, priceSummary? }
   const [error, setError] = useState('');
