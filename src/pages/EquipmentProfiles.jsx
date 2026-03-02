@@ -6,9 +6,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Wrench, Search, AlertCircle } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link, useNavigate } from 'react-router-dom';
+import EquipmentCatalogPanel from '@/components/equipment/EquipmentCatalogPanel';
+import PartsManagementPanel from '@/components/equipment/PartsManagementPanel';
 
 const TYPE_LABELS = {
   pump: 'Pump',
