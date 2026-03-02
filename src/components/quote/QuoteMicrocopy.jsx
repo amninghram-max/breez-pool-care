@@ -14,12 +14,11 @@ export function QuoteTrustBadges() {
   );
 }
 
-export function QuoteDisclaimer({ isDemo }) {
+export function QuoteDisclaimer() {
   return (
-    <div className={`flex items-start gap-2 rounded-lg px-4 py-3 text-xs ${isDemo ? 'bg-amber-50 border border-amber-200 text-amber-800' : 'bg-gray-50 border border-gray-200 text-gray-600'}`}>
+    <div className="flex items-start gap-2 rounded-lg px-4 py-3 text-xs bg-gray-50 border border-gray-200 text-gray-600">
       <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
       <span>
-        {isDemo && <strong className="block mb-0.5">Demo Quote — Not saved or official.</strong>}
         This quote is based on the pool details provided. Final pricing is confirmed during the free inspection and may change if actual conditions differ.
       </span>
     </div>

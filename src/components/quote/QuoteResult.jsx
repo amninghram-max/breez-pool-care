@@ -9,10 +9,9 @@ import { QuoteTrustBadges, QuoteDisclaimer } from './QuoteMicrocopy';
 
 /**
  * QuoteResult — displays quote output.
- * isDemo=true → amber disclaimer + "Convert to Real Quote" CTA
- * isDemo=false → normal CTA to schedule inspection
+ * Shows pricing, what's included, and schedule inspection CTA.
  */
-export default function QuoteResult({ quote, quoteId, expiresAt, formData, isDemo = false, onConvertToReal, onModify }) {
+export default function QuoteResult({ quote, quoteId, expiresAt, formData, onModify }) {
   const { data: user } = useQuery({
     queryKey: ['user'],
     queryFn: async () => { try { return await base44.auth.me(); } catch { return null; } }
@@ -55,21 +54,7 @@ export default function QuoteResult({ quote, quoteId, expiresAt, formData, isDem
     <div className="space-y-5">
       {/* Trust + disclaimer */}
       <QuoteTrustBadges />
-      <QuoteDisclaimer isDemo={isDemo} />
-
-      {/* Demo banner */}
-      {isDemo && (
-        <Card className="bg-amber-50 border-amber-300">
-          <CardContent className="pt-4 pb-4">
-            <p className="text-sm text-amber-800 font-medium mb-3">This is an unofficial estimate. No data has been saved.</p>
-            {onConvertToReal && (
-              <Button onClick={() => onConvertToReal(formData)} className="bg-amber-600 hover:bg-amber-700 text-white text-sm">
-                Convert to Real Quote
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      )}
+      <QuoteDisclaimer />
 
       {/* Main pricing card */}
       <Card className="bg-gradient-to-br from-teal-50 to-blue-50 border-teal-200">
@@ -119,17 +104,15 @@ export default function QuoteResult({ quote, quoteId, expiresAt, formData, isDem
       </Card>
 
       {/* CTA */}
-      {!isDemo && (
-        <Card className="bg-gradient-to-r from-teal-600 to-blue-600 text-white border-0">
-          <CardContent className="pt-6 text-center">
-            <h3 className="text-xl font-bold mb-1">Ready to get started?</h3>
-            <p className="text-teal-100 text-sm mb-5">Schedule your free pool inspection</p>
-            <Button onClick={handleScheduleInspection} size="lg" className="bg-white text-teal-600 hover:bg-gray-100 px-8">
-              Schedule Free Inspection
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+      <Card className="bg-gradient-to-r from-teal-600 to-blue-600 text-white border-0">
+        <CardContent className="pt-6 text-center">
+          <h3 className="text-xl font-bold mb-1">Ready to get started?</h3>
+          <p className="text-teal-100 text-sm mb-5">Schedule your free pool inspection</p>
+          <Button onClick={handleScheduleInspection} size="lg" className="bg-white text-teal-600 hover:bg-gray-100 px-8">
+            Schedule Free Inspection
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Staff/admin internal breakdown */}
       {isStaffOrAdmin && (
@@ -173,7 +156,7 @@ export default function QuoteResult({ quote, quoteId, expiresAt, formData, isDem
         )}
       </div>
 
-      {expiryDate && !isDemo && (
+      {expiryDate && (
         <p className="text-xs text-gray-400 text-center">Quote valid until {expiryDate}</p>
       )}
     </div>

@@ -36,7 +36,7 @@ export default function QuoteWizard({ mode = 'real', initialAnswers = null, onCo
   const [formData, setFormData] = useState(initialAnswers ? { ...DEFAULT_FORM, ...initialAnswers } : DEFAULT_FORM);
   const [hasSavedAnswers] = useState(() => !!localStorage.getItem(LAST_ANSWERS_KEY));
 
-  const isDemo = mode === 'demo';
+  const isPreview = mode === 'field-sales';
 
   const setF = (k, v) => setFormData(f => ({ ...f, [k]: v }));
 
@@ -63,10 +63,10 @@ export default function QuoteWizard({ mode = 'real', initialAnswers = null, onCo
       const { clientFirstName, clientLastName, clientEmail, clientPhone, ...poolAnswers } = formData;
       localStorage.setItem(LAST_ANSWERS_KEY, JSON.stringify(poolAnswers));
 
-      if (isDemo) {
-        // Demo: pure engine, no persistence
+      if (isPreview) {
+        // Field Sales: preview estimate, no persistence
         const res = await base44.functions.invoke('calculateQuoteOnly', { questionnaireData: formData });
-        return { ...res.data, isDemo: true };
+        return res.data;
       } else {
         // Real: persist Quote record
         const res = await base44.functions.invoke('calculateQuote', { questionnaireData: formData });
@@ -95,12 +95,6 @@ export default function QuoteWizard({ mode = 'real', initialAnswers = null, onCo
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
-      {isDemo && (
-        <div className="bg-amber-50 border border-amber-300 rounded-lg px-4 py-2 text-sm text-amber-800 font-medium">
-          ⚡ Demo Quote — No data will be saved. Prices shown are estimates only.
-        </div>
-      )}
-
       {hasSavedAnswers && step === 1 && (
         <button onClick={reuseLastAnswers} className="flex items-center gap-1.5 text-sm text-teal-700 hover:text-teal-900 underline underline-offset-2">
           <RefreshCw className="w-3.5 h-3.5" /> Reuse my last pool answers
@@ -283,7 +277,7 @@ export default function QuoteWizard({ mode = 'real', initialAnswers = null, onCo
                 disabled={!stepValid() || calculateMutation.isPending}
                 className="flex-1 bg-teal-600 hover:bg-teal-700"
               >
-                {calculateMutation.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Calculating...</> : isDemo ? 'Get Demo Estimate' : 'Get My Quote'}
+                {calculateMutation.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Calculating...</> : 'Get My Quote'}
               </Button>
             )}
           </div>
