@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
     if (payload?.__force === "1") {
       return json200({ success: false, build: BUILD, note: "force reached V2" });
     }
-    const { leadId, email, appOrigin: appOriginRaw, origin: originFallback, firstName } = payload || {};
+    const { leadId, email, appOrigin: appOriginRaw, origin: originFallback, firstName: firstNameInput } = payload || {};
 
     // Validate required fields
     const missing = {
@@ -87,6 +87,20 @@ Deno.serve(async (req) => {
         receivedKeys: Object.keys(payload || {}),
         build: BUILD
       });
+    }
+
+    // Determine firstName: use input, or look it up from Lead, or null
+    let firstName = firstNameInput && typeof firstNameInput === 'string' ? firstNameInput.trim() : null;
+    if (!firstName) {
+      try {
+        const leads = await base44.asServiceRole.entities.Lead.filter({ id: leadId.trim() }, null, 1);
+        if (leads && leads.length > 0 && leads[0].firstName) {
+          firstName = leads[0].firstName;
+          console.log('V2_FIRSTNAME_LOOKUP', { leadId: leadId.trim(), firstName });
+        }
+      } catch (lookupErr) {
+        console.warn('V2_FIRSTNAME_LOOKUP_FAILED', { leadId: leadId.trim(), error: String(lookupErr?.message ?? lookupErr) });
+      }
     }
 
     const appOriginRawToValidate = appOriginRaw || originFallback;
