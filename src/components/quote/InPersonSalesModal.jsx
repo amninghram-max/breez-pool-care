@@ -263,6 +263,15 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
                 </Button>
               </div>
             </div>
+          ) : currentStep === 1 ? (
+            // ── Step 1: Pricing (QuoteWizard) ──
+            <div className="space-y-4">
+              <QuoteWizard
+                mode="demo"
+                initialAnswers={pricingInputs}
+                onComplete={handleQuoteWizardComplete}
+              />
+            </div>
           ) : currentStep === 2 ? (
             // ── Step 2: Lock Quote + Contact Info ──
             <div className="space-y-4">
