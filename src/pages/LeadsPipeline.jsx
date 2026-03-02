@@ -35,7 +35,6 @@ export default function LeadsPipeline() {
   const [selectedLead, setSelectedLead] = useState(null);
   const [repairResult, setRepairResult] = useState(null);
   const [showNewLead, setShowNewLead] = useState(false);
-  const [showNewQuote, setShowNewQuote] = useState(false);
   const [expandedStages, setExpandedStages] = useState(STAGES.filter(s => s.defaultExpanded).map(s => s.key));
   const [undoAction, setUndoAction] = useState(null);
   const undoTimer = useRef(null);
