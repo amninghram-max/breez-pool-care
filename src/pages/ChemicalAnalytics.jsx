@@ -89,17 +89,21 @@ export default function ChemicalAnalytics() {
     enabled: !!costDateFrom && !!costDateTo
   });
 
-  // Legacy analytics query for Compare tab (global scope, not date-filtered)
+  // Legacy analytics query for Compare tab (now date-filtered via dateFrom/dateTo)
   const { 
     data: legacyAnalyticsData, 
     isLoading: legacyAnalyticsLoading, 
     error: legacyAnalyticsError
   } = useQuery({
-    queryKey: ['legacyAnalyticsForCompare'],
+    queryKey: ['legacyAnalyticsForCompare', costDateFrom, costDateTo],
     queryFn: async () => {
-      const response = await base44.functions.invoke('chemicalUsageAnalytics', {});
+      const response = await base44.functions.invoke('chemicalUsageAnalytics', {
+        dateFrom: costDateFrom,
+        dateTo: costDateTo
+      });
       return response.data;
-    }
+    },
+    enabled: !!costDateFrom && !!costDateTo
   });
 
   const loadAnalytics = useMutation({
