@@ -207,7 +207,7 @@ function ThankYouDisplay({ firstName, email, leadId }) {
 
 // ── Main wizard ───────────────────────────────────────────────────────────────
 
-export default function PublicQuoteWizard({ prefillData }) {
+export default function PublicQuoteWizard({ prefillData, onDebugStateChange }) {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -218,6 +218,8 @@ export default function PublicQuoteWizard({ prefillData }) {
   const [error, setError] = useState('');
   const [finalizeError, setFinalizeError] = useState('');
   const [isFinalizing, setIsFinalizing] = useState(false);
+  const [lastFinalizeRequest, setLastFinalizeRequest] = useState(null);
+  const [lastFinalizeResponse, setLastFinalizeResponse] = useState(null);
 
   // Determine steps dynamically (trees only shown if unscreened)
   const showTrees = answers.enclosure === 'unscreened';
