@@ -412,7 +412,7 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
                                    Per visit: ${perVisit.toFixed(2)}
                                  </p>
                                )}
-                               {oneTime && oneTime > 0 && (
+                               {typeof oneTime === 'number' && oneTime > 0 && (
                                  <p className={`text-sm ${pricingSource === 'LOCKED' ? 'text-green-700' : 'text-teal-700'}`}>
                                    One-time fees: ${oneTime.toFixed(2)}
                                  </p>
