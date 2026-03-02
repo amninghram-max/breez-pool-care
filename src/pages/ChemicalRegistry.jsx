@@ -59,6 +59,8 @@ function ChemicalForm({ chemical, onSave, onCancel, isLoading }) {
       strengthPercent: '',
       defaultDoseUnit: 'gal',
       densityLbPerGal: '',
+      costCanonicalUnit: '',
+      costPerCanonicalUnitCents: '',
       notes: '',
       dosageRuleType: 'per_10k_per_delta',
       dosageRuleJson: '',
@@ -89,6 +91,12 @@ function ChemicalForm({ chemical, onSave, onCancel, isLoading }) {
       return;
     }
     
+    // Validate cost fields: if cents provided, unit must be selected
+    if (formData.costPerCanonicalUnitCents && !formData.costCanonicalUnit) {
+      toast.error('Cost unit is required when cost per unit is specified');
+      return;
+    }
+
     // Parse dosageRuleJson if provided
     if (formData.dosageRuleJson) {
       try {
@@ -106,7 +114,9 @@ function ChemicalForm({ chemical, onSave, onCancel, isLoading }) {
         .map(t => t.trim())
         .filter(t => t.length > 0),
       strengthPercent: formData.strengthPercent ? parseFloat(formData.strengthPercent) : null,
-      densityLbPerGal: formData.densityLbPerGal ? parseFloat(formData.densityLbPerGal) : null
+      densityLbPerGal: formData.densityLbPerGal ? parseFloat(formData.densityLbPerGal) : null,
+      costCanonicalUnit: formData.costCanonicalUnit || null,
+      costPerCanonicalUnitCents: formData.costPerCanonicalUnitCents ? parseInt(formData.costPerCanonicalUnitCents, 10) : null
     };
 
     onSave(payload);
@@ -203,6 +213,34 @@ function ChemicalForm({ chemical, onSave, onCancel, isLoading }) {
           onChange={(e) => setFormData({ ...formData, densityLbPerGal: e.target.value })}
           placeholder="e.g., 11.2"
         />
+      </div>
+
+      {/* Cost Tracking */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Cost Canonical Unit</label>
+        <select
+          value={formData.costCanonicalUnit}
+          onChange={(e) => setFormData({ ...formData, costCanonicalUnit: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+        >
+          <option value="">Select unit…</option>
+          <option value="fl_oz">fl_oz (fluid ounce)</option>
+          <option value="qt">qt (quart)</option>
+          <option value="gal">gal (gallon)</option>
+          <option value="oz_wt">oz_wt (ounce weight)</option>
+          <option value="lb">lb (pound)</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Cost per Canonical Unit (cents)</label>
+        <Input
+          type="number"
+          value={formData.costPerCanonicalUnitCents}
+          onChange={(e) => setFormData({ ...formData, costPerCanonicalUnitCents: e.target.value })}
+          placeholder="e.g., 250 = $2.50"
+        />
+        <p className="text-xs text-gray-500 mt-1">Store cents; 250 = $2.50</p>
       </div>
 
       {/* Dosage Guidance */}
