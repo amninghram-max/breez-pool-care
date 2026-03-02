@@ -174,16 +174,18 @@ Deno.serve(async (req) => {
     if (leadId) {
       try {
         await base44.asServiceRole.entities.Lead.update(leadId, {
+          firstName: firstName.trim(),
           mobilePhone: phone.trim(),
           inspectionScheduled: true,
           inspectionEventId: eventCreated.id,
           requestedInspectionDate: requestedDate,
           requestedInspectionTime: requestedTimeSlot,
+          serviceAddress: serviceAddressStr,
           stage: 'inspection_scheduled',
           // Only set notification flag if this is first scheduling
           ...(shouldSendNotification && { confirmationSentAt: new Date().toISOString() })
         });
-        console.log('SFI_V1_LEAD_UPDATED', { leadId, shouldSendNotification });
+        console.log('SFI_V1_LEAD_UPDATED', { leadId, shouldSendNotification, serviceAddress: serviceAddressStr });
       } catch (e) {
         console.warn('SFI_V1_LEAD_UPDATE_FAILED', { error: e.message });
         // Don't fail the response; event is created
@@ -194,7 +196,7 @@ Deno.serve(async (req) => {
       success: true,
       scheduledDate: requestedDate,
       timeWindow: timeWindow,
-      email: email,
+      email: finalEmail,
       firstName: firstName,
       eventId: eventCreated?.id,
       shouldSendNotification: shouldSendNotification,
