@@ -403,6 +403,128 @@ export default function CustomerTimeline() {
         </CardContent>
       </Card>
 
+      {/* Chemistry Trends (Last 30 Days) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Chemistry Readings (Last 30 Days)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {visitsLast30Days.length === 0 ? (
+            <p className="text-gray-600 text-sm">No readings in the last 30 days.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-2 px-2 font-medium text-gray-700">Date</th>
+                    <th className="text-left py-2 px-2 font-medium text-gray-700">FC (ppm)</th>
+                    <th className="text-left py-2 px-2 font-medium text-gray-700">pH</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visitsLast30Days.slice(0, 8).map(visit => (
+                    <tr key={visit.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-2 px-2 text-gray-900">{format(new Date(visit.visitDate), 'MMM d')}</td>
+                      <td className="py-2 px-2 text-gray-700">{visit.freeChlorine ?? '—'}</td>
+                      <td className="py-2 px-2 text-gray-700">{visit.pH ?? '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Equipment Summary */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Equipment</CardTitle>
+            <Link to={createPageUrl('EquipmentProfileAdmin') + `?leadId=${leadId}`}>
+              <Button size="sm" variant="ghost" className="text-xs">Add Equipment</Button>
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {equipment.length === 0 ? (
+            <p className="text-gray-600 text-sm">No equipment on file.</p>
+          ) : (
+            <div className="space-y-3">
+              {equipment.map(eq => (
+                <div key={eq.id} className="border border-gray-200 rounded-lg p-3 bg-gray-50 text-sm">
+                  <div className="font-medium text-gray-900 mb-1">
+                    {eq.customType ? (
+                      <>
+                        {eq.customType.charAt(0).toUpperCase() + eq.customType.slice(1)}
+                        {eq.customBrand && ` • ${eq.customBrand}`}
+                      </>
+                    ) : (
+                      'Equipment'
+                    )}
+                  </div>
+                  {eq.customModel && <p className="text-xs text-gray-600">Model: {eq.customModel}</p>}
+                  {eq.serialNumber && <p className="text-xs text-gray-600">Serial: {eq.serialNumber}</p>}
+                  {eq.installDate && <p className="text-xs text-gray-600">Installed: {format(new Date(eq.installDate), 'MMM d, yyyy')}</p>}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Communications Summary */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Communications</CardTitle>
+            <Link to={createPageUrl('AdminMessaging') + `?leadId=${leadId}`}>
+              <Button size="sm" variant="ghost" className="text-xs">View All</Button>
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent className="text-sm">
+          <p className="text-gray-700">
+            <span className="font-medium">{openMessageCount}</span> open message thread{openMessageCount !== 1 ? 's' : ''}
+          </p>
+          {messageThreads.length > 0 && messageThreads[0].lastMessageAt && (
+            <p className="text-xs text-gray-600 mt-2">
+              Last message: {format(new Date(messageThreads[0].lastMessageAt), 'MMM d, yyyy')}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Alerts Summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Alerts & Incidents</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          {openFecalCount > 0 && (
+            <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded">
+              <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-red-900">{openFecalCount} Open Fecal Incident{openFecalCount !== 1 ? 's' : ''}</p>
+                <p className="text-xs text-red-700">Requires immediate attention</p>
+              </div>
+            </div>
+          )}
+          {activeRiskCount > 0 && (
+            <div className="flex items-start gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded">
+              <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-yellow-900">{activeRiskCount} Active Chemistry Risk Event{activeRiskCount !== 1 ? 's' : ''}</p>
+                <p className="text-xs text-yellow-700">Monitor chemical levels</p>
+              </div>
+            </div>
+          )}
+          {openFecalCount === 0 && activeRiskCount === 0 && (
+            <p className="text-gray-600">No active alerts.</p>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Older Visits Dropdown */}
       {olderVisitOptions.length > 0 && (
         <Card className="bg-gray-50 border-gray-200">
