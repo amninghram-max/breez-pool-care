@@ -9,6 +9,15 @@ const json200 = (data) => new Response(
 );
 
 /**
+ * Generates a cryptographically secure 24-byte hex token
+ */
+function generateToken() {
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
  * Validates that appOrigin sent from the client (window.location.origin) is:
  * - a valid URL
  * - origin-only (pathname === "/", no search, no hash)
