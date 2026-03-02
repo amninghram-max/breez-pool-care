@@ -166,13 +166,6 @@ function QuoteResultDisplay({ result, firstName, email, leadId }) {
         </button>
         <p className="text-xs text-center text-gray-400">No obligation. Homeowner or designated caretaker must be present.</p>
       </div>
-      {/* DEBUG OUTPUT – REMOVE AFTER FIXING */}
-      <div className="mt-6">
-        <div className="text-xs text-gray-400 mb-1">DEBUG RESULT OBJECT</div>
-        <pre className="text-[10px] bg-gray-100 border p-3 rounded overflow-auto whitespace-pre-wrap">
-          {JSON.stringify(result, null, 2)}
-       </pre>
-      </div>
     </div>
   );
 }
