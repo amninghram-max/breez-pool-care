@@ -6,7 +6,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  * IDEMPOTENT: Checks for existing inspection scheduling and returns cached state.
  * Side effects (email, stage update) only occur on first scheduling.
  * 
- * Input: { token, phone, requestedDate (YYYY-MM-DD), requestedTimeSlot }
+ * Input: { token, firstName, phone, email, serviceAddress: { street, city, state, zip }, requestedDate (YYYY-MM-DD), requestedTimeSlot }
  * Output: { success, scheduledDate?, timeWindow?, email?, firstName?, alreadyScheduled?, error?, build }
  */
 
