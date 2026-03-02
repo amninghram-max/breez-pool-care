@@ -182,14 +182,17 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
         return;
       }
 
-      // Log timestamp in notes
-      const timestamp = new Date().toISOString();
-      const newNotes = (lead.notes || '') + `\n[QUOTE_EMAIL_SENT] ${timestamp}`;
-      
-      // Update lead notes with timestamp
-      await base44.entities.Lead.update(lead.id, {
-        notes: newNotes
+      // Update lead metadata: email and notes via backend
+      const metaRes = await base44.functions.invoke('updateLeadMeta', {
+        leadId: lead.id,
+        email: email !== lead.email ? email : undefined,
+        noteTag: 'QUOTE_EMAIL_SENT',
+        noteText: `pricing sent to ${email}`
       });
+
+      if (!metaRes.data?.success) {
+        throw new Error(metaRes.data?.error || 'Failed to update lead metadata');
+      }
 
       toast.success('Quote email sent');
       onSuccess?.();
