@@ -20,11 +20,26 @@ const TYPE_COLORS = {
   retest: 'bg-indigo-100 text-indigo-800',
 };
 
-export default function TodaySchedulePanel({ events }) {
+export default function TodaySchedulePanel({ events, leads = [] }) {
   const [view, setView] = useState('today');
+
+  // Build lead map for deleted check
+  const leadMap = React.useMemo(() => {
+    const m = {};
+    for (const l of leads) m[l.id] = l;
+    return m;
+  }, [leads]);
 
   const filtered = events.filter(e => {
     if (!e.scheduledDate) return false;
+    
+    // Skip cancelled events
+    if (e.status === 'cancelled') return false;
+    
+    // Skip deleted leads
+    const lead = leadMap[e.leadId];
+    if (lead?.isDeleted) return false;
+    
     const d = new Date(e.scheduledDate + 'T12:00:00');
     return view === 'today' ? isToday(d) : isThisWeek(d, { weekStartsOn: 1 });
   }).sort((a, b) => a.routePosition - b.routePosition || a.scheduledDate.localeCompare(b.scheduledDate));
