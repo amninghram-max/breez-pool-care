@@ -223,19 +223,27 @@ Deno.serve(async (req) => {
     // Stamp the Lead so frontend can verify success even if SDK parse fails
     let stampUpdated = false;
     let stampError = null;
-    const stampTs = new Date().toISOString();
+    let stampValue = null;
+    stampValue = new Date().toISOString();
+
+    console.log('STAMP_ATTEMPT', { leadId, stampValue });
     try {
       await base44.asServiceRole.entities.Lead.update(leadId, {
-        confirmationSentAt: stampTs
+        confirmationSentAt: stampValue
       });
       stampUpdated = true;
-      console.log('STAMP_OK', { leadId, confirmationSentAt: stampTs });
     } catch (stampErr) {
-      stampError = stampErr?.message || String(stampErr);
-      console.warn('STAMP_FAIL (best-effort, email already sent)', { leadId, error: stampError });
+      stampError = String(stampErr?.stack ?? stampErr?.message ?? stampErr);
     }
+    console.log('STAMP_RESULT', { stampUpdated, stampError });
 
-    return new Response(JSON.stringify({ success: true, stampUpdated, stampError }), {
+    return new Response(JSON.stringify({
+      success: true,
+      stampField: "confirmationSentAt",
+      stampUpdated,
+      stampValue,
+      stampError
+    }), {
       status: 200,
       headers: { "content-type": "application/json; charset=utf-8" }
     });
