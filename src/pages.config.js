@@ -97,6 +97,7 @@ import TechnicianHome from './pages/TechnicianHome';
 import TechnicianRoute from './pages/TechnicianRoute';
 import TestDashboard from './pages/TestDashboard';
 import architectureContext from './pages/_ARCHITECTURE_CONTEXT';
+import ChemicalRegistry from './pages/ChemicalRegistry';
 import __Layout from './Layout.jsx';
 
 
@@ -151,6 +152,7 @@ export const PAGES = {
     "TechnicianRoute": TechnicianRoute,
     "TestDashboard": TestDashboard,
     "_ARCHITECTURE_CONTEXT": architectureContext,
+    "ChemicalRegistry": ChemicalRegistry,
 }
 
 export const pagesConfig = {
