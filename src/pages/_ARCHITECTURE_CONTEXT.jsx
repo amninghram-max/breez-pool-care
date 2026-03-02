@@ -108,7 +108,7 @@ export const AI_BOOTSTRAP_CONTEXT = `# AI_BOOTSTRAP_CONTEXT — Breez Pool Care 
 
 **Last updated:** 2026-03-02  
 **Enforced by:** Architecture review required for any deviation.
-\`;
+`;
 
 export default function ArchitectureContextPage() {
   return null;
