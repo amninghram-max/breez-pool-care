@@ -215,10 +215,16 @@ Deno.serve(async (req) => {
       let quoteResult = null;
       let quoteRecord = null;
 
-      if (isNotSure) {
-        quoteResult = runPricingRange(questionnaireData, settings);
-      } else {
-        quoteResult = runPricingEngine(questionnaireData, settings);
+      try {
+        if (isNotSure) {
+          quoteResult = runPricingRange(questionnaireData, settings);
+        } else {
+          quoteResult = runPricingEngine(questionnaireData, settings);
+        }
+        console.log('QUOTE_PRICING_COMPUTED', { isNotSure, monthly: isNotSure ? `${quoteResult.minMonthly}-${quoteResult.maxMonthly}` : quoteResult.finalMonthlyPrice });
+      } catch (pricingErr) {
+        console.error('QUOTE_PRICING_ENGINE_ERROR', { error: pricingErr.message, poolSize });
+        return new Response(JSON.stringify({ success: false, error: 'Failed to calculate pricing', detail: pricingErr.message }), { status: 200, headers });
       }
 
       // Persist a Quote record (use min price for not_sure)
@@ -251,6 +257,7 @@ Deno.serve(async (req) => {
           configRecordId: settings.id,
           expiresAt,
         });
+        console.log('QUOTE_PERSISTED', { quoteId: quoteRecord?.id, email: clientEmail });
         // Update lead with quote reference
         if (lead) {
           await base44.asServiceRole.entities.Lead.update(lead.id, { acceptedQuoteId: quoteRecord.id, quoteGenerated: true });
