@@ -98,7 +98,7 @@ export default function AdminHome() {
       </div>
 
       {/* Top Actions Bar */}
-      <TopActionsBar onNewQuote={() => setShowReal(true)} onOpenInPerson={() => setShowInPerson(true)} />
+      <TopActionsBar onOpenInPerson={() => setShowInPerson(true)} />
 
       {/* Next Up — priority blockers */}
       <NextUpCard />
