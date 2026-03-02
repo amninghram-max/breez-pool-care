@@ -189,13 +189,20 @@ export default function CustomerTimeline() {
     staleTime: 60000
   });
 
-  // Load all visits for dropdown (older than the 4 recent)
+  // Load visits for chemistry trends (last 30 days)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
   const { data: allVisits = [] } = useQuery({
     queryKey: ['allVisitsForDropdown', leadId],
     queryFn: () => leadId ? base44.entities.ServiceVisit.filter({ propertyId: leadId }, '-visitDate', 50) : [],
     enabled: !!leadId,
     staleTime: 60000
   });
+
+  const visitsLast30Days = useMemo(() => {
+    return allVisits.filter(v => new Date(v.visitDate) >= thirtyDaysAgo);
+  }, [allVisits]);
 
   // Load single selected older visit details
   const { data: selectedOldVisit } = useQuery({
@@ -206,6 +213,38 @@ export default function CustomerTimeline() {
     staleTime: 60000
   });
 
+  // Load equipment for this customer
+  const { data: equipment = [] } = useQuery({
+    queryKey: ['customerEquipment', leadId],
+    queryFn: () => leadId ? base44.entities.CustomerEquipment.filter({ customerId: leadId }) : [],
+    enabled: !!leadId,
+    staleTime: 60000
+  });
+
+  // Load message threads for this customer
+  const { data: messageThreads = [] } = useQuery({
+    queryKey: ['messageThreads', leadId],
+    queryFn: () => leadId ? base44.entities.MessageThread.filter({ leadId }) : [],
+    enabled: !!leadId,
+    staleTime: 60000
+  });
+
+  // Load fecal incidents for this customer
+  const { data: fecalIncidents = [] } = useQuery({
+    queryKey: ['fecalIncidents', leadId],
+    queryFn: () => leadId ? base44.entities.FecalIncident.filter({ leadId }) : [],
+    enabled: !!leadId,
+    staleTime: 60000
+  });
+
+  // Load chemistry risk events for this customer
+  const { data: chemistryRiskEvents = [] } = useQuery({
+    queryKey: ['chemistryRiskEvents', leadId],
+    queryFn: () => leadId ? base44.entities.ChemistryRiskEvent.filter({ leadId }) : [],
+    enabled: !!leadId,
+    staleTime: 60000
+  });
+
   // Generate older visits dropdown options (skip the 4 recent)
   const olderVisitOptions = useMemo(() => {
     return allVisits.slice(4).map(v => ({
@@ -213,6 +252,18 @@ export default function CustomerTimeline() {
       label: `${format(new Date(v.visitDate), 'MMM d, yyyy')}${v.technicianName ? ` • ${v.technicianName}` : ''}`
     }));
   }, [allVisits]);
+
+  const openMessageCount = useMemo(() => {
+    return messageThreads.filter(t => t.status === 'new' || t.status === 'in_progress').length;
+  }, [messageThreads]);
+
+  const openFecalCount = useMemo(() => {
+    return fecalIncidents.filter(f => f.status === 'open' || f.status === 'disinfecting').length;
+  }, [fecalIncidents]);
+
+  const activeRiskCount = useMemo(() => {
+    return chemistryRiskEvents.filter(e => new Date(e.expiresAt) > new Date()).length;
+  }, [chemistryRiskEvents]);
 
 
 
