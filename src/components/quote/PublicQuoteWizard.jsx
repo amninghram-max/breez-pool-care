@@ -272,6 +272,7 @@ export default function PublicQuoteWizard({
           clientFirstName: finalFirstName.trim(),
           clientEmail: finalEmail.trim().toLowerCase(),
           petsAccess: answers.petsAccess === true,
+          usageFrequency: answers.usageFrequency,
         }
       };
       console.log('DEBUG: Finish payload', payload);
