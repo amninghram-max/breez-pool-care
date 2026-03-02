@@ -459,13 +459,19 @@ export default function PublicQuoteWizard({
     }
 
     if (result.releaseReady && result.priceSummary) {
-      return <QuoteResultDisplay result={result} firstName={firstName} email={email} leadId={result.leadId} />;
+      const displayFirstName = hasToken ? (prefillData?.firstName || firstName) : firstName;
+      const displayEmail = hasToken ? (prefillData?.email || email) : email;
+      return <QuoteResultDisplay result={result} firstName={displayFirstName} email={displayEmail} leadId={result.leadId} />;
     }
     if (result.releaseReady) {
       // Should not happen with finalization, but fallback
-      return <QuoteResultDisplay result={result} firstName={firstName} email={email} leadId={result.leadId} />;
+      const displayFirstName = hasToken ? (prefillData?.firstName || firstName) : firstName;
+      const displayEmail = hasToken ? (prefillData?.email || email) : email;
+      return <QuoteResultDisplay result={result} firstName={displayFirstName} email={displayEmail} leadId={result.leadId} />;
     }
-    return <ThankYouDisplay firstName={firstName} email={email} leadId={result.leadId} />;
+    const displayFirstName = hasToken ? (prefillData?.firstName || firstName) : firstName;
+    const displayEmail = hasToken ? (prefillData?.email || email) : email;
+    return <ThankYouDisplay firstName={displayFirstName} email={displayEmail} leadId={result.leadId} />;
   }
 
   // If finalizing, show loading state
