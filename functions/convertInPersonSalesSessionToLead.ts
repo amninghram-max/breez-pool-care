@@ -7,6 +7,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  * Requirements:
  * - Auth: admin/staff only
  * - Load session; require quoteSnapshot (must be locked)
+ * - Accept optional contact; if not provided, load from session.contactDraft
  * - Parse pricingInputs + inspectionDraft to map to Lead fields
  * - Create Lead via direct entity call (normal authenticated client, NOT asServiceRole)
  * - Set stage="new_lead", isDeleted=false explicitly
@@ -27,18 +28,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { sessionId, contact } = await req.json();
+    const { sessionId, contact: providedContact } = await req.json();
     
     if (!sessionId) {
       return Response.json(
         { success: false, error: 'sessionId is required' },
-        { status: 400 }
-      );
-    }
-
-    if (!contact || !contact.firstName || !contact.email) {
-      return Response.json(
-        { success: false, error: 'contact.firstName and contact.email are required' },
         { status: 400 }
       );
     }
@@ -58,6 +52,34 @@ Deno.serve(async (req) => {
     if (!session.quoteSnapshot) {
       return Response.json(
         { success: false, error: 'Quote snapshot not locked; cannot convert to lead' },
+        { status: 400 }
+      );
+    }
+
+    // ── Resolve contact: use provided or load from session ──
+    let contact = providedContact;
+    if (!contact) {
+      if (!session.contactDraft) {
+        return Response.json(
+          { success: false, error: 'Contact information not provided and not stored in session' },
+          { status: 400 }
+        );
+      }
+      try {
+        contact = typeof session.contactDraft === 'string'
+          ? JSON.parse(session.contactDraft)
+          : session.contactDraft;
+      } catch (e) {
+        return Response.json(
+          { success: false, error: 'Failed to parse stored contactDraft', detail: e.message },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (!contact || !contact.firstName || !contact.email) {
+      return Response.json(
+        { success: false, error: 'contact.firstName and contact.email are required' },
         { status: 400 }
       );
     }
