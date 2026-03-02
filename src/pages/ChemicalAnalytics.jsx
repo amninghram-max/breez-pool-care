@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Droplet, 
   TrendingDown, 
@@ -16,14 +18,42 @@ import {
   DollarSign,
   Clock,
   Target,
-  Settings
+  Settings,
+  Receipt
 } from 'lucide-react';
+
+// Helper: format cents to dollars
+function formatCentsToDollars(cents) {
+  if (cents == null) return '$0.00';
+  return '$' + (cents / 100).toFixed(2);
+}
+
+// Helper: get default date range (first day of current month to tomorrow)
+function getDefaultDateRange() {
+  const now = new Date();
+  const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  
+  // Format as YYYY-MM-DD for input[type="date"]
+  const formatDate = (d) => d.toISOString().split('T')[0];
+  
+  return {
+    dateFrom: formatDate(firstOfMonth),
+    dateTo: formatDate(tomorrow)
+  };
+}
 
 export default function ChemicalAnalytics() {
   const [analyticsData, setAnalyticsData] = useState(null);
   const [adjustmentMode, setAdjustmentMode] = useState(false);
   const [riskPointAdjustments, setRiskPointAdjustments] = useState({});
   const [bracketAdjustments, setBracketAdjustments] = useState([]);
+
+  // Persisted cost tab state
+  const defaultDates = useMemo(() => getDefaultDateRange(), []);
+  const [costDateFrom, setCostDateFrom] = useState(defaultDates.dateFrom);
+  const [costDateTo, setCostDateTo] = useState(defaultDates.dateTo);
+  const [costGroupBy, setCostGroupBy] = useState('all');
 
   const queryClient = useQueryClient();
 
@@ -38,6 +68,25 @@ export default function ChemicalAnalytics() {
       const settings = await base44.entities.AdminSettings.filter({ settingKey: 'default' });
       return settings[0];
     }
+  });
+
+  // Persisted cost summary query
+  const { 
+    data: costSummaryData, 
+    isLoading: costSummaryLoading, 
+    error: costSummaryError,
+    refetch: refetchCostSummary
+  } = useQuery({
+    queryKey: ['chemicalCostSummary', costDateFrom, costDateTo, costGroupBy],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getChemicalCostSummary', {
+        dateFrom: costDateFrom,
+        dateTo: costDateTo,
+        groupBy: costGroupBy
+      });
+      return response.data;
+    },
+    enabled: !!costDateFrom && !!costDateTo
   });
 
   const loadAnalytics = useMutation({
@@ -152,13 +201,17 @@ export default function ChemicalAnalytics() {
 
       {analytics && (
         <Tabs defaultValue="brackets" className="space-y-6">
-          <TabsList>
+          <TabsList className="flex-wrap">
             <TabsTrigger value="brackets">By Risk Bracket</TabsTrigger>
             <TabsTrigger value="tiers">By Size Tier</TabsTrigger>
             <TabsTrigger value="frequency">By Frequency</TabsTrigger>
             <TabsTrigger value="underpriced">Underpriced</TabsTrigger>
             <TabsTrigger value="overperforming">Overperforming</TabsTrigger>
             <TabsTrigger value="adjustments">Adjustments</TabsTrigger>
+            <TabsTrigger value="costs-persisted" className="flex items-center gap-1">
+              <Receipt className="w-3 h-3" />
+              Costs (Persisted)
+            </TabsTrigger>
           </TabsList>
 
           {/* By Risk Bracket */}
@@ -516,6 +569,195 @@ export default function ChemicalAnalytics() {
                     </div>
                   )}
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Costs (Persisted) - uses getChemicalCostSummary */}
+          <TabsContent value="costs-persisted">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Receipt className="w-5 h-5 text-teal-600" />
+                  Persisted Chemical Costs
+                </CardTitle>
+                <CardDescription>
+                  Aggregated chemical costs from ServiceVisit.chemicalCostCents
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Filters */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="costDateFrom">Date From</Label>
+                    <Input
+                      id="costDateFrom"
+                      type="date"
+                      value={costDateFrom}
+                      onChange={(e) => setCostDateFrom(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="costDateTo">Date To</Label>
+                    <Input
+                      id="costDateTo"
+                      type="date"
+                      value={costDateTo}
+                      onChange={(e) => setCostDateTo(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Group By</Label>
+                    <Select value={costGroupBy} onValueChange={setCostGroupBy}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All (Summary Only)</SelectItem>
+                        <SelectItem value="day">Day</SelectItem>
+                        <SelectItem value="week">Week</SelectItem>
+                        <SelectItem value="tech">Technician</SelectItem>
+                        <SelectItem value="customer">Customer (Property ID)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-end">
+                    <Button 
+                      onClick={() => refetchCostSummary()} 
+                      variant="outline"
+                      className="w-full"
+                    >
+                      Refresh
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Loading State */}
+                {costSummaryLoading && (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+                  </div>
+                )}
+
+                {/* Error State */}
+                {costSummaryError && (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      {costSummaryError.message || 'Failed to load cost summary'}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {/* API returned success: false */}
+                {costSummaryData && costSummaryData.success === false && (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      {costSummaryData.error || 'An error occurred'}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {/* Success State */}
+                {costSummaryData && costSummaryData.success && (
+                  <>
+                    {/* Summary Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <Card className="bg-teal-50 border-teal-200">
+                        <CardContent className="pt-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-teal-700">Total Visits</p>
+                              <p className="text-2xl font-bold text-teal-900">
+                                {costSummaryData.summary.totalVisits}
+                              </p>
+                            </div>
+                            <Clock className="w-8 h-8 text-teal-500" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-green-50 border-green-200">
+                        <CardContent className="pt-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-green-700">Total Chemical Cost</p>
+                              <p className="text-2xl font-bold text-green-900">
+                                {formatCentsToDollars(costSummaryData.summary.totalChemicalCostCents)}
+                              </p>
+                            </div>
+                            <DollarSign className="w-8 h-8 text-green-500" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-blue-50 border-blue-200">
+                        <CardContent className="pt-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-blue-700">Avg Cost / Visit</p>
+                              <p className="text-2xl font-bold text-blue-900">
+                                {formatCentsToDollars(costSummaryData.summary.avgChemicalCostCents)}
+                              </p>
+                            </div>
+                            <Target className="w-8 h-8 text-blue-500" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Skipped Records Warning */}
+                    {costSummaryData.skippedRecords > 0 && (
+                      <Alert>
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                          {costSummaryData.skippedRecords} record(s) skipped due to invalid visitDate
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    {/* Grouped Rows Table */}
+                    {costGroupBy !== 'all' && costSummaryData.rows && costSummaryData.rows.length > 0 && (
+                      <div className="border rounded-lg overflow-hidden">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>
+                                {costGroupBy === 'day' && 'Date'}
+                                {costGroupBy === 'week' && 'Week'}
+                                {costGroupBy === 'tech' && 'Technician'}
+                                {costGroupBy === 'customer' && 'Property ID'}
+                              </TableHead>
+                              <TableHead className="text-right">Visit Count</TableHead>
+                              <TableHead className="text-right">Total Cost</TableHead>
+                              <TableHead className="text-right">Avg Cost</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {costSummaryData.rows.map((row) => (
+                              <TableRow key={row.key}>
+                                <TableCell className="font-medium">{row.key}</TableCell>
+                                <TableCell className="text-right">{row.visitCount}</TableCell>
+                                <TableCell className="text-right">
+                                  {formatCentsToDollars(row.totalChemicalCostCents)}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {formatCentsToDollars(row.avgChemicalCostCents)}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+
+                    {/* No rows message for grouped queries */}
+                    {costGroupBy !== 'all' && (!costSummaryData.rows || costSummaryData.rows.length === 0) && (
+                      <p className="text-center text-gray-500 py-8">
+                        No data for selected date range and grouping.
+                      </p>
+                    )}
+                  </>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
