@@ -63,7 +63,7 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
       // V2 REACHABILITY PROBE — remove after confirming
       console.log("V2_PROBE_START");
       try {
-        const r = await fetch("/api/functions/sendQuoteLinkEmailV2", {
+        const r = await fetch(`/api/apps/699a2b2056054b0207cea969/functions/sendQuoteLinkEmailV2`, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ "__force": "1" })
