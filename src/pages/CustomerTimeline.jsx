@@ -255,6 +255,14 @@ export default function CustomerTimeline() {
     staleTime: 60000
   });
 
+  // Load retest records for this customer
+  const { data: retestRecords = [] } = useQuery({
+    queryKey: ['retestRecords', leadId],
+    queryFn: () => leadId ? base44.entities.RetestRecord.filter({ leadId }) : [],
+    enabled: !!leadId,
+    staleTime: 60000
+  });
+
   // Load chemistry risk events for this customer
   const { data: chemistryRiskEvents = [] } = useQuery({
     queryKey: ['chemistryRiskEvents', leadId],
@@ -282,6 +290,10 @@ export default function CustomerTimeline() {
   const activeRiskCount = useMemo(() => {
     return chemistryRiskEvents.filter(e => new Date(e.expiresAt) > new Date()).length;
   }, [chemistryRiskEvents]);
+
+  const pendingRetestCount = useMemo(() => {
+    return retestRecords.filter(r => new Date(r.retestDate) > new Date()).length;
+  }, [retestRecords]);
 
 
   if (leadLoading) {
@@ -533,7 +545,16 @@ export default function CustomerTimeline() {
              </div>
            </div>
          )}
-         {openFecalCount === 0 && activeRiskCount === 0 && (
+         {pendingRetestCount > 0 && (
+           <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded">
+             <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+             <div>
+               <p className="font-medium text-blue-900">{pendingRetestCount} Pending Retest{pendingRetestCount !== 1 ? 's' : ''}</p>
+               <p className="text-xs text-blue-700">Scheduled post-chemical treatment</p>
+             </div>
+           </div>
+         )}
+         {openFecalCount === 0 && activeRiskCount === 0 && pendingRetestCount === 0 && (
            <p className="text-gray-600">No active alerts.</p>
          )}
        </CardContent>
