@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 
 /**
  * QuoteWizard — canonical quote flow used by both:
@@ -34,6 +35,8 @@ export default function QuoteWizard({ persistQuote = true, initialAnswers = null
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState(initialAnswers ? { ...DEFAULT_FORM, ...initialAnswers } : DEFAULT_FORM);
   const [hasSavedAnswers] = useState(() => !!localStorage.getItem(LAST_ANSWERS_KEY));
+  const [quoteResult, setQuoteResult] = useState(null);
+  const [estimateError, setEstimateError] = useState(null);
 
   const setF = (k, v) => setFormData(f => ({ ...f, [k]: v }));
 
@@ -60,17 +63,48 @@ export default function QuoteWizard({ persistQuote = true, initialAnswers = null
       const { clientFirstName, clientLastName, clientEmail, clientPhone, ...poolAnswers } = formData;
       localStorage.setItem(LAST_ANSWERS_KEY, JSON.stringify(poolAnswers));
 
+      setEstimateError(null);
+
       if (persistQuote) {
         // Persist: call calculateQuote to create Quote record
         const res = await base44.functions.invoke('calculateQuote', { questionnaireData: formData });
         return res.data;
       } else {
         // Estimate: call calculateQuoteOnly (no persistence)
-        const res = await base44.functions.invoke('calculateQuoteOnly', { questionnaireData: formData });
-        return res.data;
+        try {
+          console.log('[QuoteWizard] calculateQuoteOnly request:', {
+            poolSize: formData.poolSize,
+            poolType: formData.poolType,
+            filterType: formData.filterType,
+            chlorinationMethod: formData.chlorinationMethod,
+            useFrequency: formData.useFrequency,
+            poolCondition: formData.poolCondition
+          });
+          
+          const res = await base44.functions.invoke('calculateQuoteOnly', { questionnaireData: formData });
+          
+          console.log('[QuoteWizard] calculateQuoteOnly response:', res);
+          
+          if (!res.data) {
+            throw new Error('No data in response');
+          }
+          
+          return res.data;
+        } catch (err) {
+          console.error('[QuoteWizard] calculateQuoteOnly failed:', err);
+          setEstimateError(err.message || 'Estimate generation failed');
+          toast.error(err.message || 'Estimate failed');
+          throw err;
+        }
       }
     },
     onSuccess: (data) => {
+      if (!persistQuote) {
+        // Estimate path: show result inline
+        setQuoteResult(data);
+        toast.success('Estimate generated');
+        console.log('[QuoteWizard] Estimate result set:', data);
+      }
       if (onComplete) onComplete(data, formData);
     }
   });
