@@ -385,12 +385,26 @@ export default function PublicQuoteWizard({ prefillData }) {
       isRange: result?.isRange
     });
 
-    // DEBUG: Visibly render result object
-    if (result && typeof document !== 'undefined') {
-      const debugEl = document.getElementById('debug-result-output');
-      if (debugEl) {
-        debugEl.textContent = JSON.stringify(result, null, 2);
-      }
+    if (result.error) {
+      return (
+        <div className="space-y-4 text-center">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100">
+            <AlertCircle className="w-6 h-6 text-red-600" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">Something Went Wrong</h2>
+            <p className="text-sm text-gray-600 mt-1">{result.error}</p>
+          </div>
+          <button
+            onClick={() => { setStep(0); setResult(null); setFinalizeError(''); }}
+            className="w-full py-3 px-4 rounded-xl text-white text-sm font-semibold"
+            style={{ backgroundColor: TEAL }}
+          >
+            Start Over
+          </button>
+          <p className="text-xs text-gray-400">Support: (321) 524-3838</p>
+        </div>
+      );
     }
 
     if (result.releaseReady && result.priceSummary) {
@@ -403,13 +417,12 @@ export default function PublicQuoteWizard({ prefillData }) {
     return <ThankYouDisplay firstName={firstName} email={email} leadId={result.leadId} />;
   }
 
-  // DEBUG: Render visible debug block before completion logic
-  if (step === baseSteps.length - 1 && loading === false) {
+  // If finalizing, show loading state
+  if (isFinalizing) {
     return (
-      <div className="space-y-4">
-        <pre style={{background:"#111",color:"#0f0",padding:"12px",fontSize:"10px",fontFamily:"monospace",overflowX:"auto"}}>
-          {`DEBUG: Awaiting result...`}
-        </pre>
+      <div className="space-y-4 text-center">
+        <Loader2 className="w-8 h-8 animate-spin mx-auto" style={{ color: TEAL }} />
+        <p className="text-gray-600 text-sm">Generating your quote...</p>
       </div>
     );
   }
