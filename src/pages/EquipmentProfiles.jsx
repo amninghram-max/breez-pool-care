@@ -225,44 +225,10 @@ export default function EquipmentProfiles() {
     );
   }
 
-  // Empty state (legacy PoolEquipment - now skipped; directory shows catalog regardless)
-  if (equipment.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="bg-purple-600 text-white px-6 py-4 rounded-lg font-bold text-lg">
-          DEBUG: Rendering pages/EquipmentProfiles.jsx (empty equipment state)
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Equipment Profiles</h1>
-          <p className="text-sm text-gray-600 mt-1">0 PoolEquipment records found</p>
-        </div>
-        <Card className="bg-amber-50 border-amber-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Wrench className="w-5 h-5" />
-              No Equipment on File
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-gray-700">There are no active equipment records in the system yet.</p>
-            <Link to={createPageUrl('LeadsPipeline')}>
-              <Button className="bg-teal-600 hover:bg-teal-700">
-                Go to Leads Pipeline
-              </Button>
-            </Link>
-            <p className="text-xs text-gray-600 mt-3">
-              Tip: Select a converted customer and click "Manage Equipment" to add pool equipment.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div className="bg-red-600 text-white px-6 py-4 rounded-lg font-bold text-lg">
-        DEBUG: Equipment Directory (pages/EquipmentProfiles.js)
+        DEBUG: Rendering pages/EquipmentProfiles.jsx (tabs should show even if 0 PoolEquipment)
       </div>
 
       <div>
@@ -459,11 +425,39 @@ export default function EquipmentProfiles() {
 
         {/* CUSTOMER EQUIPMENT TAB */}
         <TabsContent value="customer" className="space-y-6">
-          <div>
-            <p className="text-sm text-gray-600">
-              {equipment.length} equipment record(s) across {Object.keys(byLead).length} customer(s)
-            </p>
-          </div>
+          {equipment.length === 0 ? (
+            <>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Equipment Profiles</h2>
+                <p className="text-sm text-gray-600 mt-1">0 PoolEquipment records found</p>
+              </div>
+              <Card className="bg-amber-50 border-amber-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Wrench className="w-5 h-5" />
+                    No Equipment on File
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-gray-700">There are no active equipment records in the system yet.</p>
+                  <Link to={createPageUrl('LeadsPipeline')}>
+                    <Button className="bg-teal-600 hover:bg-teal-700">
+                      Go to Leads Pipeline
+                    </Button>
+                  </Link>
+                  <p className="text-xs text-gray-600 mt-3">
+                    Tip: Select a converted customer and click "Manage Equipment" to add pool equipment.
+                  </p>
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <>
+              <div>
+                <p className="text-sm text-gray-600">
+                  {equipment.length} equipment record(s) across {Object.keys(byLead).length} customer(s)
+                </p>
+              </div>
 
           {/* Search Bar */}
           <div className="relative">
