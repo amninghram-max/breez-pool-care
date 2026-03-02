@@ -505,6 +505,17 @@ export default function PublicQuoteWizard({
 
   // ── Step renderers ──
   const stepConfig = {
+    poolType: {
+      title: 'What type of pool do you have?',
+      sub: 'Helps us understand your pool\'s construction and service requirements.',
+      render: () => (
+        <div className="space-y-3">
+          {POOL_TYPE_OPTIONS.map(o => (
+            <OptionCard key={o.value} option={o} selected={answers.poolType} onSelect={v => handleSelect('poolType', v)} />
+          ))}
+        </div>
+      )
+    },
     poolSize: {
       title: 'How big is your pool?',
       sub: 'This helps us calculate your base service price.',
