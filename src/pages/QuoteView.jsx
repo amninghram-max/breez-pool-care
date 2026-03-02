@@ -15,6 +15,7 @@ function resolveToken(paramsToken) {
 }
 
 export default function QuoteView() {
+  const navigate = useNavigate();
   const params = useParams();
   // Resolve once at mount — stored in a ref so it never changes and doesn't cause re-renders
   const quoteToken = useRef(resolveToken(params?.quoteToken)).current;
