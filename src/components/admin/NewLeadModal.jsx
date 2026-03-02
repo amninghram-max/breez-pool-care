@@ -37,12 +37,22 @@ export default function NewLeadModal({ onClose }) {
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      const serviceAddress = [data.streetAddress, data.aptSuite, data.city, data.state, data.zipCode].filter(Boolean).join(', ');
-      return base44.entities.Lead.create({ ...data, serviceAddress, stage: 'new_lead', isDeleted: false });
+      const serviceAddress = [data.streetAddress, data.city, data.state, data.zipCode].filter(Boolean).join(', ');
+      const res = await base44.functions.invoke('processLead', {
+        leadData: { ...data, serviceAddress }
+      });
+      if (!res.data?.success) {
+        throw new Error(res.data?.error || 'Failed to create lead');
+      }
+      return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      toast.success(`Lead created: ${data.leadId}`);
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       onClose();
+    },
+    onError: (err) => {
+      toast.error(err.message || 'Failed to create lead');
     }
   });
 
