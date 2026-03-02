@@ -613,11 +613,11 @@ export default function PublicQuoteWizard({
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <button
             onClick={handleSubmit}
-            disabled={loading || isFinalizing}
+            disabled={loading || finalizing}
             className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-white text-base font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-60"
             style={{ backgroundColor: TEAL }}
           >
-            {loading || isFinalizing ? <><Loader2 className="w-5 h-5 animate-spin" /> Generating your quote...</> : 'Get My Free Quote'}
+            {loading || finalizing ? <><Loader2 className="w-5 h-5 animate-spin" /> Generating your quote...</> : 'Get My Free Quote'}
           </button>
           <p className="text-xs text-center text-gray-400">No payment info required. No commitment.</p>
         </div>
