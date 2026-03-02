@@ -65,16 +65,28 @@ export default function ScheduleInspection() {
 
   // Load lead data from token
   useEffect(() => {
+    console.log('ScheduleInspection token:', token);
+    
     if (!token) {
-      setLoadError('No token provided');
+      setLoadError('Missing token. Please follow the link from your quote email.');
       return;
     }
 
     const loadLead = async () => {
       setLoadingLead(true);
       try {
-        const res = await base44.functions.invoke('getQuoteRequestPublicV1', { token });
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Request timed out. Please try again.')), 10000)
+        );
+        
+        const res = await Promise.race([
+          base44.functions.invoke('getQuoteRequestPublicV1', { token }),
+          timeoutPromise
+        ]);
+        
         const data = res?.data ?? res;
+        console.log('schedule options response:', data);
+        
         if (data?.success === true && data.request) {
           setLeadData({
             leadId: data.request.leadId,
@@ -90,7 +102,8 @@ export default function ScheduleInspection() {
           setLoadError(data?.error || 'Invalid or expired token');
         }
       } catch (err) {
-        setLoadError(err?.message || 'Failed to load request');
+        console.error('ScheduleInspection load error:', err);
+        setLoadError(err?.message || 'Failed to load request details');
       } finally {
         setLoadingLead(false);
       }
