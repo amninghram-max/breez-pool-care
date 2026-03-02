@@ -466,7 +466,7 @@ export default function PublicQuoteWizard({
     }
     const displayFirstName = hasToken ? (prefillData?.firstName || firstName) : firstName;
     const displayEmail = hasToken ? (prefillData?.email || email) : email;
-    return <ThankYouDisplay firstName={displayFirstName} email={displayEmail} leadId={result.leadId} />;
+    return <ThankYouDisplay firstName={displayFirstName} email={displayEmail} leadId={result.leadId} quoteToken={result.quoteToken} />;
   }
 
   // If finalizing, show loading state
