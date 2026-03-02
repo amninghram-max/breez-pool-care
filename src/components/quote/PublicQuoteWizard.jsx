@@ -87,7 +87,7 @@ function ProgressBar({ current, total }) {
 
 // ── Quote result display ─────────────────────────────────────────────────────
 
-function QuoteResultDisplay({ result, firstName, email, leadId }) {
+function QuoteResultDisplay({ result, firstName, email, leadId, quoteToken }) {
   const { isRange, quote, priceSummary: resultPriceSummary } = result;
   // Prefer priceSummary from result, fallback to quote fields
   const priceSummary = resultPriceSummary || {};
