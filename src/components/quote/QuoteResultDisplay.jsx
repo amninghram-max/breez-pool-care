@@ -21,7 +21,7 @@ export default function QuoteResultDisplay({ result, firstName, email, leadId, q
       : quote?.oneTimeFees > 0 ? `$${quote.oneTimeFees}` : null
   );
 
-  React.useEffect(() => {
+  useEffect(() => {
     console.log('[QuoteResultDisplay] Mounted/updated', { firstName, quoteToken, hasPrice: !!priceSummary.monthlyPrice });
   }, [quoteToken]);
 
