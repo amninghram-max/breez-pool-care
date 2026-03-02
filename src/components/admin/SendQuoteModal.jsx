@@ -86,7 +86,7 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
       const tsKeys = Object.keys(updatedLead || {}).filter(k => /at$|date$|time$|sent$|stamp$/i.test(k));
       console.log("LEAD_TIMESTAMP_KEYS", tsKeys.reduce((acc, k) => { acc[k] = updatedLead[k]; return acc; }, {}));
 
-      const sentAtMs = updatedLead?.confirmationSentAt ? Date.parse(updatedLead.confirmationSentAt) : NaN;
+      const sentAtMs = updatedLead?.quoteLinkEmailSentAt ? Date.parse(updatedLead.quoteLinkEmailSentAt) : NaN;
       const isRecent = Number.isFinite(sentAtMs) && (Date.now() - sentAtMs) < 3 * 60 * 1000;
 
       if (isRecent) {
