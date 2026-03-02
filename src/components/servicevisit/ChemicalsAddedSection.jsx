@@ -37,51 +37,67 @@ function ChemicalDoseModal({ isOpen, onClose, onAddDose, chemicals = [], propert
 
   const selectedChemical = chemicals.find(c => c.id === selectedChemicalId);
 
-  // Fetch suggestion when chemical is selected
-  React.useEffect(() => {
-    setSuggestion(null);
-    setLoadingSuggestion(false);
+  // Set up debounced suggestion fetcher
+  const { debounceAndFetch } = useMemo(() => {
+    const fetchFn = async ({ propertyId, readings, chemical }) => {
+      const response = await base44.functions.invoke('calculateChemicalSuggestions', {
+        propertyId,
+        readings: {
+          freeChlorine: parseFloat(readings.freeChlorine),
+          pH: parseFloat(readings.pH),
+          totalAlkalinity: parseFloat(readings.totalAlkalinity)
+        }
+      });
+      return response.data?.adjustments?.[0] || null;
+    };
 
-    if (!selectedChemicalId || !propertyId || !visitReadings?.freeChlorine || !visitReadings?.pH || !visitReadings?.totalAlkalinity) {
+    return createSuggestionFetcher(fetchFn, suggestionCacheRef, inFlightRef);
+  }, []);
+
+  // Trigger suggestion fetch when chemical or readings change
+  React.useEffect(() => {
+    if (!selectedChemical || !propertyId) {
+      setSuggestionState('idle');
+      setSuggestion(null);
       return;
     }
 
-    const fetchSuggestion = async () => {
-      try {
-        setLoadingSuggestion(true);
-        const response = await base44.functions.invoke('calculateChemicalSuggestions', {
-          propertyId,
-          readings: {
-            freeChlorine: parseFloat(visitReadings.freeChlorine),
-            pH: parseFloat(visitReadings.pH),
-            totalAlkalinity: parseFloat(visitReadings.totalAlkalinity)
-          }
-        });
+    // Check for missing required readings
+    const hasRequiredReadings = visitReadings?.freeChlorine && visitReadings?.pH && visitReadings?.totalAlkalinity;
+    if (!hasRequiredReadings) {
+      setSuggestionState('insufficient-inputs');
+      setSuggestion(null);
+      return;
+    }
 
-        if (response.data && response.data.adjustments) {
-          // Find suggestion matching this chemical's serviceVisitKey
-          const chemical = selectedChemical;
-          const match = response.data.adjustments.find(
-            adj => adj.chemical?.toLowerCase() === chemical.serviceVisitKey.replace(/([A-Z])/g, ' $1').toLowerCase().trim()
-          );
+    setSuggestionState('waiting');
 
-          if (match) {
-            setSuggestion({
-              amount: match.amount,
-              unit: match.unit,
-              reason: match.reason
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching suggestion:', error);
-      } finally {
-        setLoadingSuggestion(false);
+    const cacheKey = buildSuggestionCacheKey(
+      propertyId,
+      selectedChemical.serviceVisitKey,
+      visitReadings
+    );
+
+    debounceAndFetch(cacheKey, propertyId, visitReadings, selectedChemical, (result) => {
+      if (result.state === 'insufficient-inputs') {
+        setSuggestionState('insufficient-inputs');
+        setSuggestion(null);
+      } else if (result.state === 'waiting') {
+        setSuggestionState('waiting');
+      } else if (result.state === 'fetching') {
+        setSuggestionState('fetching');
+      } else if (result.state === 'cached') {
+        setSuggestionState('idle');
+        setSuggestion(result.data);
+      } else if (result.state === 'loaded') {
+        setSuggestionState('idle');
+        setSuggestion(result.data);
+      } else if (result.state === 'error') {
+        setSuggestionState('error');
+        setSuggestion(null);
       }
-    };
-
-    fetchSuggestion();
-  }, [selectedChemicalId, propertyId, visitReadings]);
+    });
+  }, [selectedChemicalId, propertyId, visitReadings, selectedChemical, debounceAndFetch]);
 
   const handleUseSuggestion = () => {
     if (suggestion) {
