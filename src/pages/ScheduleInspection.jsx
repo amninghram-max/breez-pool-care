@@ -49,6 +49,7 @@ export default function ScheduleInspection() {
   const [leadData, setLeadData] = useState(null);
   const [loadingLead, setLoadingLead] = useState(false);
   const [loadError, setLoadError] = useState('');
+  const [firstName, setFirstName] = useState('');
   const [phone, setPhone] = useState('');
   const [street, setStreet] = useState('');
   const [city, setCity] = useState('');
