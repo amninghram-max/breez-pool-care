@@ -338,7 +338,7 @@ export default function PublicQuoteWizard({
       if (data?.releaseReady && data?.quote) {
         const finalizePayload = {
           token: prefillData?.token || null,
-          leadId: data?.leadId || null,
+          leadId: prefillData?.leadId || data?.leadId || null,
           prequalAnswers: answers
         };
         console.log('DEBUG: Calling finalize with', finalizePayload);
