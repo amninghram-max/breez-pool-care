@@ -272,7 +272,7 @@ export default function PublicQuoteWizard({ prefillData, onDebugStateChange }) {
     
     setLoading(true);
     setResult(null);
-    setIsFinalizing(false);
+    setIsFinalizing(true);
     setFinalizeError(null);
 
     try {
