@@ -103,8 +103,16 @@ export default function ScheduleInspection() {
     setError('');
 
     // Validation
+    if (!firstName.trim()) {
+      setError('First name is required.');
+      return;
+    }
     if (!phone.trim()) {
       setError('Phone number is required.');
+      return;
+    }
+    if (!street.trim() || !city.trim() || !state.trim() || !zip.trim()) {
+      setError('Service address (street, city, state, zip) is required.');
       return;
     }
     if (!selectedDate || !selectedSlot) {
@@ -122,7 +130,15 @@ export default function ScheduleInspection() {
     try {
       const res = await base44.functions.invoke('scheduleFirstInspectionPublicV1', {
         token: token,
+        firstName: firstName.trim(),
         phone: phone.trim(),
+        email: leadData?.email,
+        serviceAddress: {
+          street: street.trim(),
+          city: city.trim(),
+          state: state.trim(),
+          zip: zip.trim()
+        },
         requestedDate: isoDate,
         requestedTimeSlot: selectedSlot,
       });
