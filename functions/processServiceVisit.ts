@@ -133,6 +133,20 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Compute costing summary for response
+    const skippedLines = chemicalCostLines.filter(l => l.status === 'skipped');
+    const costedLines = chemicalCostLines.filter(l => l.status === 'costed');
+    const skippedCount = skippedLines.length;
+    const costedCount = costedLines.length;
+    const skippedReasons = Array.from(
+      new Set(skippedLines.map(l => l.reason).filter(Boolean))
+    );
+    const costingSummary = {
+      skippedCount,
+      costedCount,
+      skippedReasons
+    };
+
     // Create service visit record with costing data
     const visit = await base44.asServiceRole.entities.ServiceVisit.create({
       ...visitData,
