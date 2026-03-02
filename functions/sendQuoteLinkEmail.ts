@@ -1,3 +1,4 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { getAppOrigin } from "./_getAppOrigin.js";
 
 const BUILD = "SQLE-2026-03-01-A";

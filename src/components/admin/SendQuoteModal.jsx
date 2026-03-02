@@ -40,43 +40,46 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
   const handleSendQuoteLink = async () => {
     setError('');
 
-    if (!email.trim()) {
-      setError('Email is required');
-      return;
-    }
-
-    if (!isValidEmail(email)) {
-      setError('Please enter a valid email address');
-      return;
-    }
+    if (!email.trim()) { setError('Email is required'); return; }
+    if (!isValidEmail(email)) { setError('Please enter a valid email address'); return; }
 
     setLoading(true);
     try {
-      // Update lead email if changed
       if (email !== lead.email) {
         await base44.entities.Lead.update(lead.id, { email });
       }
 
-      // Send quote link via SDK invoke
       const payload = { leadId: lead.id, firstName: lead.firstName, email };
-      
-      const res = await base44.functions.invoke("sendQuoteLinkEmail", payload);
-      const data = res?.data;
 
-      console.log("SEND_QUOTE_LINK_INVOKE", data);
-
-      if (!data?.success) {
-        console.error('sendQuoteLinkEmail failure', { data });
-        const msg = data?.error || data?.message || 'Failed to send quote link email';
-        throw new Error(`sendQuoteLinkEmail failed: ${msg}`);
+      // Invoke — tolerate SDK JSON parse errors; real signal is Lead.quoteLinkEmailSentAt
+      let invokeErr = null;
+      try {
+        const res = await base44.functions.invoke("sendQuoteLinkEmail", payload);
+        console.log("SEND_QUOTE_LINK_INVOKE", res?.data);
+      } catch (err) {
+        if (err?.message?.includes('Unexpected end of JSON') || err?.message?.includes('JSON')) {
+          console.warn('SDK parse error (non-fatal), verifying via Lead refetch:', err.message);
+          invokeErr = err;
+        } else {
+          throw err; // real error — re-throw
+        }
       }
 
-      console.log("SEND_QUOTE_LINK_SUCCESS_PATH");
-      toast.success('Quote link sent');
-      onSuccess?.();
-      onClose();
+      // Verify success by checking Lead.quoteLinkEmailSentAt was stamped recently
+      const [updatedLead] = await base44.entities.Lead.filter({ id: lead.id });
+      const sentAt = updatedLead?.quoteLinkEmailSentAt ? new Date(updatedLead.quoteLinkEmailSentAt) : null;
+      const isRecent = sentAt && (Date.now() - sentAt.getTime()) < 3 * 60 * 1000;
+
+      if (isRecent) {
+        toast.success('Quote link email sent');
+        onSuccess?.();
+        onClose();
+      } else {
+        const msg = invokeErr ? getErrMsg(invokeErr) : 'Failed to send quote link email';
+        setError(msg);
+        toast.error(msg);
+      }
     } catch (err) {
-      console.log("SEND_QUOTE_LINK_CATCH", err);
       console.error('Send quote link error:', err);
       const errorMsg = getErrMsg(err);
       setError(errorMsg);
