@@ -270,11 +270,14 @@ export default function PublicQuoteWizard({ prefillData }) {
       
       // If releaseReady and we have a quote, finalize it to ensure priceSummary
       if (data?.releaseReady && data?.quote) {
-        const finalizeRes = await base44.functions.invoke('finalizePrequalQuoteV1', {
+        const finalizePayload = {
           token: prefillData?.token || null,
           leadId: data?.leadId || null,
           prequalAnswers: answers
-        });
+        };
+        console.log('DEBUG: Calling finalize function with', finalizePayload);
+        const finalizeRes = await base44.functions.invoke('finalizePrequalQuoteV1', finalizePayload);
+        console.log('DEBUG: Finalize response', finalizeRes);
         const finalizeData = finalizeRes?.data ?? finalizeRes;
         if (finalizeData?.success === true && finalizeData?.priceSummary) {
           // Merge: use quoteSnapshot as quote, ensure priceSummary is present
