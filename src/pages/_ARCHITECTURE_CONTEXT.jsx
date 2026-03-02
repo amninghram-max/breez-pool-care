@@ -1,4 +1,4 @@
-export default `# AI_BOOTSTRAP_CONTEXT — Breez Pool Care App
+export const AI_BOOTSTRAP_CONTEXT = `# AI_BOOTSTRAP_CONTEXT — Breez Pool Care App
 
 > ⚠️ **Non-negotiable invariants for all code generation. Do not deviate.**
 
@@ -71,3 +71,7 @@ export default `# AI_BOOTSTRAP_CONTEXT — Breez Pool Care App
 **Last updated:** 2026-03-02  
 **Enforced by:** Architecture review required for any deviation.
 `;
+
+export default function ArchitectureContextPage() {
+  return null;
+}
