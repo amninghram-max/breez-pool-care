@@ -68,12 +68,12 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
       // Verify success by checking Lead.quoteLinkEmailSentAt was stamped recently
       const leads = await base44.entities.Lead.filter({ id: lead.id });
       const updatedLead = leads?.[0] ?? null;
-      console.log("LEAD_REFETCH", { id: lead.id, quoteLinkEmailSentAt: updatedLead?.quoteLinkEmailSentAt });
+      console.log("LEAD_REFETCH", { id: lead.id, confirmationSentAt: updatedLead?.confirmationSentAt });
       console.log("LEAD_KEYS", Object.keys(updatedLead || {}));
       const tsKeys = Object.keys(updatedLead || {}).filter(k => /at$|date$|time$|sent$|stamp$/i.test(k));
       console.log("LEAD_TIMESTAMP_KEYS", tsKeys.reduce((acc, k) => { acc[k] = updatedLead[k]; return acc; }, {}));
 
-      const sentAtMs = updatedLead?.quoteLinkEmailSentAt ? Date.parse(updatedLead.quoteLinkEmailSentAt) : NaN;
+      const sentAtMs = updatedLead?.confirmationSentAt ? Date.parse(updatedLead.confirmationSentAt) : NaN;
       const isRecent = Number.isFinite(sentAtMs) && (Date.now() - sentAtMs) < 3 * 60 * 1000;
 
       if (isRecent) {
