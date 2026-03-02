@@ -509,13 +509,13 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
                            )}
                          </Button>
                        )}
-                     </CardContent>
-                     </Card>
-                     )}
-                     </>
-                     );
-                     })()}
-           </div>
+                       </CardContent>
+                       </Card>
+                       )}
+                       </>
+                       );
+                       })()}
+                       </div>
           ) : currentStep === 3 ? (
             // ── Step 3: Inspection ──
             <div className="space-y-4">
