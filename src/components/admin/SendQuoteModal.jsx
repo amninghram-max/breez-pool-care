@@ -66,16 +66,19 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
       }
 
       // Verify success by checking Lead.quoteLinkEmailSentAt was stamped recently
-      const [updatedLead] = await base44.entities.Lead.filter({ id: lead.id });
-      const sentAt = updatedLead?.quoteLinkEmailSentAt ? new Date(updatedLead.quoteLinkEmailSentAt) : null;
-      const isRecent = sentAt && (Date.now() - sentAt.getTime()) < 3 * 60 * 1000;
+      const leads = await base44.entities.Lead.filter({ id: lead.id });
+      const updatedLead = leads?.[0] ?? null;
+      console.log("LEAD_REFETCH", { id: lead.id, quoteLinkEmailSentAt: updatedLead?.quoteLinkEmailSentAt });
+
+      const sentAtMs = updatedLead?.quoteLinkEmailSentAt ? Date.parse(updatedLead.quoteLinkEmailSentAt) : NaN;
+      const isRecent = Number.isFinite(sentAtMs) && (Date.now() - sentAtMs) < 3 * 60 * 1000;
 
       if (isRecent) {
         toast.success('Quote link email sent');
         onSuccess?.();
         onClose();
       } else {
-        const msg = invokeErr ? getErrMsg(invokeErr) : 'Failed to send quote link email';
+        const msg = invokeErr ? getErrMsg(invokeErr) : 'Lead stamp missing';
         setError(msg);
         toast.error(msg);
       }
