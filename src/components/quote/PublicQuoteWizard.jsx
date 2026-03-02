@@ -91,15 +91,16 @@ function QuoteResultDisplay({ result, firstName, email, leadId }) {
   const { isRange, quote } = result;
   const [showScheduler, setShowScheduler] = useState(false);
 
-  const priceDisplay = isRange
+  const priceSummary = result?.priceSummary || {};
+  const priceDisplay = priceSummary.monthlyPrice || (isRange
     ? `$${quote.minMonthly} – $${quote.maxMonthly}`
-    : `$${quote.finalMonthlyPrice}`;
+    : `$${quote.finalMonthlyPrice}`);
 
-  const freqLabel = quote.frequency === 'twice_weekly' ? 'Twice Weekly' : 'Weekly';
+  const freqLabel = priceSummary.visitFrequency || (quote.frequency === 'twice_weekly' ? 'Twice Weekly' : 'Weekly');
 
-  const oneTimeDisplay = isRange
+  const oneTimeDisplay = priceSummary.oneTimeFees || (isRange
     ? (quote.minOneTimeFees > 0 ? `$${quote.minOneTimeFees}–$${quote.maxOneTimeFees}` : null)
-    : (quote.oneTimeFees > 0 ? `$${quote.oneTimeFees}` : null);
+    : (quote.oneTimeFees > 0 ? `$${quote.oneTimeFees}` : null));
 
   if (showScheduler) {
     return (
