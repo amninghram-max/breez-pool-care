@@ -105,13 +105,7 @@ function ProgressBar({ current, total }) {
 
 // ── Thank you (not ready) ─────────────────────────────────────────────────────
 
-function ThankYouDisplay({ firstName, email, leadId }) {
-  const [showScheduler, setShowScheduler] = useState(false);
-
-  if (showScheduler) {
-    return <PublicScheduler leadId={leadId} clientEmail={email} clientFirstName={firstName} />;
-  }
-
+function ThankYouDisplay({ firstName, email, leadId, quoteToken }) {
   return (
     <div className="space-y-6 text-center">
       <div className="inline-flex items-center justify-center w-14 h-14 rounded-full mb-2" style={{ backgroundColor: '#e8f8f9' }}>
@@ -125,7 +119,12 @@ function ThankYouDisplay({ firstName, email, leadId }) {
       </div>
       <div className="space-y-3">
         <button
-          onClick={() => setShowScheduler(true)}
+          type="button"
+          onClick={() => {
+            const schedulingUrl = `/ScheduleInspection?token=${encodeURIComponent(quoteToken || '')}`;
+            console.log('[ThankYouDisplay] Navigating to scheduling:', { quoteToken, schedulingUrl });
+            window.location.href = schedulingUrl;
+          }}
           className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-white text-base font-semibold shadow-md hover:shadow-lg transition-all"
           style={{ backgroundColor: TEAL }}
         >
