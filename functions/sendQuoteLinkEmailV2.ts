@@ -214,6 +214,14 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('V2 crash:', error);
-    return json200({ success: false, error: 'sendQuoteLinkEmailV2 crashed', message: String(error?.message ?? error), build: BUILD });
+    const detail = String(error?.message ?? error);
+    const stack = error?.stack ? String(error.stack).slice(0, 500) : undefined;
+    return json200({
+      success: false,
+      error: 'sendQuoteLinkEmailV2 crashed',
+      detail,
+      stack,
+      build: BUILD
+    });
   }
 });
