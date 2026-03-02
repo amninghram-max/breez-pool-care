@@ -279,8 +279,7 @@ function LeadRow({ lead, stage, onAdvance, onStageChange, onEdit, queryClient })
   const lastEmailSent = getLastEmailSent();
 
   const handleStageAction = (newStage, data) => {
-    const updateData = { stage: newStage, ...data };
-    onUpdate({ id: lead.id, data: updateData });
+    onStageChange(newStage);
     setValidationError(null);
   };
 
