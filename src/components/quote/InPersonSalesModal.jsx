@@ -413,142 +413,108 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
                          </p>
                        </div>
                      <div className="flex gap-3 pt-4 border-t">
-                       <Button onClick={() => setCurrentStep(3)} className="flex-1 bg-teal-600 hover:bg-teal-700">
-                         Continue to Inspection
-                       </Button>
-                       <Button onClick={() => setCurrentStep(4)} variant="outline" className="flex-1 text-teal-600 border-teal-600 hover:bg-teal-50">
-                         Convert Now
-                       </Button>
+                       {pricingSource === 'LOCKED' ? (
+                         <>
+                           <Button onClick={() => setCurrentStep(3)} className="flex-1 bg-teal-600 hover:bg-teal-700">
+                             Continue to Inspection
+                           </Button>
+                           <Button onClick={() => setCurrentStep(4)} variant="outline" className="flex-1 text-teal-600 border-teal-600 hover:bg-teal-50">
+                             Convert Now
+                           </Button>
+                         </>
+                       ) : (
+                         <>
+                           <Button
+                             onClick={handleBackToPricing}
+                             variant="outline"
+                             className="flex-1"
+                             disabled={lockQuoteMutation.isPending}
+                           >
+                             Back
+                           </Button>
+                           <Button
+                             onClick={() => setCurrentStep(4)}
+                             variant="outline"
+                             className="flex-1 text-teal-600 border-teal-600 hover:bg-teal-50"
+                             disabled={lockQuoteMutation.isPending}
+                           >
+                             Convert Now
+                           </Button>
+                           <Button
+                             onClick={handleLockQuote}
+                             className="flex-1 bg-teal-600 hover:bg-teal-700"
+                             disabled={lockQuoteMutation.isPending}
+                           >
+                             {lockQuoteMutation.isPending ? (
+                               <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Locking...</>
+                             ) : (
+                               'Lock Estimate'
+                             )}
+                           </Button>
+                         </>
+                       )}
                      </div>
-                   </CardContent>
-                 </Card>
+                     </CardContent>
+                     </Card>
 
-                 <Card>
-                   <CardHeader>
-                     <CardTitle className="text-base">Add Contact Info (Optional)</CardTitle>
-                   </CardHeader>
-                   <CardContent className="space-y-4">
-                     <div className="grid grid-cols-2 gap-4">
+                     {pricingSource === 'LOCKED' && (
+                     <Card>
+                     <CardHeader>
+                       <CardTitle className="text-base">Add Contact Info (Optional)</CardTitle>
+                     </CardHeader>
+                     <CardContent className="space-y-4">
+                       <div className="grid grid-cols-2 gap-4">
+                         <div>
+                           <Label>First Name</Label>
+                           <Input
+                             value={contactDraft.firstName}
+                             onChange={e => setContactDraft(d => ({ ...d, firstName: e.target.value }))}
+                             placeholder="John"
+                             className="mt-1.5"
+                           />
+                         </div>
+                         <div>
+                           <Label>Email</Label>
+                           <Input
+                             type="email"
+                             value={contactDraft.email}
+                             onChange={e => setContactDraft(d => ({ ...d, email: e.target.value }))}
+                             placeholder="john@example.com"
+                             className="mt-1.5"
+                           />
+                         </div>
+                       </div>
                        <div>
-                         <Label>First Name</Label>
+                         <Label>Phone (Optional)</Label>
                          <Input
-                           value={contactDraft.firstName}
-                           onChange={e => setContactDraft(d => ({ ...d, firstName: e.target.value }))}
-                           placeholder="John"
+                           type="tel"
+                           value={contactDraft.phone}
+                           onChange={e => setContactDraft(d => ({ ...d, phone: e.target.value }))}
+                           placeholder="(555) 000-0000"
                            className="mt-1.5"
                          />
                        </div>
-                       <div>
-                         <Label>Email</Label>
-                         <Input
-                           type="email"
-                           value={contactDraft.email}
-                           onChange={e => setContactDraft(d => ({ ...d, email: e.target.value }))}
-                           placeholder="john@example.com"
-                           className="mt-1.5"
-                         />
-                       </div>
-                     </div>
-                     <div>
-                       <Label>Phone (Optional)</Label>
-                       <Input
-                         type="tel"
-                         value={contactDraft.phone}
-                         onChange={e => setContactDraft(d => ({ ...d, phone: e.target.value }))}
-                         placeholder="(555) 000-0000"
-                         className="mt-1.5"
-                       />
-                     </div>
-                     {(contactDraft.firstName || contactDraft.email || contactDraft.phone) && (
-                       <Button
-                         type="button"
-                         onClick={handleSaveContactInfo}
-                         disabled={updateSessionMutation.isPending}
-                         className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800"
-                         size="sm"
-                       >
-                         {updateSessionMutation.isPending ? (
-                           <><Loader2 className="w-3 h-3 mr-2 animate-spin" />Saving...</>
-                         ) : (
-                           'Save Contact Info'
-                         )}
-                       </Button>
+                       {(contactDraft.firstName || contactDraft.email || contactDraft.phone) && (
+                         <Button
+                           type="button"
+                           onClick={handleSaveContactInfo}
+                           disabled={updateSessionMutation.isPending}
+                           className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800"
+                           size="sm"
+                         >
+                           {updateSessionMutation.isPending ? (
+                             <><Loader2 className="w-3 h-3 mr-2 animate-spin" />Saving...</>
+                           ) : (
+                             'Save Contact Info'
+                           )}
+                         </Button>
+                       )}
+                     </CardContent>
+                     </Card>
                      )}
-                   </CardContent>
-                 </Card>
-               </>
-             ) : estimatePreview ? (
-               // ── Estimate preview: show and allow locking ──
-               <>
-                 <Card>
-                   <CardHeader>
-                     <CardTitle>Estimate Preview</CardTitle>
-                   </CardHeader>
-                   <CardContent className="space-y-4">
-                     <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
-                       <p className="text-sm text-teal-700 mb-2">Monthly: <strong>${(estimatePreview.monthly || 0).toFixed(2)}</strong></p>
-                       {estimatePreview.perVisit && (
-                         <p className="text-sm text-teal-700">Per visit: ${estimatePreview.perVisit.toFixed(2)}</p>
-                       )}
-                       {estimatePreview.oneTime && estimatePreview.oneTime > 0 && (
-                         <p className="text-sm text-teal-700">One-time fees: ${estimatePreview.oneTime.toFixed(2)}</p>
-                       )}
-                     </div>
-                     <p className="text-xs text-gray-600">
-                       Lock this estimate to proceed through inspection. You can edit contact information anytime.
-                     </p>
-                     <div className="flex gap-3">
-                       <Button
-                         onClick={handleBackToPricing}
-                         variant="outline"
-                         className="flex-1"
-                         disabled={lockQuoteMutation.isPending}
-                       >
-                         Back
-                       </Button>
-                       <Button
-                         onClick={() => setCurrentStep(4)}
-                         variant="outline"
-                         className="flex-1 text-teal-600 border-teal-600 hover:bg-teal-50"
-                         disabled={lockQuoteMutation.isPending}
-                       >
-                         Convert Now
-                       </Button>
-                       <Button
-                         onClick={handleLockQuote}
-                         className="flex-1 bg-teal-600 hover:bg-teal-700"
-                         disabled={lockQuoteMutation.isPending}
-                       >
-                         {lockQuoteMutation.isPending ? (
-                           <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Locking...</>
-                         ) : (
-                           'Lock Estimate'
-                         )}
-                       </Button>
-                     </div>
-                   </CardContent>
-                 </Card>
-               </>
-             ) : (
-               // ── No estimate yet ──
-               <Card>
-                 <CardHeader>
-                   <CardTitle>No Estimate Yet</CardTitle>
-                 </CardHeader>
-                 <CardContent className="space-y-4">
-                   <p className="text-sm text-gray-600">
-                     Please go back and generate an estimate first.
-                   </p>
-                   <Button
-                     onClick={handleBackToPricing}
-                     variant="outline"
-                     className="w-full"
-                   >
-                     Back to Pricing
-                   </Button>
-                 </CardContent>
-               </Card>
-             )}
+                     </>
+                     );
+                     })()}
            </div>
           ) : currentStep === 3 ? (
             // ── Step 3: Inspection ──
