@@ -295,10 +295,6 @@ export default function EquipmentProfiles() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-red-600 text-white px-6 py-4 rounded-lg font-bold text-lg">
-        DEBUG: Rendering pages/EquipmentProfiles.jsx (tabs should show even if 0 PoolEquipment)
-      </div>
-
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Equipment Directory & Profiles</h1>
         <p className="text-sm text-gray-600 mt-1">

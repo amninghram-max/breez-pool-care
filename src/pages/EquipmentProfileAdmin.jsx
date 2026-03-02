@@ -26,7 +26,6 @@ export default function EquipmentProfileAdmin() {
 
   // Redirect to Equipment Directory
   useEffect(() => {
-    console.log('DEBUG: legacy EquipmentProfileAdmin hit; redirecting to directory');
     navigate(createPageUrl('EquipmentProfiles'));
   }, [navigate]);
 
