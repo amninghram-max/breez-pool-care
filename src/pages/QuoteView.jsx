@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Loader2, AlertCircle, Clock } from 'lucide-react';
@@ -15,34 +15,54 @@ const STATUS_COLORS = {
   EXPIRED: 'bg-gray-100 text-gray-600',
 };
 
+function resolveToken(paramsToken) {
+  if (paramsToken && paramsToken.trim()) return paramsToken.trim();
+  // Fallback: parse /QuoteView/<token> from pathname
+  const match = window.location.pathname.match(/\/QuoteView\/([^/?#]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 export default function QuoteView() {
-  const { quoteToken } = useParams();
-  const [state, setState] = useState({ loading: true, error: null, quote: null });
+  const params = useParams();
+  // Resolve once at mount — stored in a ref so it never changes and doesn't cause re-renders
+  const quoteToken = useRef(resolveToken(params?.quoteToken)).current;
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [quote, setQuote] = useState(null);
 
   useEffect(() => {
     if (!quoteToken) {
-      setState({ loading: false, error: 'No quote token provided.', quote: null });
+      setError('Missing quote token.');
+      setLoading(false);
       return;
     }
+
+    let cancelled = false;
 
     const load = async () => {
       try {
         const res = await base44.functions.invoke('getQuotePublicV1', { quoteToken });
+        if (cancelled) return;
         const data = res?.data ?? res;
         if (data?.success === true) {
-          setState({ loading: false, error: null, quote: data.quote });
+          setQuote(data.quote);
         } else {
-          setState({ loading: false, error: data?.error || 'Failed to load quote.', quote: null });
+          setError(data?.error || 'Failed to load quote.');
         }
       } catch (err) {
-        setState({ loading: false, error: err?.message || 'Failed to load quote.', quote: null });
+        if (!cancelled) setError(err?.message || 'Failed to load quote.');
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     };
 
     load();
-  }, [quoteToken]);
 
-  if (state.loading) {
+    return () => { cancelled = true; };
+  }, [quoteToken]); // stable ref value — fires exactly once
+
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center gap-3 text-gray-500">
@@ -53,7 +73,7 @@ export default function QuoteView() {
     );
   }
 
-  if (state.error) {
+  if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <Card className="max-w-md w-full border-red-200">
@@ -61,7 +81,7 @@ export default function QuoteView() {
             <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold text-gray-900">Quote Unavailable</p>
-              <p className="text-sm text-gray-600 mt-1">{state.error}</p>
+              <p className="text-sm text-gray-600 mt-1">{error}</p>
             </div>
           </CardContent>
         </Card>
@@ -69,12 +89,9 @@ export default function QuoteView() {
     );
   }
 
-  const { quote } = state;
-
   return (
     <div className="min-h-screen bg-gray-50 py-10 px-4">
       <div className="max-w-2xl mx-auto space-y-6">
-        {/* Header */}
         <div className="text-center">
           <img
             src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/0b0c31666_Breez2.png"
@@ -84,7 +101,6 @@ export default function QuoteView() {
           <h1 className="text-2xl font-bold text-gray-900">Your Quote</h1>
         </div>
 
-        {/* Status */}
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -96,7 +112,6 @@ export default function QuoteView() {
           </CardHeader>
         </Card>
 
-        {/* Quote Snapshot */}
         {quote.quoteSnapshot ? (
           <Card>
             <CardHeader>
@@ -117,7 +132,6 @@ export default function QuoteView() {
           </Card>
         )}
 
-        {/* CTA Placeholder */}
         <div className="text-center">
           <Button
             disabled
