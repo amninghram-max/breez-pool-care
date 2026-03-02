@@ -178,7 +178,7 @@ export default function PublicQuoteWizard({
     ...(showTrees ? ['treesOverhead'] : []),
     'petsAccess',
     'poolCondition',
-    ...(hasToken ? [] : ['contact']),
+    'contact',
   ];
 
   const totalSteps = baseSteps.length;
