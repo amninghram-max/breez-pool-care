@@ -391,6 +391,15 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
                  );
                }
 
+               // Zero-tolerant formatting helper
+               const fmt = (v) => {
+                 if (typeof v !== 'number' || !Number.isFinite(v)) return '—';
+                 return `$${v.toFixed(2)}`;
+               };
+
+               // Validate monthly price exists and is valid
+               const monthlyIsValid = typeof monthlyPrice === 'number' && Number.isFinite(monthlyPrice) && monthlyPrice > 0;
+
                return (
                  <>
                    <Card>
@@ -399,22 +408,28 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
                      </CardHeader>
                      <CardContent className="space-y-4">
                        <div className={`rounded-lg p-4 ${pricingSource === 'LOCKED' ? 'bg-green-50 border border-green-200' : 'bg-teal-50 border border-teal-200'}`}>
-                         <p className={`text-sm ${pricingSource === 'LOCKED' ? 'text-green-700' : 'text-teal-700'} mb-2`}>
-                           Monthly: <strong>${(monthlyPrice ?? 0).toFixed(2)}</strong>
-                         </p>
+                         {monthlyIsValid ? (
+                           <p className={`text-sm ${pricingSource === 'LOCKED' ? 'text-green-700' : 'text-teal-700'} mb-2`}>
+                             Monthly: <strong>{fmt(monthlyPrice)}</strong>
+                           </p>
+                         ) : (
+                           <p className="text-sm text-red-600 mb-2">
+                             Pricing missing — go back and regenerate estimate.
+                           </p>
+                         )}
                          {(() => {
                            const perVisit = pricingSource === 'PREVIEW' ? pricingForDisplay?.perVisit : pricingForDisplay?.estimatedPerVisitPrice;
                            const oneTime = pricingSource === 'PREVIEW' ? pricingForDisplay?.oneTime : pricingForDisplay?.estimatedOneTimeFees;
                            return (
                              <>
-                               {perVisit && (
+                               {typeof perVisit === 'number' && Number.isFinite(perVisit) && perVisit > 0 && (
                                  <p className={`text-sm ${pricingSource === 'LOCKED' ? 'text-green-700' : 'text-teal-700'}`}>
-                                   Per visit: ${perVisit.toFixed(2)}
+                                   Per visit: {fmt(perVisit)}
                                  </p>
                                )}
-                               {typeof oneTime === 'number' && oneTime > 0 && (
+                               {typeof oneTime === 'number' && Number.isFinite(oneTime) && oneTime > 0 && (
                                  <p className={`text-sm ${pricingSource === 'LOCKED' ? 'text-green-700' : 'text-teal-700'}`}>
-                                   One-time fees: ${oneTime.toFixed(2)}
+                                   One-time fees: {fmt(oneTime)}
                                  </p>
                                )}
                              </>
