@@ -167,9 +167,10 @@ export default function PublicQuoteWizard({
   // Determine steps dynamically (trees only shown if unscreened, contact skipped if token present)
   const showTrees = answers.enclosure === 'unscreened';
   const hasToken = prefillData?.token;
-  const [disqualified, setDisqualified] = useState(null); // null, 'de'
+  const [disqualified, setDisqualified] = useState(null); // null, 'pool_type', 'filter_type'
 
   const baseSteps = [
+    'poolType',
     'poolSize',
     'enclosure',
     'filterType',
