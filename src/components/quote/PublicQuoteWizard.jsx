@@ -301,6 +301,7 @@ export default function PublicQuoteWizard({
           token: prefillData?.token || null,
           prequalAnswers: answers,
           clientFirstName: finalFirstName.trim(),
+          clientLastName: answers.lastName?.trim() || null,
           clientEmail: finalEmail.trim().toLowerCase()
         };
         console.log('DEBUG: Calling finalizePrequalQuoteV2 with', finalizePayload);
