@@ -94,7 +94,8 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
         onSuccess?.();
         onClose();
       } else {
-        const msg = invokeErr ? getErrMsg(invokeErr) : 'Lead stamp missing';
+        const msg = 'Lead stamp missing';
+        console.log("SEND_QUOTE_LINK_STAMP_MISSING", { invokeNormalized: normalized, invokeErr });
         setError(msg);
         toast.error(msg);
       }
