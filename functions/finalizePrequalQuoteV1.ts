@@ -216,6 +216,7 @@ Deno.serve(async (req) => {
         quoteResult = runPricingEngine(prequalAnswers, settings);
       }
       console.log('FPQ_PRICING_COMPUTED', { isNotSure, monthly: isNotSure ? `${quoteResult.minMonthly}-${quoteResult.maxMonthly}` : quoteResult.finalMonthlyPrice });
+      console.log('DEBUG: Exact pricing engine output', quoteResult);
     } catch (e) {
       console.error('FPQ_PRICING_ERROR', { error: e.message });
       return json200({
