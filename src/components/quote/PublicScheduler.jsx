@@ -50,6 +50,11 @@ export default function PublicScheduler({ leadId, clientEmail, clientFirstName, 
       setError('Please select a date and time window.');
       return;
     }
+    const isoDate = toISODate(selectedDate);
+    if (!isoDate) {
+      setError('Invalid date selected. Please try again.');
+      return;
+    }
     setError('');
     setLoading(true);
     try {
@@ -57,7 +62,7 @@ export default function PublicScheduler({ leadId, clientEmail, clientFirstName, 
         leadId: leadId || null,
         clientEmail,
         clientFirstName,
-        requestedDate: toISODate(selectedDate),
+        requestedDate: isoDate,
         requestedTimeSlot: selectedSlot,
       });
       setConfirmed(res.data);
