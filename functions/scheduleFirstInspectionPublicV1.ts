@@ -166,6 +166,8 @@ Deno.serve(async (req) => {
       timeWindow: timeWindow,
       email: email,
       firstName: firstName,
+      eventId: eventCreated?.id,
+      shouldSendNotification: shouldSendNotification,
       build: BUILD
     });
 
