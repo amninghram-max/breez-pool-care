@@ -326,6 +326,21 @@ Deno.serve(async (req) => {
 
       persistedQuote = await base44.asServiceRole.entities.Quote.create(quoteData);
       console.log('FPQ_V2_QUOTE_PERSISTED', { quoteId: persistedQuote.id, token: token.trim().slice(0, 8) });
+
+      // Auto-stage progression: update Lead to 'quote_sent' after quote persistence
+      if (leadId) {
+        try {
+          await base44.functions.invoke('updateLeadStagePublicV1', {
+            token: token.trim(),
+            newStage: 'quote_sent',
+            context: 'prequal-completion'
+          });
+          console.log('FPQ_V2_STAGE_PROGRESSED', { leadId, newStage: 'quote_sent' });
+        } catch (stageErr) {
+          console.warn('FPQ_V2_STAGE_UPDATE_FAILED', { error: stageErr.message });
+          // Non-fatal: continue even if stage update fails
+        }
+      }
     } catch (e) {
       console.error('FPQ_V2_PERSIST_FAILED', { error: e.message });
       // Don't fail the response; still return the computed quote
