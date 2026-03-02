@@ -193,114 +193,7 @@ export default function CustomerTimeline() {
   });
 
   // TEMP: remove after testing
-  const seedTestDataMutation = useMutation({
-    mutationFn: async () => {
-      // Mark the start
-      setSeedClickCount(c => c + 1);
-      setSeedDebugText('clicked: starting invoke');
-      setSeedResponse({ marker: 'pre-invoke', time: Date.now() });
-      
-      const payload = { leadId, daysBack: 30, visitsCount: 6 };
-      
-      try {
-        const raw = await base44.functions.invoke('seedTestCustomerData', payload);
-        
-        // Immediately mark invoke returned
-        setSeedDebugText('try: invoke returned');
-        setSeedResponse({ marker: 'try', raw: raw ?? null });
-        
-        // Normalize response from various wrapper levels
-        const normalized =
-          raw?.success !== undefined ? raw :
-          raw?.data?.success !== undefined ? raw.data :
-          raw?.result?.success !== undefined ? raw.result :
-          raw;
-        
-        // Store comprehensive debug info
-        setSeedResponse({
-          marker: 'try-normalized',
-          phase: 'try',
-          payload,
-          rawType: typeof raw,
-          rawKeys: raw && typeof raw === 'object' ? Object.keys(raw) : null,
-          raw,
-          normalizedType: typeof normalized,
-          normalizedKeys: normalized && typeof normalized === 'object' ? Object.keys(normalized) : null,
-          normalized
-        });
-        
-        // Only invalidate/refresh queries if seeding succeeded
-        if (normalized?.success === true) {
-          queryClient.invalidateQueries({ queryKey: ['recentVisits', leadId] });
-          queryClient.invalidateQueries({ queryKey: ['allVisitsForDropdown', leadId] });
-          queryClient.invalidateQueries({ queryKey: ['customerEquipment', leadId] });
-          queryClient.invalidateQueries({ queryKey: ['messageThreads', leadId] });
-          queryClient.invalidateQueries({ queryKey: ['chemistryRiskEvents', leadId] });
-          
-          toast.success(
-            `✓ Verified: ${normalized.verifiedServiceVisitCount} visits, ${normalized.verifiedCustomerEquipmentCount} equipment`
-          );
-        } else if (normalized?.step && normalized?.errorMessage) {
-          toast.error(`Seed failed at step "${normalized.step}": ${normalized.errorMessage}`);
-        }
-        
-        return normalized;
-      } catch (err) {
-        // Capture error details
-        setSeedDebugText('catch: invoke threw');
-        setSeedResponse({
-          marker: 'catch',
-          message: err?.message ?? String(err),
-          status: err?.response?.status ?? null,
-          responseData: err?.response?.data ?? null
-        });
-        
-        toast.error(`Error: ${err?.message || 'Unknown error'}`);
-        throw err;
-      }
-    },
-    onError: () => {
-      // Error already captured in try/catch above
-    }
-  });
-
   const [selectedOldVisitId, setSelectedOldVisitId] = useState(null);
-  const [seedResponse, setSeedResponse] = useState(null);
-  const [seedClickCount, setSeedClickCount] = useState(0);
-  const [seedDebugText, setSeedDebugText] = useState('idle');
-  const [serviceVisitCreateResult, setServiceVisitCreateResult] = useState(null);
-  const [isCreatingTestVisit, setIsCreatingTestVisit] = useState(false);
-
-  // TEMP: Direct handler for test ServiceVisit create
-  const handleTestServiceVisitCreate = async () => {
-    try {
-      setIsCreatingTestVisit(true);
-      setServiceVisitCreateResult({ phase: 'start' });
-      
-      const result = await base44.entities.ServiceVisit.create({
-        propertyId: leadId,
-        visitDate: new Date().toISOString(),
-        technicianName: 'Test Tech',
-        freeChlorine: 2.5,
-        pH: 7.5,
-        totalAlkalinity: 90,
-        servicesPerformed: ['skim', 'test_equipment']
-      });
-      
-      setServiceVisitCreateResult({
-        phase: 'success',
-        record: result
-      });
-    } catch (err) {
-      setServiceVisitCreateResult({
-        phase: 'error',
-        message: err?.message,
-        error: err
-      });
-    } finally {
-      setIsCreatingTestVisit(false);
-    }
-  };
 
   // Load only recent 4 visits on initial render
   const { data: recentVisits = [] } = useQuery({
@@ -386,36 +279,6 @@ export default function CustomerTimeline() {
     return chemistryRiskEvents.filter(e => new Date(e.expiresAt) > new Date()).length;
   }, [chemistryRiskEvents]);
 
-  // TEMP: Data diagnostics to confirm linkage keys
-  const { data: diagnosticsData = {} } = useQuery({
-    queryKey: ['diagnostics', leadId],
-    queryFn: async () => {
-      try {
-        const allVisits = await base44.entities.ServiceVisit.list('-visitDate', 100);
-        const visitsByPropertyId = allVisits.filter(v => v.propertyId === leadId).length;
-        const visitsByLeadId = allVisits.filter(v => v.leadId === leadId).length;
-
-        const allEquipment = await base44.entities.CustomerEquipment.list();
-        const equipmentByCustomerId = allEquipment.filter(e => e.customerId === leadId).length;
-        const equipmentByLeadId = allEquipment.filter(e => e.leadId === leadId).length;
-
-        return {
-          visitsByPropertyId,
-          visitsByLeadId,
-          equipmentByCustomerId,
-          equipmentByLeadId
-        };
-      } catch (err) {
-        console.error('Diagnostics query error:', err);
-        return { error: err.message };
-      }
-    },
-    enabled: !!leadId && user && ['admin', 'staff'].includes(user.role)
-  });
-
-
-
-
 
   if (leadLoading) {
     return <div className="text-gray-500">Loading timeline...</div>;
@@ -474,39 +337,7 @@ export default function CustomerTimeline() {
               Messages
             </Button>
           </Link>
-          
-          {/* TEMP: remove after testing */}
-          {user && ['admin', 'staff'].includes(user.role) && (
-            <>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleTestServiceVisitCreate}
-                disabled={isCreatingTestVisit}
-                className="text-blue-600 hover:bg-blue-50"
-                title="TEMP: direct create handler active"
-              >
-                {isCreatingTestVisit ? (
-                  <><Loader2 className="w-3 h-3 mr-1 animate-spin" />Creating...</>
-                ) : (
-                  <>🧪 Create Test ServiceVisit</>
-                )}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => seedTestDataMutation.mutate()}
-                disabled={seedTestDataMutation.isPending}
-                className="text-purple-600 hover:bg-purple-50"
-              >
-                {seedTestDataMutation.isPending ? (
-                  <><Loader2 className="w-3 h-3 mr-1 animate-spin" />Seeding...</>
-                ) : (
-                  <>📊 Seed Test Data</>
-                )}
-              </Button>
-            </>
-          )}
+
         </div>
       </div>
 
@@ -768,64 +599,6 @@ export default function CustomerTimeline() {
                 )}
               </div>
             )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* TEMP: Create ServiceVisit Test */}
-      {user && ['admin', 'staff'].includes(user.role) && (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="text-xs font-mono text-blue-900">TEMP: Create ServiceVisit Test (direct handler)</CardTitle>
-          </CardHeader>
-          <CardContent className="text-xs font-mono">
-            {serviceVisitCreateResult === null ? (
-              <div className="text-gray-600">(no create attempt yet)</div>
-            ) : (
-              <pre className="bg-gray-900 text-green-400 p-3 rounded border border-gray-700 overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-words">
-                {JSON.stringify(serviceVisitCreateResult, null, 2)}
-              </pre>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* TEMP: Seed Response */}
-      {user && ['admin', 'staff'].includes(user.role) && (
-        <Card className="bg-purple-50 border-purple-200">
-          <CardHeader>
-            <CardTitle className="text-xs font-mono text-purple-900">TEMP: Seed Response Debug</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-xs font-mono">
-            <div>Seed Debug: <span className="font-bold text-purple-700">{seedDebugText}</span></div>
-            <div>Seed Clicks: <span className="font-bold text-purple-700">{seedClickCount}</span></div>
-            <div>SeedResponse Type: <span className="font-bold text-purple-700">{typeof seedResponse}</span></div>
-            
-            <div className="border-t border-purple-200 pt-3">
-              {seedResponse === null || seedResponse === undefined ? (
-                <div className="text-gray-600">(seedResponse is empty)</div>
-              ) : (
-                <pre className="bg-gray-900 text-green-400 p-3 rounded border border-gray-700 overflow-x-auto max-h-96 overflow-y-auto whitespace-pre-wrap break-words">
-                  {JSON.stringify(seedResponse, null, 2)}
-                </pre>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* TEMP: Data Diagnostics */}
-      {user && ['admin', 'staff'].includes(user.role) && (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="text-xs font-mono text-blue-900">TEMP: Data Diagnostics</CardTitle>
-          </CardHeader>
-          <CardContent className="text-xs font-mono text-gray-700 space-y-1">
-            <div>ServiceVisit where propertyId = leadId: <span className="font-bold text-blue-800">{diagnosticsData.visitsByPropertyId || 0}</span></div>
-            <div>ServiceVisit where leadId = leadId: <span className="text-gray-500">{diagnosticsData.visitsByLeadId ? diagnosticsData.visitsByLeadId : 'field not present'}</span></div>
-            <div>CustomerEquipment where customerId = leadId: <span className="font-bold text-blue-800">{diagnosticsData.equipmentByCustomerId || 0}</span></div>
-            <div>CustomerEquipment where leadId = leadId: <span className="text-gray-500">{diagnosticsData.equipmentByLeadId ? diagnosticsData.equipmentByLeadId : 'field not present'}</span></div>
-            {diagnosticsData.error && <div className="text-red-600 mt-2">Error: {diagnosticsData.error}</div>}
           </CardContent>
         </Card>
       )}
