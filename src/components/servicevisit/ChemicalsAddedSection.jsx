@@ -156,6 +156,7 @@ function ChemicalDoseModal({ isOpen, onClose, onAddDose, chemicals = [] }) {
 
 export default function ChemicalsAddedSection({ chemicalsAdded, onChemicalsChange }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [bucketUnits, setBucketUnits] = useState({});
 
   const { data: chemicals = [] } = useQuery({
     queryKey: ['chemicalCatalogForService'],
@@ -164,6 +165,24 @@ export default function ChemicalsAddedSection({ chemicalsAdded, onChemicalsChang
 
   const handleAddDose = (dose) => {
     const key = dose.serviceVisitKey;
+    const priorUnit = bucketUnits[key];
+
+    // Unit consistency check
+    if (priorUnit && priorUnit !== dose.unit) {
+      toast.error(
+        `Unit mismatch: "${key}" is tracked in ${priorUnit}. Selected chemical uses ${dose.unit}.`
+      );
+      return;
+    }
+
+    // If this is the first dose for this bucket, lock in the unit
+    if (!priorUnit) {
+      setBucketUnits({
+        ...bucketUnits,
+        [key]: dose.unit
+      });
+    }
+
     const currentValue = parseFloat(chemicalsAdded[key]) || 0;
     const newValue = (currentValue + dose.amount).toString();
 
@@ -180,6 +199,10 @@ export default function ChemicalsAddedSection({ chemicalsAdded, onChemicalsChang
       ...chemicalsAdded,
       [key]: ''
     });
+    // Clear the unit tracking for this bucket
+    const newUnits = { ...bucketUnits };
+    delete newUnits[key];
+    setBucketUnits(newUnits);
   };
 
   // Build display list: group chemicals by serviceVisitKey, show which registry items map to it
