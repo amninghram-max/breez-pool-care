@@ -166,6 +166,11 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
   };
 
   const handleSaveContactInfo = async () => {
+    // Only persist if at least one field is non-empty
+    if (!contactDraft.firstName && !contactDraft.email && !contactDraft.phone) {
+      toast.info('Please enter at least one contact field');
+      return;
+    }
     try {
       await updateSessionMutation.mutateAsync({
         contactDraft
@@ -191,8 +196,14 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
   const handleConvert = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
 
-    // Save contact info if not yet saved, then convert
-    if ((contactDraft.firstName || contactDraft.email || contactDraft.phone) && !contactDraft.isSaved) {
+    // At Step 4, firstName and email are required; save if needed then convert
+    if (!contactDraft.firstName || !contactDraft.email) {
+      toast.error('First name and email are required to convert');
+      return;
+    }
+
+    // Save contact info if not yet persisted
+    if (contactDraft.firstName || contactDraft.email || contactDraft.phone) {
       try {
         await updateSessionMutation.mutateAsync({
           contactDraft
