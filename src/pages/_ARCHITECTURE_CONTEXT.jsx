@@ -48,7 +48,7 @@ export const AI_BOOTSTRAP_CONTEXT = `# AI_BOOTSTRAP_CONTEXT — Breez Pool Care 
 ### Public Quote Requests
 - **Buffer entity:** \`PublicQuoteRequest\` holds pending intake requests (status: pending, converted_to_lead, expired, spam, duplicate).
 - **\`publicSubmitQuoteRequest\`** writes intake submissions to \`PublicQuoteRequest\`; does not create Leads.
-- **\`publicGetQuote\`** generates quotes from questionnaire; does not create/update entities; persists Quote if admin is ready.
+- **\`publicGetQuote\`** computes pricing/quote output for the public questionnaire and must not create/update Lead. It may call \`publicSubmitQuoteRequest\` to record intake.
 - **\`convertQuoteRequestToLead\`** (staff-only, no service role) converts pending requests to Leads; idempotent; updates request status.
 - **Admin queue:** \`QuoteRequestQueuePanel\` on \`AdminHome\` displays pending requests; staff converts via modal.
 
@@ -99,7 +99,7 @@ export const AI_BOOTSTRAP_CONTEXT = `# AI_BOOTSTRAP_CONTEXT — Breez Pool Care 
 5. User's \`linkedLeadId\` set to lead.id
 
 ### Test Data Handling
-- All database queries in test mode **must** pass \`data_env: "dev"\`
+- Dev/test workflows that operate on test data must pass \`data_env: "dev"\` and must never mix environments in a single operation.
 - Production queries use default (no \`data_env\` or \`data_env: "prod"\`)
 - Never mix environments in a single operation
 - Test cleanup via \`bulkSoftDeleteTestLeadsV2\` with \`data_env: "dev"\` only
