@@ -44,6 +44,8 @@ export default function ScheduleInspection() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
 
+  console.log('ScheduleInspection mounted with token:', token);
+
   const [leadData, setLeadData] = useState(null);
   const [loadingLead, setLoadingLead] = useState(false);
   const [loadError, setLoadError] = useState('');
