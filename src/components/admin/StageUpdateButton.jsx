@@ -37,10 +37,11 @@ export default function StageUpdateButton({ leadId, currentStage, onStageUpdated
         leadId,
         newStage,
         context: 'admin-manual',
-        allowRegression: false // Set to true if user clicks "force move" button
+        allowRegression: false
       });
 
       const result = res?.data ?? res;
+      console.log('[StageUpdateButton] Backend response:', { leadId, newStage, success: result?.success, error: result?.error });
 
       if (result?.success) {
         toast.success(`Stage updated to ${VALID_STAGES.find(s => s.value === newStage)?.label || newStage}`);
