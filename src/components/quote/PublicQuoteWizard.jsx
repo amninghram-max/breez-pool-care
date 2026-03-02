@@ -243,6 +243,7 @@ export default function PublicQuoteWizard({ prefillData }) {
 
   const handleSubmit = async () => {
     setError('');
+    setFinalizeError('');
     if (!firstName.trim()) { setError('Please enter your first name.'); return; }
     if (!email.trim() || !email.includes('@')) { setError('Please enter a valid email address.'); return; }
     setLoading(true);
@@ -261,7 +262,26 @@ export default function PublicQuoteWizard({ prefillData }) {
         setError(data?.error || 'Failed to generate quote. Please try again.');
         return;
       }
-      setResult(data);
+      
+      // If releaseReady and we have a quote, finalize it to ensure priceSummary
+      if (data?.releaseReady && data?.quote) {
+        const finalizeRes = await base44.functions.invoke('finalizePrequalQuoteV1', {
+          token: prefillData?.token || null,
+          leadId: data?.leadId || null,
+          prequalAnswers: answers
+        });
+        const finalizeData = finalizeRes?.data ?? finalizeRes;
+        if (finalizeData?.success === true && finalizeData?.priceSummary) {
+          // Merge finalize result into result
+          setResult({ ...data, priceSummary: finalizeData.priceSummary, quoteSnapshot: finalizeData.quoteSnapshot });
+        } else {
+          // Finalize failed — show error with build tag
+          setFinalizeError(`${finalizeData?.error || 'Failed to finalize quote'} (${finalizeData?.build || 'unknown'})`);
+          return;
+        }
+      } else {
+        setResult(data);
+      }
     } catch (e) {
       setError(e?.message || 'Something went wrong. Please try again or call us at (321) 524-3838.');
     } finally {
