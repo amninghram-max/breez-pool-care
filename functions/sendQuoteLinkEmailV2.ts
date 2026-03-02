@@ -60,10 +60,10 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { leadId, firstName, email, appOrigin: appOriginRaw } = payload || {};
+    const { quoteId, firstName, email, appOrigin: appOriginRaw } = payload || {};
 
     const missingFields = [];
-    if (!leadId || typeof leadId !== 'string' || !leadId.trim()) missingFields.push('leadId');
+    if (!quoteId || typeof quoteId !== 'string' || !quoteId.trim()) missingFields.push('quoteId');
     if (!firstName || typeof firstName !== 'string' || !firstName.trim()) missingFields.push('firstName');
     if (!email || typeof email !== 'string' || !email.trim()) missingFields.push('email');
 
@@ -85,10 +85,31 @@ Deno.serve(async (req) => {
       return json200({ success: false, error: 'RESEND_API_KEY not configured', build: BUILD });
     }
 
-    const link = `${appOrigin}/activate?leadId=${encodeURIComponent(leadId)}`;
+    // Fetch quote and check/generate quoteToken
+    let quote = null;
+    try {
+      quote = await base44.asServiceRole.entities.Quote.get(quoteId);
+    } catch (getErr) {
+      console.error('V2_QUOTE_GET_FAILED', { quoteId, error: String(getErr?.message ?? getErr) });
+      return json200({ success: false, error: 'Quote not found', build: BUILD });
+    }
+
+    let quoteToken = quote?.quoteToken;
+    if (!quoteToken) {
+      quoteToken = generateToken();
+      try {
+        await base44.asServiceRole.entities.Quote.update(quoteId, { quoteToken });
+        console.log('V2_TOKEN_GENERATED', { quoteId, quoteToken });
+      } catch (tokenErr) {
+        console.error('V2_TOKEN_UPDATE_FAILED', { quoteId, error: String(tokenErr?.message ?? tokenErr) });
+        return json200({ success: false, error: 'Failed to generate quote token', build: BUILD });
+      }
+    }
+
+    const link = `${appOrigin}/QuoteView/${encodeURIComponent(quoteToken)}`;
     const publicHomeLink = `${appOrigin}/PublicHome`;
 
-    console.log('V2_SEND', { leadId, email, link, build: BUILD });
+    console.log('V2_SEND', { quoteId, email, link, build: BUILD });
 
     const htmlBody = `<!DOCTYPE html>
 <html>
