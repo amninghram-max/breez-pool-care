@@ -147,8 +147,21 @@ export function computeChemicalCostLines(
     } else if (['bakingSoda', 'stabilizer', 'salt'].includes(key)) {
       impliedUnit = 'lb';
     } else if (key === 'chlorineTablets') {
-      // Tablets: treat as numeric lb (ambiguous; should ideally be count or lb)
-      impliedUnit = 'lb';
+      // Tablets: unit is ambiguous (count vs lb). Skip costing rather than guessing.
+      lines.push({
+        serviceVisitKey: key,
+        catalogItemId: catalogItem.id,
+        catalogName: catalogItem.name,
+        inputAmount: amountNum,
+        inputUnit: 'unknown',
+        normalizedAmount: null,
+        costCanonicalUnit: catalogItem.costCanonicalUnit,
+        unitCostCents: catalogItem.costPerCanonicalUnitCents,
+        lineCostCents: 0,
+        status: 'skipped',
+        reason: 'ambiguous_unit'
+      });
+      continue;
     }
 
     // Validate cost data exists
@@ -249,8 +262,9 @@ export function computeChemicalCostLines(
         normalizedUnit = 'fl_oz';
       }
 
-      // Lookup catalog by name
-      const catalogItem = chemicalCatalogItemsByName.get(name);
+      // Lookup catalog by name (case-insensitive)
+      const normalizedName = name.trim().toLowerCase();
+      const catalogItem = chemicalCatalogItemsByName.get(normalizedName);
       if (!catalogItem) {
         lines.push({
           serviceVisitKey: 'other',
