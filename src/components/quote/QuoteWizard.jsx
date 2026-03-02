@@ -173,11 +173,11 @@ export default function QuoteWizard({ persistQuote = true, initialAnswers = null
             <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
               <p className="text-sm text-teal-700 mb-3">Monthly Service Price:</p>
               <p className="text-3xl font-bold text-teal-900">${monthlyPrice.toFixed(2)}</p>
-              {normalized.perVisit && (
-                <p className="text-xs text-teal-600 mt-2">Per visit: ${normalized.perVisit.toFixed(2)}</p>
+              {quoteResult.perVisit && (
+                <p className="text-xs text-teal-600 mt-2">Per visit: ${quoteResult.perVisit.toFixed(2)}</p>
               )}
-              {normalized.oneTime && normalized.oneTime > 0 && (
-                <p className="text-xs text-teal-600 mt-1">One-time fees: ${normalized.oneTime.toFixed(2)}</p>
+              {quoteResult.oneTime && quoteResult.oneTime > 0 && (
+                <p className="text-xs text-teal-600 mt-1">One-time fees: ${quoteResult.oneTime.toFixed(2)}</p>
               )}
             </div>
             <div className="flex gap-3">
