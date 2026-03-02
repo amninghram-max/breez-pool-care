@@ -100,10 +100,22 @@ export default function QuoteWizard({ persistQuote = true, initialAnswers = null
     },
     onSuccess: (data) => {
       if (!persistQuote) {
-        // Estimate path: show result inline
-        setQuoteResult(data);
+        // Estimate path: normalize and validate before showing result
+        const normalized = normalizeEstimate(data);
+        
+        // CRITICAL: monthly must be a number
+        if (!normalized.monthly || typeof normalized.monthly !== 'number') {
+          console.error('[QuoteWizard] Estimate rejected: monthly is not a number', { normalized });
+          setEstimateError('Estimate generation failed: no valid monthly price');
+          toast.error('Estimate generation failed: no valid monthly price');
+          return;
+        }
+        
+        // Store ONLY normalized canonical shape for callback
+        setQuoteResult(normalized);
         toast.success('Estimate generated');
-        console.log('[QuoteWizard] Estimate result set:', data);
+        console.log('[QuoteWizard] Estimate normalized and ready:', { monthly: normalized.monthly, perVisit: normalized.perVisit, oneTime: normalized.oneTime });
+        return; // Don't call onComplete yet; wait for user to click "Continue"
       }
       if (onComplete) onComplete(data, formData);
     }
