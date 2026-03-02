@@ -606,51 +606,69 @@ export default function PublicQuoteWizard({
       )
     },
     contact: {
-      title: 'Last step — where should we send your quote?',
-      sub: 'No payment info needed. No spam. Just your quote.',
-      render: () => (
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-            <input
-              type="text"
-              value={firstName}
-              onChange={e => setFirstName(e.target.value)}
-              placeholder="Your first name"
-              className={`w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none transition-colors text-gray-900`}
-              style={{ '--tw-ring-color': TEAL }}
-              onFocus={e => e.target.style.borderColor = TEAL}
-              onBlur={e => e.target.style.borderColor = '#e5e7eb'}
-              autoComplete="given-name"
-            />
-            {prefillData?.firstName && <p className="text-xs text-gray-400 mt-1">From your request</p>}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="guest@breezpoolcare.com"
-              className={`w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none transition-colors text-gray-900`}
-              onFocus={e => e.target.style.borderColor = TEAL}
-              onBlur={e => e.target.style.borderColor = '#e5e7eb'}
-              autoComplete="email"
-            />
-          </div>
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-          <button
-            onClick={handleSubmit}
-            disabled={loading || finalizing}
-            className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-white text-base font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-60"
-            style={{ backgroundColor: TEAL }}
-          >
-            {loading || finalizing ? <><Loader2 className="w-5 h-5 animate-spin" /> Generating your quote...</> : 'Get My Free Quote'}
-          </button>
-          <p className="text-xs text-center text-gray-400">No payment info required. No commitment.</p>
-        </div>
-      )
-    }
+       title: 'Last step — where should we send your quote?',
+       sub: 'No payment info needed. No spam. Just your quote.',
+       render: () => (
+         <div className="space-y-4">
+           <div>
+             <label className="block text-sm font-medium text-gray-700 mb-1">
+               First Name <span className="text-red-600">*</span>
+             </label>
+             <input
+               type="text"
+               value={firstName}
+               onChange={e => setFirstName(e.target.value)}
+               placeholder="Your first name"
+               className={`w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none transition-colors text-gray-900`}
+               style={{ '--tw-ring-color': TEAL }}
+               onFocus={e => e.target.style.borderColor = TEAL}
+               onBlur={e => e.target.style.borderColor = '#e5e7eb'}
+               autoComplete="given-name"
+             />
+           </div>
+           <div>
+             <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+             <input
+               type="text"
+               value={answers.lastName || ''}
+               onChange={e => setAnswers({ ...answers, lastName: e.target.value })}
+               placeholder="Your last name (optional)"
+               className={`w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none transition-colors text-gray-900`}
+               style={{ '--tw-ring-color': TEAL }}
+               onFocus={e => e.target.style.borderColor = TEAL}
+               onBlur={e => e.target.style.borderColor = '#e5e7eb'}
+               autoComplete="family-name"
+             />
+           </div>
+           <div>
+             <label className="block text-sm font-medium text-gray-700 mb-1">
+               Email Address <span className="text-red-600">*</span>
+             </label>
+             <input
+               type="email"
+               value={email}
+               onChange={e => setEmail(e.target.value)}
+               placeholder="Enter Your Email"
+               className={`w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none transition-colors text-gray-900 placeholder-gray-400`}
+               style={{ '--tw-ring-color': TEAL }}
+               onFocus={e => e.target.style.borderColor = TEAL}
+               onBlur={e => e.target.style.borderColor = '#e5e7eb'}
+               autoComplete="email"
+             />
+           </div>
+           {error && <p className="text-red-500 text-sm font-medium">{error}</p>}
+           <button
+             onClick={handleSubmit}
+             disabled={loading || finalizing}
+             className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-white text-base font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-60"
+             style={{ backgroundColor: TEAL }}
+           >
+             {loading || finalizing ? <><Loader2 className="w-5 h-5 animate-spin" /> Generating your quote...</> : 'Get My Free Quote'}
+           </button>
+           <p className="text-xs text-center text-gray-400">No payment info required. No commitment.</p>
+         </div>
+       )
+     }
   };
 
   const config = stepConfig[currentKey];
