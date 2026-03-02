@@ -152,13 +152,184 @@ Rule:
 ------------------------------------------------------------------
 ARCHITECTURAL CONSTRAINTS
 ------------------------------------------------------------------
-
 - No backend function invoking other backend functions.
 - No divergent config loaders.
 - No RLS rules blocking AdminSettings reads.
 - No nondeterministic pricing logic.
 - Quotes must be stateless and regenerable.
 - Quotes should expire (recommended 14 days).
+
+  INSPECTION SCHEDULING + CALENDAR + PIPELINE (2026-03 Stabilization)
+
+This section governs lead stage progression, inspection scheduling, calendar events, rescheduling, and deletion behavior. It MUST NOT modify pricing engine math or chemistry invariants.
+
+CORE SCHEDULING INVARIANTS
+
+Public scheduling is token-based. No login required until post-inspection.
+
+All backend responses are HTTP 200 with application/json; charset=utf-8.
+
+Backend functions are versioned. Use V2 for scheduling/reschedule/delete flows.
+
+Side effects are idempotent (emails, stage updates, event creation, request creation).
+
+Lead deletion is soft delete (Lead.isDeleted + deletedAt/by/reason). No hard delete in normal ops.
+
+Admin schedule views must exclude cancelled events and exclude deleted leads by default.
+
+SOURCE OF TRUTH (NO SPLIT-BRAIN)
+
+InspectionRecord is the authoritative source for inspection appointment time.
+
+CalendarEvent is a projection of InspectionRecord, not authoritative.
+
+Lead mirror fields (requested/confirmed inspection date/time + inspectionEventId) must be synced from InspectionRecord when scheduling or rescheduling.
+
+After any schedule change, these three MUST match:
+
+InspectionRecord appointment fields
+
+CalendarEvent appointment fields
+
+Lead mirror appointment fields
+
+If these drift, it is a defect: SPLIT_BRAIN_APPOINTMENT_TIME.
+
+SINGLE ACTIVE INSPECTION EVENT GUARANTEE
+
+A Lead must not have more than one active inspection CalendarEvent at a time.
+
+Enforcement is at the application layer (Base44 may not support DB unique constraints).
+
+Scheduling and reschedule approval must:
+
+Query active inspection events for the lead
+
+Cancel duplicates (status="cancelled", cancelReason="duplicate_inspection_event")
+
+Update existing event rather than creating new ones
+
+REQUIRED ENTITIES (CURRENT MODEL)
+
+Lead
+
+stage (pipeline stage enum)
+
+inspectionEventId (internal CalendarEvent.id)
+
+soft delete fields: isDeleted, deletedAt, deletedBy, deleteReason
+
+InspectionRecord (authoritative)
+
+leadId
+
+appointment fields: scheduledDate, startTime, timeWindow, appointmentStatus
+
+calendarEventId
+
+cancellation fields: cancelledAt, cancelReason
+
+CalendarEvent (projection)
+
+leadId
+
+eventType (inspection/service/etc.)
+
+status (active/cancelled)
+
+cancellation fields: cancelledAt, cancelReason
+
+RescheduleRequest
+
+leadId, calendarEventId, inspectionId
+
+requestedStart
+
+status (pending/approved/denied/cancelled)
+
+idempotencyKey = resched:${leadId}:${calendarEventId}:${requestedStart}
+
+No external calendar provider IDs are required for Phase 1 (internal CalendarEvent only).
+
+VERSIONED BACKEND FUNCTIONS (REQUIRED)
+
+Scheduling / rescheduling / deletion MUST use V2:
+
+scheduleFirstInspectionPublicV2
+
+Creates/ensures InspectionRecord first (idempotent single-per-lead)
+
+Creates/updates CalendarEvent projection
+
+Syncs Lead mirror fields
+
+Cancels duplicate active inspection events
+
+Updates pipeline stage via public stage updater
+
+requestReschedulePublicV2
+
+Token-based (no login)
+
+Resolves appointment via InspectionRecord first; fallback to Lead.inspectionEventId only if needed
+
+Creates idempotent RescheduleRequest (pending)
+
+approveRescheduleV2 / denyRescheduleV2
+
+Approval updates InspectionRecord (authoritative) → CalendarEvent (projection) → Lead mirrors (no drift)
+
+Must remain idempotent
+
+softDeleteLeadV2
+
+Soft-deletes Lead and cancels all linked InspectionRecords and CalendarEvents with reason lead_deleted
+
+LEAD PIPELINE STAGE INVARIANTS
+
+Lead stage field: Lead.stage
+
+Stage updates must be done via backend functions (service role), not client-side entity writes.
+
+Public milestone mapping (minimum):
+
+Prequal quote persisted → quote_sent
+
+Inspection scheduled → inspection_scheduled
+
+Stage update functions:
+
+updateLeadStagePublicV1 (token → leadId → stage)
+
+updateLeadStageV1 (admin/staff/manual)
+
+Non-regression rule:
+
+Public updates must not move backwards.
+
+Admin may override regressions only with explicit allowRegression=true.
+
+LEAD RLS SAFETY REQUIREMENT
+
+Lead entity update RLS must NOT be wide open.
+
+Admin/staff can update.
+
+Customers can only update their own lead (linkedLeadId/email/created_by).
+
+Backend service role must be able to update stage and operational fields via service-context behavior.
+
+Any attempt to set Lead.rls.update = true is a security defect: LEAD_UPDATE_RLS_TOO_PERMISSIVE.
+
+ADMIN SCHEDULE VIEW FILTERING
+
+Default schedule/calendar views must hide:
+
+CalendarEvent.status="cancelled"
+
+Leads where Lead.isDeleted=true
+
+Optional: an admin-only toggle “Show cancelled” for audit.
 
 ------------------------------------------------------------------
 FUTURE EXPANSION (MUST NOT BREAK ABOVE RULES)
@@ -545,6 +716,8 @@ Then status becomes Active
 Then added to schedule
 
 No payment → not scheduled.
+
+Usage input policy: If usage frequency is not collected in the quote wizard, it must be recorded explicitly as "unknown" and the pricing token must be 0 only if "unknown" is a defined option in the pricing-input schema. Production must never silently assume a usage value. If "unknown" is not present, release readiness must block with MISSING_INPUT_USAGE.
 
 4️⃣ CUSTOMER DASHBOARD
 
