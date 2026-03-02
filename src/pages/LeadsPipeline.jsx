@@ -382,7 +382,7 @@ function LeadRow({ lead, stage, onAdvance, onStageChange, onEdit, onUpdate, quer
               variant="outline"
               className="h-8 w-8 text-red-600 hover:bg-red-50 border-red-200"
               title="Delete Lead (NEW only)"
-              onClick={() => setShowDeleteConfirm(true)}
+              onClick={() => setShowRemovePanel(true)}
             >
               <Trash2 className="w-3 h-3" />
             </Button>
