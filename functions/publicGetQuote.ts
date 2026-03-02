@@ -192,6 +192,7 @@ Deno.serve(async (req) => {
         firstName: clientFirstName,
         email: clientEmail,
         poolType: questionnaireData.poolType || undefined,
+        filterType: questionnaireData.filterType || undefined,
         screenedArea: questionnaireData.enclosure === 'unscreened' ? 'unscreened' : (questionnaireData.enclosure === 'fully_screened' ? 'fully_screened' : undefined),
         treesOverhead: questionnaireData.treesOverhead || undefined,
         usageFrequency: questionnaireData.useFrequency || undefined,
