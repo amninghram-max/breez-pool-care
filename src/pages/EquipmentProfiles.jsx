@@ -67,41 +67,32 @@ export default function EquipmentProfiles() {
     }
   });
 
-  // Role guard
-  if (user && !['admin', 'staff', 'technician'].includes(user.role)) {
-    return (
-      <Card className="max-w-2xl mx-auto mt-6 border-red-200 bg-red-50">
-        <CardContent className="pt-6">
-          <p className="text-red-800">Access Denied: Only admin, staff, and technician roles can view equipment profiles.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+
 
   // Catalog items and parts for search
   const { data: catalogItems = [] } = useQuery({
     queryKey: ['equipmentCatalogItems'],
     queryFn: () => base44.entities.EquipmentCatalogItem.list('-created_date', 500),
-    enabled: !!user && ['admin', 'staff', 'technician'].includes(user?.role)
+    enabled: !!user
   });
 
   const { data: catalogParts = [] } = useQuery({
     queryKey: ['equipmentCatalogParts'],
     queryFn: () => base44.entities.EquipmentCatalogPart.list('-created_date', 1000),
-    enabled: !!user && ['admin', 'staff', 'technician'].includes(user?.role)
+    enabled: !!user
   });
 
   // Customer equipment
   const { data: equipment = [], isLoading, error: equipmentError } = useQuery({
     queryKey: ['equipmentProfiles'],
     queryFn: () => base44.entities.PoolEquipment.filter({ isActive: true }, 'equipmentType'),
-    enabled: !!user && ['admin', 'staff', 'technician'].includes(user?.role)
+    enabled: !!user
   });
 
   const { data: leads = [], error: leadsError } = useQuery({
     queryKey: ['leadsForEquipment'],
     queryFn: () => base44.entities.Lead.list('-created_date', 200),
-    enabled: !!user && ['admin', 'staff', 'technician'].includes(user?.role)
+    enabled: !!user
   });
 
   const leadMap = Object.fromEntries(leads.map(l => [l.id, l]));
