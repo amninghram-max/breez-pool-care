@@ -59,9 +59,20 @@ export default function ServiceVisitEntry() {
       const response = await base44.functions.invoke('processServiceVisit', { visitData: data });
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['serviceVisits'] });
-      alert('Service visit saved successfully!');
+      toast.success('Service visit saved successfully');
+      
+      // Show costing warnings if items were skipped
+      if (data.costingSummary?.skippedCount > 0) {
+        const reasonsList = data.costingSummary.skippedReasons
+          .slice(0, 3)
+          .join(', ') + (data.costingSummary.skippedReasons.length > 3 ? '…' : '');
+        toast.warning(
+          `Chemical costing skipped for ${data.costingSummary.skippedCount} item(s): ${reasonsList}`
+        );
+      }
+
       // Reset form
       setVisitData({
         visitDate: new Date().toISOString(),
