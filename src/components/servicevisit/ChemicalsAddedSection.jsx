@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,14 +10,19 @@ import { Plus, X, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import RetestPrompt from './RetestPrompt';
 import { getRetestEligibility } from './retestHeuristics';
+import { buildSuggestionCacheKey, createSuggestionFetcher } from './suggestionCacheHelper';
 
 function ChemicalDoseModal({ isOpen, onClose, onAddDose, chemicals = [], propertyId, visitReadings, onDoseApplied }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedChemicalId, setSelectedChemicalId] = useState('');
   const [amount, setAmount] = useState('');
   const [suggestion, setSuggestion] = useState(null);
-  const [loadingSuggestion, setLoadingSuggestion] = useState(false);
+  const [suggestionState, setSuggestionState] = useState('idle'); // 'idle', 'waiting', 'fetching', 'loaded', 'error', 'insufficient-inputs'
   const [wasSuggestionUsed, setWasSuggestionUsed] = useState(false);
+  
+  // Cache and in-flight tracking refs
+  const suggestionCacheRef = useRef(new Map());
+  const inFlightRef = useRef(new Map());
 
   const filteredChemicals = useMemo(() => {
     if (!searchQuery.trim()) return chemicals;
@@ -187,9 +192,19 @@ function ChemicalDoseModal({ isOpen, onClose, onAddDose, chemicals = [], propert
               </div>
 
               {/* Suggested Dose */}
-              {loadingSuggestion ? (
+              {suggestionState === 'insufficient-inputs' ? (
+                <div className="bg-gray-50 border border-gray-200 p-3 rounded-lg text-sm">
+                  <p className="text-xs text-gray-600">Enter pool readings (FC, pH, TA) to see suggestion.</p>
+                </div>
+              ) : suggestionState === 'waiting' || suggestionState === 'fetching' ? (
                 <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg text-sm">
-                  <p className="text-xs text-amber-700">Calculating suggestion...</p>
+                  <p className="text-xs text-amber-700">
+                    {suggestionState === 'waiting' ? 'Calculating suggestion...' : 'Fetching suggestion...'}
+                  </p>
+                </div>
+              ) : suggestionState === 'error' ? (
+                <div className="bg-red-50 border border-red-200 p-3 rounded-lg text-sm">
+                  <p className="text-xs text-red-700">Failed to fetch suggestion. Try again.</p>
                 </div>
               ) : suggestion ? (
                 <div className="bg-green-50 border border-green-200 p-3 rounded-lg text-sm space-y-2">
@@ -211,13 +226,11 @@ function ChemicalDoseModal({ isOpen, onClose, onAddDose, chemicals = [], propert
                     </Button>
                   </div>
                 </div>
-              ) : (
-                !loadingSuggestion && (
-                  <div className="bg-gray-50 border border-gray-200 p-3 rounded-lg text-sm">
-                    <p className="text-xs text-gray-600">No suggestion available for this chemical.</p>
-                  </div>
-                )
-              )}
+              ) : suggestionState === 'idle' ? (
+                <div className="bg-gray-50 border border-gray-200 p-3 rounded-lg text-sm">
+                  <p className="text-xs text-gray-600">No suggestion available for this chemical.</p>
+                </div>
+              ) : null}
             </div>
           )}
 
