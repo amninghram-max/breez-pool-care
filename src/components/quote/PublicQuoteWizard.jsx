@@ -353,7 +353,7 @@ export default function PublicQuoteWizard({ prefillData }) {
   };
 
   // ── Render finalize error ──
-  if (finalizeError && step === baseSteps.length - 1) {
+  if (finalizeError) {
     return (
       <div className="space-y-4 text-center">
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100">
@@ -364,7 +364,7 @@ export default function PublicQuoteWizard({ prefillData }) {
           <p className="text-sm text-gray-600 mt-1">{finalizeError}</p>
         </div>
         <button
-          onClick={() => { setStep(0); setFinalizeError(''); }}
+          onClick={() => { setStep(0); setFinalizeError(''); setResult(null); }}
           className="w-full py-3 px-4 rounded-xl text-white text-sm font-semibold"
           style={{ backgroundColor: TEAL }}
         >
