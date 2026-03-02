@@ -350,14 +350,13 @@ export default function PublicQuoteWizard({
         return;
       }
 
-      // STEP 2: If releaseReady with quote, finalize to get priceSummary
+      // STEP 2: If releaseReady with quote, persist to V2
       if (data?.releaseReady && data?.quote) {
         const finalizePayload = {
           token: prefillData?.token || null,
-          leadId: prefillData?.leadId || data?.leadId || null,
           prequalAnswers: answers
         };
-        console.log('DEBUG: Calling finalize with', finalizePayload);
+        console.log('DEBUG: Calling finalizePrequalQuoteV2 with', finalizePayload);
         setLastFinalizeRequest(finalizePayload);
 
         const timeoutPromise = new Promise((_, reject) => {
@@ -365,7 +364,7 @@ export default function PublicQuoteWizard({
         });
 
         const finalizeRes = await Promise.race([
-          base44.functions.invoke('finalizePrequalQuoteV1', finalizePayload),
+          base44.functions.invoke('finalizePrequalQuoteV2', finalizePayload),
           timeoutPromise
         ]);
         console.log('DEBUG: Finalize raw response', finalizeRes);
