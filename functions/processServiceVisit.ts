@@ -168,7 +168,8 @@ Deno.serve(async (req) => {
       success: true,
       visitId: visit.id,
       outOfRange,
-      chemicalCostCents
+      chemicalCostCents,
+      costingSummary
     });
   } catch (error) {
     console.error('Process service visit error:', error);
