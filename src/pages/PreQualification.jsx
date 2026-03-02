@@ -12,15 +12,25 @@ export default function PreQualification() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
-  const [debugState, setDebugState] = useState({
-    lastFinalizeRequest: null,
-    lastFinalizeResponse: null,
-    isFinalizing: false,
-    finalizeError: null,
-    finishClickedAt: null,
+  // Finalize state hooks (used by PublicQuoteWizard)
+  const [finalizing, setFinalizing] = useState(false);
+  const [finalizeState, setFinalizeState] = useState('idle');
+  const [finalizeError, setFinalizeError] = useState(null);
+  const [lastFinalizeRequest, setLastFinalizeRequest] = useState(null);
+  const [lastFinalizeResponse, setLastFinalizeResponse] = useState(null);
+  const [finishClickedAt, setFinishClickedAt] = useState(null);
+
+  // Debug state for display
+  const debugState = {
+    finalizeState,
+    lastFinalizeRequest,
+    lastFinalizeResponse,
+    isFinalizing: finalizing,
+    finalizeError,
+    finishClickedAt,
     currentStep: 0,
     currentStepName: ''
-  });
+  };
   
   const [user, setUser] = useState(undefined); // undefined = loading, null = guest
   const [quoteResult, setQuoteResult] = useState(null);
