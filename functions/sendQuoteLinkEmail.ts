@@ -2,39 +2,34 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { getAppOrigin } from "./_getAppOrigin.js";
 
 const BUILD = "SQLE-FORCE-RESPONSE-2026-03-01-D";
+const FORCE_BUILD = "SQLE-FORCE-BODY-2026-03-01-G";
 
 Deno.serve(async (req) => {
-  const FORCE = "SQLE-FORCE-DEPLOY-2026-03-01-F";
-  if (new URL(req.url).searchParams.get("force") === "1") {
+  const base44 = createClientFromRequest(req);
+
+  const raw = await req.text();
+  let payload = null;
+  try { payload = raw ? JSON.parse(raw) : null; } catch {}
+
+  if (payload?.__force === "1") {
     return new Response(JSON.stringify({
       success: false,
-      build: FORCE,
-      note: "This is a forced deploy proof response"
+      build: FORCE_BUILD,
+      note: "force path reached",
+      sawKeys: Object.keys(payload || {})
     }), { status: 200, headers: { "content-type": "application/json; charset=utf-8" } });
   }
 
-  const base44 = createClientFromRequest(req);
   try {
     const method = req.method;
     const contentType = req.headers.get("content-type") || "";
-    const raw = await req.text();
     const bodyLength = raw?.length ?? 0;
 
     console.log("SQLE_BUILD_CHECK", BUILD, { method, contentType, bodyLength });
 
-    if (bodyLength === 0) {
+    if (bodyLength === 0 || !payload) {
       return new Response(JSON.stringify({
         success: false, error: 'Missing JSON body', build: BUILD
-      }), { status: 200, headers: { "content-type": "application/json; charset=utf-8" } });
-    }
-
-    let payload;
-    try {
-      payload = JSON.parse(raw);
-    } catch (parseError) {
-      return new Response(JSON.stringify({
-        success: false, error: 'Invalid JSON body',
-        message: String(parseError?.message ?? parseError), build: BUILD
       }), { status: 200, headers: { "content-type": "application/json; charset=utf-8" } });
     }
 
