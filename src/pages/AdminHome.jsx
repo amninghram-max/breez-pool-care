@@ -158,13 +158,6 @@ export default function AdminHome() {
       {showDemo && (
         <DemoQuoteModal
           onClose={() => setShowDemo(false)}
-          onConvertToReal={(fd) => { setConvertAnswers(fd); setShowReal(true); setShowDemo(false); }}
-        />
-      )}
-      {showReal && (
-        <RealQuoteModal
-          onClose={() => { setShowReal(false); setConvertAnswers(null); }}
-          initialAnswers={convertAnswers}
         />
       )}
       <InPersonSalesModal open={showInPerson} onOpenChange={setShowInPerson} />
