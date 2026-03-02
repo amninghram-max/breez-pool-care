@@ -254,9 +254,14 @@ export default function PublicQuoteWizard({ prefillData }) {
         }
       };
       const res = await base44.functions.invoke('publicGetQuote', payload);
-      setResult(res.data);
+      const data = res?.data ?? res;
+      if (data?.success !== true) {
+        setError(data?.error || 'Failed to generate quote. Please try again.');
+        return;
+      }
+      setResult(data);
     } catch (e) {
-      setError('Something went wrong. Please try again or call us at (321) 524-3838.');
+      setError(e?.message || 'Something went wrong. Please try again or call us at (321) 524-3838.');
     } finally {
       setLoading(false);
     }
