@@ -204,39 +204,26 @@ export default function PreQualification() {
         <a href="tel:3215243838" className="text-sm text-gray-500 hover:text-gray-700">(321) 524-3838</a>
       </header>
 
-      {/* Show existing quote if found */}
+      {/* Show existing quote if found - use full QuoteResultDisplay */}
       {existingQuote ? (
         <div className="flex-1 flex items-start justify-center px-4 py-10">
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-lg p-8">
-            <div className="space-y-6">
-              <div className="text-center">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome back, {existingQuote.clientFirstName}!</h1>
-                <p className="text-gray-500 text-sm">Here's your saved quote</p>
-              </div>
-
-              <div className="rounded-2xl border-2 border-teal-600 p-6 bg-blue-50">
-                <div className="text-center mb-4">
-                  <div className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Estimated Monthly Service</div>
-                  <div className="text-4xl font-bold text-teal-600">{existingQuote.priceSummary?.monthlyPrice || 'TBD'}</div>
-                  <div className="mt-2 inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-white border border-teal-600 text-teal-600">
-                    {existingQuote.priceSummary?.visitFrequency} Service
-                  </div>
-                  {existingQuote.priceSummary?.oneTimeFees && (
-                    <div className="border-t pt-4 mt-4 text-center">
-                      <div className="text-xs text-gray-500 uppercase tracking-widest mb-1">One-Time Initial Fee</div>
-                      <div className="text-xl font-bold text-gray-800">{existingQuote.priceSummary.oneTimeFees}</div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <button
-                onClick={() => setExistingQuote(null)}
-                className="w-full py-3 px-4 rounded-xl text-white text-sm font-semibold bg-teal-600 hover:bg-teal-700 transition-all"
-              >
-                Schedule Your Free Inspection
-              </button>
-            </div>
+            {(() => {
+              console.log('[PreQual] Rendering full QuoteResultDisplay for token:', token);
+              return (
+                <QuoteResultDisplay
+                  result={{
+                    quote: existingQuote.quoteSnapshot || existingQuote,
+                    priceSummary: existingQuote.priceSummary,
+                    isRange: existingQuote.isRange
+                  }}
+                  firstName={existingQuote.clientFirstName || 'Guest'}
+                  email={existingQuote.clientEmail}
+                  leadId={existingQuote.leadId}
+                  quoteToken={token}
+                />
+              );
+            })()}
           </div>
         </div>
       ) : (
