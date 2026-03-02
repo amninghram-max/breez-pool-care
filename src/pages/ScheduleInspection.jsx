@@ -87,14 +87,7 @@ export default function ScheduleInspection() {
         const data = res?.data ?? res;
         console.log('schedule options response:', data);
         
-        // Check success flag explicitly
-        if (data?.success !== true) {
-          setLoadError(data?.error || 'Unable to load schedule options');
-          setLoadingLead(false);
-          return;
-        }
-
-        if (data.request) {
+        if (data?.success === true && data.request) {
           setLeadData({
             leadId: data.request.leadId,
             email: data.request.email,
@@ -106,7 +99,7 @@ export default function ScheduleInspection() {
             setFirstName(data.request.firstName);
           }
         } else {
-          setLoadError('Unable to load quote details');
+          setLoadError(data?.error || 'Invalid or expired token');
         }
       } catch (err) {
         console.error('ScheduleInspection load error:', err);
