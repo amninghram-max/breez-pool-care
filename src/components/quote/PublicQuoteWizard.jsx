@@ -143,19 +143,21 @@ function QuoteResultDisplay({ result, firstName, email, leadId, quoteToken }) {
       </p>
 
       {/* CTA */}
-      <div className="space-y-3">
-        <button
-          onClick={() => {
-            if (quoteToken) {
-              window.location.href = `/ScheduleInspection?token=${encodeURIComponent(quoteToken)}`;
-            }
-          }}
-          className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-white text-base font-semibold shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5"
-          style={{ backgroundColor: TEAL }}
-        >
-          <Calendar className="w-5 h-5" />
-          Schedule Your Free Inspection
-        </button>
+       <div className="space-y-3">
+         <button
+           type="button"
+           onClick={() => {
+             if (quoteToken) {
+               console.log('Navigating to ScheduleInspection with token:', quoteToken);
+               window.location.href = `/ScheduleInspection?token=${encodeURIComponent(quoteToken)}`;
+             }
+           }}
+           className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-white text-base font-semibold shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5"
+           style={{ backgroundColor: TEAL }}
+         >
+           <Calendar className="w-5 h-5" />
+           Schedule Your Free Inspection
+         </button>
         <p className="text-xs text-center text-gray-400">No obligation. Homeowner or designated caretaker must be present.</p>
       </div>
     </div>
