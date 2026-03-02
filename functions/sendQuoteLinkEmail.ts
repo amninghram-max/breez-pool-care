@@ -248,12 +248,18 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({
       success: true,
       build: BUILD,
-      resendId,
       link: prequalLink,
+      resendId,
       stampField: "quoteLinkEmailSentAt",
       stampUpdated,
       stampValue,
-      stampError
+      stampError,
+      debug: {
+        appOrigin,
+        host: req.headers.get("host"),
+        xfHost: req.headers.get("x-forwarded-host"),
+        xfProto: req.headers.get("x-forwarded-proto")
+      }
     }), {
       status: 200,
       headers: { "content-type": "application/json; charset=utf-8" }
