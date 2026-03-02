@@ -375,11 +375,13 @@ export default function PublicQuoteWizard({ prefillData }) {
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none transition-colors text-gray-900"
-              onFocus={e => e.target.style.borderColor = TEAL}
-              onBlur={e => e.target.style.borderColor = '#e5e7eb'}
+              disabled={prefillData?.email ? true : false}
+              className={`w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none transition-colors text-gray-900 ${prefillData?.email ? 'bg-gray-50 cursor-not-allowed opacity-75' : ''}`}
+              onFocus={e => !prefillData?.email && (e.target.style.borderColor = TEAL)}
+              onBlur={e => !prefillData?.email && (e.target.style.borderColor = '#e5e7eb')}
               autoComplete="email"
             />
+            {prefillData?.email && <p className="text-xs text-gray-400 mt-1">Pre-filled from your request</p>}
           </div>
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <button
