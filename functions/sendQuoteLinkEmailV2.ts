@@ -2,31 +2,58 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 const BUILD = "SQLE-V2-2026-03-01-H";
 
-function getAppOrigin(req) {
-  // 1) env var first
-  const envUrl = (Deno.env.get("PUBLIC_APP_URL") || "").trim();
-  if (envUrl) {
-    let u;
-    try { u = new URL(envUrl); } catch { throw new Error("PUBLIC_APP_URL is not a valid URL"); }
-    if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error("PUBLIC_APP_URL must be http/https");
-    const origin = u.origin.replace(/\/+$/, "");
-    if (origin.includes("deno.dev")) throw new Error("Invalid app origin (deno.dev)");
-    return origin;
-  }
+const json = (data) => new Response(
+  JSON.stringify(data),
+  { status: 200, headers: { "content-type": "application/json; charset=utf-8" } }
+);
 
-  // 2) header fallback chain
-  const proto = (req.headers.get("x-forwarded-proto") || "https").split(",")[0].trim();
+function isValidOrigin(origin) {
+  try {
+    const u = new URL(origin);
+    if (u.protocol !== "http:" && u.protocol !== "https:") return false;
+    if (!u.host) return false;
+    if (u.host.endsWith(".deno.dev") || u.host.includes("deno.dev")) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function getAppOrigin(req) {
+  // A) req.url first
+  try {
+    const reqUrl = new URL(req.url);
+    const candidate = `${reqUrl.protocol}//${reqUrl.host}`;
+    if (isValidOrigin(candidate)) return candidate;
+  } catch {}
+
+  // B) headers
+  const xfProto = (req.headers.get("x-forwarded-proto") || "").split(",")[0].trim();
   const xfHost = (req.headers.get("x-forwarded-host") || "").split(",")[0].trim();
   const host = (req.headers.get("host") || "").split(",")[0].trim();
-  const h = xfHost || host;
 
-  if (!h) throw new Error("Unable to determine app origin: PUBLIC_APP_URL not set and request headers missing host");
-  if (proto !== "http" && proto !== "https") throw new Error("Invalid forwarded proto");
+  if (xfHost) {
+    const proto = xfProto || "https";
+    const candidate = `${proto}://${xfHost}`;
+    if (isValidOrigin(candidate)) return candidate;
+  }
+  if (host) {
+    const proto = xfProto || "https";
+    const candidate = `${proto}://${host}`;
+    if (isValidOrigin(candidate)) return candidate;
+  }
 
-  const origin = `${proto}://${h}`.replace(/\/+$/, "");
-  if (origin.includes("deno.dev")) throw new Error("Invalid app origin (deno.dev)");
-  try { new URL(origin); } catch { throw new Error("Derived app origin is not a valid URL"); }
-  return origin;
+  // C) env var
+  const envUrl = (Deno.env.get("PUBLIC_APP_URL") || "").trim();
+  if (envUrl) {
+    try {
+      const u = new URL(envUrl);
+      const candidate = u.origin;
+      if (isValidOrigin(candidate)) return candidate;
+    } catch {}
+  }
+
+  return null;
 }
 
 Deno.serve(async (req) => {
@@ -38,11 +65,7 @@ Deno.serve(async (req) => {
 
   // Force probe
   if (payload?.__force === "1") {
-    return new Response(JSON.stringify({
-      success: false,
-      build: BUILD,
-      note: "force reached V2"
-    }), { status: 200, headers: { "content-type": "application/json; charset=utf-8" } });
+    return json({ success: false, build: BUILD, note: "force reached V2" });
   }
 
   try {
@@ -54,26 +77,30 @@ Deno.serve(async (req) => {
     if (!email || typeof email !== 'string' || !email.trim()) missingFields.push('email');
 
     if (missingFields.length > 0) {
-      return new Response(JSON.stringify({
-        success: false, error: 'Missing or invalid required fields', missingFields, build: BUILD
-      }), { status: 200, headers: { "content-type": "application/json; charset=utf-8" } });
+      return json({ success: false, error: 'Missing or invalid required fields', missingFields, build: BUILD });
     }
 
-    let appOrigin;
-    try {
-      appOrigin = getAppOrigin(req);
-    } catch (error) {
-      console.error('V2 getAppOrigin failed:', error.message);
-      return new Response(JSON.stringify({
-        success: false, error: 'Could not determine application URL', details: error.message, build: BUILD
-      }), { status: 200, headers: { "content-type": "application/json; charset=utf-8" } });
+    const appOrigin = getAppOrigin(req);
+    if (!appOrigin) {
+      console.error('V2 getAppOrigin: no valid origin found', {
+        url: req.url,
+        host: req.headers.get("host"),
+        xfHost: req.headers.get("x-forwarded-host"),
+        xfProto: req.headers.get("x-forwarded-proto")
+      });
+      return json({
+        success: false,
+        error: 'Could not determine application URL',
+        detail: `req.url=${req.url} host=${req.headers.get("host")} xfHost=${req.headers.get("x-forwarded-host")}`,
+        build: BUILD
+      });
     }
+
+    console.log('V2_ORIGIN_RESOLVED', { appOrigin, build: BUILD });
 
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     if (!resendApiKey) {
-      return new Response(JSON.stringify({
-        success: false, error: 'RESEND_API_KEY not configured', build: BUILD
-      }), { status: 200, headers: { "content-type": "application/json; charset=utf-8" } });
+      return json({ success: false, error: 'RESEND_API_KEY not configured', build: BUILD });
     }
 
     const link = `${appOrigin}/PreQualification?leadId=${encodeURIComponent(leadId)}`;
@@ -124,9 +151,7 @@ Deno.serve(async (req) => {
 
     if (!emailRes.ok) {
       console.error('V2 Resend error:', emailRes.status, resendText.slice(0, 200));
-      return new Response(JSON.stringify({
-        success: false, error: 'Resend failed', status: emailRes.status, body: resendText, build: BUILD
-      }), { status: 200, headers: { "content-type": "application/json; charset=utf-8" } });
+      return json({ success: false, error: 'Resend failed', status: emailRes.status, body: resendText.slice(0, 300), build: BUILD });
     }
 
     const resendId = emailData.id ?? null;
@@ -146,21 +171,10 @@ Deno.serve(async (req) => {
     }
     console.log('V2_STAMP', { stampUpdated, stampError });
 
-    return new Response(JSON.stringify({
-      success: true,
-      build: BUILD,
-      link,
-      resendId,
-      stampUpdated,
-      stampValue,
-      stampError
-    }), { status: 200, headers: { "content-type": "application/json; charset=utf-8" } });
+    return json({ success: true, build: BUILD, link, resendId, stampUpdated, stampValue, stampError });
 
   } catch (error) {
     console.error('V2 crash:', error);
-    return new Response(JSON.stringify({
-      success: false, error: 'sendQuoteLinkEmailV2 crashed',
-      message: String(error?.message ?? error), build: BUILD
-    }), { status: 200, headers: { "content-type": "application/json; charset=utf-8" } });
+    return json({ success: false, error: 'sendQuoteLinkEmailV2 crashed', message: String(error?.message ?? error), build: BUILD });
   }
 });
