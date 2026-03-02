@@ -65,9 +65,16 @@ export default function QuoteResultDisplay({ result, firstName, email, leadId, q
       {/* CTA */}
       <div className="space-y-3">
         {!quoteToken ? (
-          <div className="flex items-center justify-center gap-2 py-4 rounded-xl text-gray-400 text-base font-semibold opacity-60">
-            <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
-            Loading schedule options…
+          <div className="rounded-lg bg-red-50 border border-red-200 p-4">
+            <p className="text-sm font-semibold text-red-900 mb-2">Quote token missing</p>
+            <p className="text-xs text-red-700 mb-3">Cannot proceed without a valid quote reference.</p>
+            <button
+              type="button"
+              onClick={() => window.location.href = '/PreQualification'}
+              className="w-full py-2 px-3 rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors"
+            >
+              Restart Quote
+            </button>
           </div>
         ) : (
           <button
