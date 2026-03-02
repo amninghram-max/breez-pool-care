@@ -363,7 +363,11 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
                // Derived pricing state for display — eliminates all $0 defaults
                const pricingForDisplay = quoteSnapshot ?? estimatePreview ?? null;
                const pricingSource = quoteSnapshot ? 'LOCKED' : estimatePreview ? 'PREVIEW' : 'NONE';
-               const monthlyPrice = pricingForDisplay?.finalMonthlyPrice ?? pricingForDisplay?.monthly;
+               // For PREVIEW: read directly from canonical { monthly, perVisit?, oneTime? }
+               // For LOCKED: fallback to finalMonthlyPrice if needed
+               const monthlyPrice = pricingSource === 'PREVIEW' 
+                 ? pricingForDisplay?.monthly 
+                 : (pricingForDisplay?.finalMonthlyPrice ?? pricingForDisplay?.monthly);
 
                if (!pricingForDisplay) {
                  return (
