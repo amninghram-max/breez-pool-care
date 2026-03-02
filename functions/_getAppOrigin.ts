@@ -32,16 +32,26 @@ export function getAppOrigin(req) {
 
   const origin = `${proto}://${host}`;
 
+  let url;
   try {
-    const url = new URL(origin);
-    if (!["http:", "https:"].includes(url.protocol)) {
-      throw new Error(`Invalid protocol: ${url.protocol}. Must be http or https.`);
-    }
-    return `${url.protocol}//${url.host}`;
+    url = new URL(origin);
   } catch (e) {
     throw new Error(
       `Could not derive valid origin from request headers. ` +
       `proto="${proto}", host="${host}". Error: ${e.message}`
     );
   }
+
+  if (!["http:", "https:"].includes(url.protocol)) {
+    throw new Error(`Invalid protocol: ${url.protocol}. Must be http or https.`);
+  }
+
+  if (url.hostname === "deno.dev" || url.hostname.endsWith(".deno.dev")) {
+    throw new Error(
+      `Resolved origin is a deno.dev host ("${url.host}"), which must not be used for outbound links. ` +
+      `Set PUBLIC_APP_URL to the app's public URL (e.g., https://preview--breez-pool-care.base44.app).`
+    );
+  }
+
+  return `${url.protocol}//${url.host}`;
 }
