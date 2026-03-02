@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const payload = await req.json();
-    const { token, phone, requestedDate, requestedTimeSlot } = payload || {};
+    const { token, firstName, phone, email, serviceAddress, requestedDate, requestedTimeSlot } = payload || {};
 
     // Validate inputs
     if (!token || typeof token !== 'string') {
@@ -32,10 +32,35 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (!firstName || typeof firstName !== 'string' || !firstName.trim()) {
+      return json200({
+        success: false,
+        error: 'firstName is required',
+        build: BUILD
+      });
+    }
+
     if (!phone || typeof phone !== 'string' || !phone.trim()) {
       return json200({
         success: false,
         error: 'phone is required',
+        build: BUILD
+      });
+    }
+
+    if (!serviceAddress || typeof serviceAddress !== 'object') {
+      return json200({
+        success: false,
+        error: 'serviceAddress object is required',
+        build: BUILD
+      });
+    }
+
+    const { street, city, state, zip } = serviceAddress;
+    if (!street?.trim() || !city?.trim() || !state?.trim() || !zip?.trim()) {
+      return json200({
+        success: false,
+        error: 'serviceAddress must include street, city, state, and zip',
         build: BUILD
       });
     }
