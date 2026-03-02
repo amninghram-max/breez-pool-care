@@ -225,7 +225,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log('✅ Quote link email sent via Resend:', { id: emailData.id, to: email, link: quoteLink, build: BUILD });
+    console.log('✅ Quote link email sent via Resend:', { id: emailData.id, to: email, prequalLink, publicHomeLink, build: BUILD });
 
     // Stamp the Lead so frontend can verify success even if SDK parse fails
     let stampUpdated = false;
