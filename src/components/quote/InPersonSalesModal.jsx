@@ -402,16 +402,24 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
                          <p className={`text-sm ${pricingSource === 'LOCKED' ? 'text-green-700' : 'text-teal-700'} mb-2`}>
                            Monthly: <strong>${(monthlyPrice ?? 0).toFixed(2)}</strong>
                          </p>
-                         {pricingForDisplay.estimatedPerVisitPrice && (
-                           <p className={`text-sm ${pricingSource === 'LOCKED' ? 'text-green-700' : 'text-teal-700'}`}>
-                             Per visit: ${pricingForDisplay.estimatedPerVisitPrice.toFixed(2)}
-                           </p>
-                         )}
-                         {pricingForDisplay.estimatedOneTimeFees && pricingForDisplay.estimatedOneTimeFees > 0 && (
-                           <p className={`text-sm ${pricingSource === 'LOCKED' ? 'text-green-700' : 'text-teal-700'}`}>
-                             One-time fees: ${pricingForDisplay.estimatedOneTimeFees.toFixed(2)}
-                           </p>
-                         )}
+                         {(() => {
+                           const perVisit = pricingSource === 'PREVIEW' ? pricingForDisplay?.perVisit : pricingForDisplay?.estimatedPerVisitPrice;
+                           const oneTime = pricingSource === 'PREVIEW' ? pricingForDisplay?.oneTime : pricingForDisplay?.estimatedOneTimeFees;
+                           return (
+                             <>
+                               {perVisit && (
+                                 <p className={`text-sm ${pricingSource === 'LOCKED' ? 'text-green-700' : 'text-teal-700'}`}>
+                                   Per visit: ${perVisit.toFixed(2)}
+                                 </p>
+                               )}
+                               {oneTime && oneTime > 0 && (
+                                 <p className={`text-sm ${pricingSource === 'LOCKED' ? 'text-green-700' : 'text-teal-700'}`}>
+                                   One-time fees: ${oneTime.toFixed(2)}
+                                 </p>
+                               )}
+                             </>
+                           );
+                         })()}
                          <p className="text-xs text-gray-500 mt-3 pt-3 border-t">
                            Source: <code>{pricingSource}</code> | monthlyRaw: {monthlyPrice ?? 'undefined'}
                          </p>
