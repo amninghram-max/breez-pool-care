@@ -184,6 +184,7 @@ export default function PublicQuoteWizard({
     'filterType',
     'chlorinationMethod',
     'useFrequency',
+    'usageFrequency',
     ...(showTrees ? ['treesOverhead'] : []),
     'petsAccess',
     'poolCondition',
