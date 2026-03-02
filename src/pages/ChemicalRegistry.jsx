@@ -479,6 +479,7 @@ export default function ChemicalRegistry() {
   const [editingId, setEditingId] = useState(null);
   const [viewingId, setViewingId] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [showMissingOnly, setShowMissingOnly] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -514,8 +515,22 @@ export default function ChemicalRegistry() {
 
   const canEdit = user && ['admin', 'staff'].includes(user.role);
 
+  const costingStats = useMemo(() => {
+    const active = chemicals.filter(c => c.isActive);
+    const missingUnit = active.filter(c => !c.costCanonicalUnit);
+    const missingCents = active.filter(c => !c.costPerCanonicalUnitCents);
+    const fullyCoded = active.filter(c => c.costCanonicalUnit && c.costPerCanonicalUnitCents);
+    
+    return {
+      activeCount: active.length,
+      missingUnitCount: missingUnit.length,
+      missingCentsCount: missingCents.length,
+      fullyCostedCount: fullyCoded.length
+    };
+  }, [chemicals]);
+
   const filteredChemicals = useMemo(() => {
-    return chemicals.filter(chem => {
+    let result = chemicals.filter(chem => {
       const matchesSearch =
         !searchQuery ||
         chem.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -526,7 +541,13 @@ export default function ChemicalRegistry() {
       
       return matchesSearch && matchesCategory;
     });
-  }, [chemicals, searchQuery, selectedCategory]);
+
+    if (showMissingOnly) {
+      result = result.filter(c => c.isActive && (!c.costCanonicalUnit || !c.costPerCanonicalUnitCents));
+    }
+
+    return result;
+  }, [chemicals, searchQuery, selectedCategory, showMissingOnly]);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 p-6">
@@ -566,9 +587,44 @@ export default function ChemicalRegistry() {
             </DialogContent>
           </Dialog>
         )}
-      </div>
+        </div>
 
-      {/* Search & Filters */}
+        {/* Costing Completeness Summary */}
+        <Card className="bg-slate-50 border-slate-200">
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <div className="flex gap-8">
+                <div>
+                  <p className="text-xs font-semibold text-gray-600 uppercase">Active</p>
+                  <p className="text-lg font-bold text-gray-900">{costingStats.activeCount}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-600 uppercase">Missing Unit</p>
+                  <p className="text-lg font-bold text-orange-600">{costingStats.missingUnitCount}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-600 uppercase">Missing Cents</p>
+                  <p className="text-lg font-bold text-orange-600">{costingStats.missingCentsCount}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-600 uppercase">Fully Costed</p>
+                  <p className="text-lg font-bold text-green-600">{costingStats.fullyCostedCount}</p>
+                </div>
+              </div>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={showMissingOnly}
+                  onChange={(e) => setShowMissingOnly(e.target.checked)}
+                  className="rounded"
+                />
+                Show only missing cost config
+              </label>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Search & Filters */}
       <div className="space-y-4">
         <div className="relative">
           <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
@@ -617,8 +673,15 @@ export default function ChemicalRegistry() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-4">
-          {filteredChemicals.map(chem => (
-            <Card key={chem.id} className="hover:shadow-md transition-shadow">
+           {filteredChemicals.map(chem => (
+             <Card 
+               key={chem.id} 
+               className={`hover:shadow-md transition-shadow ${
+                 chem.isActive && (!chem.costCanonicalUnit || !chem.costPerCanonicalUnitCents)
+                   ? 'border-orange-300 bg-orange-50'
+                   : ''
+               }`}
+             >
               <CardContent className="pt-6">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
