@@ -300,7 +300,9 @@ export default function PublicQuoteWizard({
       if (data?.releaseReady && data?.quote) {
         const finalizePayload = {
           token: prefillData?.token || null,
-          prequalAnswers: answers
+          prequalAnswers: answers,
+          clientFirstName: finalFirstName.trim(),
+          clientEmail: finalEmail.trim().toLowerCase()
         };
         console.log('DEBUG: Calling finalizePrequalQuoteV2 with', finalizePayload);
         setLastFinalizeRequest(finalizePayload);
