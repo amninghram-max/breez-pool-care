@@ -117,7 +117,6 @@ Deno.serve(async (req) => {
 
     let attemptedServiceVisits = 0;
     let attemptedCustomerEquipment = 0;
-    let attemptedChemistryRiskEvents = 0;
 
     // 4. Create ServiceVisit records (spread across daysBack)
     try {
@@ -200,65 +199,13 @@ Deno.serve(async (req) => {
       }, { status: err.status || 500 });
     }
 
-    // 6. Create ChemistryRiskEvent records (open + resolved)
-    try {
-      const now = new Date();
-      const thirtyDaysFromNow = new Date(now);
-      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-
-      const openRiskEvent = {
-        poolId: leadId,
-        leadId: leadId,
-        testRecordId: `TST-RECORD-${Date.now()}`,
-        eventType: 'LOW_FC_CRITICAL',
-        severityPoints: 5,
-        triggerValue: 0.5,
-        thresholdValue: 1.0,
-        createdDate: new Date().toISOString(),
-        expiresAt: thirtyDaysFromNow.toISOString(),
-        notes: 'Test open risk event for dashboard',
-      };
-
-      await base44.entities.ChemistryRiskEvent.create(openRiskEvent);
-      attemptedChemistryRiskEvents++;
-
-      const pastDate = new Date();
-      pastDate.setDate(pastDate.getDate() - 35);
-      const expiredDate = new Date(pastDate);
-      expiredDate.setDate(expiredDate.getDate() + 30);
-
-      const resolvedRiskEvent = {
-        poolId: leadId,
-        leadId: leadId,
-        testRecordId: `TST-RECORD-${Date.now() + 1}`,
-        eventType: 'HIGH_PH',
-        severityPoints: 2,
-        triggerValue: 8.2,
-        thresholdValue: 7.8,
-        createdDate: pastDate.toISOString(),
-        expiresAt: expiredDate.toISOString(),
-        notes: 'Test resolved risk event for dashboard',
-      };
-
-      await base44.entities.ChemistryRiskEvent.create(resolvedRiskEvent);
-      attemptedChemistryRiskEvents++;
-    } catch (err) {
-      console.error('ChemistryRiskEvent creation error:', err.message);
-      return Response.json({
-        error: {
-          step: 'createChemistryRiskEvents',
-          errorMessage: err.message,
-          errorCode: err.code || 'UNKNOWN',
-          statusCode: err.status || 500,
-          attempted: attemptedChemistryRiskEvents
-        }
-      }, { status: err.status || 500 });
-    }
+    // 6. Skip ChemistryRiskEvent for now (requires poolId + testRecordId linkage)
+    // TODO: Add after visits/equipment populate
+    const attemptedChemistryRiskEvents = 0;
 
     // 7. Verification read-back
     let verifiedServiceVisitCount = 0;
     let verifiedCustomerEquipmentCount = 0;
-    let verifiedChemistryRiskEventCount = 0;
 
     try {
       const allVisits = await base44.entities.ServiceVisit.list('-visitDate', 500);
@@ -266,9 +213,6 @@ Deno.serve(async (req) => {
 
       const allEquipment = await base44.entities.CustomerEquipment.list();
       verifiedCustomerEquipmentCount = allEquipment.filter(e => e.customerId === leadId).length;
-
-      const allRiskEvents = await base44.entities.ChemistryRiskEvent.list();
-      verifiedChemistryRiskEventCount = allRiskEvents.filter(e => e.leadId === leadId).length;
     } catch (err) {
       console.error('Verification read-back error:', err.message);
       // Continue despite verification error—creations may have succeeded
@@ -282,7 +226,7 @@ Deno.serve(async (req) => {
       attemptedChemistryRiskEvents,
       verifiedServiceVisitCount,
       verifiedCustomerEquipmentCount,
-      verifiedChemistryRiskEventCount,
+      verifiedChemistryRiskEventCount: 0,
       message: 'Test customer data seeded successfully',
     });
   } catch (error) {
