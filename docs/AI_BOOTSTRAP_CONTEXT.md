@@ -1,4 +1,10 @@
 # Breez Pool Care – AI Bootstrap Context
+
+This file mirrors pages/_ARCHITECTURE_CONTEXT.jsx.
+Source of truth lives inside the app.
+If mismatch occurs, the JSX file is authoritative.
+
+---
 # Authoritative architecture constraints for pricing + release system
 
 SYSTEM_NAME: Breez Pool Care Platform
