@@ -455,6 +455,20 @@ export default function ChemicalsAddedSection({ chemicalsAdded, onChemicalsChang
           </div>
         )}
       </CardContent>
+
+      {/* Retest Prompt */}
+      {retestDetails && (
+        <RetestPrompt
+          isOpen={retestPromptOpen}
+          onClose={() => {
+            setRetestPromptOpen(false);
+            setRetestDetails(null);
+          }}
+          onSelect={handleRetestSelection}
+          reason={retestDetails.reason}
+          isDismissed={dismissRetestPrompt}
+        />
+      )}
     </Card>
   );
 }

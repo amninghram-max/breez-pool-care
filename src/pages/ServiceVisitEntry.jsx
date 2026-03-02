@@ -361,6 +361,7 @@ export default function ServiceVisitEntry() {
           pH: visitData.pH,
           totalAlkalinity: visitData.totalAlkalinity
         }}
+        technicianId={visitData.technicianName}
       />
 
       {/* Services Performed */}
