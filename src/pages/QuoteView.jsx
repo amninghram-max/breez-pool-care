@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import QuoteResultDisplay from '../components/quote/QuoteResultDisplay';
+import QuoteResultDisplay from '../components/quote/QuoteResultDisplay.jsx';
 
 const TEAL = '#1B9B9F';
 
