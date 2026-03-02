@@ -62,6 +62,7 @@ Deno.serve(async (req) => {
       });
       console.log('SOFT_DELETE_LEAD_V2_MARKED', { leadId, deletedBy: user.email });
     } catch (e) {
+      console.error('DEBUG_LEAD_UPDATE_ERROR', { message: e?.message, detail: e?.response?.data || e });
       console.error('SOFT_DELETE_LEAD_V2_MARK_FAILED', { error: e.message, detail: e?.response?.data });
       return json200({ success: false, error: 'Failed to mark Lead as deleted', detail: e.message, build: BUILD });
     }
