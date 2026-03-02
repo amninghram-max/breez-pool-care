@@ -38,11 +38,6 @@ export default function SendInspectionLinkModal({ lead, isOpen, onClose, onSucce
 
     setLoading(true);
     try {
-      // Update lead email if changed
-      if (email !== lead.email) {
-        await base44.entities.Lead.update(lead.id, { email });
-      }
-
       // Trigger inspection scheduling email workflow
       const res = await base44.functions.invoke('sendScheduleNotification', {
         leadId: lead.id,
@@ -55,14 +50,17 @@ export default function SendInspectionLinkModal({ lead, isOpen, onClose, onSucce
         throw new Error(res.data?.error || 'Failed to send inspection link');
       }
 
-      // Log timestamp in notes
-      const timestamp = new Date().toISOString();
-      const newNotes = (lead.notes || '') + `\n[INSPECTION_LINK_SENT] ${timestamp}`;
-      
-      // Keep QUOTED stage, just log the action
-      await base44.entities.Lead.update(lead.id, {
-        notes: newNotes
+      // Update lead metadata: email and notes via backend
+      const metaRes = await base44.functions.invoke('updateLeadMeta', {
+        leadId: lead.id,
+        email: email !== lead.email ? email : undefined,
+        noteTag: 'INSPECTION_LINK_SENT',
+        noteText: `sent to ${email}`
       });
+
+      if (!metaRes.data?.success) {
+        throw new Error(metaRes.data?.error || 'Failed to update lead metadata');
+      }
 
       toast.success('Inspection link sent');
       onSuccess?.();
