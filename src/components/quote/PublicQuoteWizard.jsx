@@ -248,21 +248,7 @@ export default function PublicQuoteWizard({
   const totalSteps = baseSteps.length;
   const currentKey = baseSteps[step];
 
-  // Emit debug state to parent whenever state changes
-  React.useEffect(() => {
-    if (onDebugStateChange) {
-      onDebugStateChange({
-        finalizeState,
-        lastFinalizeRequest,
-        lastFinalizeResponse,
-        isFinalizing,
-        finalizeError,
-        finishClickedAt,
-        currentStep: step,
-        currentStepName: currentKey
-      });
-    }
-  }, [step, finalizeState, isFinalizing, finalizeError, lastFinalizeRequest, lastFinalizeResponse, finishClickedAt, currentKey, onDebugStateChange]);
+
 
   const goBack = () => setStep(s => Math.max(0, s - 1));
 
