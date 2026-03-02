@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import QuickActionsBar from '../components/customer/QuickActionsBar';
 import SendAlertModal from '../components/customer/SendAlertModal';
 import AlertsActionBar from '../components/customer/AlertsActionBar';
+import ChemistryCard from '../components/customer/ChemistryCard';
 
 function ActiveCustomersDirectory() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -432,25 +433,10 @@ export default function CustomerTimeline() {
           {visitsLast30Days.length === 0 ? (
             <p className="text-gray-600 text-sm">No readings in the last 30 days.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-2 px-2 font-medium text-gray-700">Date</th>
-                    <th className="text-left py-2 px-2 font-medium text-gray-700">FC (ppm)</th>
-                    <th className="text-left py-2 px-2 font-medium text-gray-700">pH</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visitsLast30Days.slice(0, 8).map(visit => (
-                    <tr key={visit.id} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-2 px-2 text-gray-900">{format(new Date(visit.visitDate), 'MMM d')}</td>
-                      <td className="py-2 px-2 text-gray-700">{visit.freeChlorine ?? '—'}</td>
-                      <td className="py-2 px-2 text-gray-700">{visit.pH ?? '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="space-y-3">
+              {visitsLast30Days.map(visit => (
+                <ChemistryCard key={visit.id} visit={visit} />
+              ))}
             </div>
           )}
         </CardContent>
