@@ -267,6 +267,7 @@ export default function PublicQuoteWizard({ prefillData, onDebugStateChange }) {
 
   const handleSubmit = async () => {
     console.log('DEBUG: Finish clicked');
+    setFinishClickedAt(Date.now());
     setError('');
     setFinalizeError('');
     if (!firstName.trim()) { setError('Please enter your first name.'); return; }
