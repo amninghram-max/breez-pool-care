@@ -207,7 +207,21 @@ function ThankYouDisplay({ firstName, email, leadId }) {
 
 // ── Main wizard ───────────────────────────────────────────────────────────────
 
-export default function PublicQuoteWizard({ prefillData, onDebugStateChange }) {
+export default function PublicQuoteWizard({ 
+  prefillData,
+  finalizing,
+  setFinalizing,
+  finalizeState,
+  setFinalizeState,
+  finalizeError,
+  setFinalizeError,
+  lastFinalizeRequest,
+  setLastFinalizeRequest,
+  lastFinalizeResponse,
+  setLastFinalizeResponse,
+  finishClickedAt,
+  setFinishClickedAt
+}) {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -216,12 +230,6 @@ export default function PublicQuoteWizard({ prefillData, onDebugStateChange }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null); // { releaseReady, quote?, isRange?, priceSummary? }
   const [error, setError] = useState('');
-  const [finalizeError, setFinalizeError] = useState('');
-  const [finalizeState, setFinalizeState] = useState('idle'); // milestone tracker
-  const [isFinalizing, setIsFinalizing] = useState(false);
-  const [lastFinalizeRequest, setLastFinalizeRequest] = useState(null);
-  const [lastFinalizeResponse, setLastFinalizeResponse] = useState(null);
-  const [finishClickedAt, setFinishClickedAt] = useState(null);
 
   // Determine steps dynamically (trees only shown if unscreened)
   const showTrees = answers.enclosure === 'unscreened';
