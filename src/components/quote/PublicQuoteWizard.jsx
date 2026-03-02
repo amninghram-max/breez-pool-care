@@ -181,6 +181,12 @@ export default function PublicQuoteWizard({
   const goBack = () => setStep(s => Math.max(0, s - 1));
 
   const handleSelect = (key, value) => {
+    // Check for DE filter disqualification
+    if (key === 'filterType' && value === 'de') {
+      setDisqualified('de');
+      return;
+    }
+
     const newAnswers = { ...answers, [key]: value };
     // Clear trees if switching to screened
     if (key === 'enclosure' && value !== 'unscreened') delete newAnswers.treesOverhead;
