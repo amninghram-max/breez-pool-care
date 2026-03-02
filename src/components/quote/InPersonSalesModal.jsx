@@ -184,14 +184,14 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
   const handleQuoteWizardComplete = async (data, formData) => {
     setPricingInputs(formData);
     
-    // Estimate mode: store normalized estimate and advance to lock step
-    if (!data.raw) {
-      // Already normalized (from estimate path)
-      console.log('[InPersonSalesModal] Estimate completed, advancing to lock step', { monthly: data.monthly });
+    // Estimate path (from QuoteWizard estimate result): store normalized canonical object
+    if (data && data.monthly && typeof data.monthly === 'number' && !data.raw) {
+      // Already normalized: { monthly, perVisit?, oneTime? }
+      console.log('[InPersonSalesModal] Estimate received', { monthly: data.monthly, perVisit: data.perVisit, oneTime: data.oneTime });
       setEstimatePreview(data);
       
       try {
-        // Best-effort: store estimate in session draftData
+        // Best-effort: store estimate in session
         await updateSessionMutation.mutateAsync({
           currentStep: 2,
           pricingInputs: formData
