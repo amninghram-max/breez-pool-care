@@ -9,6 +9,7 @@ import EventDetailsModal from './EventDetailsModal';
 
 export default function DayView({ date, technicianFilter }) {
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showCancelled, setShowCancelled] = useState(false);
   const queryClient = useQueryClient();
   const dateStr = date.toISOString().split('T')[0];
 
@@ -22,6 +23,11 @@ export default function DayView({ date, technicianFilter }) {
       const result = await base44.entities.CalendarEvent.filter(query);
       return result.sort((a, b) => (a.routePosition || 0) - (b.routePosition || 0));
     }
+  });
+
+  const { data: leads = [] } = useQuery({
+    queryKey: ['leads-slim'],
+    queryFn: () => base44.entities.Lead.list('-created_date', 200),
   });
 
   const { data: settings } = useQuery({
@@ -42,9 +48,23 @@ export default function DayView({ date, technicianFilter }) {
     );
   }
 
-  // Group events by technician
+  // Build lead map
+  const leadMap = React.useMemo(() => {
+    const m = {};
+    for (const l of leads) m[l.id] = l;
+    return m;
+  }, [leads]);
+
+  // Group events by technician, filtering cancelled + deleted leads
   const eventsByTechnician = {};
   events.forEach(event => {
+    // Skip cancelled events unless toggled
+    if (event.status === 'cancelled' && !showCancelled) return;
+    
+    // Skip events for deleted leads
+    const lead = leadMap[event.leadId];
+    if (lead?.isDeleted) return;
+    
     const tech = event.assignedTechnician || 'Unassigned';
     if (!eventsByTechnician[tech]) {
       eventsByTechnician[tech] = [];
@@ -79,6 +99,19 @@ export default function DayView({ date, technicianFilter }) {
 
   return (
     <>
+      {/* Show cancelled toggle */}
+      <div className="flex items-center justify-end mb-4">
+        <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900">
+          <input
+            type="checkbox"
+            checked={showCancelled}
+            onChange={(e) => setShowCancelled(e.target.checked)}
+            className="rounded border-gray-300"
+          />
+          Show cancelled events
+        </label>
+      </div>
+
       <div className="space-y-6">
         {Object.keys(eventsByTechnician).length === 0 ? (
           <Card>
