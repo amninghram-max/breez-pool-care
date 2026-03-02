@@ -3,10 +3,11 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 /**
  * scheduleFirstInspectionPublicV1
  * Public endpoint to schedule an inspection via token (no login required).
- * Creates a CalendarEvent + updates Lead stage.
+ * IDEMPOTENT: Checks for existing inspection scheduling and returns cached state.
+ * Side effects (email, stage update) only occur on first scheduling.
  * 
  * Input: { token, phone, requestedDate (YYYY-MM-DD), requestedTimeSlot }
- * Output: { success, scheduledDate?, timeWindow?, error?, build }
+ * Output: { success, scheduledDate?, timeWindow?, email?, firstName?, alreadyScheduled?, error?, build }
  */
 
 const BUILD = "SFI-V1-2026-03-02";
