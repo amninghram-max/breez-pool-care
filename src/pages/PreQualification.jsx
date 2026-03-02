@@ -12,6 +12,14 @@ export default function PreQualification() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
+  const [debugState, setDebugState] = useState({
+    lastFinalizeRequest: null,
+    lastFinalizeResponse: null,
+    isFinalizing: false,
+    finalizeError: null,
+    currentStep: 0,
+    currentStepName: ''
+  });
   
   const [user, setUser] = useState(undefined); // undefined = loading, null = guest
   const [quoteResult, setQuoteResult] = useState(null);
