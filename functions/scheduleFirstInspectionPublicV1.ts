@@ -120,8 +120,8 @@ Deno.serve(async (req) => {
               alreadyScheduled: true,
               scheduledDate: lead.requestedInspectionDate,
               timeWindow: lead.requestedInspectionTime, // Will be converted to friendly format below
-              email: email,
-              firstName: firstName,
+              email: finalEmail,
+              firstName: lead.firstName || firstName,
               build: BUILD
             });
           }
