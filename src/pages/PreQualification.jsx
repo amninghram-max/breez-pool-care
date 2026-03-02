@@ -40,10 +40,35 @@ export default function PreQualification() {
   const [prefillError, setPrefillError] = useState('');
   const [loadingPrefill, setLoadingPrefill] = useState(false);
   const [existingQuote, setExistingQuote] = useState(null); // persisted quote snapshot
+  const [tokenCreationError, setTokenCreationError] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => setUser(null));
   }, []);
+
+  // If token is missing on mount, create one
+  useEffect(() => {
+    if (token) return; // Token already present
+    
+    const createToken = async () => {
+      try {
+        const res = await base44.functions.invoke('createPrequalTokenV2', {});
+        const data = res?.data ?? res;
+        if (data?.success && data?.token) {
+          console.log('[PreQual] Token created, redirecting:', data.token.slice(0, 8) + '...');
+          navigate(`/PreQualification?token=${encodeURIComponent(data.token)}`, { replace: true });
+        } else {
+          console.error('[PreQual] Token creation failed:', data?.error);
+          setTokenCreationError(true);
+        }
+      } catch (err) {
+        console.error('[PreQual] Token creation error:', err?.message);
+        setTokenCreationError(true);
+      }
+    };
+    
+    createToken();
+  }, [token, navigate]);
 
   // Load prefill data from token if present
   useEffect(() => {
