@@ -272,14 +272,22 @@ export default function PublicQuoteWizard({ prefillData }) {
         });
         const finalizeData = finalizeRes?.data ?? finalizeRes;
         if (finalizeData?.success === true && finalizeData?.priceSummary) {
-          // Merge finalize result into result
-          setResult({ ...data, priceSummary: finalizeData.priceSummary, quoteSnapshot: finalizeData.quoteSnapshot });
+          // Merge: use quoteSnapshot as quote, ensure priceSummary is present
+          setResult({
+            ...data,
+            quote: finalizeData.quoteSnapshot || data.quote,
+            priceSummary: finalizeData.priceSummary,
+          });
         } else {
           // Finalize failed — show error with build tag
           setFinalizeError(`${finalizeData?.error || 'Failed to finalize quote'} (${finalizeData?.build || 'unknown'})`);
           return;
         }
+      } else if (data?.releaseReady) {
+        // releaseReady but no quote — invalid state, show as not ready
+        setResult(data);
       } else {
+        // Not ready (will show ThankYouDisplay)
         setResult(data);
       }
     } catch (e) {
