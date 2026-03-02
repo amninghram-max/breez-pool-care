@@ -201,12 +201,12 @@ function ThankYouDisplay({ firstName, email, leadId }) {
 
 // ── Main wizard ───────────────────────────────────────────────────────────────
 
-export default function PublicQuoteWizard() {
+export default function PublicQuoteWizard({ prefillData }) {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
   const [firstName, setFirstName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(prefillData?.email || '');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null); // { releaseReady, quote?, isRange? }
   const [error, setError] = useState('');
