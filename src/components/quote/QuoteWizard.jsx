@@ -11,13 +11,12 @@ import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 
 /**
  * QuoteWizard — canonical quote flow used by both:
- * - Public customers (real, persistent)
- * - Admin "Start New Quote (Real)" (real, persistent)
- * - Admin "Quick Quote (Demo)" (demo=true, no persistence)
+ * - Public customers (persistQuote=true, real, persistent)
+ * - Field Sales (persistQuote=false, estimate only, no persistence)
  *
  * Props:
- *   mode: 'real' | 'demo'
- *   initialAnswers: prefilled answers (for "Convert to Real" flow)
+ *   persistQuote: boolean — if true, calls calculateQuote (persist); if false, calls calculateQuoteOnly (estimate)
+ *   initialAnswers: prefilled answers
  *   onComplete: (quoteResult, formData) => void  — called when quote is ready
  */
 
@@ -31,12 +30,10 @@ const DEFAULT_FORM = {
   clientFirstName: '', clientLastName: '', clientEmail: '', clientPhone: ''
 };
 
-export default function QuoteWizard({ mode = 'real', initialAnswers = null, onComplete }) {
+export default function QuoteWizard({ persistQuote = true, initialAnswers = null, onComplete }) {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState(initialAnswers ? { ...DEFAULT_FORM, ...initialAnswers } : DEFAULT_FORM);
   const [hasSavedAnswers] = useState(() => !!localStorage.getItem(LAST_ANSWERS_KEY));
-
-  const isPreview = mode === 'field-sales';
 
   const setF = (k, v) => setFormData(f => ({ ...f, [k]: v }));
 
@@ -63,13 +60,13 @@ export default function QuoteWizard({ mode = 'real', initialAnswers = null, onCo
       const { clientFirstName, clientLastName, clientEmail, clientPhone, ...poolAnswers } = formData;
       localStorage.setItem(LAST_ANSWERS_KEY, JSON.stringify(poolAnswers));
 
-      if (isPreview) {
-        // Field Sales: preview estimate, no persistence
-        const res = await base44.functions.invoke('calculateQuoteOnly', { questionnaireData: formData });
+      if (persistQuote) {
+        // Persist: call calculateQuote to create Quote record
+        const res = await base44.functions.invoke('calculateQuote', { questionnaireData: formData });
         return res.data;
       } else {
-        // Real: persist Quote record
-        const res = await base44.functions.invoke('calculateQuote', { questionnaireData: formData });
+        // Estimate: call calculateQuoteOnly (no persistence)
+        const res = await base44.functions.invoke('calculateQuoteOnly', { questionnaireData: formData });
         return res.data;
       }
     },
@@ -277,7 +274,11 @@ export default function QuoteWizard({ mode = 'real', initialAnswers = null, onCo
                 disabled={!stepValid() || calculateMutation.isPending}
                 className="flex-1 bg-teal-600 hover:bg-teal-700"
               >
-                {calculateMutation.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Calculating...</> : 'Get My Quote'}
+                {calculateMutation.isPending ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Calculating...</>
+                ) : (
+                  'Get My Quote'
+                )}
               </Button>
             )}
           </div>

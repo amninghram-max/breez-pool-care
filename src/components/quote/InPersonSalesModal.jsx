@@ -288,7 +288,7 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
             // ── Step 1: Pricing (QuoteWizard) ──
             <div className="space-y-4">
               <QuoteWizard
-                mode="field-sales"
+                persistQuote={false}
                 initialAnswers={pricingInputs}
                 onComplete={handleQuoteWizardComplete}
               />
