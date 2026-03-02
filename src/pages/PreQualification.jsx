@@ -80,6 +80,68 @@ export default function PreQualification() {
     );
   }
 
+  // Token loading state
+  if (token && loadingPrefill) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <header className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
+          <img
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/0b0c31666_Breez2.png"
+            alt="Breez Pool Care"
+            className="h-10 w-auto cursor-pointer"
+            onClick={() => navigate('/')}
+          />
+          <a href="tel:3215243838" className="text-sm text-gray-500 hover:text-gray-700">(321) 524-3838</a>
+        </header>
+        <div className="flex-1 flex items-center justify-center px-4">
+          <div className="flex flex-col items-center gap-3 text-gray-500">
+            <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+            <p className="text-sm">Loading your quote request…</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Token error state
+  if (token && prefillError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <header className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
+          <img
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/0b0c31666_Breez2.png"
+            alt="Breez Pool Care"
+            className="h-10 w-auto cursor-pointer"
+            onClick={() => navigate('/')}
+          />
+          <a href="tel:3215243838" className="text-sm text-gray-500 hover:text-gray-700">(321) 524-3838</a>
+        </header>
+        <div className="flex-1 flex items-center justify-center px-4 py-10">
+          <Card className="max-w-md w-full border-red-200">
+            <CardContent className="pt-6 flex flex-col gap-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-gray-900">Link Invalid or Expired</p>
+                  <p className="text-sm text-gray-600 mt-1">{prefillError}</p>
+                </div>
+              </div>
+              <Button
+                onClick={() => navigate('/')}
+                className="w-full bg-teal-600 hover:bg-teal-700 text-white"
+              >
+                Request a New Quote Link
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+        <footer className="text-center text-xs text-gray-400 py-4 pb-8">
+          Breez Pool Care LLC · Melbourne, FL · (321) 524-3838
+        </footer>
+      </div>
+    );
+  }
+
   // Guest / customer path — minimal public wizard
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -101,7 +163,7 @@ export default function PreQualification() {
             <h1 className="text-2xl font-bold text-gray-900">Get Your Free Instant Quote</h1>
             <p className="text-gray-500 text-sm mt-1">1 question at a time. Takes about 2 minutes.</p>
           </div>
-          <PublicQuoteWizard />
+          <PublicQuoteWizard prefillData={prefillData} />
         </div>
       </div>
 
