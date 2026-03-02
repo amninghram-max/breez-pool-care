@@ -217,6 +217,7 @@ export default function PublicQuoteWizard({ prefillData }) {
   const [result, setResult] = useState(null); // { releaseReady, quote?, isRange?, priceSummary? }
   const [error, setError] = useState('');
   const [finalizeError, setFinalizeError] = useState('');
+  const [isFinalizing, setIsFinalizing] = useState(false);
 
   // Determine steps dynamically (trees only shown if unscreened)
   const showTrees = answers.enclosure === 'unscreened';
