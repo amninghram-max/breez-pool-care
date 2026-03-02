@@ -35,8 +35,26 @@ const EQUIPMENT_TYPES = [
 
 export default function EquipmentProfiles() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  // Search & filter state
   const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
   const [selectedCatalogItemId, setSelectedCatalogItemId] = useState(null);
+  
+  // Create form state
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [createFormData, setCreateFormData] = useState({
+    type: 'pump',
+    brand: '',
+    model: '',
+    variant: '',
+    manufacturerUrl: '',
+    manualUrl: '',
+    manualFile: null,
+    tags: '',
+    notes: ''
+  });
 
   const { data: user } = useQuery({
     queryKey: ['userForEquipmentProfiles'],
@@ -59,8 +77,6 @@ export default function EquipmentProfiles() {
       </Card>
     );
   }
-
-  const isAdmin = user?.role === 'admin';
 
   const { data: equipment = [], isLoading, error: equipmentError } = useQuery({
     queryKey: ['equipmentProfiles'],
