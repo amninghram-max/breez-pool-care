@@ -84,11 +84,14 @@ export default function QuoteWizard({ persistQuote = true, initialAnswers = null
       const base = formData.filterType && formData.chlorinationMethod && formData.useFrequency && formData.poolCondition;
       return formData.poolCondition === 'green_algae' ? base && formData.greenPoolSeverity : base;
     }
-    if (step === 3) return formData.clientFirstName && formData.clientEmail;
+    // Step 3 only required when persistQuote (public/real flow)
+    if (step === 3 && persistQuote) return formData.clientFirstName && formData.clientEmail;
     return true;
   };
 
-  const totalSteps = 3;
+  // Estimate (persistQuote=false): 2 steps (pool + features)
+  // Persist (persistQuote=true): 3 steps (pool + features + contact)
+  const totalSteps = persistQuote ? 3 : 2;
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
@@ -239,8 +242,8 @@ export default function QuoteWizard({ persistQuote = true, initialAnswers = null
             </>
           )}
 
-          {/* STEP 3 — Contact */}
-          {step === 3 && (
+          {/* STEP 3 — Contact (persist path only) */}
+          {step === 3 && persistQuote && (
             <>
               <div className="grid grid-cols-2 gap-4">
                 <div>
