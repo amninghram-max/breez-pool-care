@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ChevronLeft, Loader2, Calendar, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, Loader2, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import PublicScheduler from './PublicScheduler';
 
