@@ -268,6 +268,7 @@ export default function CustomerTimeline() {
   const [seedResponse, setSeedResponse] = useState(null);
   const [seedClickCount, setSeedClickCount] = useState(0);
   const [seedDebugText, setSeedDebugText] = useState('idle');
+  const [serviceVisitCreateResult, setServiceVisitCreateResult] = useState(null);
 
   // Load only recent 4 visits on initial render
   const { data: recentVisits = [] } = useQuery({
@@ -444,19 +445,34 @@ export default function CustomerTimeline() {
           
           {/* TEMP: remove after testing */}
           {user && ['admin', 'staff'].includes(user.role) && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => seedTestDataMutation.mutate()}
-              disabled={seedTestDataMutation.isPending}
-              className="text-purple-600 hover:bg-purple-50"
-            >
-              {seedTestDataMutation.isPending ? (
-                <><Loader2 className="w-3 h-3 mr-1 animate-spin" />Seeding...</>
-              ) : (
-                <>📊 Seed Test Data</>
-              )}
-            </Button>
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => testServiceVisitCreateMutation.mutate()}
+                disabled={testServiceVisitCreateMutation.isPending}
+                className="text-blue-600 hover:bg-blue-50"
+              >
+                {testServiceVisitCreateMutation.isPending ? (
+                  <><Loader2 className="w-3 h-3 mr-1 animate-spin" />Creating...</>
+                ) : (
+                  <>🧪 Create Test ServiceVisit</>
+                )}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => seedTestDataMutation.mutate()}
+                disabled={seedTestDataMutation.isPending}
+                className="text-purple-600 hover:bg-purple-50"
+              >
+                {seedTestDataMutation.isPending ? (
+                  <><Loader2 className="w-3 h-3 mr-1 animate-spin" />Seeding...</>
+                ) : (
+                  <>📊 Seed Test Data</>
+                )}
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -718,6 +734,24 @@ export default function CustomerTimeline() {
                   </div>
                 )}
               </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* TEMP: Create ServiceVisit Test */}
+      {user && ['admin', 'staff'].includes(user.role) && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardHeader>
+            <CardTitle className="text-xs font-mono text-blue-900">TEMP: Create ServiceVisit Test</CardTitle>
+          </CardHeader>
+          <CardContent className="text-xs font-mono">
+            {serviceVisitCreateResult === null ? (
+              <div className="text-gray-600">(no create attempt yet)</div>
+            ) : (
+              <pre className="bg-gray-900 text-green-400 p-3 rounded border border-gray-700 overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-words">
+                {JSON.stringify(serviceVisitCreateResult, null, 2)}
+              </pre>
             )}
           </CardContent>
         </Card>
