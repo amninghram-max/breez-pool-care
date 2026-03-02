@@ -1,7 +1,33 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { getAppOrigin } from "./_getAppOrigin.js";
 
 const BUILD = "SQLE-V2-2026-03-01-H";
+
+function getAppOrigin(req) {
+  // 1) env var first
+  const envUrl = (Deno.env.get("PUBLIC_APP_URL") || "").trim();
+  if (envUrl) {
+    let u;
+    try { u = new URL(envUrl); } catch { throw new Error("PUBLIC_APP_URL is not a valid URL"); }
+    if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error("PUBLIC_APP_URL must be http/https");
+    const origin = u.origin.replace(/\/+$/, "");
+    if (origin.includes("deno.dev")) throw new Error("Invalid app origin (deno.dev)");
+    return origin;
+  }
+
+  // 2) header fallback chain
+  const proto = (req.headers.get("x-forwarded-proto") || "https").split(",")[0].trim();
+  const xfHost = (req.headers.get("x-forwarded-host") || "").split(",")[0].trim();
+  const host = (req.headers.get("host") || "").split(",")[0].trim();
+  const h = xfHost || host;
+
+  if (!h) throw new Error("Unable to determine app origin: PUBLIC_APP_URL not set and request headers missing host");
+  if (proto !== "http" && proto !== "https") throw new Error("Invalid forwarded proto");
+
+  const origin = `${proto}://${h}`.replace(/\/+$/, "");
+  if (origin.includes("deno.dev")) throw new Error("Invalid app origin (deno.dev)");
+  try { new URL(origin); } catch { throw new Error("Derived app origin is not a valid URL"); }
+  return origin;
+}
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
@@ -22,7 +48,6 @@ Deno.serve(async (req) => {
   try {
     const { leadId, firstName, email } = payload || {};
 
-    // Validate required fields
     const missingFields = [];
     if (!leadId || typeof leadId !== 'string' || !leadId.trim()) missingFields.push('leadId');
     if (!firstName || typeof firstName !== 'string' || !firstName.trim()) missingFields.push('firstName');
@@ -34,7 +59,6 @@ Deno.serve(async (req) => {
       }), { status: 200, headers: { "content-type": "application/json; charset=utf-8" } });
     }
 
-    // Resolve app origin
     let appOrigin;
     try {
       appOrigin = getAppOrigin(req);
@@ -108,7 +132,6 @@ Deno.serve(async (req) => {
     const resendId = emailData.id ?? null;
     console.log('V2_SENT', { resendId, email, build: BUILD });
 
-    // Stamp Lead fields (best-effort)
     const stampValue = new Date().toISOString();
     let stampUpdated = false;
     let stampError = null;
