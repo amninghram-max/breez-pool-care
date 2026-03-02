@@ -49,19 +49,65 @@ Deno.serve(async (req) => {
 
     if (visitData.chemicalsAdded && Object.keys(visitData.chemicalsAdded).length > 0) {
       try {
-        // Fetch all active chemical catalog items
-        const allChemicals = await base44.asServiceRole.entities.ChemicalCatalogItem.filter(
-          { isActive: true },
-          '-updated_date',
-          200
-        );
+        // Scoped fetch: collect only needed serviceVisitKeys and "other" names
+        const knownBuckets = [
+          'liquidChlorine',
+          'acid',
+          'bakingSoda',
+          'stabilizer',
+          'salt',
+          'chlorineTablets'
+        ];
+        const neededServiceVisitKeys = new Set();
+        const otherNames = new Set();
 
-        // Build lookup maps
+        for (const key of knownBuckets) {
+          const amount = visitData.chemicalsAdded[key];
+          if (amount && parseFloat(amount) > 0) {
+            neededServiceVisitKeys.add(key);
+          }
+        }
+
+        if (
+          visitData.chemicalsAdded.other &&
+          Array.isArray(visitData.chemicalsAdded.other)
+        ) {
+          for (const entry of visitData.chemicalsAdded.other) {
+            if (entry.name && entry.amount && parseFloat(entry.amount) > 0) {
+              otherNames.add(entry.name.trim().toLowerCase());
+            }
+          }
+        }
+
+        // Fetch only needed serviceVisitKey items
+        const allChemicals = [];
+        for (const key of neededServiceVisitKeys) {
+          const results = await base44.asServiceRole.entities.ChemicalCatalogItem.filter(
+            { serviceVisitKey: key, isActive: true },
+            '-updated_date',
+            10
+          );
+          allChemicals.push(...results);
+        }
+
+        // Fetch "other" items by name (if any)
+        if (otherNames.size > 0) {
+          const otherResults = await base44.asServiceRole.entities.ChemicalCatalogItem.filter(
+            { isActive: true },
+            '-updated_date',
+            50
+          );
+          allChemicals.push(
+            ...otherResults.filter(c => otherNames.has(c.name.trim().toLowerCase()))
+          );
+        }
+
+        // Build lookup maps (name map uses lowercased key)
         const byServiceVisitKey = new Map(
           allChemicals.map(c => [c.serviceVisitKey, c])
         );
         const byName = new Map(
-          allChemicals.map(c => [c.name, c])
+          allChemicals.map(c => [c.name.trim().toLowerCase(), c])
         );
 
         // Compute cost lines
