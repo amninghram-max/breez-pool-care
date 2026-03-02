@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-const BUILD = "SQLE-V2-2026-03-01-H";
+const BUILD = "SQLE-V2-2026-03-02-PREQ";
 
 // All responses: HTTP 200, application/json; charset=utf-8
 const json200 = (data) => new Response(
