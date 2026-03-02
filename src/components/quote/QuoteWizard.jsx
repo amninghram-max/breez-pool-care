@@ -183,8 +183,8 @@ export default function QuoteWizard({ persistQuote = true, initialAnswers = null
             <div className="flex gap-3">
               <Button
                 onClick={() => {
-                  // Pass normalized canonical object only
-                  if (onComplete) onComplete({ monthly: normalized.monthly, perVisit: normalized.perVisit, oneTime: normalized.oneTime }, formData);
+                  // Pass canonical object only
+                  if (onComplete) onComplete({ monthly: quoteResult.monthly, perVisit: quoteResult.perVisit, oneTime: quoteResult.oneTime }, formData);
                 }}
                 className="flex-1 bg-teal-600 hover:bg-teal-700"
               >
