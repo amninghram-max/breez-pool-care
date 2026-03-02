@@ -92,17 +92,17 @@ Deno.serve(async (req) => {
       console.warn('SOFT_DELETE_LEAD_V2_INSPECTIONS_QUERY_FAILED', { error: e.message });
     }
 
-    // Cancel all CalendarEvents for this lead
+    // Cancel all CalendarEvents for this lead (service role bypasses RLS)
     try {
-      const events = await base44.asServiceRole.entities.CalendarEvent.filter(
+      const events = await serviceBase44.asServiceRole.entities.CalendarEvent.filter(
         { leadId, status: { $ne: 'cancelled' } },
         null,
         100
       );
-      if (events) {
+      if (events && events.length > 0) {
         for (const event of events) {
           try {
-            await base44.asServiceRole.entities.CalendarEvent.update(event.id, {
+            await serviceBase44.asServiceRole.entities.CalendarEvent.update(event.id, {
               status: 'cancelled',
               cancelledAt: new Date().toISOString(),
               cancelReason: 'lead_deleted'
