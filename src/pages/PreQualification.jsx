@@ -191,7 +191,21 @@ export default function PreQualification() {
             <h1 className="text-2xl font-bold text-gray-900">Get Your Free Instant Quote</h1>
             <p className="text-gray-500 text-sm mt-1">1 question at a time. Takes about 2 minutes.</p>
           </div>
-          <PublicQuoteWizard prefillData={prefillData} onDebugStateChange={setDebugState} />
+          <PublicQuoteWizard 
+            prefillData={prefillData}
+            finalizing={finalizing}
+            setFinalizing={setFinalizing}
+            finalizeState={finalizeState}
+            setFinalizeState={setFinalizeState}
+            finalizeError={finalizeError}
+            setFinalizeError={setFinalizeError}
+            lastFinalizeRequest={lastFinalizeRequest}
+            setLastFinalizeRequest={setLastFinalizeRequest}
+            lastFinalizeResponse={lastFinalizeResponse}
+            setLastFinalizeResponse={setLastFinalizeResponse}
+            finishClickedAt={finishClickedAt}
+            setFinishClickedAt={setFinishClickedAt}
+          />
         </div>
       </div>
 
