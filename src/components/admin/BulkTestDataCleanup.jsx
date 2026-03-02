@@ -14,23 +14,44 @@ export default function BulkTestDataCleanup() {
   const handleDryRun = async () => {
     setLoading(true);
     try {
-      const res = await base44.functions.invoke('bulkSoftDeleteTestLeadsV1', {
-        dryRun: true
+      // Step 1: Discover test leads (no execution yet)
+      const discoverRes = await base44.functions.invoke('bulkSoftDeleteTestLeadsV2', {
+        dryRun: true,
+        data_env: 'dev'
+        // No leadIds - triggers discover mode
       });
-      const data = res?.data ?? res;
+      const discoverData = discoverRes?.data ?? discoverRes;
 
-      if (data.success) {
-        setDryRunResult(data);
+      if (!discoverData.success) {
+        toast({
+          title: 'Dry Run Failed',
+          description: discoverData.error || 'Unknown error',
+          variant: 'destructive'
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Step 2: Execute dry run on discovered leads (dryRun = true, no mutations)
+      const dryRunRes = await base44.functions.invoke('bulkSoftDeleteTestLeadsV2', {
+        dryRun: true,
+        data_env: 'dev',
+        leadIds: discoverData.leadIds
+      });
+      const dryRunData = dryRunRes?.data ?? dryRunRes;
+
+      if (dryRunData.success) {
+        setDryRunResult(dryRunData);
         setStep('confirming');
         toast({
           title: 'Dry Run Complete',
-          description: `Found ${data.matchedCount} test leads. Review and confirm to delete.`,
+          description: `Found ${dryRunData.matchedCount} test leads. Review and confirm to delete.`,
           duration: 5000
         });
       } else {
         toast({
           title: 'Dry Run Failed',
-          description: data.error || 'Unknown error',
+          description: dryRunData.error || 'Unknown error',
           variant: 'destructive'
         });
       }
