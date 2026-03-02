@@ -38,6 +38,13 @@ export default function DayView({ date, technicianFilter }) {
     }
   });
 
+  // Build lead map — must be called unconditionally before any early returns
+  const leadMap = React.useMemo(() => {
+    const m = {};
+    for (const l of leads) m[l.id] = l;
+    return m;
+  }, [leads]);
+
   if (isLoading) {
     return (
       <Card>
@@ -47,13 +54,6 @@ export default function DayView({ date, technicianFilter }) {
       </Card>
     );
   }
-
-  // Build lead map
-  const leadMap = React.useMemo(() => {
-    const m = {};
-    for (const l of leads) m[l.id] = l;
-    return m;
-  }, [leads]);
 
   // Group events by technician, filtering cancelled + deleted leads
   const eventsByTechnician = {};
