@@ -280,14 +280,18 @@ export default function PublicQuoteWizard({
     setFinalizeState('starting');
 
     try {
+      // Use resolved data from prefillData if token present, otherwise use form input
+      const finalFirstName = hasToken ? (prefillData?.firstName || firstName) : firstName;
+      const finalEmail = hasToken ? (prefillData?.email || email) : email;
+
       // VALIDATION: capture errors and set state milestone before returning
-      if (!firstName.trim()) {
+      if (!finalFirstName.trim()) {
         setFinalizeError('Please enter your first name.');
         setFinalizeState('done_error');
         setFinalizing(false);
         return;
       }
-      if (!email.trim() || !email.includes('@')) {
+      if (!finalEmail.trim() || !finalEmail.includes('@')) {
         setFinalizeError('Please enter a valid email address.');
         setFinalizeState('done_error');
         setFinalizing(false);
