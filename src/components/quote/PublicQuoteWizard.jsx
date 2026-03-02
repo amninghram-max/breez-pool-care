@@ -330,6 +330,22 @@ export default function PublicQuoteWizard({ prefillData }) {
 
   // ── Render result or error ──
   if (result) {
+    console.log('DEBUG: Completion Decision', {
+      result,
+      hasPriceSummary: !!result?.priceSummary,
+      hasQuote: !!result?.quote,
+      finalMonthly: result?.quote?.finalMonthlyPrice,
+      isRange: result?.isRange
+    });
+
+    // DEBUG: Visibly render result object
+    if (result && typeof document !== 'undefined') {
+      const debugEl = document.getElementById('debug-result-output');
+      if (debugEl) {
+        debugEl.textContent = JSON.stringify(result, null, 2);
+      }
+    }
+
     if (result.releaseReady && result.priceSummary) {
       return <QuoteResultDisplay result={result} firstName={firstName} email={email} leadId={result.leadId} />;
     }
@@ -338,6 +354,17 @@ export default function PublicQuoteWizard({ prefillData }) {
       return <QuoteResultDisplay result={result} firstName={firstName} email={email} leadId={result.leadId} />;
     }
     return <ThankYouDisplay firstName={firstName} email={email} leadId={result.leadId} />;
+  }
+
+  // DEBUG: Render visible debug block before completion logic
+  if (step === baseSteps.length - 1 && loading === false) {
+    return (
+      <div className="space-y-4">
+        <pre style={{background:"#111",color:"#0f0",padding:"12px",fontSize:"10px",fontFamily:"monospace",overflowX:"auto"}}>
+          {`DEBUG: Awaiting result...`}
+        </pre>
+      </div>
+    );
   }
 
   // If there's an error in form submission, show it with a support option
