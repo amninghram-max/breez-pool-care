@@ -223,8 +223,7 @@ Deno.serve(async (req) => {
     // Stamp the Lead so frontend can verify success even if SDK parse fails
     let stampUpdated = false;
     let stampError = null;
-    let stampValue = null;
-    stampValue = new Date().toISOString();
+    let stampValue = new Date().toISOString();
 
     console.log('STAMP_ATTEMPT', { leadId, stampValue });
     try {
@@ -239,6 +238,9 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({
       success: true,
+      build: BUILD,
+      resendId: emailData.id ?? null,
+      link: quoteLink,
       stampField: "confirmationSentAt",
       stampUpdated,
       stampValue,
