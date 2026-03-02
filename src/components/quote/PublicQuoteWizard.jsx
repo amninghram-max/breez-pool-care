@@ -10,6 +10,14 @@ const TEAL = '#1B9B9F';
 
 // ── Step definitions ──────────────────────────────────────────────────────────
 
+const POOL_TYPE_OPTIONS = [
+  { value: 'in_ground_concrete', label: 'In-Ground Concrete/Plaster', sub: 'Concrete or plaster pool' },
+  { value: 'fiberglass',         label: 'Fiberglass', sub: 'Fiberglass pool' },
+  { value: 'vinyl',              label: 'Vinyl Liner', sub: 'Vinyl liner pool' },
+  { value: 'above_ground',       label: 'Above-Ground', sub: 'Above-ground pool' },
+  { value: 'unknown',            label: 'Not Sure', sub: "We'll assess at inspection" },
+];
+
 const POOL_SIZE_OPTIONS = [
   { value: 'under_10k', label: 'Under 10,000 gal', sub: 'Small pool' },
   { value: '10_15k',    label: '10,000 – 15,000 gal', sub: 'Standard' },
