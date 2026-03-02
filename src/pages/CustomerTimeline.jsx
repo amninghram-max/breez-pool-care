@@ -270,6 +270,41 @@ export default function CustomerTimeline() {
   const [seedDebugText, setSeedDebugText] = useState('idle');
   const [serviceVisitCreateResult, setServiceVisitCreateResult] = useState(null);
 
+  // TEMP: Test direct ServiceVisit.create
+  const testServiceVisitCreateMutation = useMutation({
+    mutationFn: async () => {
+      try {
+        const result = await base44.entities.ServiceVisit.create({
+          propertyId: leadId,
+          visitDate: new Date().toISOString(),
+          technicianName: 'Test Tech',
+          freeChlorine: 2.0,
+          pH: 7.5,
+          totalAlkalinity: 100
+        });
+        setServiceVisitCreateResult({
+          success: true,
+          id: result?.id,
+          createdRecord: result
+        });
+        return result;
+      } catch (err) {
+        setServiceVisitCreateResult({
+          success: false,
+          message: err?.message,
+          code: err?.code,
+          status: err?.response?.status,
+          data: err?.response?.data,
+          fullError: String(err)
+        });
+        throw err;
+      }
+    },
+    onError: () => {
+      // Error already captured above
+    }
+  });
+
   // Load only recent 4 visits on initial render
   const { data: recentVisits = [] } = useQuery({
     queryKey: ['recentVisits', leadId],
