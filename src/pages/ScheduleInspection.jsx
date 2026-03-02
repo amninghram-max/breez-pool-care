@@ -425,7 +425,7 @@ export default function ScheduleInspection() {
 
               <Button
                 type="submit"
-                disabled={loading || !phone.trim()}
+                disabled={loading || !firstName.trim() || !phone.trim() || !street.trim() || !city.trim() || !state.trim() || !zip.trim()}
                 className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-white text-base font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-50"
                 style={{ backgroundColor: TEAL }}
               >
