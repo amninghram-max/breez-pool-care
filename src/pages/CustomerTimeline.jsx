@@ -281,9 +281,10 @@ export default function CustomerTimeline() {
         propertyId: leadId,
         visitDate: new Date().toISOString(),
         technicianName: 'Test Tech',
-        servicesPerformed: 'TEMP test create',
         freeChlorine: 2.5,
-        pH: 7.5
+        pH: 7.5,
+        totalAlkalinity: 90,
+        servicesPerformed: ['skim', 'test_equipment']
       });
       
       setServiceVisitCreateResult({
