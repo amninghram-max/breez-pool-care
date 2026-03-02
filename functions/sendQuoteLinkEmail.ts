@@ -216,15 +216,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log('✅ Quote link email sent via Resend:', { id: emailData.id, to: email });
+    console.log('✅ Quote link email sent via Resend:', { id: emailData.id, to: email, link: quoteLink, build: BUILD });
 
-    const obj = {
-      success: true,
-      link: quoteLink,
-      resendId: emailData.id,
-      build: BUILD
-    };
-    return new Response(JSON.stringify(obj), {
+    return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { "content-type": "application/json; charset=utf-8" }
     });
