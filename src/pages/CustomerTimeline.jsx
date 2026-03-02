@@ -198,7 +198,8 @@ export default function CustomerTimeline() {
       const res = await base44.functions.invoke('seedTestCustomerData', {
         leadId,
         daysBack: 30,
-        visitsCount: 6
+        visitsCount: 6,
+        debugAuth: true
       });
       return res.data;
     },
