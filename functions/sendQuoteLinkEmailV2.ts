@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
     const link = `${appOrigin}/PreQualification/${encodeURIComponent(token)}`;
     const publicHomeLink = `${appOrigin}/PublicHome`;
 
-    console.log('V2_SEND', { quoteId: quote.id, email, link, build: BUILD });
+    console.log('V2_SEND', { email, link, build: BUILD });
 
     const htmlBody = `<!DOCTYPE html>
 <html>
