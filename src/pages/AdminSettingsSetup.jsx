@@ -164,7 +164,7 @@ export default function AdminSettingsSetup() {
 
   const { data: allSettings = [], isLoading } = useQuery({
     queryKey: ['adminSettingsAll'],
-    queryFn: () => base44.entities.AdminSettings.list('-created_date', 50),
+    queryFn: () => base44.entities.AdminSettings.list('-created_date', 1),
     enabled: user?.role === 'admin'
   });
 

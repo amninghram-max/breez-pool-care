@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
     }
 
     // Step 1: Count before (via user-scoped call — RLS allows admin reads)
-    const before = await base44.asServiceRole.entities.AdminSettings.list('-created_date', 50);
+    const before = await base44.asServiceRole.entities.AdminSettings.list('-created_date', 1);
     const beforeCount = before.length;
     console.log(`[seed] before count: ${beforeCount}`);
 

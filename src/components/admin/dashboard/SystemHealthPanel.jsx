@@ -27,7 +27,7 @@ function Check({ label, ok, blocker, detail }) {
 export default function SystemHealthPanel() {
   const { data: adminSettings = [] } = useQuery({
     queryKey: ['adminSettingsHealth'],
-    queryFn: () => base44.entities.AdminSettings.list()
+    queryFn: () => base44.entities.AdminSettings.list('-created_date', 1)
   });
 
   const { data: chemTargets = [] } = useQuery({
