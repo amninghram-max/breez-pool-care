@@ -106,17 +106,49 @@ export default function EquipmentProfiles() {
 
   const leadMap = Object.fromEntries(leads.map(l => [l.id, l]));
 
-  // Group by customer
+  // Group customer equipment by customer
   const byLead = equipment.reduce((acc, eq) => {
     if (!acc[eq.leadId]) acc[eq.leadId] = [];
     acc[eq.leadId].push(eq);
     return acc;
   }, {});
 
-  // Filter leads by search query
+  // Search and filter catalog items + parts
+  const filteredCatalogItems = useMemo(() => {
+    let filtered = catalogItems;
+    
+    // Filter by type
+    if (typeFilter !== 'all') {
+      filtered = filtered.filter(item => item.type === typeFilter);
+    }
+    
+    // Filter by search (brand, model, variant OR part number/description in related parts)
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(item => {
+        const itemMatches = 
+          item.brand.toLowerCase().includes(q) ||
+          item.model.toLowerCase().includes(q) ||
+          (item.variant && item.variant.toLowerCase().includes(q)) ||
+          (item.tags && item.tags.some(t => t.toLowerCase().includes(q)));
+        
+        const relatedParts = catalogParts.filter(p => p.catalogItemId === item.id);
+        const partMatches = relatedParts.some(p =>
+          p.partNumber.toLowerCase().includes(q) ||
+          p.description.toLowerCase().includes(q)
+        );
+        
+        return itemMatches || partMatches;
+      });
+    }
+    
+    return filtered;
+  }, [searchQuery, typeFilter, catalogItems, catalogParts]);
+
+  // Filter leads by search query (for customer equipment tab)
   const filteredLeadIds = useMemo(() => {
-    if (!searchQuery.trim()) return Object.keys(byLead);
     const q = searchQuery.toLowerCase();
+    if (!q.trim()) return Object.keys(byLead);
     return Object.keys(byLead).filter(leadId => {
       const lead = leadMap[leadId];
       if (!lead) return false;
@@ -127,6 +159,63 @@ export default function EquipmentProfiles() {
       return fullName.includes(q) || email.includes(q) || phone.includes(q) || address.includes(q);
     });
   }, [searchQuery, byLead, leadMap]);
+
+  // Create catalog item mutation
+  const createMutation = useMutation({
+    mutationFn: async (formData) => {
+      let manualPdfUrl = null;
+      
+      // Upload PDF if provided
+      if (formData.manualFile) {
+        const uploadRes = await base44.integrations.Core.UploadFile({ file: formData.manualFile });
+        manualPdfUrl = uploadRes.file_url;
+      }
+      
+      const createData = {
+        type: formData.type,
+        brand: formData.brand,
+        model: formData.model,
+        variant: formData.variant || undefined,
+        manufacturerUrl: formData.manufacturerUrl || undefined,
+        manualPdf: manualPdfUrl || undefined,
+        manualUrl: formData.manualUrl || undefined,
+        tags: formData.tags ? formData.tags.split(',').map(t => t.trim()) : [],
+        notes: formData.notes || undefined,
+        isActive: true
+      };
+      
+      return base44.entities.EquipmentCatalogItem.create(createData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipmentCatalogItems'] });
+      setShowCreateForm(false);
+      setCreateFormData({
+        type: 'pump',
+        brand: '',
+        model: '',
+        variant: '',
+        manufacturerUrl: '',
+        manualUrl: '',
+        manualFile: null,
+        tags: '',
+        notes: ''
+      });
+      toast.success('Equipment model created');
+    },
+    onError: (err) => toast.error(err.message || 'Failed to create equipment')
+  });
+
+  const handleCreateSubmit = () => {
+    if (!createFormData.brand || !createFormData.model) {
+      toast.error('Brand and model are required');
+      return;
+    }
+    if (!createFormData.manualUrl && !createFormData.manualFile) {
+      toast.error('Either manual URL or PDF upload is required');
+      return;
+    }
+    createMutation.mutate(createFormData);
+  };
 
   if (isLoading) {
     return <div className="p-6 text-gray-500">Loading equipment profiles...</div>;
