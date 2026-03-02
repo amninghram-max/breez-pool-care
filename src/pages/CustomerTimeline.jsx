@@ -434,8 +434,13 @@ export default function CustomerTimeline() {
             <p className="text-gray-600 text-sm">No readings in the last 30 days.</p>
           ) : (
             <div className="space-y-3">
-              {visitsLast30Days.map(visit => (
-                <ChemistryCard key={visit.id} visit={visit} />
+              {visitsLast30Days.map((visit, index) => (
+                <ChemistryCard
+                  key={visit.id}
+                  visit={visit}
+                  allVisits={visitsLast30Days}
+                  visitIndex={index}
+                />
               ))}
             </div>
           )}
