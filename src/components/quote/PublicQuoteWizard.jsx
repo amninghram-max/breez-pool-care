@@ -242,14 +242,13 @@ export default function PublicQuoteWizard({
       const finalEmail = hasToken ? (prefillData?.email || email) : email;
 
       // VALIDATION: capture errors and set state milestone before returning
-      if (!finalFirstName.trim()) {
-        setFinalizeError('Please enter your first name.');
-        setFinalizeState('done_error');
-        setFinalizing(false);
-        return;
-      }
-      if (!finalEmail.trim() || !finalEmail.includes('@') || finalEmail.trim() === 'guest@breezpoolcare.com') {
-        setFinalizeError('Please enter your actual email address.');
+      const missingFields = [];
+      if (!finalFirstName.trim()) missingFields.push('first name');
+      if (!finalEmail.trim() || !finalEmail.includes('@') || finalEmail.trim() === 'guest@breezpoolcare.com') missingFields.push('email');
+      
+      if (missingFields.length > 0) {
+        const fieldText = missingFields.length === 1 ? missingFields[0] : missingFields.join(' and ');
+        setFinalizeError(`Please enter your ${fieldText}.`);
         setFinalizeState('done_error');
         setFinalizing(false);
         return;
