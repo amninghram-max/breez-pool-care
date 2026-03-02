@@ -328,15 +328,107 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
           ) : currentStep === 2 ? (
             // ── Step 2: Lock Quote ──
             <div className="space-y-4">
-              {!quoteLocked ? (
+              {quoteSnapshot ? (
+                // ── Already locked: show locked summary ──
                 <Card>
                   <CardHeader>
-                    <CardTitle>Lock Quote</CardTitle>
+                    <CardTitle>Locked Quote Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <p className="text-sm text-green-700 mb-2">Monthly: <strong>${(quoteSnapshot.finalMonthlyPrice || quoteSnapshot.monthly || 0).toFixed(2)}</strong></p>
+                      {quoteSnapshot.estimatedPerVisitPrice && (
+                        <p className="text-sm text-green-700">Per visit: ${quoteSnapshot.estimatedPerVisitPrice.toFixed(2)}</p>
+                      )}
+                      {quoteSnapshot.estimatedOneTimeFees && quoteSnapshot.estimatedOneTimeFees > 0 && (
+                        <p className="text-sm text-green-700">One-time fees: ${quoteSnapshot.estimatedOneTimeFees.toFixed(2)}</p>
+                      )}
+                    </div>
+                    <div className="flex gap-3 pt-4 border-t">
+                      <Button onClick={() => setCurrentStep(3)} className="flex-1 bg-teal-600 hover:bg-teal-700">
+                        Continue to Inspection
+                      </Button>
+                      <Button onClick={() => setCurrentStep(4)} variant="outline" className="flex-1 text-teal-600 border-teal-600 hover:bg-teal-50">
+                        Convert Now
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : estimatePreview ? (
+                // ── Estimate preview: show and allow locking ──
+                <>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Estimate Preview</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
+                        <p className="text-sm text-teal-700 mb-2">Monthly: <strong>${(estimatePreview.monthly || 0).toFixed(2)}</strong></p>
+                        {estimatePreview.perVisit && (
+                          <p className="text-sm text-teal-700">Per visit: ${estimatePreview.perVisit.toFixed(2)}</p>
+                        )}
+                        {estimatePreview.oneTime && estimatePreview.oneTime > 0 && (
+                          <p className="text-sm text-teal-700">One-time fees: ${estimatePreview.oneTime.toFixed(2)}</p>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-600">
+                        Lock this estimate to proceed through inspection. You can edit contact information anytime.
+                      </p>
+                      <div className="flex gap-3">
+                        <Button
+                          onClick={handleBackToPricing}
+                          variant="outline"
+                          className="flex-1"
+                          disabled={lockQuoteMutation.isPending}
+                        >
+                          Back
+                        </Button>
+                        <Button
+                          onClick={() => setCurrentStep(4)}
+                          variant="outline"
+                          className="flex-1 text-teal-600 border-teal-600 hover:bg-teal-50"
+                          disabled={lockQuoteMutation.isPending}
+                        >
+                          Convert Now
+                        </Button>
+                        <Button
+                          onClick={handleLockQuote}
+                          className="flex-1 bg-teal-600 hover:bg-teal-700"
+                          disabled={lockQuoteMutation.isPending}
+                        >
+                          {lockQuoteMutation.isPending ? (
+                            <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Locking...</>
+                          ) : (
+                            'Lock Estimate'
+                          )}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </>
+              ) : (
+                // ── No estimate yet ──
+                <Card>
+                  <CardHeader>
+                    <CardTitle>No Estimate Yet</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <p className="text-sm text-gray-600">
-                      Once locked, the quote will be finalized. Contact information can be added later.
+                      Please go back and generate an estimate first.
                     </p>
+                    <Button
+                      onClick={handleBackToPricing}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      Back to Pricing
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {!quoteLocked && !quoteSnapshot && estimatePreview && (
+                // ── Contact info section (only show when estimate preview is active, before lock) ──
                     <div className="flex gap-3">
                       <Button
                         onClick={handleBackToPricing}
