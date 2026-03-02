@@ -96,13 +96,13 @@ export default function LeadsPipeline() {
   }
 
   const handleStageChange = (leadId, newStage, oldStage) => {
-    updateLeadMutation.mutate({ id: leadId, data: { stage: newStage } }, {
+    updateLeadStageMutation.mutate({ leadId, stage: newStage }, {
       onSuccess: () => {
         const newStageLabel = STAGES.find(s => s.key === newStage)?.label || newStage;
         toast.success(`Moved to ${newStageLabel}`, {
           action: {
             label: 'Undo',
-            onClick: () => updateLeadMutation.mutate({ id: leadId, data: { stage: oldStage } })
+            onClick: () => updateLeadStageMutation.mutate({ leadId, stage: oldStage })
           }
         });
       }
