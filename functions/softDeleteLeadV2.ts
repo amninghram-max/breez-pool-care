@@ -34,10 +34,13 @@ Deno.serve(async (req) => {
       return json200({ success: false, error: 'leadId is required', build: BUILD });
     }
 
+    // Create service-role client for all cascade operations
+    const serviceBase44 = createClientFromRequest(req);
+
     // Fetch Lead to verify it exists
     let lead = null;
     try {
-      lead = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
+      lead = await serviceBase44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
       if (!lead || lead.length === 0) {
         return json200({ success: false, error: 'Lead not found', build: BUILD });
       }
