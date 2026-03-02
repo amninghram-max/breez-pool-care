@@ -7,11 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2, Edit } from 'lucide-react';
 import { toast } from 'sonner';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
-export default function PartsManagementPanel({ catalogItemId }) {
+export default function PartsManagementPanel({ catalogItemId, typeFilter }) {
   const [showForm, setShowForm] = useState(false);
   const [editingPart, setEditingPart] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [partToDelete, setPartToDelete] = useState(null);
   const [formData, setFormData] = useState({
     partType: 'motor',
     partNumber: '',
@@ -54,10 +56,20 @@ export default function PartsManagementPanel({ catalogItemId }) {
     mutationFn: (id) => base44.entities.EquipmentCatalogPart.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['catalogParts', catalogItemId] });
-      toast.success('Deleted');
+      setPartToDelete(null);
+      toast.success('Part deleted');
     },
-    onError: (err) => toast.error(err.message)
+    onError: (err) => {
+      toast.error(err.message);
+      setPartToDelete(null);
+    }
   });
+
+  const handleDeletePartConfirm = () => {
+    if (partToDelete) {
+      deleteMutation.mutate(partToDelete.id);
+    }
+  };
 
   const filteredParts = parts.filter(p => 
     !searchQuery ||
@@ -188,7 +200,13 @@ export default function PartsManagementPanel({ catalogItemId }) {
                         <Button size="sm" variant="ghost" onClick={() => handleEdit(part)}>
                           <Edit className="w-3 h-3" />
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => deleteMutation.mutate(part.id)} disabled={deleteMutation.isPending}>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => setPartToDelete(part)} 
+                          disabled={deleteMutation.isPending}
+                          className="text-red-600 hover:text-red-700"
+                        >
                           <Trash2 className="w-3 h-3" />
                         </Button>
                       </div>
@@ -200,6 +218,24 @@ export default function PartsManagementPanel({ catalogItemId }) {
           </div>
         )}
       </div>
+
+      {/* Delete Part Confirmation Modal */}
+      <AlertDialog open={!!partToDelete} onOpenChange={(open) => !open && setPartToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Part?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Delete {partToDelete?.partNumber} - {partToDelete?.description}? This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex gap-3 justify-end mt-4">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeletePartConfirm} disabled={deleteMutation.isPending} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
