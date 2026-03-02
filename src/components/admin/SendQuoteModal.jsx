@@ -60,19 +60,19 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
 
       const payload = { leadId: lead.id, firstName: lead.firstName, email };
 
-      // Invoke — always log outcome; real success signal is Lead.confirmationSentAt
-      console.log("SEND_QUOTE_LINK_BEFORE_INVOKE", payload);
+      const FN = "sendQuoteLinkEmailV2";
+      console.log("SEND_QUOTE_LINK_BEFORE_INVOKE", { fn: FN, ...payload });
 
       let invokeRes = null;
       let invokeErr = null;
 
       try {
-        invokeRes = await base44.functions.invoke("sendQuoteLinkEmail", payload);
-        console.log("SEND_QUOTE_LINK_AFTER_INVOKE", invokeRes);
+        invokeRes = await base44.functions.invoke(FN, payload);
+        console.log("SEND_QUOTE_LINK_AFTER_INVOKE", { fn: FN, status: invokeRes?.status });
         console.log("SEND_QUOTE_LINK_AFTER_INVOKE_DATA", invokeRes?.data);
       } catch (e) {
         invokeErr = e;
-        console.log("SEND_QUOTE_LINK_INVOKE_THROW", e);
+        console.log("SEND_QUOTE_LINK_INVOKE_THROW", { fn: FN, err: e });
       }
 
       const normalized = invokeRes?.data ?? invokeRes ?? null;
