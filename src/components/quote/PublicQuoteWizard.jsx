@@ -494,6 +494,17 @@ export default function PublicQuoteWizard({
         </div>
       )
     },
+    filterType: {
+      title: 'What type of filter does your pool have?',
+      sub: 'Helps us understand your pool\'s equipment and service needs.',
+      render: () => (
+        <div className="space-y-3">
+          {FILTER_TYPE_OPTIONS.map(o => (
+            <OptionCard key={o.value} option={o} selected={answers.filterType} onSelect={v => handleSelect('filterType', v)} />
+          ))}
+        </div>
+      )
+    },
     chlorinationMethod: {
       title: 'What sanitation system does your pool use?',
       sub: 'Helps us understand your pool\'s chemistry needs.',
