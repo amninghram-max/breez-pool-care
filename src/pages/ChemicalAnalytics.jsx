@@ -199,21 +199,25 @@ export default function ChemicalAnalytics() {
         </div>
       )}
 
-      {analytics && (
-        <Tabs defaultValue="brackets" className="space-y-6">
-          <TabsList className="flex-wrap">
-            <TabsTrigger value="brackets">By Risk Bracket</TabsTrigger>
-            <TabsTrigger value="tiers">By Size Tier</TabsTrigger>
-            <TabsTrigger value="frequency">By Frequency</TabsTrigger>
-            <TabsTrigger value="underpriced">Underpriced</TabsTrigger>
-            <TabsTrigger value="overperforming">Overperforming</TabsTrigger>
-            <TabsTrigger value="adjustments">Adjustments</TabsTrigger>
-            <TabsTrigger value="costs-persisted" className="flex items-center gap-1">
-              <Receipt className="w-3 h-3" />
-              Costs (Persisted)
-            </TabsTrigger>
-          </TabsList>
+      <Tabs defaultValue={analytics ? "brackets" : "costs-persisted"} className="space-y-6">
+        <TabsList className="flex-wrap">
+          {analytics && (
+            <>
+              <TabsTrigger value="brackets">By Risk Bracket</TabsTrigger>
+              <TabsTrigger value="tiers">By Size Tier</TabsTrigger>
+              <TabsTrigger value="frequency">By Frequency</TabsTrigger>
+              <TabsTrigger value="underpriced">Underpriced</TabsTrigger>
+              <TabsTrigger value="overperforming">Overperforming</TabsTrigger>
+              <TabsTrigger value="adjustments">Adjustments</TabsTrigger>
+            </>
+          )}
+          <TabsTrigger value="costs-persisted" className="flex items-center gap-1">
+            <Receipt className="w-3 h-3" />
+            Costs (Persisted)
+          </TabsTrigger>
+        </TabsList>
 
+          {analytics && <>
           {/* By Risk Bracket */}
           <TabsContent value="brackets">
             <Card>
@@ -572,6 +576,7 @@ export default function ChemicalAnalytics() {
               </CardContent>
             </Card>
           </TabsContent>
+          </>}
 
           {/* Costs (Persisted) - uses getChemicalCostSummary */}
           <TabsContent value="costs-persisted">
@@ -761,8 +766,7 @@ export default function ChemicalAnalytics() {
               </CardContent>
             </Card>
           </TabsContent>
-        </Tabs>
-      )}
+      </Tabs>
     </div>
   );
 }
