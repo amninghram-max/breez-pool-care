@@ -302,8 +302,8 @@ export default function PublicQuoteWizard({
       const payload = {
         questionnaireData: {
           ...answers,
-          clientFirstName: firstName.trim(),
-          clientEmail: email.trim().toLowerCase(),
+          clientFirstName: finalFirstName.trim(),
+          clientEmail: finalEmail.trim().toLowerCase(),
           petsAccess: answers.petsAccess === true,
         }
       };
