@@ -232,6 +232,7 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
             </div>
           ) : activationLink ? (
             // ── Success: Activation Link ──
+            <>
             <div className="space-y-4">
               <div className="flex items-start gap-3 bg-green-50 border border-green-200 rounded-lg p-4">
                 <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
@@ -262,8 +263,9 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
                   Close
                 </Button>
               </div>
-            </div>
-          ) : currentStep === 1 ? (
+              </div>
+              </>
+              ) : currentStep === 1 ? (
             // ── Step 1: Pricing (QuoteWizard) ──
             <div className="space-y-4">
               <QuoteWizard
@@ -483,9 +485,9 @@ export default function InPersonSalesModal({ open, onOpenChange }) {
                 </CardContent>
               </Card>
             </div>
-          ) : null
-        </div>
-      </div>
-    </div>
-  );
-}
+            ) : null}
+            </div>
+            </div>
+            </div>
+            );
+            }
