@@ -19,6 +19,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const body = await req.json();
     const {
       leadId,
       calendarEventId,
@@ -35,26 +36,29 @@ Deno.serve(async (req) => {
       techNotes,
       photoBefore,
       customerPresent,
-    } = await req.json();
+    } = body;
 
     if (!leadId || !confirmedPoolCondition) {
       return Response.json({ error: 'leadId and confirmedPoolCondition required' }, { status: 400 });
     }
 
-    // Look up existing InspectionRecord for this lead to get required scheduling fields
+    // Look up scheduling fields from existing InspectionRecord or CalendarEvent
     let scheduledDate = new Date().toISOString().split('T')[0];
     let startTime = '09:00';
-    let timeWindow = 'Morning (8:00 AM – 11:00 AM)';
+    let timeWindow = 'Morning (8:00 AM - 11:00 AM)';
 
-    const existingRecords = await base44.asServiceRole.entities.InspectionRecord.filter({ leadId }, '-created_date', 1);
-    if (existingRecords?.length > 0) {
-      const existing = existingRecords[0];
-      scheduledDate = existing.scheduledDate || scheduledDate;
-      startTime = existing.startTime || startTime;
-      timeWindow = existing.timeWindow || timeWindow;
-    } else if (calendarEventId) {
-      // Fall back to calendar event if available
-      const events = await base44.asServiceRole.entities.CalendarEvent.filter({ leadId }, '-created_date', 1);
+    const existingRecords = await base44.asServiceRole.entities.InspectionRecord.filter({ leadId }, '-created_date', 5);
+    // Find the most recent scheduled (not submitted) record
+    const scheduledRecord = existingRecords?.find(r => r.scheduledDate && r.finalizationStatus !== 'finalized');
+    if (scheduledRecord) {
+      scheduledDate = scheduledRecord.scheduledDate || scheduledDate;
+      startTime = scheduledRecord.startTime || startTime;
+      timeWindow = scheduledRecord.timeWindow || timeWindow;
+    } else {
+      // Fall back to CalendarEvent
+      const events = await base44.asServiceRole.entities.CalendarEvent.filter(
+        { leadId, eventType: 'inspection' }, '-created_date', 1
+      );
       if (events?.length > 0) {
         scheduledDate = events[0].scheduledDate || scheduledDate;
         startTime = events[0].startTime || startTime;
@@ -62,31 +66,44 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Create immutable inspection record using service role to bypass RLS
-    const record = await base44.asServiceRole.entities.InspectionRecord.create({
+    const recordData = {
+      leadId,
       scheduledDate,
       startTime,
       timeWindow,
-      leadId,
       calendarEventId: calendarEventId || null,
       submittedByUserId: user.id,
       submittedByName: user.full_name || user.email,
       submittedAt: new Date().toISOString(),
-      confirmedPoolSize,
-      confirmedPoolType,
-      confirmedEnclosure,
-      confirmedFilterType,
-      confirmedChlorinationMethod,
-      confirmedSpaPresent,
-      confirmedTreesOverhead,
+      confirmedPoolSize: confirmedPoolSize || null,
+      confirmedPoolType: confirmedPoolType || null,
+      confirmedEnclosure: confirmedEnclosure || null,
+      confirmedFilterType: confirmedFilterType || null,
+      confirmedChlorinationMethod: confirmedChlorinationMethod || null,
+      confirmedSpaPresent: confirmedSpaPresent === true,
+      confirmedTreesOverhead: confirmedTreesOverhead || null,
       confirmedPoolCondition,
-      greenSeverity: confirmedPoolCondition === 'green' ? greenSeverity : null,
-      equipmentNotes,
-      techNotes,
+      greenSeverity: confirmedPoolCondition === 'green' ? (greenSeverity || null) : null,
+      equipmentNotes: equipmentNotes || null,
+      techNotes: techNotes || null,
       photoBefore: photoBefore || [],
       customerPresent: customerPresent !== false,
       finalizationStatus: 'pending_finalization',
-    });
+      appointmentStatus: 'completed',
+    };
+
+    console.log('[submitInspection] Creating record for leadId:', leadId, 'by:', user.email, 'role:', user.role);
+
+    // Try service role first, fall back to user-scoped
+    let record;
+    try {
+      record = await base44.asServiceRole.entities.InspectionRecord.create(recordData);
+      console.log('[submitInspection] Created via asServiceRole, id:', record.id);
+    } catch (srErr) {
+      console.warn('[submitInspection] asServiceRole failed, trying user-scoped:', srErr.message);
+      record = await base44.entities.InspectionRecord.create(recordData);
+      console.log('[submitInspection] Created via user-scoped, id:', record.id);
+    }
 
     // Mark calendar event completed
     if (calendarEventId) {
@@ -101,11 +118,11 @@ Deno.serve(async (req) => {
       stage: 'inspection_confirmed',
     });
 
-    console.log(`✅ Inspection submitted: recordId=${record.id}, leadId=${leadId}, by=${user.email}`);
+    console.log(`[submitInspection] Success: recordId=${record.id}, leadId=${leadId}, by=${user.email}`);
 
     return Response.json({ success: true, inspectionRecordId: record.id });
   } catch (error) {
-    console.error('submitInspection error:', error);
+    console.error('[submitInspection] error:', error.message, error?.data || '');
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
