@@ -9,6 +9,12 @@ import { Phone, Mail, MessageSquare, Calendar, AlertCircle, Check, Wrench, Plus,
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 import UnstickLeadPanel from '@/components/admin/UnstickLeadPanel';
 import NewLeadModal from '@/components/admin/NewLeadModal';
 import RemoveLeadPanel from '@/components/admin/RemoveLeadPanel';
