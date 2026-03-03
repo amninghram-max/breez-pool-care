@@ -72,6 +72,23 @@ export default function StormModeTools({ currentDate, onClose }) {
   });
   const technicians = settings?.technicians?.filter(t => t.active) || [];
 
+  // Load audit log entries
+  const { data: auditEntries = [], isLoading: auditLoading, error: auditError, refetch: refetchAudit } = useQuery({
+    queryKey: ['stormBatchAudit'],
+    queryFn: async () => {
+      try {
+        const entries = await base44.asServiceRole.entities.AnalyticsEvent.filter({
+          eventName: 'storm_batch_audit'
+        }, '-created_date', 50);
+        return entries;
+      } catch (err) {
+        console.error('Failed to load audit log:', err);
+        throw err;
+      }
+    },
+    enabled: showAuditModal
+  });
+
   // Load events in the selected date range
   const { data: allEvents = [], isLoading: eventsLoading } = useQuery({
     queryKey: ['stormRangeEvents', fromDate, toDate],
