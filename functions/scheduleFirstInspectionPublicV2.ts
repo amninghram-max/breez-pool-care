@@ -524,8 +524,37 @@ Deno.serve(async (req) => {
       });
       console.log('SFI_V2_INSPECTION_CREATED', { leadId, inspectionId: inspection.id });
     } catch (e) {
-      console.error('SFI_V2_INSPECTION_CREATE_FAILED', { error: e.message });
-      return json200({ success: false, error: 'Failed to create inspection record', build: BUILD });
+      // Classify error: permission/403 vs other failures
+      const isPermissionError = e?.status === 403 || e?.message?.includes('Permission denied');
+      
+      if (isPermissionError) {
+        // Permission failure: fail fast, no downstream writes
+        console.error('SFI_V2_INSPECTION_CREATE_FORBIDDEN', {
+          error: e.message,
+          leadId: leadId.slice(0, 8),
+          token: token.slice(0, 8),
+          status: e?.status
+        });
+        return json200({
+          success: false,
+          code: 'INSPECTION_CREATE_FORBIDDEN',
+          error: 'Unable to schedule inspection right now. Please contact Breez at (321) 524-3838.',
+          build: BUILD
+        });
+      } else {
+        // Non-permission failure (network, validation, etc.)
+        console.error('SFI_V2_INSPECTION_CREATE_FAILED', {
+          error: e.message,
+          leadId: leadId.slice(0, 8),
+          token: token.slice(0, 8)
+        });
+        return json200({
+          success: false,
+          code: 'INSPECTION_CREATE_FAILED',
+          error: 'Failed to create inspection record',
+          build: BUILD
+        });
+      }
     }
 
     // Step 2: Cancel any existing active inspection CalendarEvents (single-event guarantee)
