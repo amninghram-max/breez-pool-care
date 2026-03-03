@@ -237,7 +237,34 @@ Deno.serve(async (req) => {
       console.warn('SFI_V2_LEAD_SYNC_FAILED', { error: e.message });
     }
 
-    console.log('SFI_V2_SUCCESS', { leadId, inspectionId: inspection.id, eventId: calendarEvent.id, scheduledDate: requestedDate });
+    // Step 6: Send confirmation email server-side (authoritative, non-blocking)
+    let emailStatus = 'sent';
+    let emailError = null;
+    try {
+      const emailRes = await base44.asServiceRole.functions.invoke('sendInspectionConfirmation', {
+        leadId,
+        // Pass scheduling context in case lead fields aren't synced yet
+        firstName: firstName.trim(),
+        email: finalEmail,
+        inspectionDate: requestedDate,
+        inspectionTime: timeWindow,
+        force: shouldSendNotification // force send on first schedule; skip if already sent
+      });
+      const emailData = emailRes?.data ?? emailRes;
+      if (emailData?.skipped) {
+        emailStatus = 'sent'; // already sent previously — treat as success
+      } else if (!emailData?.success && !emailData?.emailSent) {
+        emailStatus = 'failed';
+        emailError = emailData?.error || 'Email delivery failed';
+      }
+      console.log('SFI_V2_EMAIL', { leadId, emailStatus, skipped: emailData?.skipped });
+    } catch (emailErr) {
+      emailStatus = 'failed';
+      emailError = emailErr?.message || 'Email trigger exception';
+      console.error('SFI_V2_EMAIL_FAILED', { leadId, error: emailErr?.message });
+    }
+
+    console.log('SFI_V2_SUCCESS', { leadId, inspectionId: inspection.id, eventId: calendarEvent.id, scheduledDate: requestedDate, emailStatus });
 
     return json200({
       success: true,
@@ -248,6 +275,8 @@ Deno.serve(async (req) => {
       inspectionId: inspection.id,
       eventId: calendarEvent.id,
       shouldSendNotification,
+      emailStatus,
+      ...(emailError && { emailError }),
       build: BUILD
     });
 
