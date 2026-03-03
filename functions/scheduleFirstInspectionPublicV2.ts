@@ -87,13 +87,22 @@ async function resolveToken(base44, token) {
     }
   }
 
-  // 3. Validate lead is not soft-deleted
+  // 3. Validate lead is not soft-deleted (EXPLICIT UNAVAILABLE CHECK)
   if (leadId) {
     try {
       const leadRows = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
       const lead = leadRows?.[0];
-      if (!lead || lead.isDeleted === true) {
-        leadId = null; // force INCOMPLETE_DATA
+      if (lead && lead.isDeleted === true) {
+        // Lead exists but is soft-deleted — explicit LEAD_UNAVAILABLE
+        console.log('SFI_V2_LEAD_UNAVAILABLE', {
+          token: cleanToken.slice(0, 8),
+          leadId: leadId.slice(0, 8),
+          reason: 'lead_soft_deleted'
+        });
+        return { code: 'LEAD_UNAVAILABLE', error: 'This quote is no longer active. Please contact Breez at (321) 524-3838 for assistance.' };
+      }
+      if (!lead) {
+        leadId = null; // Force INCOMPLETE_DATA (true missing-link case)
       }
     } catch (e) {
       console.warn('SFI_V2_LEAD_VALIDATE_FAILED', { error: e.message });
