@@ -510,5 +510,10 @@ Deno.serve(async (req) => {
       error: error.message || 'Internal server error',
       build: BUILD
     }, { status: 500 });
+  } finally {
+    // Cleanup: always remove key from processing set
+    if (idempotencyKey) {
+      processingKeys.delete(idempotencyKey);
+    }
   }
 });
