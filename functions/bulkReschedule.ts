@@ -348,7 +348,7 @@ Deno.serve(async (req) => {
       if (!event) continue;
 
       try {
-        // If inspection: update InspectionRecord first (source of truth)
+        // WRITE ORDER: InspectionRecord → CalendarEvent → Lead (for inspections)
         if (event.eventType === 'inspection' && inspectionByEventId[event.id]) {
           const inspection = inspectionByEventId[event.id];
           await base44.asServiceRole.entities.InspectionRecord.update(inspection.id, {
@@ -357,7 +357,7 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Update CalendarEvent projection
+        // Update CalendarEvent projection (second)
         await base44.asServiceRole.entities.CalendarEvent.update(event.id, {
           scheduledDate: item.newDate,
           originalScheduledDate: event.scheduledDate,
@@ -366,7 +366,7 @@ Deno.serve(async (req) => {
           rescheduleReason: 'Storm/weather conditions'
         });
 
-        // Sync Lead mirror fields if inspection
+        // Sync Lead mirror fields if inspection (third)
         if (event.eventType === 'inspection') {
           const lead = leadMap[event.leadId];
           if (lead) {
@@ -396,6 +396,10 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Deterministic order
+    writeResults.sort((a, b) => a.eventId.localeCompare(b.eventId));
+    skipped.sort((a, b) => a.eventId.localeCompare(b.eventId));
+
     return Response.json({
       success: writeResults.filter(r => r.status === 'success').length > 0,
       dryRun: false,
@@ -407,7 +411,8 @@ Deno.serve(async (req) => {
         selectedCount: validEvents.length,
         applyEligibleCount: writeResults.filter(r => r.status === 'success').length,
         skippedCount: skipped.length + conflicts.length
-      }
+      },
+      idempotency: idempotencyInfo
     });
 
   } catch (error) {
