@@ -333,7 +333,12 @@ export default function StormModeTools({ currentDate, onClose }) {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
       queryClient.invalidateQueries({ queryKey: ['stormRangeEvents'] });
-      alert(`Successfully rescheduled ${data.rescheduledCount} events!`);
+      // Capture applied events for communication workflow
+      if (data.applied && data.applied.length > 0) {
+        setLastBatchApplied(data.applied);
+        setShowCommunicationPanel(true);
+      }
+      alert(`Successfully rescheduled ${data.applied?.length || 0} events!`);
       setRescheduleToDate('');
     }
   });
