@@ -107,6 +107,28 @@ export default function LeadsPipeline() {
     }
   });
 
+  const batchFollowUpMutation = useMutation({
+    mutationFn: ({ leadIds, templateType }) =>
+      base44.functions.invoke('batchFollowUpEmailV1', {
+        leadIds: Array.from(leadIds),
+        templateType,
+        initiatedBy: user?.email
+      }),
+    onSuccess: (res) => {
+      setBatchResults(res.data);
+      setSelectedLeadIds(new Set());
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      setTimeout(() => {
+        setBatchConfirmation(null);
+        setTimeout(() => setBatchResults(null), 4000);
+      }, 500);
+    },
+    onError: (err) => {
+      toast.error(`Batch send failed: ${err.message}`);
+      setBatchConfirmation(null);
+    }
+  });
+
   if (user?.role !== 'admin') {
     return (
       <div className="p-8 text-center">
