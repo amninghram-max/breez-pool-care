@@ -92,6 +92,26 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ── Step 2b: Validate Lead is not deleted ──
+    if (leadId) {
+      try {
+        const leadRows = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
+        const lead = leadRows?.[0];
+        if (!lead || lead.isDeleted === true) {
+          console.log('RQT_V1_LEAD_DELETED_OR_MISSING', {
+            token: cleanToken.slice(0, 8),
+            leadId: leadId.slice(0, 8),
+            found: !!lead,
+            isDeleted: lead?.isDeleted ?? null
+          });
+          leadId = null; // Force INCOMPLETE_DATA downstream
+        }
+      } catch (e) {
+        console.warn('RESOLVE_TOKEN_V1_LEAD_CHECK_FAILED', { error: e.message });
+        leadId = null; // Fail safe
+      }
+    }
+
     // ── Step 3: Strict validation — both leadId and email must be present ──
     if (!leadId || !email) {
       console.log('RESOLVE_TOKEN_V1_INCOMPLETE', { leadId, hasEmail: !!email, token: cleanToken.slice(0, 8) });
