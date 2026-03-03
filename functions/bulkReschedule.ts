@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
       eventTypes = [],
       technicianFilter,
       policy = 'shift_day',
-      dryRun = true,
+      dryRun = false,
       sendNotifications = false,
       idempotencyKey,
       targetDate
