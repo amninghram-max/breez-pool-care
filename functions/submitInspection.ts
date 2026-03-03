@@ -62,8 +62,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Create immutable inspection record (use user-scoped client since user is authenticated as allowed role)
-    const record = await base44.entities.InspectionRecord.create({
+    // Create immutable inspection record using service role to bypass RLS
+    const record = await base44.asServiceRole.entities.InspectionRecord.create({
       scheduledDate,
       startTime,
       timeWindow,
