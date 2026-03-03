@@ -163,7 +163,7 @@ export default function PublicHome() {
 
       {/* ── Trust Strip ── */}
       <section className="py-8 px-4 border-b border-gray-100 bg-white">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-5xl mx-auto space-y-6">
           <div className="flex flex-wrap justify-center items-center gap-x-10 gap-y-4">
             {[
               { icon: ShieldCheck, label: 'Licensed & Insured' },
@@ -177,10 +177,12 @@ export default function PublicHome() {
                 <span className="text-sm font-medium">{label}</span>
               </div>
             ))}
+          </div>
+          <div className="flex justify-center">
             <img
               src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/aed629531_CertifiedPoolSpaOperator.png"
               alt="Certified Pool & Spa Operator"
-              className="h-14 w-auto"
+              className="h-28 w-auto"
             />
           </div>
         </div>
