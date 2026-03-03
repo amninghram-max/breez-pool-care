@@ -481,28 +481,7 @@ export default function PublicQuoteWizard({
     );
   }
 
-  // If there's an error in form submission, show it with a support option
-  if (error && step === baseSteps.length - 1) {
-    return (
-      <div className="space-y-4 text-center">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100">
-          <AlertCircle className="w-6 h-6 text-red-600" />
-        </div>
-        <div>
-          <h2 className="text-lg font-bold text-gray-900">Unable to Generate Quote</h2>
-          <p className="text-sm text-gray-600 mt-1">{error}</p>
-        </div>
-        <button
-          onClick={() => setStep(0)}
-          className="w-full py-3 px-4 rounded-xl text-white text-sm font-semibold"
-          style={{ backgroundColor: TEAL }}
-        >
-          Start Over
-        </button>
-        <p className="text-xs text-gray-400">Support: (321) 524-3838</p>
-      </div>
-    );
-  }
+  // Validation errors are shown inline — do NOT show the full error page for them
 
   // ── Step renderers ──
   const stepConfig = {
