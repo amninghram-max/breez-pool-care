@@ -128,6 +128,13 @@ export default function PublicHome() {
         </div>
 
         <div className="relative max-w-4xl mx-auto text-center">
+          <div className="flex justify-center mb-6">
+            <img
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/697499e86_Breez1.png"
+              alt="Breez Pool Care"
+              className="h-28 w-auto"
+            />
+          </div>
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium mb-6 border" style={{ backgroundColor: '#e8f8f9', borderColor: '#b2e8ea', color: TEAL }}>
             <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: TEAL }} />
             Now Serving Melbourne, FL
