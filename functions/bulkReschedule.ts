@@ -441,7 +441,7 @@ Deno.serve(async (req) => {
     writeResults.sort((a, b) => a.eventId.localeCompare(b.eventId));
     skipped.sort((a, b) => a.eventId.localeCompare(b.eventId));
 
-    return Response.json({
+    const liveResponse = {
       success: writeResults.filter(r => r.status === 'success').length > 0,
       dryRun: false,
       applied: writeResults,
@@ -454,7 +454,36 @@ Deno.serve(async (req) => {
         skippedCount: skipped.length + conflicts.length
       },
       idempotency: idempotencyInfo
-    });
+    };
+
+    // PERSIST LIVE RESPONSE for replay
+    if (idempotencyKey) {
+      try {
+        await base44.asServiceRole.entities.AnalyticsEvent.create({
+          eventName: 'bulk_reschedule_idempotency',
+          properties: {
+            operationType: 'live',
+            paramFromDate: fromDate,
+            paramToDate: toDate,
+            paramPolicy: policy
+          },
+          metadata: {
+            idempotencyKey,
+            fingerprint: effectiveFingerprint,
+            responseBody: liveResponse,
+            createdAt: new Date().toISOString()
+          }
+        });
+      } catch (analyticsErr) {
+        console.error(`Failed to persist live idempotency record:`, analyticsErr);
+        liveResponse.warnings = [
+          ...liveResponse.warnings,
+          'WARNING: Idempotency persistence failed; replay protection unavailable for this request.'
+        ];
+      }
+    }
+
+    return Response.json(liveResponse);
 
   } catch (error) {
     console.error(`[${BUILD}] Unhandled error:`, error);
