@@ -208,13 +208,23 @@ export default function StormModeTools({ currentDate, onClose }) {
             <Cloud className="w-5 h-5 text-orange-600" />
             Storm/Weather Reschedule Mode
           </CardTitle>
-          <button
-            onClick={onClose}
-            aria-label="Close Storm Mode"
-            className="text-gray-400 hover:text-gray-700 text-lg leading-none"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowAuditModal(true)}
+              className="p-1.5 text-gray-500 hover:bg-orange-100 rounded-lg transition-colors"
+              title="View storm batch audit log"
+              aria-label="View audit log"
+            >
+              <History className="w-5 h-5" />
+            </button>
+            <button
+              onClick={onClose}
+              aria-label="Close Storm Mode"
+              className="text-gray-400 hover:text-gray-700 text-lg leading-none"
+            >
+              ✕
+            </button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
