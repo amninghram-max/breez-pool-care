@@ -265,7 +265,7 @@ async function sendQuoteSummaryEmail({ firstName, email, quoteToken, appOrigin, 
     return { sent: false, reason: `Resend API error ${emailRes.status}`, detail: resendText.slice(0, 200) };
   }
 
-  console.log('FPQ_V2_EMAIL_SENT', { email: email.slice(0, 5), resendId: resendData.id });
+  console.log('FPQ_V2_EMAIL_SENT', { email: email.slice(0, 5), resendId: resendData.id, emailLinkMode });
   return { sent: true, resendId: resendData.id || null };
 }
 
