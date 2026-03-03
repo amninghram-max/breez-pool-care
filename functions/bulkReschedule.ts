@@ -356,9 +356,11 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Bulk reschedule error:', error);
-    return Response.json({ 
-      error: error.message || 'Failed to bulk reschedule'
+    console.error(`[${BUILD}] Unhandled error:`, error);
+    return Response.json({
+      success: false,
+      error: error.message || 'Internal server error',
+      build: BUILD
     }, { status: 500 });
   }
 });
