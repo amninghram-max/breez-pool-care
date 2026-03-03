@@ -319,8 +319,8 @@ export default function PublicHome() {
             </div>
             <div className="rounded-3xl overflow-hidden shadow-xl aspect-[4/3]">
               <img
-                src="https://images.unsplash.com/photo-1572385672892-c3d1aaedc294?w=800&auto=format&fit=crop&q=80"
-                alt="Crystal clear pool water"
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/8f63f3f99_Skimming_pool.png"
+                alt="Breez Pool Care technician skimming pool"
                 className="w-full h-full object-cover"
               />
             </div>
