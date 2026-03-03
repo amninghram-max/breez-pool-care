@@ -52,19 +52,19 @@ export default function PreQualification() {
     if (token) return; // Token already present
     
     const createToken = async () => {
+      setCreatingToken(true);
       try {
         const res = await base44.functions.invoke('createPrequalTokenV2', {});
         const data = res?.data ?? res;
         if (data?.success && data?.token) {
-          console.log('[PreQual] Token created, redirecting:', data.token.slice(0, 8) + '...');
           navigate(`/PreQualification?token=${encodeURIComponent(data.token)}`, { replace: true });
         } else {
-          console.error('[PreQual] Token creation failed:', data?.error);
           setTokenCreationError(true);
         }
       } catch (err) {
-        console.error('[PreQual] Token creation error:', err?.message);
         setTokenCreationError(true);
+      } finally {
+        setCreatingToken(false);
       }
     };
     
