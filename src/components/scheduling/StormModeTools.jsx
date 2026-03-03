@@ -586,6 +586,63 @@ export default function StormModeTools({ currentDate, onClose }) {
         </DialogContent>
       </Dialog>
 
+      {/* ── Undo Confirmation Modal ──────────────────────────────── */}
+      <Dialog open={!!undoConfirmData} onOpenChange={(open) => !open && setUndoConfirmData(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-orange-600" />
+              Confirm Undo Storm Batch
+            </DialogTitle>
+          </DialogHeader>
+          {undoConfirmData && (
+            <div className="space-y-4 text-sm">
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <p className="text-orange-900 font-semibold mb-2">⚠️ This will revert changes</p>
+                <p className="text-orange-800 text-xs">
+                  Events will be restored to their original dates before the storm batch was applied.
+                  Only unchanged events will be reverted; modified events will be skipped.
+                </p>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-3 space-y-1.5">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Applied in batch:</span>
+                  <strong>{undoConfirmData.entry.data?.metadata?.responseBody?.summary?.applyEligibleCount || 0}</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Batch created:</span>
+                  <span className="text-xs">
+                    {new Date(undoConfirmData.entry.created_date).toLocaleString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-xs text-gray-500">Undo is idempotent. You can retry if needed.</p>
+            </div>
+          )}
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" onClick={() => setUndoConfirmData(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => undoConfirmData && undoBatchMutation.mutate(undoConfirmData.batchId)}
+              disabled={undoBatchMutation.isPending}
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              {undoBatchMutation.isPending ? 'Undoing…' : 'Confirm Undo'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* ── Audit Log Modal ──────────────────────────────────── */}
       <Dialog open={showAuditModal} onOpenChange={setShowAuditModal}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
