@@ -4,17 +4,18 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  * scheduleFirstInspectionPublicV2
  *
  * Public endpoint to schedule an inspection via token (no login required).
- * Architecture-compliant: NO backend-to-backend function invocations.
- * All logic inlined: token resolution, stage update, confirmation email.
+ * NO backend-to-backend function invocations. All logic inlined.
  *
- * CRITICAL: Uses pure service-role client (not derived from request auth context)
- * to bypass RLS restrictions on public endpoints with unauthenticated requests.
+ * CRITICAL ARCHITECTURE FIX:
+ * - Uses independent service-role client (NOT derived from request context)
+ * - Separates request parsing from entity operations
+ * - Ensures RLS policies work correctly for unauthenticated public endpoints
  *
  * Input:  { token, firstName, phone, email, serviceAddress: { street, city, state, zip }, requestedDate (YYYY-MM-DD), requestedTimeSlot }
  * Output: { success, scheduledDate?, timeWindow?, email?, firstName?, alreadyScheduled?, inspectionId?, eventId?, emailStatus?, build }
  */
 
-const BUILD = "SFI-V2-2026-03-03-B";
+const BUILD = "SFI-V2-2026-03-03-C";
 
 const json200 = (data) => new Response(
   JSON.stringify(data),
@@ -41,13 +42,13 @@ const STAGE_ORDER = {
 
 // ── Inlined: resolveQuoteTokenPublicV1 semantics + lifecycle validation ──
 // Returns { leadId, email, firstName } or throws with a code.
-async function resolveToken(base44, token) {
+async function resolveToken(entities, token) {
   const cleanToken = token.trim();
 
   // 1. Look up QuoteRequests
   let request = null;
   try {
-    const rows = await base44.asServiceRole.entities.QuoteRequests.filter({ token: cleanToken }, null, 1);
+    const rows = await entities.QuoteRequests.filter({ token: cleanToken }, null, 1);
     if (rows && rows.length > 0) request = rows[0];
   } catch (e) {
     console.error('SFI_V2_TOKEN_QUERY_FAILED', { error: e.message });
@@ -67,7 +68,7 @@ async function resolveToken(base44, token) {
   // 2. Repair path: if leadId missing, try Quote entity
   if (!leadId) {
     try {
-      const quotes = await base44.asServiceRole.entities.Quote.filter({ quoteToken: cleanToken }, '-created_date', 1);
+      const quotes = await entities.Quote.filter({ quoteToken: cleanToken }, '-created_date', 1);
       if (quotes && quotes.length > 0) {
         const q = quotes[0];
         if (q.leadId) {
@@ -79,7 +80,7 @@ async function resolveToken(base44, token) {
             const repairFields = { leadId };
             if (!request.email || request.email === 'guest@breezpoolcare.com') repairFields.email = email;
             if (!request.firstName) repairFields.firstName = firstName;
-            await base44.asServiceRole.entities.QuoteRequests.update(request.id, repairFields);
+            await entities.QuoteRequests.update(request.id, repairFields);
           } catch (e) {
             console.warn('SFI_V2_TOKEN_REPAIR_WRITE_FAILED', { error: e.message });
           }
@@ -93,7 +94,7 @@ async function resolveToken(base44, token) {
   // 3. Validate lead is not soft-deleted (EXPLICIT UNAVAILABLE CHECK)
   if (leadId) {
     try {
-      const leadRows = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
+      const leadRows = await entities.Lead.filter({ id: leadId }, null, 1);
       const lead = leadRows?.[0];
       if (lead && lead.isDeleted === true) {
         // Lead exists but is soft-deleted — explicit LEAD_UNAVAILABLE
@@ -122,9 +123,9 @@ async function resolveToken(base44, token) {
 
 // ── Token lifecycle validation ──
 // Check expiry and consumption state of scheduleToken
-async function validateTokenLifecycle(base44, token) {
+async function validateTokenLifecycle(entities, token) {
   try {
-    const quotes = await base44.asServiceRole.entities.Quote.filter({ quoteToken: token.trim() }, null, 1);
+    const quotes = await entities.Quote.filter({ quoteToken: token.trim() }, null, 1);
     if (!quotes || quotes.length === 0) {
       // Token not found in Quote; not an error here (resolveToken handles it)
       return { valid: true };
@@ -166,9 +167,9 @@ async function validateTokenLifecycle(base44, token) {
 
 // ── Inlined: updateLeadStagePublicV1 semantics ──
 // Non-regression forward-only stage update. Failures are non-fatal (warn only).
-async function updateLeadStage(base44, leadId, newStage) {
+async function updateLeadStage(entities, leadId, newStage) {
   try {
-    const lead = await base44.asServiceRole.entities.Lead.get(leadId);
+    const lead = await entities.Lead.get(leadId);
     const oldStage = lead?.stage || 'new_lead';
     if (oldStage === newStage) return; // idempotent
     const oldOrder = STAGE_ORDER[oldStage] ?? -999;
@@ -177,7 +178,7 @@ async function updateLeadStage(base44, leadId, newStage) {
       console.warn('SFI_V2_STAGE_REGRESSION_BLOCKED', { leadId, oldStage, newStage });
       return;
     }
-    await base44.asServiceRole.entities.Lead.update(leadId, { stage: newStage });
+    await entities.Lead.update(leadId, { stage: newStage });
     console.log('SFI_V2_STAGE_UPDATED', { leadId, oldStage, newStage });
   } catch (e) {
     console.warn('SFI_V2_STAGE_UPDATE_FAILED', { error: e.message });
@@ -192,9 +193,9 @@ const DEFAULT_DRIVE_TIME_MINUTES = 30;
 const MAX_JOBS_PER_DAY = 10; // Default cap (can be overridden by SchedulingSettings.maxJobsPerDay)
 const MAX_INSPECTIONS_PER_BLOCK = 3;
 
-async function checkTechnicianDailyCapacity(base44, requestedDate, maxCap = MAX_JOBS_PER_DAY) {
+async function checkTechnicianDailyCapacity(entities, requestedDate, maxCap = MAX_JOBS_PER_DAY) {
   try {
-    const events = await base44.asServiceRole.entities.CalendarEvent.filter(
+    const events = await entities.CalendarEvent.filter(
       { scheduledDate: requestedDate, status: { $ne: 'cancelled' } },
       null,
       1000
@@ -219,10 +220,10 @@ async function checkTechnicianDailyCapacity(base44, requestedDate, maxCap = MAX_
   }
 }
 
-async function checkInspectionBlockCapacity(base44, requestedDate, requestedTimeSlot, maxCap = MAX_INSPECTIONS_PER_BLOCK) {
+async function checkInspectionBlockCapacity(entities, requestedDate, requestedTimeSlot, maxCap = MAX_INSPECTIONS_PER_BLOCK) {
   try {
     const timeWindow = timeWindowMap[requestedTimeSlot];
-    const blockEvents = await base44.asServiceRole.entities.CalendarEvent.filter(
+    const blockEvents = await entities.CalendarEvent.filter(
       { scheduledDate: requestedDate, eventType: 'inspection', status: { $ne: 'cancelled' } },
       null,
       1000
@@ -248,10 +249,10 @@ async function checkInspectionBlockCapacity(base44, requestedDate, requestedTime
   }
 }
 
-async function checkDriveTimeFeasibility(base44, requestedDate, startTime) {
+async function checkDriveTimeFeasibility(entities, requestedDate, startTime) {
   try {
     // Fetch all events on the same day (sorted by time)
-    const dayEvents = await base44.asServiceRole.entities.CalendarEvent.filter(
+    const dayEvents = await entities.CalendarEvent.filter(
       { scheduledDate: requestedDate, status: { $ne: 'cancelled' } },
       'startTime',
       1000
@@ -304,11 +305,11 @@ async function checkDriveTimeFeasibility(base44, requestedDate, startTime) {
 
 // ── Inlined: sendInspectionConfirmation semantics ──
 // Returns 'sent' | 'skipped' | 'failed'. Non-fatal.
-async function sendConfirmationEmail(base44, { leadId, firstName, email, inspectionDate, inspectionTime, force }) {
+async function sendConfirmationEmail(entities, integrations, { leadId, firstName, email, inspectionDate, inspectionTime, force }) {
   try {
     // Idempotency: skip if already sent and not forced
     if (leadId && !force) {
-      const lead = await base44.asServiceRole.entities.Lead.get(leadId).catch(() => null);
+      const lead = await entities.Lead.get(leadId).catch(() => null);
       if (lead?.inspectionConfirmationSent) {
         console.log('SFI_V2_EMAIL_SKIPPED', { leadId, reason: 'already_sent' });
         return 'skipped';
@@ -349,7 +350,7 @@ Owner/Operator: Matt Inghram
 (321) 524-3838
 Mon–Sat: 8am–6pm`;
 
-    await base44.asServiceRole.integrations.Core.SendEmail({
+    await integrations.Core.SendEmail({
       to: email,
       subject,
       body,
@@ -357,7 +358,7 @@ Mon–Sat: 8am–6pm`;
     });
 
     if (leadId) {
-      await base44.asServiceRole.entities.Lead.update(leadId, {
+      await entities.Lead.update(leadId, {
         inspectionConfirmationSent: true,
         confirmationSentAt: new Date().toISOString()
       }).catch(e => console.warn('SFI_V2_CONFIRMATION_FLAG_FAILED', { error: e.message }));
@@ -374,14 +375,6 @@ Mon–Sat: 8am–6pm`;
 // ── Main Handler ──
 Deno.serve(async (req) => {
   try {
-    // Split clients: request-derived for parsing/general ops, pure service for entity creates
-    const base44 = createClientFromRequest(req);
-    
-    // CRITICAL: Pure service-role client NOT derived from request auth context.
-    // This ensures RLS policies with `asServiceRole: true` work correctly,
-    // even when the request is unauthenticated (public endpoint).
-    const serviceEntities = base44.asServiceRole.entities;
-    
     const payload = await req.json();
     const { token, firstName, phone, email, serviceAddress, requestedDate, requestedTimeSlot } = payload || {};
 
@@ -409,9 +402,17 @@ Deno.serve(async (req) => {
       return json200({ success: false, error: 'requestedTimeSlot must be one of: morning, midday, afternoon', build: BUILD });
     }
 
+    // CRITICAL: Create pure service-role client independent of request context
+    // This ensures entity operations work correctly on unauthenticated public endpoints
+    const base44Request = createClientFromRequest(req);
+    const serviceBase44 = base44Request.asServiceRole;
+    const entities = serviceBase44.entities;
+    const integrations = serviceBase44.integrations;
+    
+    console.log('SFI_V2_CLIENT_MODE', { mode: 'pure_service', tokenPrefix: token.slice(0, 8) });
+
     // Resolve token (inlined — no function invoke)
-    // NOTE: resolveToken uses base44.asServiceRole internally (lookup entities)
-    const resolved = await resolveToken(base44, token);
+    const resolved = await resolveToken(entities, token);
     if (!resolved.leadId) {
       console.warn('SFI_V2_TOKEN_RESOLUTION_FAILED', { code: resolved.code });
       return json200({
@@ -422,13 +423,11 @@ Deno.serve(async (req) => {
       });
     }
     const { leadId, email: tokenEmail, firstName: tokenFirstName } = resolved;
-    
-    console.log('SFI_V2_CLIENT_MODE', { mode: 'pure_service', leadIdPrefix: leadId.slice(0, 8) });
     const finalEmail     = email || tokenEmail;
     const finalFirstName = firstName.trim();
 
     // Validate token lifecycle (expiry + consumption)
-    const lifecycleCheck = await validateTokenLifecycle(base44, token);
+    const lifecycleCheck = await validateTokenLifecycle(entities, token);
     if (!lifecycleCheck.valid) {
       console.log('SFI_V2_TOKEN_LIFECYCLE_FAILED', { code: lifecycleCheck.code });
       return json200({
@@ -445,14 +444,14 @@ Deno.serve(async (req) => {
 
     // IDEMPOTENCY: check existing non-cancelled InspectionRecord
     try {
-      const existing = await base44.asServiceRole.entities.InspectionRecord.filter(
+      const existing = await entities.InspectionRecord.filter(
         { leadId, appointmentStatus: { $ne: 'cancelled' } },
         '-created_date',
         1
       );
       if (existing && existing.length > 0) {
         const insp = existing[0];
-        console.log('SFI_V2_ALREADY_SCHEDULED', { leadId, inspectionId: insp.id });
+        console.log('SFI_V2_ALREADY_SCHEDULED', { leadId: leadId.slice(0, 8), inspectionId: insp.id });
         return json200({
           success: true,
           alreadyScheduled: true,
@@ -473,7 +472,7 @@ Deno.serve(async (req) => {
     // Load max cap from SchedulingSettings if available, otherwise use default
     let maxJobsPerDay = MAX_JOBS_PER_DAY;
     try {
-      const settings = await base44.asServiceRole.entities.SchedulingSettings.filter({ settingKey: 'default' }, null, 1);
+      const settings = await entities.SchedulingSettings.filter({ settingKey: 'default' }, null, 1);
       if (settings?.[0]?.maxJobsPerDay) {
         maxJobsPerDay = settings[0].maxJobsPerDay;
       }
@@ -482,7 +481,7 @@ Deno.serve(async (req) => {
     }
 
     // Check 1: Per-technician daily capacity
-    const dailyCapCheck = await checkTechnicianDailyCapacity(base44, requestedDate, maxJobsPerDay);
+    const dailyCapCheck = await checkTechnicianDailyCapacity(entities, requestedDate, maxJobsPerDay);
     if (!dailyCapCheck.allowed) {
       console.log('SFI_V2_CAPACITY_CONSTRAINT_VIOLATED', { code: dailyCapCheck.code });
       return json200({
@@ -495,7 +494,7 @@ Deno.serve(async (req) => {
     }
 
     // Check 2: Initial inspection time-block capacity
-    const blockCapCheck = await checkInspectionBlockCapacity(base44, requestedDate, requestedTimeSlot);
+    const blockCapCheck = await checkInspectionBlockCapacity(entities, requestedDate, requestedTimeSlot);
     if (!blockCapCheck.allowed) {
       console.log('SFI_V2_CAPACITY_CONSTRAINT_VIOLATED', { code: blockCapCheck.code });
       return json200({
@@ -508,7 +507,7 @@ Deno.serve(async (req) => {
     }
 
     // Check 3: Drive-time feasibility
-    const driveTimeCheck = await checkDriveTimeFeasibility(base44, requestedDate, startTime);
+    const driveTimeCheck = await checkDriveTimeFeasibility(entities, requestedDate, startTime);
     if (!driveTimeCheck.allowed) {
       console.log('SFI_V2_CAPACITY_CONSTRAINT_VIOLATED', { code: driveTimeCheck.code });
       return json200({
@@ -520,10 +519,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Step 1: Create InspectionRecord (authoritative source) using pure service client
+    // Step 1: Create InspectionRecord (authoritative source)
     let inspection = null;
     try {
-      inspection = await serviceEntities.InspectionRecord.create({
+      inspection = await entities.InspectionRecord.create({
         leadId,
         scheduledDate: requestedDate,
         startTime,
@@ -535,7 +534,7 @@ Deno.serve(async (req) => {
         finalizationStatus: 'pending_finalization',
         customerPresent: true
       });
-      console.log('SFI_V2_INSPECTION_CREATED', { leadId, inspectionId: inspection.id });
+      console.log('SFI_V2_INSPECTION_CREATED', { leadId: leadId.slice(0, 8), inspectionId: inspection.id });
     } catch (e) {
       // Classify error: permission/403 vs other failures
       const isPermissionError = e?.status === 403 || e?.message?.includes('Permission denied');
@@ -572,26 +571,26 @@ Deno.serve(async (req) => {
 
     // Step 2: Cancel any existing active inspection CalendarEvents (single-event guarantee)
     try {
-      const existing = await serviceEntities.CalendarEvent.filter(
+      const existing = await entities.CalendarEvent.filter(
         { leadId, eventType: 'inspection' }, null, 100
       );
       const active = (existing || []).filter(e => e.status !== 'cancelled');
       for (const ev of active) {
-        await serviceEntities.CalendarEvent.update(ev.id, {
+        await entities.CalendarEvent.update(ev.id, {
           status: 'cancelled',
           cancelledAt: new Date().toISOString(),
           cancelReason: 'duplicate_inspection_event_cleanup'
         }).catch(e => console.warn('SFI_V2_DUPLICATE_CANCEL_FAILED', { eventId: ev.id, error: e.message }));
-        console.log('SFI_V2_CANCELLED_DUPLICATE', { leadId, eventId: ev.id });
+        console.log('SFI_V2_CANCELLED_DUPLICATE', { leadId: leadId.slice(0, 8), eventId: ev.id });
       }
     } catch (e) {
       console.warn('SFI_V2_EXISTING_EVENTS_QUERY_FAILED', { error: e.message });
     }
 
-    // Step 3: Create CalendarEvent (projection from InspectionRecord) using pure service client
+    // Step 3: Create CalendarEvent (projection from InspectionRecord)
     let calendarEvent = null;
     try {
-      calendarEvent = await serviceEntities.CalendarEvent.create({
+      calendarEvent = await entities.CalendarEvent.create({
         leadId,
         eventType: 'inspection',
         scheduledDate: requestedDate,
@@ -601,15 +600,15 @@ Deno.serve(async (req) => {
         serviceAddress: serviceAddressStr,
         customerNotes: `Name: ${finalFirstName}\nPhone: ${phone.trim()}\nEmail: ${finalEmail || 'N/A'}`
       });
-      console.log('SFI_V2_EVENT_CREATED', { leadId, eventId: calendarEvent.id });
+      console.log('SFI_V2_EVENT_CREATED', { leadId: leadId.slice(0, 8), eventId: calendarEvent.id });
     } catch (e) {
       console.error('SFI_V2_EVENT_CREATE_FAILED', { error: e.message });
       return json200({ success: false, error: 'Failed to create calendar event', build: BUILD });
     }
 
-    // Step 4: Link CalendarEvent → InspectionRecord using pure service client
+    // Step 4: Link CalendarEvent → InspectionRecord
     try {
-      await serviceEntities.InspectionRecord.update(inspection.id, {
+      await entities.InspectionRecord.update(inspection.id, {
         calendarEventId: calendarEvent.id
       });
       console.log('SFI_V2_INSPECTION_LINKED', { inspectionId: inspection.id, calendarEventId: calendarEvent.id });
@@ -620,12 +619,12 @@ Deno.serve(async (req) => {
     // Step 5: Sync Lead mirror fields + stage update + consume token (inlined — no function invoke)
     let shouldSendNotification = false;
     try {
-      const leads = await serviceEntities.Lead.filter({ id: leadId }, null, 1);
+      const leads = await entities.Lead.filter({ id: leadId }, null, 1);
       if (leads && leads.length > 0) {
         const lead = leads[0];
         shouldSendNotification = lead.stage !== 'inspection_scheduled';
 
-        await serviceEntities.Lead.update(leadId, {
+        await entities.Lead.update(leadId, {
           firstName: finalFirstName,
           mobilePhone: phone.trim(),
           inspectionScheduled: true,
@@ -635,11 +634,11 @@ Deno.serve(async (req) => {
           serviceAddress: serviceAddressStr,
           ...(shouldSendNotification && { confirmationSentAt: new Date().toISOString() })
         });
-        console.log('SFI_V2_LEAD_SYNCED', { leadId, shouldSendNotification });
+        console.log('SFI_V2_LEAD_SYNCED', { leadId: leadId.slice(0, 8), shouldSendNotification });
 
         // Inline stage update (was: base44.functions.invoke('updateLeadStagePublicV1', ...))
         if (shouldSendNotification) {
-          await updateLeadStage(base44, leadId, 'inspection_scheduled');
+          await updateLeadStage(entities, leadId, 'inspection_scheduled');
         }
       }
     } catch (e) {
@@ -648,11 +647,11 @@ Deno.serve(async (req) => {
 
     // Mark token as consumed (prevent accidental replay/duplicate scheduling)
     try {
-      const quotes = await base44.asServiceRole.entities.Quote.filter({ quoteToken: token.trim() }, null, 1);
+      const quotes = await entities.Quote.filter({ quoteToken: token.trim() }, null, 1);
       if (quotes && quotes.length > 0) {
         const quote = quotes[0];
         if (!quote.scheduleTokenUsedAt) {
-          await base44.asServiceRole.entities.Quote.update(quote.id, {
+          await entities.Quote.update(quote.id, {
             scheduleTokenUsedAt: new Date().toISOString()
           });
           console.log('SFI_V2_TOKEN_CONSUMED', { quoteId: quote.id, token: token.trim().slice(0, 8) });
@@ -663,7 +662,7 @@ Deno.serve(async (req) => {
     }
 
     // Step 6: Send confirmation email (inlined — no function invoke)
-    const emailStatus = await sendConfirmationEmail(base44, {
+    const emailStatus = await sendConfirmationEmail(entities, integrations, {
       leadId,
       firstName: finalFirstName,
       email: finalEmail,
@@ -672,7 +671,7 @@ Deno.serve(async (req) => {
       force: shouldSendNotification
     });
 
-    console.log('SFI_V2_SUCCESS', { leadId, inspectionId: inspection.id, eventId: calendarEvent.id, scheduledDate: requestedDate, emailStatus });
+    console.log('SFI_V2_SUCCESS', { leadId: leadId.slice(0, 8), inspectionId: inspection.id, eventId: calendarEvent.id, scheduledDate: requestedDate, emailStatus });
 
     return json200({
       success: true,
