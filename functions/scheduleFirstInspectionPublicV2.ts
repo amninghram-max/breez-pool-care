@@ -620,12 +620,12 @@ Deno.serve(async (req) => {
     // Step 5: Sync Lead mirror fields + stage update + consume token (inlined — no function invoke)
     let shouldSendNotification = false;
     try {
-      const leads = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
+      const leads = await serviceEntities.Lead.filter({ id: leadId }, null, 1);
       if (leads && leads.length > 0) {
         const lead = leads[0];
         shouldSendNotification = lead.stage !== 'inspection_scheduled';
 
-        await base44.asServiceRole.entities.Lead.update(leadId, {
+        await serviceEntities.Lead.update(leadId, {
           firstName: finalFirstName,
           mobilePhone: phone.trim(),
           inspectionScheduled: true,
