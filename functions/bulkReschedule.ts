@@ -134,24 +134,36 @@ Deno.serve(async (req) => {
     const candidateEventIds = validEvents.map(e => e.id);
     const effectiveFingerprint = computeFingerprint(fromDate, toDate, eventTypes, technicianFilter, policy, targetDate, candidateEventIds);
     
-    // Check idempotency: if same key + fingerprint replayed, return cached summary
+    // PERSISTED IDEMPOTENCY LOOKUP
     let idempotencyInfo = { key: idempotencyKey || null, fingerprint: effectiveFingerprint, replayed: false };
-    
+
     if (idempotencyKey) {
-      // Idempotency check: create deterministic cache key
-      const cacheKey = `idempotent:${idempotencyKey}:${effectiveFingerprint}`;
-      // Note: without a dedicated entity, we rely on function execution being deterministic
-      // In a production setting, store last N cache entries in a RescheduleAudit or similar
-      // For now, we proceed and trust request deduplication at network level or caller
-      // Mark as replayed if explicitly requested; caller responsible for cache management
-    } else if (idempotencyKey) {
-      // Different fingerprint with same key = conflict
-      return Response.json({
-        success: false,
-        error: 'IDEMPOTENCY_CONFLICT',
-        message: 'Same idempotencyKey provided but request parameters differ',
-        idempotency: idempotencyInfo
-      }, { status: 400 });
+      // Query AnalyticsEvent for prior execution with same key
+      const priorEvents = await base44.asServiceRole.entities.AnalyticsEvent.filter({
+        eventName: 'bulk_reschedule_idempotency',
+        'metadata.idempotencyKey': idempotencyKey
+      });
+
+      if (priorEvents.length > 0) {
+        const priorEvent = priorEvents[0];
+        const storedFingerprint = priorEvent.metadata?.fingerprint;
+
+        // Same fingerprint = replay stored response
+        if (storedFingerprint === effectiveFingerprint) {
+          idempotencyInfo.replayed = true;
+          const cachedResponse = priorEvent.metadata?.responseBody || {};
+          cachedResponse.idempotency = idempotencyInfo;
+          return Response.json(cachedResponse);
+        }
+
+        // Different fingerprint = conflict
+        return Response.json({
+          success: false,
+          error: 'IDEMPOTENCY_CONFLICT',
+          message: 'Same idempotencyKey provided but request parameters differ (fingerprint mismatch)',
+          idempotency: idempotencyInfo
+        }, { status: 400 });
+      }
     }
 
     if (validEvents.length === 0) {
