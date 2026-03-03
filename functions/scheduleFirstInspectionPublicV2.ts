@@ -36,7 +36,7 @@ const STAGE_ORDER = {
   inspection_scheduled: 3, inspection_confirmed: 4, converted: 5, lost: -1
 };
 
-// ── Inlined: resolveQuoteTokenPublicV1 semantics ──
+// ── Inlined: resolveQuoteTokenPublicV1 semantics + lifecycle validation ──
 // Returns { leadId, email, firstName } or throws with a code.
 async function resolveToken(base44, token) {
   const cleanToken = token.trim();
@@ -105,7 +105,51 @@ async function resolveToken(base44, token) {
     return { code: 'INCOMPLETE_DATA', error: 'Token does not have complete lead information' };
   }
 
-  return { leadId, email, firstName };
+  return { leadId, email, firstName, quoteRequest: request };
+}
+
+// ── Token lifecycle validation ──
+// Check expiry and consumption state of scheduleToken
+async function validateTokenLifecycle(base44, token) {
+  try {
+    const quotes = await base44.asServiceRole.entities.Quote.filter({ quoteToken: token.trim() }, null, 1);
+    if (!quotes || quotes.length === 0) {
+      // Token not found in Quote; not an error here (resolveToken handles it)
+      return { valid: true };
+    }
+
+    const quote = quotes[0];
+    const now = new Date();
+
+    // Check expiry
+    if (quote.scheduleTokenExpiresAt) {
+      const expiryTime = new Date(quote.scheduleTokenExpiresAt);
+      if (now > expiryTime) {
+        console.warn('SFI_V2_TOKEN_EXPIRED', { token: token.trim().slice(0, 8), expiresAt: quote.scheduleTokenExpiresAt });
+        return {
+          valid: false,
+          code: 'TOKEN_EXPIRED',
+          message: 'This scheduling link has expired. Please request a new quote or contact support.'
+        };
+      }
+    }
+
+    // Check consumed
+    if (quote.scheduleTokenUsedAt) {
+      console.warn('SFI_V2_TOKEN_ALREADY_USED', { token: token.trim().slice(0, 8) });
+      return {
+        valid: false,
+        code: 'TOKEN_ALREADY_USED',
+        message: 'This scheduling link has already been used. To reschedule, please contact us at (321) 524-3838.'
+      };
+    }
+
+    return { valid: true };
+  } catch (e) {
+    console.warn('SFI_V2_TOKEN_LIFECYCLE_CHECK_FAILED', { error: e.message });
+    // Non-fatal: allow to proceed
+    return { valid: true };
+  }
 }
 
 // ── Inlined: updateLeadStagePublicV1 semantics ──
@@ -350,11 +394,28 @@ Deno.serve(async (req) => {
     const resolved = await resolveToken(base44, token);
     if (!resolved.leadId) {
       console.warn('SFI_V2_TOKEN_RESOLUTION_FAILED', { code: resolved.code });
-      return json200({ success: false, error: resolved.error || 'Token not found or invalid', build: BUILD });
+      return json200({
+        success: false,
+        code: resolved.code,
+        error: resolved.error || 'Token not found or invalid',
+        build: BUILD
+      });
     }
     const { leadId, email: tokenEmail, firstName: tokenFirstName } = resolved;
     const finalEmail     = email || tokenEmail;
     const finalFirstName = firstName.trim();
+
+    // Validate token lifecycle (expiry + consumption)
+    const lifecycleCheck = await validateTokenLifecycle(base44, token);
+    if (!lifecycleCheck.valid) {
+      console.log('SFI_V2_TOKEN_LIFECYCLE_FAILED', { code: lifecycleCheck.code });
+      return json200({
+        success: false,
+        code: lifecycleCheck.code,
+        error: lifecycleCheck.message,
+        build: BUILD
+      });
+    }
 
     const serviceAddressStr = `${street.trim()}, ${city.trim()}, ${state.trim()} ${zip.trim()}`;
     const timeWindow = timeWindowMap[requestedTimeSlot];
