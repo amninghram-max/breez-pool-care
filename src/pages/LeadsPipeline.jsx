@@ -94,13 +94,26 @@ export default function LeadsPipeline() {
   }
 
   const handleStageChange = (leadId, newStage, oldStage) => {
-    updateLeadStageMutation.mutate({ leadId, stage: newStage }, {
+    // Detect backward move (manual override) and allow regression
+    const oldIdx = STAGES.findIndex(s => s.key === oldStage);
+    const newIdx = STAGES.findIndex(s => s.key === newStage);
+    const isBackwardMove = newIdx < oldIdx && newStage !== 'lost';
+    
+    updateLeadStageMutation.mutate({ 
+      leadId, 
+      stage: newStage,
+      allowRegression: isBackwardMove 
+    }, {
       onSuccess: () => {
         const newStageLabel = STAGES.find(s => s.key === newStage)?.label || newStage;
         toast.success(`Moved to ${newStageLabel}`, {
           action: {
             label: 'Undo',
-            onClick: () => updateLeadStageMutation.mutate({ leadId, stage: oldStage })
+            onClick: () => updateLeadStageMutation.mutate({ 
+              leadId, 
+              stage: oldStage,
+              allowRegression: true 
+            })
           }
         });
       }
