@@ -146,7 +146,10 @@ async function sendQuoteSummaryEmail({ firstName, email, quoteToken, appOrigin, 
     return { sent: false, reason: 'RESEND_API_KEY not configured' };
   }
 
-  const scheduleLink = `${appOrigin}/ScheduleInspection?token=${encodeURIComponent(quoteToken)}`;
+  // Build schedule link: absolute if origin resolved, relative if not
+  const scheduleLink = appOrigin
+    ? `${appOrigin}/ScheduleInspection?token=${encodeURIComponent(quoteToken)}`
+    : `/ScheduleInspection?token=${encodeURIComponent(quoteToken)}`;
 
   // Build inline quote snapshot for email body
   const quoteSnapshot = priceSummary ? `
