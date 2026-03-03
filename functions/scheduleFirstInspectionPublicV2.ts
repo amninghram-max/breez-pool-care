@@ -520,10 +520,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Step 1: Create InspectionRecord (authoritative source)
+    // Step 1: Create InspectionRecord (authoritative source) using pure service client
     let inspection = null;
     try {
-      inspection = await base44.asServiceRole.entities.InspectionRecord.create({
+      inspection = await serviceEntities.InspectionRecord.create({
         leadId,
         scheduledDate: requestedDate,
         startTime,
