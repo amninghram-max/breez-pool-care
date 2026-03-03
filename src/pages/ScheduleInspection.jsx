@@ -153,7 +153,7 @@ export default function ScheduleInspection() {
       );
 
       const res = await Promise.race([
-        base44.functions.invoke('scheduleFirstInspectionPublicV1', {
+        base44.functions.invoke('scheduleFirstInspectionPublicV2', {
           token: token,
           firstName: firstName.trim(),
           phone: phone.trim(),
