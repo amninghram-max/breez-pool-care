@@ -2,6 +2,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 const BUILD = 'bulkRescheduleStormV2';
 
+// Module-level in-memory guard for concurrent processing of same idempotencyKey
+const processingKeys = new Set();
+
 // Helper: parse date string safely
 function parseDate(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
