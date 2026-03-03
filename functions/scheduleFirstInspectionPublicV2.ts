@@ -374,7 +374,14 @@ Mon–Sat: 8am–6pm`;
 // ── Main Handler ──
 Deno.serve(async (req) => {
   try {
+    // Split clients: request-derived for parsing/general ops, pure service for entity creates
     const base44 = createClientFromRequest(req);
+    
+    // CRITICAL: Pure service-role client NOT derived from request auth context.
+    // This ensures RLS policies with `asServiceRole: true` work correctly,
+    // even when the request is unauthenticated (public endpoint).
+    const serviceEntities = base44.asServiceRole.entities;
+    
     const payload = await req.json();
     const { token, firstName, phone, email, serviceAddress, requestedDate, requestedTimeSlot } = payload || {};
 
