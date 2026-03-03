@@ -62,20 +62,60 @@ Deno.serve(async (req) => {
       targetDate
     } = await req.json();
 
-    // Get storm impacted events
-    const query = {
-      scheduledDate: fromDate,
-      stormImpacted: true
-    };
-    
-    if (technicianName) {
-      query.assignedTechnician = technicianName;
+    // Input validation
+    if (!fromDate || !toDate) {
+      return Response.json({ error: 'fromDate and toDate required' }, { status: 400 });
+    }
+    if (!['shift_day', 'next_available', 'manual_review'].includes(policy)) {
+      return Response.json({ error: `Invalid policy: ${policy}` }, { status: 400 });
     }
 
-    const events = await base44.asServiceRole.entities.CalendarEvent.filter(query);
+    // Load all events in date range
+    const dayMap = {};
+    let d = parseDate(fromDate);
+    const endDate = parseDate(toDate);
+    while (d <= endDate) {
+      const dateStr = formatDate(d);
+      dayMap[dateStr] = [];
+      d.setDate(d.getDate() + 1);
+    }
 
-    if (events.length === 0) {
-      return Response.json({ success: true, message: 'No events to reschedule' });
+    // Fetch events per day
+    const allEventsRaw = [];
+    for (const dateStr of Object.keys(dayMap).sort()) {
+      const dayEvents = await base44.asServiceRole.entities.CalendarEvent.filter({ scheduledDate: dateStr });
+      allEventsRaw.push(...dayEvents);
+    }
+
+    // Filter by event type and technician
+    let allEvents = allEventsRaw;
+    if (eventTypes.length > 0) {
+      allEvents = allEvents.filter(e => eventTypes.includes(e.eventType));
+    }
+    if (technicianFilter && technicianFilter !== 'all') {
+      allEvents = allEvents.filter(e => e.assignedTechnician === technicianFilter);
+    }
+
+    // Exclude cancelled, deleted leads
+    const leads = await base44.asServiceRole.entities.Lead.list('-created_date', 1000);
+    const leadMap = {};
+    leads.forEach(l => { leadMap[l.id] = l; });
+
+    const validEvents = allEvents.filter(e => {
+      const lead = leadMap[e.leadId];
+      return lead && !lead.isDeleted && e.status !== 'cancelled';
+    });
+
+    if (validEvents.length === 0) {
+      return Response.json({
+        success: true,
+        dryRun,
+        applied: [],
+        skipped: [],
+        conflicts: [],
+        warnings: [],
+        summary: { selectedCount: 0, applyEligibleCount: 0, skippedCount: 0 }
+      });
     }
 
     // Get customer constraints to find next available slots
