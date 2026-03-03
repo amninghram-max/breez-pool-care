@@ -572,12 +572,12 @@ Deno.serve(async (req) => {
 
     // Step 2: Cancel any existing active inspection CalendarEvents (single-event guarantee)
     try {
-      const existing = await base44.asServiceRole.entities.CalendarEvent.filter(
+      const existing = await serviceEntities.CalendarEvent.filter(
         { leadId, eventType: 'inspection' }, null, 100
       );
       const active = (existing || []).filter(e => e.status !== 'cancelled');
       for (const ev of active) {
-        await base44.asServiceRole.entities.CalendarEvent.update(ev.id, {
+        await serviceEntities.CalendarEvent.update(ev.id, {
           status: 'cancelled',
           cancelledAt: new Date().toISOString(),
           cancelReason: 'duplicate_inspection_event_cleanup'
@@ -588,10 +588,10 @@ Deno.serve(async (req) => {
       console.warn('SFI_V2_EXISTING_EVENTS_QUERY_FAILED', { error: e.message });
     }
 
-    // Step 3: Create CalendarEvent (projection from InspectionRecord)
+    // Step 3: Create CalendarEvent (projection from InspectionRecord) using pure service client
     let calendarEvent = null;
     try {
-      calendarEvent = await base44.asServiceRole.entities.CalendarEvent.create({
+      calendarEvent = await serviceEntities.CalendarEvent.create({
         leadId,
         eventType: 'inspection',
         scheduledDate: requestedDate,
@@ -607,9 +607,9 @@ Deno.serve(async (req) => {
       return json200({ success: false, error: 'Failed to create calendar event', build: BUILD });
     }
 
-    // Step 4: Link CalendarEvent → InspectionRecord
+    // Step 4: Link CalendarEvent → InspectionRecord using pure service client
     try {
-      await base44.asServiceRole.entities.InspectionRecord.update(inspection.id, {
+      await serviceEntities.InspectionRecord.update(inspection.id, {
         calendarEventId: calendarEvent.id
       });
       console.log('SFI_V2_INSPECTION_LINKED', { inspectionId: inspection.id, calendarEventId: calendarEvent.id });
