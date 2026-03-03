@@ -540,7 +540,7 @@ function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit
   };
 
   return (
-    <div className="px-4 py-3 space-y-2 hover:bg-gray-50">
+    <div className={`px-4 py-3 space-y-2 transition-colors ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
       {/* Validation Error */}
       {validationError && (
         <StageValidationError error={validationError} onEditInfo={onEdit} />
@@ -548,6 +548,14 @@ function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit
 
       {/* Row — Desktop layout (hidden on mobile) */}
       <div className="hidden sm:flex items-center justify-between gap-2 text-sm">
+        {/* Checkbox */}
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={onToggleSelect}
+          className="w-4 h-4 rounded cursor-pointer flex-shrink-0"
+          aria-label="Select lead"
+        />
         {/* Lead Info */}
         <div className="flex-1 min-w-0 cursor-pointer" onClick={onEdit}>
           <div className="flex items-start gap-2">
