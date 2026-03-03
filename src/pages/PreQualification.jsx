@@ -253,11 +253,6 @@ export default function PreQualification() {
   // Guest / customer path — minimal public wizard
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* DEBUG BANNER */}
-      <div style={{ backgroundColor: '#dc2626', color: '#ffffff', padding: '12px 16px', fontWeight: 'bold', textAlign: 'center', fontSize: '14px' }}>
-        DEBUG BUILD ACTIVE: PREQUAL_DEBUG_2026_03_01_A
-      </div>
-
       {/* Simple header */}
       <header className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
         <img
@@ -316,47 +311,6 @@ export default function PreQualification() {
           </div>
         </div>
       )}
-
-      {/* DEBUG PANEL - Fixed bottom-right */}
-      <div style={{
-        position: 'fixed',
-        bottom: '12px',
-        right: '12px',
-        backgroundColor: '#1f2937',
-        color: '#d1d5db',
-        padding: '8px 12px',
-        borderRadius: '4px',
-        fontSize: '10px',
-        fontFamily: 'monospace',
-        maxWidth: '300px',
-        maxHeight: '320px',
-        overflowY: 'auto',
-        border: '1px solid #374151',
-        zIndex: 9999,
-        lineHeight: '1.3'
-      }}>
-        <div style={{ marginBottom: '6px', fontWeight: 'bold', color: '#fbbf24' }}>DEBUG PANEL</div>
-        <div>origin: {window.location.origin}</div>
-        <div style={{ wordBreak: 'break-all' }}>href: {window.location.href}</div>
-        <div>token: {token || 'none'}</div>
-        <div>step: {debugState.currentStep}/{debugState.currentStepName}</div>
-        <div style={{ color: debugState.finalizeState === 'done_success' ? '#86efac' : debugState.finalizeState === 'done_error' ? '#ef4444' : '#fbbf24' }}>
-          finalizeState: {debugState.finalizeState}
-        </div>
-        <div>finalizing: {String(debugState.isFinalizing)}</div>
-        {debugState.finishClickedAt && <div style={{ color: '#fbbf24' }}>finishClickedAt: {debugState.finishClickedAt}</div>}
-        {debugState.finalizeError && <div style={{ color: '#ef4444' }}>error: {debugState.finalizeError}</div>}
-        {debugState.lastFinalizeRequest && (
-          <div style={{ marginTop: '4px', borderTop: '1px solid #374151', paddingTop: '4px' }}>
-            <div style={{ color: '#86efac', wordBreak: 'break-all' }}>req: {JSON.stringify(debugState.lastFinalizeRequest).slice(0, 120)}...</div>
-          </div>
-        )}
-        {debugState.lastFinalizeResponse && (
-          <div style={{ marginTop: '4px', color: '#60a5fa', wordBreak: 'break-all' }}>
-            resp: {JSON.stringify(debugState.lastFinalizeResponse).slice(0, 120)}...
-          </div>
-        )}
-      </div>
 
       <footer className="text-center text-xs text-gray-400 py-4 pb-8">
         Breez Pool Care LLC · Melbourne, FL · (321) 524-3838
