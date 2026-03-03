@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
         }
       } catch (e) {
         console.warn('RESOLVE_TOKEN_V1_LEAD_CHECK_FAILED', { error: e.message });
-        leadId = null; // Fail safe
+        return json200({ success: false, code: 'LEAD_LOOKUP_FAILED', error: 'Platform temporarily unavailable', build: BUILD });
       }
     }
 
