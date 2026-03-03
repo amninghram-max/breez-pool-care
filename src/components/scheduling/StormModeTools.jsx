@@ -58,6 +58,7 @@ export default function StormModeTools({ currentDate, onClose }) {
 
   // --- Confirmation modal ---
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showAuditModal, setShowAuditModal] = useState(false);
 
   const queryClient = useQueryClient();
 
