@@ -114,10 +114,16 @@ export default function PublicHome() {
       </header>
 
       {/* ── Hero ── */}
-      <section className="relative overflow-hidden py-24 px-4" style={{ background: 'linear-gradient(135deg, #f0fdfd 0%, #e8f8f9 40%, #f0f7ff 100%)' }}>
-        {/* Decorative water-like blobs */}
-        <div className="absolute top-0 right-0 w-96 h-96 rounded-full opacity-20 blur-3xl" style={{ background: TEAL, transform: 'translate(30%, -30%)' }} />
-        <div className="absolute bottom-0 left-0 w-80 h-80 rounded-full opacity-10 blur-3xl" style={{ background: '#5DADE2', transform: 'translate(-30%, 30%)' }} />
+      <section className="relative overflow-hidden py-24 px-4">
+        {/* Pool photo background */}
+        <div className="absolute inset-0">
+          <img
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/33c67f7d7_Pool.png"
+            alt=""
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(240,253,253,0.92) 0%, rgba(232,248,249,0.88) 40%, rgba(240,247,255,0.90) 100%)' }} />
+        </div>
 
         <div className="relative max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium mb-6 border" style={{ backgroundColor: '#e8f8f9', borderColor: '#b2e8ea', color: TEAL }}>
