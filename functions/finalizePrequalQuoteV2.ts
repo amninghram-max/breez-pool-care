@@ -477,15 +477,50 @@ Deno.serve(async (req) => {
       frequencyAutoRequired: quoteResult.frequencyAutoRequired
     };
 
-    // ── Step 5: Create Lead if missing ──
+    // ── Step 5: Create Lead if missing (with email reuse/restore) ──
     if (!leadId) {
       try {
-        // Dedup: check if lead already exists for this email
-        const existingLeads = await base44.asServiceRole.entities.Lead.filter({ email }, '-created_date', 1);
+        // Email reuse: look for ANY lead with this email (deleted or active)
+        const existingLeads = await base44.asServiceRole.entities.Lead.filter({ email }, '-created_date', 10);
+        
         if (existingLeads && existingLeads.length > 0) {
-          leadId = existingLeads[0].id;
-          console.log('FPQ_V2_LEAD_DEDUP', { leadId, email: email.slice(0, 5) });
+          const lead = existingLeads[0];
+          
+          // If soft-deleted, automatically restore for reuse
+          if (lead.isDeleted === true) {
+            try {
+              await base44.asServiceRole.entities.Lead.update(lead.id, {
+                isDeleted: false,
+                deletedAt: null,
+                deletedBy: null,
+                deleteReason: null,
+                firstName,
+                stage: 'new_lead',
+                quoteGenerated: true
+              });
+              leadId = lead.id;
+              console.log('FPQ_V2_LEAD_RESTORED', { leadId, email: email.slice(0, 5), reason: 'email_reuse' });
+            } catch (restoreErr) {
+              console.warn('FPQ_V2_LEAD_RESTORE_FAILED', { error: restoreErr.message, leadId: lead.id });
+              // Fallback: create new lead if restore fails
+              const newLead = await base44.asServiceRole.entities.Lead.create({
+                firstName,
+                email,
+                stage: 'new_lead',
+                quoteGenerated: true,
+                isEligible: true,
+                isDeleted: false,
+              });
+              leadId = newLead.id;
+              console.log('FPQ_V2_LEAD_CREATED_FALLBACK', { leadId, email: email.slice(0, 5) });
+            }
+          } else {
+            // Active lead: reuse as-is
+            leadId = lead.id;
+            console.log('FPQ_V2_LEAD_REUSED', { leadId, email: email.slice(0, 5), stage: lead.stage });
+          }
         } else {
+          // No prior record: create fresh
           const newLead = await base44.asServiceRole.entities.Lead.create({
             firstName,
             email,
