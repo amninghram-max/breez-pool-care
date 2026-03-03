@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Cloud, AlertTriangle, Send, Eye, EyeOff, ChevronRight, Info } from 'lucide-react';
+import { Cloud, AlertTriangle, Send, Eye, EyeOff, ChevronRight, Info, History, RotateCcw } from 'lucide-react';
 
 const EVENT_TYPES = [
   { value: 'inspection', label: 'Inspection', icon: '🔍', priority: 'high' },
