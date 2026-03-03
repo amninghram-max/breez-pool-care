@@ -56,6 +56,14 @@ export default function StormModeTools({ currentDate, onClose }) {
   const [selectedPolicy, setSelectedPolicy] = useState('shift_day');
   const [rescheduleToDate, setRescheduleToDate] = useState('');
 
+  // --- Communication workflow ---
+  const [selectedTemplate, setSelectedTemplate] = useState('inspection_moved');
+  const [deliveryMode, setDeliveryMode] = useState('send_now');
+  const [skipReason, setSkipReason] = useState('');
+  const [showCommunicationPanel, setShowCommunicationPanel] = useState(false);
+  const [lastBatchApplied, setLastBatchApplied] = useState(null);
+  const [communicationResults, setCommunicationResults] = useState(null);
+
   // --- Confirmation modal ---
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showAuditModal, setShowAuditModal] = useState(false);
