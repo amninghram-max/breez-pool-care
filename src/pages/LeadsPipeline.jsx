@@ -411,6 +411,18 @@ export default function LeadsPipeline() {
                   <h3 className="font-semibold text-gray-900">{stage.label}</h3>
                   <Badge className={stage.color}>{stageLeads.length}</Badge>
                 </div>
+                {/* Select all for visible section */}
+                {isExpanded && stageLeads.length > 0 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      selectVisibleLeads(stageLeads.map(l => l.id));
+                    }}
+                    className="text-xs text-blue-600 hover:text-blue-800"
+                  >
+                    Select All
+                  </button>
+                )}
               </button>
 
               {/* Helper text for grouped section */}
