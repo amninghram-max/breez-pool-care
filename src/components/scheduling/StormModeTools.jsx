@@ -721,6 +721,21 @@ export default function StormModeTools({ currentDate, onClose }) {
                           )}
                         </div>
                       )}
+
+                      {/* Undo button for live batches (not undo records) */}
+                      {entry.data?.eventName !== 'storm_batch_undo_audit' && meta.operationType === 'live' && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setUndoConfirmData({ batchId: entry.id, entry })}
+                            className="text-orange-600 hover:bg-orange-50 border-orange-200 hover:border-orange-300"
+                          >
+                            <RotateCcw className="w-3 h-3 mr-1" />
+                            Undo Batch
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
