@@ -322,6 +322,7 @@ export default function PublicQuoteWizard({
             ...data,
             quote: finalizeData.quoteSnapshot || data.quote,
             priceSummary: finalizeData.priceSummary,
+            quoteToken: finalizeData.quoteToken || finalizeData.quoteSnapshot?.quoteToken || data.quoteToken || data.quote?.quoteToken || null,
           };
           setResult(normalizedResult);
           setFinalizeState('done_success');
