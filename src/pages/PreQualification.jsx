@@ -269,7 +269,6 @@ export default function PreQualification() {
         <div className="flex-1 flex items-start justify-center px-4 py-10">
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-lg p-8">
             {(() => {
-              console.log('[PreQual] Rendering full QuoteResultDisplay with persisted token:', existingQuote.quoteToken);
               return (
                 <QuoteResultDisplay
                   result={{
