@@ -150,6 +150,28 @@ export default function PreQualification() {
     );
   }
 
+  // Creating token loading state (before redirect)
+  if (!token && creatingToken) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <header className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
+          <img
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/0b0c31666_Breez2.png"
+            alt="Breez Pool Care"
+            className="h-10 w-auto"
+          />
+          <a href="tel:3215243838" className="text-sm text-gray-500 hover:text-gray-700">(321) 524-3838</a>
+        </header>
+        <div className="flex-1 flex items-center justify-center px-4">
+          <div className="flex flex-col items-center gap-3 text-gray-500">
+            <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+            <p className="text-sm">Starting your quote…</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Token loading state
   if (token && loadingPrefill) {
     return (
