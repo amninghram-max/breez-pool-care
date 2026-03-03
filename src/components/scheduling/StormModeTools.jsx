@@ -171,6 +171,25 @@ export default function StormModeTools({ currentDate, onClose }) {
     }
   });
 
+  const undoBatchMutation = useMutation({
+    mutationFn: async (batchEventId) => {
+      const response = await base44.functions.invoke('undoStormBatchV1', {
+        batchEventId
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['stormBatchAudit'] });
+      queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
+      setUndoConfirmData(null);
+      alert(`Undo complete: ${data.undoneCount} restored, ${data.skippedCount} skipped.`);
+    },
+    onError: (error) => {
+      console.error('Undo failed:', error);
+      alert(`Undo failed: ${error.message}`);
+    }
+  });
+
   const toggleEventType = (type) => {
     setSelectedEventTypes(prev =>
       prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
