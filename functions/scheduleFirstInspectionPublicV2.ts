@@ -128,6 +128,124 @@ async function updateLeadStage(base44, leadId, newStage) {
   }
 }
 
+// ── Capacity constraint checkers ──
+// Returns { allowed: true } or { allowed: false, code: string, message: string, details: object }
+
+// Conservative drive-time buffer (minutes) when historical data unavailable
+const DEFAULT_DRIVE_TIME_MINUTES = 30;
+const MAX_JOBS_PER_DAY = 10; // Default cap (can be overridden by SchedulingSettings.maxJobsPerDay)
+const MAX_INSPECTIONS_PER_BLOCK = 3;
+
+async function checkTechnicianDailyCapacity(base44, requestedDate, maxCap = MAX_JOBS_PER_DAY) {
+  try {
+    const events = await base44.asServiceRole.entities.CalendarEvent.filter(
+      { scheduledDate: requestedDate, status: { $ne: 'cancelled' } },
+      null,
+      1000
+    );
+    const activeCount = (events || []).length;
+    
+    if (activeCount >= maxCap) {
+      console.warn('SFI_V2_TECH_DAILY_CAP', { date: requestedDate, count: activeCount, cap: maxCap });
+      return {
+        allowed: false,
+        code: 'TECH_DAILY_CAP_REACHED',
+        message: `Maximum ${maxCap} inspections/services reached for this date. Please choose another date.`,
+        details: { date: requestedDate, currentCount: activeCount, cap: maxCap }
+      };
+    }
+    
+    return { allowed: true };
+  } catch (e) {
+    console.warn('SFI_V2_TECH_DAILY_CAP_CHECK_FAILED', { error: e.message });
+    // Non-fatal: allow booking to proceed on check failure
+    return { allowed: true };
+  }
+}
+
+async function checkInspectionBlockCapacity(base44, requestedDate, requestedTimeSlot, maxCap = MAX_INSPECTIONS_PER_BLOCK) {
+  try {
+    const timeWindow = timeWindowMap[requestedTimeSlot];
+    const blockEvents = await base44.asServiceRole.entities.CalendarEvent.filter(
+      { scheduledDate: requestedDate, eventType: 'inspection', status: { $ne: 'cancelled' } },
+      null,
+      1000
+    );
+    
+    // Count inspections in the same time block
+    const blockCount = (blockEvents || []).filter(e => e.timeWindow === timeWindow).length;
+    
+    if (blockCount >= maxCap) {
+      console.warn('SFI_V2_INSPECTION_BLOCK_CAP', { date: requestedDate, timeWindow, count: blockCount, cap: maxCap });
+      return {
+        allowed: false,
+        code: 'INSPECTION_BLOCK_CAP_REACHED',
+        message: `Maximum ${maxCap} inspections available for this time slot. Please choose another time.`,
+        details: { date: requestedDate, timeWindow, currentCount: blockCount, cap: maxCap }
+      };
+    }
+    
+    return { allowed: true };
+  } catch (e) {
+    console.warn('SFI_V2_INSPECTION_BLOCK_CAP_CHECK_FAILED', { error: e.message });
+    return { allowed: true };
+  }
+}
+
+async function checkDriveTimeFeasibility(base44, requestedDate, startTime) {
+  try {
+    // Fetch all events on the same day (sorted by time)
+    const dayEvents = await base44.asServiceRole.entities.CalendarEvent.filter(
+      { scheduledDate: requestedDate, status: { $ne: 'cancelled' } },
+      'startTime',
+      1000
+    );
+    
+    if (!dayEvents || dayEvents.length === 0) {
+      // No existing events, always feasible
+      return { allowed: true };
+    }
+    
+    // Check feasibility with adjacent events
+    const reqHours = parseInt(startTime.split(':')[0]);
+    const reqMinutes = parseInt(startTime.split(':')[1] || 0);
+    const reqTimeInMinutes = reqHours * 60 + reqMinutes;
+    
+    // Simplified check: verify no back-to-back conflicts
+    // (assume 30 min inspection + 30 min drive-time buffer)
+    const INSPECTION_DURATION = 30;
+    const DRIVE_BUFFER = DEFAULT_DRIVE_TIME_MINUTES;
+    const REQUIRED_WINDOW = INSPECTION_DURATION + DRIVE_BUFFER * 2;
+    
+    for (const evt of dayEvents) {
+      if (!evt.startTime) continue;
+      const evtHours = parseInt(evt.startTime.split(':')[0]);
+      const evtMinutes = parseInt(evt.startTime.split(':')[1] || 0);
+      const evtTimeInMinutes = evtHours * 60 + evtMinutes;
+      const evtDuration = evt.estimatedDuration || 45;
+      
+      // Check overlap: requested time within existing event's window (with buffer)
+      const evtStart = evtTimeInMinutes - DRIVE_BUFFER;
+      const evtEnd = evtTimeInMinutes + evtDuration + DRIVE_BUFFER;
+      
+      if (reqTimeInMinutes >= evtStart && reqTimeInMinutes <= evtEnd) {
+        console.warn('SFI_V2_DRIVE_TIME_CONFLICT', { date: requestedDate, reqTime: startTime, existingEvent: evt.id });
+        return {
+          allowed: false,
+          code: 'DRIVE_TIME_CONFLICT',
+          message: 'Insufficient travel time between appointments. Please choose another time slot.',
+          details: { date: requestedDate, requestedTime: startTime, buffer: DRIVE_BUFFER }
+        };
+      }
+    }
+    
+    return { allowed: true };
+  } catch (e) {
+    console.warn('SFI_V2_DRIVE_TIME_CHECK_FAILED', { error: e.message });
+    return { allowed: true };
+  }
+}
+
 // ── Inlined: sendInspectionConfirmation semantics ──
 // Returns 'sent' | 'skipped' | 'failed'. Non-fatal.
 async function sendConfirmationEmail(base44, { leadId, firstName, email, inspectionDate, inspectionTime, force }) {
@@ -266,6 +384,57 @@ Deno.serve(async (req) => {
       }
     } catch (e) {
       console.warn('SFI_V2_IDEMPOTENCY_CHECK_FAILED', { error: e.message });
+    }
+
+    // CAPACITY CONSTRAINTS: Check before creating booking
+    // Load max cap from SchedulingSettings if available, otherwise use default
+    let maxJobsPerDay = MAX_JOBS_PER_DAY;
+    try {
+      const settings = await base44.asServiceRole.entities.SchedulingSettings.filter({ settingKey: 'default' }, null, 1);
+      if (settings?.[0]?.maxJobsPerDay) {
+        maxJobsPerDay = settings[0].maxJobsPerDay;
+      }
+    } catch (e) {
+      console.warn('SFI_V2_SETTINGS_LOAD_FAILED', { error: e.message });
+    }
+
+    // Check 1: Per-technician daily capacity
+    const dailyCapCheck = await checkTechnicianDailyCapacity(base44, requestedDate, maxJobsPerDay);
+    if (!dailyCapCheck.allowed) {
+      console.log('SFI_V2_CAPACITY_CONSTRAINT_VIOLATED', { code: dailyCapCheck.code });
+      return json200({
+        success: false,
+        code: dailyCapCheck.code,
+        error: dailyCapCheck.message,
+        details: dailyCapCheck.details,
+        build: BUILD
+      });
+    }
+
+    // Check 2: Initial inspection time-block capacity
+    const blockCapCheck = await checkInspectionBlockCapacity(base44, requestedDate, requestedTimeSlot);
+    if (!blockCapCheck.allowed) {
+      console.log('SFI_V2_CAPACITY_CONSTRAINT_VIOLATED', { code: blockCapCheck.code });
+      return json200({
+        success: false,
+        code: blockCapCheck.code,
+        error: blockCapCheck.message,
+        details: blockCapCheck.details,
+        build: BUILD
+      });
+    }
+
+    // Check 3: Drive-time feasibility
+    const driveTimeCheck = await checkDriveTimeFeasibility(base44, requestedDate, startTime);
+    if (!driveTimeCheck.allowed) {
+      console.log('SFI_V2_CAPACITY_CONSTRAINT_VIOLATED', { code: driveTimeCheck.code });
+      return json200({
+        success: false,
+        code: driveTimeCheck.code,
+        error: driveTimeCheck.message,
+        details: driveTimeCheck.details,
+        build: BUILD
+      });
     }
 
     // Step 1: Create InspectionRecord (authoritative source)
