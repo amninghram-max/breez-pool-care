@@ -7,6 +7,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  * Architecture-compliant: NO backend-to-backend function invocations.
  * All logic inlined: token resolution, stage update, confirmation email.
  *
+ * CRITICAL: Uses pure service-role client (not derived from request auth context)
+ * to bypass RLS restrictions on public endpoints with unauthenticated requests.
+ *
  * Input:  { token, firstName, phone, email, serviceAddress: { street, city, state, zip }, requestedDate (YYYY-MM-DD), requestedTimeSlot }
  * Output: { success, scheduledDate?, timeWindow?, email?, firstName?, alreadyScheduled?, inspectionId?, eventId?, emailStatus?, build }
  */
