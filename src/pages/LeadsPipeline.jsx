@@ -344,8 +344,8 @@ function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit
         <StageValidationError error={validationError} onEditInfo={onEdit} />
       )}
 
-      {/* Row */}
-      <div className="flex items-center justify-between gap-3 text-sm">
+      {/* Row — Desktop layout (hidden on mobile) */}
+      <div className="hidden sm:flex items-center justify-between gap-2 text-sm">
         {/* Lead Info */}
         <div className="flex-1 min-w-0 cursor-pointer" onClick={onEdit}>
           <div className="flex items-start gap-2">
@@ -360,8 +360,15 @@ function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit
           </div>
         </div>
 
+        {/* Grouped badge (if in merged section) */}
+        {groupedSection && (
+          <Badge variant="outline" className="text-xs flex-shrink-0">
+            {lead.stage === 'inspection_confirmed' ? 'Inspected' : 'Awaiting'}
+          </Badge>
+        )}
+
         {/* Metadata */}
-        <div className="text-xs text-gray-500 w-12 text-right">{timeStr}</div>
+        <div className="text-xs text-gray-500 w-12 text-right flex-shrink-0">{timeStr}</div>
 
         {/* Stage-Specific Primary Action */}
         <div className="flex-shrink-0">
@@ -370,18 +377,20 @@ function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit
               size="sm"
               variant="default"
               onClick={() => setShowSendQuoteModal(true)}
-              className="gap-2"
+              className="gap-1"
             >
-              Send Quote
+              <Send className="w-3 h-3" />
+              Quote
             </Button>
-          ) : lead.stage === 'quoted' ? (
+          ) : lead.stage === 'contacted' ? (
             <Button
               size="sm"
               variant="default"
               onClick={() => setShowSendInspectionModal(true)}
-              className="gap-2"
+              className="gap-1"
             >
-              Send Link
+              <Calendar className="w-3 h-3" />
+              Schedule
             </Button>
           ) : lead.stage === 'inspection_scheduled' ? (
             <StartInspectionButton leadId={lead.id} />
@@ -397,41 +406,152 @@ function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit
 
         {/* Stage Dropdown */}
         <Select value={lead.stage} onValueChange={onStageChange}>
-          <SelectTrigger className="w-32 h-8 text-xs">
+          <SelectTrigger className="w-28 h-8 text-xs flex-shrink-0">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {STAGES.map(s => (
+            {STAGES.filter(s => !s.grouped).map(s => (
               <SelectItem key={s.key} value={s.key}>
                 {s.label}
               </SelectItem>
             ))}
+            {STAGES.find(s => s.grouped) && (
+              <>
+                <SelectItem value="inspection_confirmed">Inspection Completed</SelectItem>
+                <SelectItem value="quote_sent">Pending Acceptance</SelectItem>
+              </>
+            )}
           </SelectContent>
         </Select>
 
-        {/* Actions */}
-        <div className="flex gap-1">
-          <Link to={createPageUrl('CustomerTimeline') + `?leadId=${lead.id}`}>
-            <Button size="icon" variant="outline" className="h-8 w-8" title="View Timeline">
-              <Eye className="w-3 h-3" />
+        {/* Actions Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="icon" variant="outline" className="h-8 w-8 flex-shrink-0">
+              <MoreVertical className="w-4 h-4" />
             </Button>
-          </Link>
-          <Link to={createPageUrl('EquipmentProfileAdmin') + `?leadId=${lead.id}`}>
-            <Button size="icon" variant="outline" className="h-8 w-8" title="Manage Equipment">
-              <Settings className="w-3 h-3" />
-            </Button>
-          </Link>
-          {user?.role === 'admin' && lead.stage === 'new_lead' && (
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link to={createPageUrl('CustomerTimeline') + `?leadId=${lead.id}`}>
+                <Eye className="w-3 h-3 mr-2" />
+                View Timeline
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to={createPageUrl('EquipmentProfileAdmin') + `?leadId=${lead.id}`}>
+                <Settings className="w-3 h-3 mr-2" />
+                Equipment
+              </Link>
+            </DropdownMenuItem>
+            {user?.role === 'admin' && lead.stage === 'new_lead' && (
+              <DropdownMenuItem onClick={() => setShowRemovePanel(true)} className="text-red-600">
+                <Trash2 className="w-3 h-3 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Mobile layout (shown on mobile only) */}
+      <div className="sm:hidden space-y-3">
+        {/* Lead Info */}
+        <div className="cursor-pointer" onClick={onEdit}>
+          <p className="font-medium text-gray-900">{lead.firstName} {lead.lastName}</p>
+          <p className="text-xs text-gray-600 truncate">{addressLine}</p>
+          <div className="flex items-center gap-2 mt-2">
+            {groupedSection && (
+              <Badge variant="outline" className="text-xs">
+                {lead.stage === 'inspection_confirmed' ? 'Inspected' : 'Awaiting'}
+              </Badge>
+            )}
+            <span className="text-xs text-gray-500">{timeStr}</span>
+            {!lead.isEligible && <AlertCircle className="w-3 h-3 text-red-600" />}
+          </div>
+        </div>
+
+        {/* Mobile Actions Stack */}
+        <div className="flex flex-col gap-2">
+          {lead.stage === 'new_lead' ? (
             <Button
-              size="icon"
-              variant="outline"
-              className="h-8 w-8 text-red-600 hover:bg-red-50 border-red-200"
-              title="Delete Lead (NEW only)"
-              onClick={() => setShowRemovePanel(true)}
+              size="sm"
+              variant="default"
+              onClick={() => setShowSendQuoteModal(true)}
+              className="w-full gap-2 justify-center"
             >
-              <Trash2 className="w-3 h-3" />
+              <Send className="w-3 h-3" />
+              Send Quote
             </Button>
+          ) : lead.stage === 'contacted' ? (
+            <Button
+              size="sm"
+              variant="default"
+              onClick={() => setShowSendInspectionModal(true)}
+              className="w-full gap-2 justify-center"
+            >
+              <Calendar className="w-3 h-3" />
+              Schedule
+            </Button>
+          ) : lead.stage === 'inspection_scheduled' ? (
+            <StartInspectionButton leadId={lead.id} />
+          ) : (
+            <StageActionButton
+              lead={lead}
+              currentStage={lead.stage}
+              onAction={handleStageAction}
+              onValidationError={handleValidationError}
+            />
           )}
+
+          <div className="flex gap-2">
+            <Select value={lead.stage} onValueChange={onStageChange}>
+              <SelectTrigger className="flex-1 h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STAGES.filter(s => !s.grouped).map(s => (
+                  <SelectItem key={s.key} value={s.key}>
+                    {s.label}
+                  </SelectItem>
+                ))}
+                {STAGES.find(s => s.grouped) && (
+                  <>
+                    <SelectItem value="inspection_confirmed">Inspection Completed</SelectItem>
+                    <SelectItem value="quote_sent">Pending Acceptance</SelectItem>
+                  </>
+                )}
+              </SelectContent>
+            </Select>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="icon" variant="outline" className="h-8 w-8">
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link to={createPageUrl('CustomerTimeline') + `?leadId=${lead.id}`}>
+                    <Eye className="w-3 h-3 mr-2" />
+                    Timeline
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to={createPageUrl('EquipmentProfileAdmin') + `?leadId=${lead.id}`}>
+                    <Settings className="w-3 h-3 mr-2" />
+                    Equipment
+                  </Link>
+                </DropdownMenuItem>
+                {user?.role === 'admin' && lead.stage === 'new_lead' && (
+                  <DropdownMenuItem onClick={() => setShowRemovePanel(true)} className="text-red-600">
+                    <Trash2 className="w-3 h-3 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 
