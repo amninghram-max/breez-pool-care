@@ -707,6 +707,152 @@ export default function StormModeTools({ currentDate, onClose }) {
           </div>
         )}
 
+        {/* ── SECTION 5: Post-Batch Communication ─────────────────── */}
+        {showCommunicationPanel && lastBatchApplied && lastBatchApplied.length > 0 && (
+          <div className="space-y-4 border-t border-orange-200 pt-6">
+            <h3 className="font-semibold text-lg">5. Notify Customers</h3>
+
+            {/* Template selector */}
+            <div>
+              <Label htmlFor="template-select">Communication Template</Label>
+              <div className="space-y-2">
+                {Object.entries(templates).map(([key, tmpl]) => (
+                  <label key={key} className="flex items-start gap-3 cursor-pointer p-3 border rounded-lg hover:bg-orange-50 transition-colors">
+                    <input
+                      type="radio"
+                      name="template"
+                      value={key}
+                      checked={selectedTemplate === key}
+                      onChange={() => setSelectedTemplate(key)}
+                      className="mt-1"
+                      aria-label={tmpl.label}
+                    />
+                    <div className="flex-1">
+                      <p className="font-medium text-sm text-gray-900">{tmpl.label}</p>
+                      <p className="text-xs text-gray-600 mt-1 italic">
+                        {resolveTemplatePreview(key, lastBatchApplied[0])}
+                      </p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Delivery mode selector */}
+            <div>
+              <Label>Delivery Mode</Label>
+              <div className="space-y-2">
+                {[
+                  { value: 'send_now', label: 'Send Now', description: 'Messages sent immediately to customers' },
+                  { value: 'queue_approval', label: 'Queue for Approval', description: 'Flag for supervisor review before sending' },
+                  { value: 'skip_notification', label: 'Skip Notification', description: 'Do not send messages (requires reason)' }
+                ].map(mode => (
+                  <label key={mode.value} className="flex items-start gap-3 cursor-pointer p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                    <input
+                      type="radio"
+                      name="delivery-mode"
+                      value={mode.value}
+                      checked={deliveryMode === mode.value}
+                      onChange={() => setDeliveryMode(mode.value)}
+                      className="mt-1"
+                      aria-label={mode.label}
+                    />
+                    <div className="flex-1">
+                      <p className="font-medium text-sm text-gray-900">{mode.label}</p>
+                      <p className="text-xs text-gray-500">{mode.description}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Skip reason (conditional) */}
+            {deliveryMode === 'skip_notification' && (
+              <div>
+                <Label htmlFor="skip-reason">Reason for Skipping (required)</Label>
+                <Textarea
+                  id="skip-reason"
+                  value={skipReason}
+                  onChange={(e) => setSkipReason(e.target.value)}
+                  placeholder="e.g., customers will reschedule manually, already notified via phone, etc."
+                  rows={2}
+                  className="text-sm"
+                />
+                {!skipReason.trim() && (
+                  <p className="text-xs text-red-600 mt-1">Reason is required</p>
+                )}
+              </div>
+            )}
+
+            {/* Send now warning */}
+            {deliveryMode === 'send_now' && (
+              <Alert className="bg-yellow-50 border-yellow-200">
+                <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                <AlertDescription className="text-yellow-800 text-sm">
+                  Messages will be sent immediately to {lastBatchApplied.length} customer(s). Ensure template is correct before proceeding.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Results display */}
+            {communicationResults && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-2">
+                <p className="font-semibold text-green-900">✓ Communication executed</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                  {communicationResults.sent > 0 && (
+                    <div className="bg-white rounded p-2">
+                      <div className="font-bold text-green-700">{communicationResults.sent}</div>
+                      <div className="text-gray-600">Sent</div>
+                    </div>
+                  )}
+                  {communicationResults.queued > 0 && (
+                    <div className="bg-white rounded p-2">
+                      <div className="font-bold text-blue-700">{communicationResults.queued}</div>
+                      <div className="text-gray-600">Queued</div>
+                    </div>
+                  )}
+                  {communicationResults.skipped > 0 && (
+                    <div className="bg-white rounded p-2">
+                      <div className="font-bold text-gray-700">{communicationResults.skipped}</div>
+                      <div className="text-gray-600">Skipped</div>
+                    </div>
+                  )}
+                  {communicationResults.failed > 0 && (
+                    <div className="bg-white rounded p-2">
+                      <div className="font-bold text-red-700">{communicationResults.failed}</div>
+                      <div className="text-gray-600">Failed</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            {!communicationResults && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowCommunicationPanel(false);
+                    setLastBatchApplied(null);
+                  }}
+                  disabled={communicationMutation.isPending}
+                  className="flex-1"
+                >
+                  Skip
+                </Button>
+                <Button
+                  onClick={handleCommunicationSubmit}
+                  disabled={communicationMutation.isPending || (deliveryMode === 'skip_notification' && !skipReason.trim())}
+                  className="flex-1 bg-orange-600 hover:bg-orange-700"
+                >
+                  {communicationMutation.isPending ? 'Processing…' : 'Execute'}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
         <Button variant="outline" onClick={onClose} className="w-full">
           Close Storm Tools
         </Button>
