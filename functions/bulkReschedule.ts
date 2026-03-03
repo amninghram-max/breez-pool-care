@@ -23,6 +23,21 @@ function addDaysToDateStr(dateStr, n) {
   return formatDate(d);
 }
 
+// Helper: compute deterministic fingerprint from request parameters
+function computeFingerprint(fromDate, toDate, eventTypes, technicianFilter, policy, targetDate, eventIds = []) {
+  const parts = [
+    fromDate || '',
+    toDate || '',
+    (eventTypes || []).sort().join('|'),
+    technicianFilter || 'all',
+    policy || 'shift_day',
+    targetDate || '',
+    eventIds.sort().join('|')
+  ];
+  // Simple hash: join + SHA256 (or just use JSON stringify for determinism)
+  return JSON.stringify(parts);
+}
+
 // Conflict check: does event overlap with existing active event on new date for same lead?
 async function checkConflict(base44, leadId, newDate, newTimeWindow, eventDuration = 30) {
   const existingEvents = await base44.asServiceRole.entities.CalendarEvent.filter({
