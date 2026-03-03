@@ -385,6 +385,24 @@ export default function StormModeTools({ currentDate, onClose }) {
     }
   };
 
+  const handleCommunicationSubmit = () => {
+    if (deliveryMode === 'skip_notification' && !skipReason.trim()) {
+      alert('Please provide a reason for skipping notifications.');
+      return;
+    }
+    if (!lastBatchApplied || lastBatchApplied.length === 0) {
+      alert('No events to communicate.');
+      return;
+    }
+
+    communicationMutation.mutate({
+      appliedItems: lastBatchApplied,
+      template: selectedTemplate,
+      mode: deliveryMode,
+      reason: skipReason
+    });
+  };
+
   const policyLabel = POLICY_OPTIONS.find(p => p.value === selectedPolicy)?.label || selectedPolicy;
 
   return (
