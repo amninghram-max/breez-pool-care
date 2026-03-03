@@ -222,9 +222,13 @@ export default function PublicQuoteWizard({
     if (e?.preventDefault) e.preventDefault();
     setError('');
 
-    // Use resolved data from prefillData if token present, otherwise use form input
-    const finalFirstName = hasToken ? (prefillData?.firstName || firstName) : firstName;
-    const finalEmail = hasToken ? (prefillData?.email || email) : email;
+    // Resolve contact values: typed input takes priority; prefill only used if typed is absent and prefill is valid
+    const typedEmail = email.trim();
+    const prefillEmail = (prefillData?.email || '').trim();
+    const validPrefillEmail = prefillEmail && prefillEmail !== 'guest@breezpoolcare.com' ? prefillEmail : '';
+    const finalEmail = typedEmail || validPrefillEmail;
+
+    const finalFirstName = firstName.trim() || (prefillData?.firstName || '').trim();
 
     // VALIDATION: Show inline error and stay on page
     const missingFields = [];
