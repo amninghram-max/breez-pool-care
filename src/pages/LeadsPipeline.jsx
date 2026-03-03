@@ -42,8 +42,21 @@ export default function LeadsPipeline() {
   const repairMutation = useMutation({
     mutationFn: () => base44.functions.invoke('repairInspectionScheduledLeads', {}),
     onSuccess: (res) => {
-      setRepairResult(res.data?.summary);
+      const summary = res.data?.summary;
+      setRepairResult(summary);
       queryClient.invalidateQueries({ queryKey: ['leads'] });
+      
+      // Surface result to operator
+      if (summary?.repaired > 0) {
+        toast.success(`Repaired ${summary.repaired} lead(s) — ${summary.intact} already valid, ${summary.errors} errors`);
+      } else if (summary?.checked > 0) {
+        toast.info(`Scan complete: ${summary.checked} checked, all valid`);
+      } else {
+        toast.info('No leads in inspection_scheduled state');
+      }
+    },
+    onError: (error) => {
+      toast.error(`Repair failed: ${error.message}`);
     }
   });
 
