@@ -410,6 +410,7 @@ Deno.serve(async (req) => {
     }
 
     // Resolve token (inlined — no function invoke)
+    // NOTE: resolveToken uses base44.asServiceRole internally (lookup entities)
     const resolved = await resolveToken(base44, token);
     if (!resolved.leadId) {
       console.warn('SFI_V2_TOKEN_RESOLUTION_FAILED', { code: resolved.code });
@@ -421,6 +422,8 @@ Deno.serve(async (req) => {
       });
     }
     const { leadId, email: tokenEmail, firstName: tokenFirstName } = resolved;
+    
+    console.log('SFI_V2_CLIENT_MODE', { mode: 'pure_service', leadIdPrefix: leadId.slice(0, 8) });
     const finalEmail     = email || tokenEmail;
     const finalFirstName = firstName.trim();
 
