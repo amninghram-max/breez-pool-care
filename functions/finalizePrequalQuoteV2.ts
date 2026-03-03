@@ -223,35 +223,78 @@ async function sendQuoteSummaryEmail({ firstName, email, quoteToken, appOrigin, 
   return { sent: true, resendId: resendData.id || null };
 }
 
-// ── Resolve app origin from request ──────────────────────────────────────────
+// ── Resolve app origin from request (with hardened fallback order) ──────────────
 
 function resolveAppOrigin(req) {
-  // Use the request's Host header to construct the origin
-  const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || '';
-  if (host && host.endsWith('.base44.app')) {
-    const origin = `https://${host}`;
-    console.log('FPQ_V2_ORIGIN_FROM_HOST', { host, origin });
-    return origin;
-  }
-  // Fallback: derive from Origin header
-  const origin = req.headers.get('origin') || '';
-  if (origin && origin.endsWith('.base44.app')) {
-    console.log('FPQ_V2_ORIGIN_FROM_ORIGIN_HEADER', { origin });
-    return origin;
-  }
-  // Last resort: Referer header
-  const referer = req.headers.get('referer') || '';
-  if (referer) {
+  const sources = {
+    explicit_origin: req.headers.get('origin') || null,
+    referer: req.headers.get('referer') || null,
+    host: req.headers.get('host') || req.headers.get('x-forwarded-host') || null,
+    proto: req.headers.get('x-forwarded-proto') || 'https'
+  };
+
+  // (a) Explicit request header origin (validated)
+  if (sources.explicit_origin) {
     try {
-      const u = new URL(referer);
-      if (u.hostname.endsWith('.base44.app')) {
+      const u = new URL(sources.explicit_origin);
+      if (u.hostname.endsWith('.base44.app') || u.hostname === 'localhost') {
+        console.log('FPQ_V2_ORIGIN_RESOLVED', { source: 'explicit_origin', origin: sources.explicit_origin });
+        return sources.explicit_origin;
+      }
+    } catch (e) {
+      console.warn('FPQ_V2_ORIGIN_VALIDATION_FAILED', { source: 'explicit_origin', reason: e.message });
+    }
+  }
+
+  // (b) Referer-derived origin (validated)
+  if (sources.referer) {
+    try {
+      const u = new URL(sources.referer);
+      if (u.hostname.endsWith('.base44.app') || u.hostname === 'localhost') {
         const origin = `${u.protocol}//${u.host}`;
-        console.log('FPQ_V2_ORIGIN_FROM_REFERER', { origin });
+        console.log('FPQ_V2_ORIGIN_RESOLVED', { source: 'referer', origin });
         return origin;
       }
-    } catch {}
+    } catch (e) {
+      console.warn('FPQ_V2_ORIGIN_VALIDATION_FAILED', { source: 'referer', reason: e.message });
+    }
   }
-  console.error('FPQ_V2_ORIGIN_RESOLUTION_FAILED', { host, origin, referer });
+
+  // (c) Host + x-forwarded-proto reconstruction (validated)
+  if (sources.host && sources.proto) {
+    if (sources.host.endsWith('.base44.app') || sources.host === 'localhost' || sources.host.startsWith('localhost:')) {
+      const origin = `${sources.proto}://${sources.host}`;
+      try {
+        new URL(origin); // validation check
+        console.log('FPQ_V2_ORIGIN_RESOLVED', { source: 'host_proto', origin });
+        return origin;
+      } catch (e) {
+        console.warn('FPQ_V2_ORIGIN_VALIDATION_FAILED', { source: 'host_proto', reason: e.message });
+      }
+    }
+  }
+
+  // (d) Environment fallback (single canonical env var)
+  const envOrigin = Deno.env.get('APP_ORIGIN') || Deno.env.get('BASE_URL') || null;
+  if (envOrigin) {
+    try {
+      new URL(envOrigin); // validation check
+      console.log('FPQ_V2_ORIGIN_RESOLVED', { source: 'environment', origin: envOrigin });
+      return envOrigin;
+    } catch (e) {
+      console.warn('FPQ_V2_ORIGIN_VALIDATION_FAILED', { source: 'environment', reason: e.message });
+    }
+  }
+
+  // (e) No absolute origin resolved — return null for relative-link fallback
+  console.warn('FPQ_V2_ORIGIN_RESOLUTION_FALLBACK_TO_RELATIVE', {
+    sources: {
+      has_explicit_origin: !!sources.explicit_origin,
+      has_referer: !!sources.referer,
+      has_host: !!sources.host,
+      proto: sources.proto
+    }
+  });
   return null;
 }
 
