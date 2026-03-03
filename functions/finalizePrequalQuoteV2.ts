@@ -146,10 +146,53 @@ async function sendQuoteSummaryEmail({ firstName, email, quoteToken, appOrigin, 
     return { sent: false, reason: 'RESEND_API_KEY not configured' };
   }
 
-  // Build schedule link: absolute if origin resolved, relative if not
-  const scheduleLink = appOrigin
-    ? `${appOrigin}/ScheduleInspection?token=${encodeURIComponent(quoteToken)}`
-    : `/ScheduleInspection?token=${encodeURIComponent(quoteToken)}`;
+  // Canonical email link origin policy: env → request → relative fallback
+  let scheduleLink, emailLinkMode;
+  
+  // (1) Check canonical env var first
+  const canonicalOrigin = Deno.env.get('APP_ORIGIN') || Deno.env.get('BASE_URL');
+  if (canonicalOrigin) {
+    try {
+      new URL(canonicalOrigin); // validate https
+      scheduleLink = `${canonicalOrigin}/ScheduleInspection?token=${encodeURIComponent(quoteToken)}`;
+      emailLinkMode = 'absolute_env';
+      console.log('FPQ_V2_EMAIL_LINK_RESOLVED', { mode: 'absolute_env', source: 'APP_ORIGIN or BASE_URL' });
+    } catch (e) {
+      console.warn('FPQ_V2_CANONICAL_ORIGIN_INVALID', { error: e.message });
+      // Fall through to request origin
+      if (appOrigin) {
+        scheduleLink = `${appOrigin}/ScheduleInspection?token=${encodeURIComponent(quoteToken)}`;
+        emailLinkMode = 'absolute_request';
+        console.log('FPQ_V2_EMAIL_LINK_RESOLVED', { mode: 'absolute_request', source: 'request_headers' });
+      } else {
+        scheduleLink = `/ScheduleInspection?token=${encodeURIComponent(quoteToken)}`;
+        emailLinkMode = 'relative_fallback';
+        console.warn('FPQ_V2_MISSING_CANONICAL_EMAIL_ORIGIN', { 
+          msg: 'No valid APP_ORIGIN env and no request origin; using relative link',
+          hasAppOrigin: !!Deno.env.get('APP_ORIGIN'),
+          hasBaseUrl: !!Deno.env.get('BASE_URL'),
+          hasRequestOrigin: !!appOrigin
+        });
+      }
+    }
+  } else {
+    // (2) No env var; try request origin
+    if (appOrigin) {
+      scheduleLink = `${appOrigin}/ScheduleInspection?token=${encodeURIComponent(quoteToken)}`;
+      emailLinkMode = 'absolute_request';
+      console.log('FPQ_V2_EMAIL_LINK_RESOLVED', { mode: 'absolute_request', source: 'request_headers' });
+    } else {
+      // (3) Fallback to relative (non-blocking)
+      scheduleLink = `/ScheduleInspection?token=${encodeURIComponent(quoteToken)}`;
+      emailLinkMode = 'relative_fallback';
+      console.warn('FPQ_V2_MISSING_CANONICAL_EMAIL_ORIGIN', { 
+        msg: 'No APP_ORIGIN/BASE_URL env and no request origin resolved; using relative link',
+        hasAppOrigin: !!Deno.env.get('APP_ORIGIN'),
+        hasBaseUrl: !!Deno.env.get('BASE_URL'),
+        hasRequestOrigin: !!appOrigin
+      });
+    }
+  }
 
   // Build inline quote snapshot for email body
   const quoteSnapshot = priceSummary ? `
