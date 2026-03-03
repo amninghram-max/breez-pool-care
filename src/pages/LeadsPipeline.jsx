@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Phone, Mail, MessageSquare, Calendar, AlertCircle, Check, Wrench, Plus, FileText, RefreshCw, ChevronDown, ArrowRight, Eye, Settings, Trash2 } from 'lucide-react';
+import { Phone, Mail, MessageSquare, Calendar, AlertCircle, Check, Wrench, Plus, FileText, RefreshCw, ChevronDown, ArrowRight, Eye, Settings, Trash2, Send, MoreVertical, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
