@@ -88,6 +88,21 @@ Deno.serve(async (req) => {
       return Response.json({ error: `Invalid policy: ${policy}` }, { status: 400 });
     }
 
+    // IN-PROGRESS CONCURRENCY GUARD
+    if (idempotencyKey && processingKeys.has(idempotencyKey)) {
+      return Response.json({
+        success: false,
+        code: 'IDEMPOTENCY_IN_PROGRESS',
+        error: 'A request with this idempotency key is already being processed.',
+        idempotency: { key: idempotencyKey, fingerprint: null, replayed: false }
+      }, { status: 409 });
+    }
+
+    // Mark key as processing (no-op if no idempotencyKey)
+    if (idempotencyKey) {
+      processingKeys.add(idempotencyKey);
+    }
+
     // Load all events in date range
     const dayMap = {};
     let d = parseDate(fromDate);
