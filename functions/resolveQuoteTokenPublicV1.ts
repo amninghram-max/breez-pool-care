@@ -116,11 +116,46 @@ Deno.serve(async (req) => {
             token: cleanToken.slice(0, 8),
             leadId: leadId.slice(0, 8)
           });
-          leadId = null; // Force INCOMPLETE_DATA (true missing-link case)
+          leadId = null; // Will trigger rebound attempt below
         }
       } catch (e) {
         console.warn('RESOLVE_TOKEN_V1_LEAD_CHECK_FAILED', { error: e.message });
         return json200({ success: false, code: 'LEAD_LOOKUP_FAILED', error: 'Platform temporarily unavailable', build: BUILD });
+      }
+    }
+
+    // ── Step 2c: Rebound to latest active lead by email (if leadId broken & email valid) ──
+    if (!leadId && email) {
+      console.log('RESOLVE_TOKEN_V1_REBOUND_ATTEMPT', { token: cleanToken.slice(0, 8), reason: 'leadId missing or invalid' });
+      try {
+        const activeLeads = await base44.asServiceRole.entities.Lead.filter(
+          { email, isDeleted: { $ne: true } },
+          '-created_date',
+          1
+        );
+        if (activeLeads && activeLeads.length > 0) {
+          const activeLead = activeLeads[0];
+          leadId = activeLead.id;
+          if (!firstName) firstName = activeLead.firstName || null;
+          console.log('RESOLVE_TOKEN_V1_REBOUND_ACTIVE_LEAD', {
+            token: cleanToken.slice(0, 8),
+            leadId,
+            email: email.slice(0, 5)
+          });
+
+          // Write rebound back to QuoteRequests so future calls are fast
+          try {
+            const reboundFields = { leadId };
+            if (!request.email) reboundFields.email = email;
+            if (!request.firstName) reboundFields.firstName = firstName;
+            await base44.asServiceRole.entities.QuoteRequests.update(request.id, reboundFields);
+            console.log('RESOLVE_TOKEN_V1_REBOUND_WRITTEN', { requestId: request.id });
+          } catch (reboundWriteErr) {
+            console.warn('RESOLVE_TOKEN_V1_REBOUND_WRITE_FAILED', { error: reboundWriteErr.message });
+          }
+        }
+      } catch (reboundErr) {
+        console.warn('RESOLVE_TOKEN_V1_REBOUND_FAILED', { error: reboundErr.message });
       }
     }
 
