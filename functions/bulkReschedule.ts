@@ -319,6 +319,11 @@ Deno.serve(async (req) => {
 
     // If dry run, return preview without writes
     if (dryRun) {
+      // Deterministic order
+      applied.sort((a, b) => a.eventId.localeCompare(b.eventId));
+      skipped.sort((a, b) => a.eventId.localeCompare(b.eventId));
+      conflicts.sort((a, b) => a.eventId.localeCompare(b.eventId));
+
       return Response.json({
         success: true,
         dryRun: true,
@@ -330,7 +335,8 @@ Deno.serve(async (req) => {
           selectedCount: validEvents.length,
           applyEligibleCount: applied.length,
           skippedCount: skipped.length + conflicts.length
-        }
+        },
+        idempotency: idempotencyInfo
       });
     }
 
