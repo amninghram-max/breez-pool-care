@@ -41,8 +41,32 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'leadId and confirmedPoolCondition required' }, { status: 400 });
     }
 
+    // Look up existing InspectionRecord for this lead to get required scheduling fields
+    let scheduledDate = new Date().toISOString().split('T')[0];
+    let startTime = '09:00';
+    let timeWindow = 'Morning (8:00 AM – 11:00 AM)';
+
+    const existingRecords = await base44.asServiceRole.entities.InspectionRecord.filter({ leadId }, '-created_date', 1);
+    if (existingRecords?.length > 0) {
+      const existing = existingRecords[0];
+      scheduledDate = existing.scheduledDate || scheduledDate;
+      startTime = existing.startTime || startTime;
+      timeWindow = existing.timeWindow || timeWindow;
+    } else if (calendarEventId) {
+      // Fall back to calendar event if available
+      const events = await base44.asServiceRole.entities.CalendarEvent.filter({ leadId }, '-created_date', 1);
+      if (events?.length > 0) {
+        scheduledDate = events[0].scheduledDate || scheduledDate;
+        startTime = events[0].startTime || startTime;
+        timeWindow = events[0].timeWindow || timeWindow;
+      }
+    }
+
     // Create immutable inspection record
     const record = await base44.asServiceRole.entities.InspectionRecord.create({
+      scheduledDate,
+      startTime,
+      timeWindow,
       leadId,
       calendarEventId: calendarEventId || null,
       submittedByUserId: user.id,
