@@ -98,7 +98,13 @@ export default function ScheduleInspection() {
             setFirstName(data.firstName);
           }
         } else {
-          const errorMsg = data?.error || data?.code || 'Invalid or expired token';
+          const CODE_MESSAGES = {
+            INVALID_TOKEN: "This quote link is no longer valid. Start a new quote to continue.",
+            TOKEN_NOT_FOUND: "We couldn't find this quote. Please check your email for the latest link or start a new quote.",
+            INCOMPLETE_DATA: "This quote is incomplete. Please start a new quote to get your personalized price.",
+            LEAD_LOOKUP_FAILED: "We're having trouble loading your quote right now. Please try again in a few minutes.",
+          };
+          const errorMsg = CODE_MESSAGES[data?.code] || data?.error || "Unable to load your quote. Please try again.";
           setLoadError(errorMsg);
         }
       } catch (err) {
