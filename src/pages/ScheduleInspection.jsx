@@ -58,6 +58,7 @@ export default function ScheduleInspection() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [confirmed, setConfirmed] = useState(null);
+  const [emailStatus, setEmailStatus] = useState('idle'); // idle | sending | sent | failed
 
   const dates = getAvailableDates();
 
