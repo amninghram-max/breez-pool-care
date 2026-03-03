@@ -336,7 +336,7 @@ Deno.serve(async (req) => {
       console.warn('SFI_V2_LINK_FAILED', { error: e.message });
     }
 
-    // Step 5: Sync Lead mirror fields + stage update (inlined — no function invoke)
+    // Step 5: Sync Lead mirror fields + stage update + consume token (inlined — no function invoke)
     let shouldSendNotification = false;
     try {
       const leads = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
@@ -363,6 +363,22 @@ Deno.serve(async (req) => {
       }
     } catch (e) {
       console.warn('SFI_V2_LEAD_SYNC_FAILED', { error: e.message });
+    }
+
+    // Mark token as consumed (prevent accidental replay/duplicate scheduling)
+    try {
+      const quotes = await base44.asServiceRole.entities.Quote.filter({ quoteToken: token.trim() }, null, 1);
+      if (quotes && quotes.length > 0) {
+        const quote = quotes[0];
+        if (!quote.scheduleTokenUsedAt) {
+          await base44.asServiceRole.entities.Quote.update(quote.id, {
+            scheduleTokenUsedAt: new Date().toISOString()
+          });
+          console.log('SFI_V2_TOKEN_CONSUMED', { quoteId: quote.id, token: token.trim().slice(0, 8) });
+        }
+      }
+    } catch (e) {
+      console.warn('SFI_V2_TOKEN_CONSUMPTION_FAILED', { error: e.message });
     }
 
     // Step 6: Send confirmation email (inlined — no function invoke)

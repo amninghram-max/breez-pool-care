@@ -139,7 +139,7 @@ function runPricingRange(q, settings) {
 
 // ── Email sender (direct Resend API — no function-to-function call) ───────────
 
-async function sendQuoteSummaryEmail({ firstName, email, quoteToken, appOrigin }) {
+async function sendQuoteSummaryEmail({ firstName, email, quoteToken, appOrigin, priceSummary }) {
   const resendApiKey = Deno.env.get('RESEND_API_KEY');
   if (!resendApiKey) {
     console.warn('FPQ_V2_EMAIL_SKIP', { reason: 'RESEND_API_KEY not configured' });
@@ -147,7 +147,28 @@ async function sendQuoteSummaryEmail({ firstName, email, quoteToken, appOrigin }
   }
 
   const scheduleLink = `${appOrigin}/ScheduleInspection?token=${encodeURIComponent(quoteToken)}`;
-  const quoteLink = `${appOrigin}/PreQualification?token=${encodeURIComponent(quoteToken)}`;
+
+  // Build inline quote snapshot for email body
+  const quoteSnapshot = priceSummary ? `
+    <div style="background:#f0fdfd;border-left:4px solid #1B9B9F;border-radius:4px;padding:16px;margin-bottom:24px;">
+      <p style="margin:0 0 12px;font-size:14px;font-weight:600;color:#1B9B9F;">Your Quote Summary</p>
+      <div style="font-size:13px;color:#333;line-height:1.8;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <span>Monthly Service:</span>
+          <strong>${priceSummary.monthlyPrice || 'TBD'}</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <span>Frequency:</span>
+          <strong>${priceSummary.visitFrequency || 'Weekly'}</strong>
+        </div>
+        ${priceSummary.oneTimeFees ? `<div style="display:flex;justify-content:space-between;">
+          <span>One-Time Initial Fee:</span>
+          <strong>${priceSummary.oneTimeFees}</strong>
+        </div>` : ''}
+      </div>
+      <p style="margin:12px 0 0;font-size:12px;color:#666;border-top:1px solid #d0e8ea;padding-top:8px;">*Pricing is based on your questionnaire answers. Final rates confirmed during inspection.</p>
+    </div>
+  ` : '';
 
   const htmlBody = `<!DOCTYPE html>
 <html>
@@ -159,10 +180,8 @@ async function sendQuoteSummaryEmail({ firstName, email, quoteToken, appOrigin }
     </div>
     <div style="padding:32px;">
       <p style="font-size:16px;margin:0 0 16px;">Hi ${firstName},</p>
-      <p style="font-size:15px;margin:0 0 24px;">Your personalized Breez Pool Care quote is ready. No login required — view it anytime with the link below.</p>
-      <div style="text-align:center;margin-bottom:24px;">
-        <a href="${quoteLink}" style="display:inline-block;background-color:#1B9B9F;color:white;padding:14px 32px;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px;">View My Quote</a>
-      </div>
+      <p style="font-size:15px;margin:0 0 24px;">Your personalized Breez Pool Care quote is ready!</p>
+      ${quoteSnapshot}
       <div style="background:#f0fdfd;border:1px solid #a7f3d0;border-radius:8px;padding:20px;text-align:center;margin-bottom:24px;">
         <p style="margin:0 0 12px;font-size:15px;font-weight:600;color:#1B9B9F;">Ready to get started?</p>
         <p style="margin:0 0 16px;font-size:13px;color:#555;">Schedule your free no-obligation pool inspection. No commitment required.</p>
@@ -210,18 +229,29 @@ function resolveAppOrigin(req) {
   // Use the request's Host header to construct the origin
   const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || '';
   if (host && host.endsWith('.base44.app')) {
-    return `https://${host}`;
+    const origin = `https://${host}`;
+    console.log('FPQ_V2_ORIGIN_FROM_HOST', { host, origin });
+    return origin;
   }
-  // Fallback: derive from Origin or Referer header
+  // Fallback: derive from Origin header
   const origin = req.headers.get('origin') || '';
-  if (origin && origin.endsWith('.base44.app')) return origin;
+  if (origin && origin.endsWith('.base44.app')) {
+    console.log('FPQ_V2_ORIGIN_FROM_ORIGIN_HEADER', { origin });
+    return origin;
+  }
+  // Last resort: Referer header
   const referer = req.headers.get('referer') || '';
   if (referer) {
     try {
       const u = new URL(referer);
-      if (u.hostname.endsWith('.base44.app')) return `${u.protocol}//${u.host}`;
+      if (u.hostname.endsWith('.base44.app')) {
+        const origin = `${u.protocol}//${u.host}`;
+        console.log('FPQ_V2_ORIGIN_FROM_REFERER', { origin });
+        return origin;
+      }
     } catch {}
   }
+  console.error('FPQ_V2_ORIGIN_RESOLUTION_FAILED', { host, origin, referer });
   return null;
 }
 
@@ -449,7 +479,11 @@ Deno.serve(async (req) => {
 
     // ── Step 9: Send quote summary email (idempotent: skip if already sent for this lead) ──
     let emailResult = { sent: false, reason: 'skipped' };
-    const appOrigin = resolveAppOrigin(req) || 'https://699a2b2056054b0207cea969.base44.app';
+    const appOrigin = resolveAppOrigin(req);
+    if (!appOrigin) {
+      console.error('FPQ_V2_CRITICAL_ORIGIN_MISSING', { requestHeaders: { host: req.headers.get('host'), origin: req.headers.get('origin') } });
+      return json200({ success: false, error: 'Cannot determine app origin from request (misconfigured environment)', build: BUILD });
+    }
 
     // Idempotency guard: check if email already sent for this lead
     let alreadyEmailed = false;
@@ -460,7 +494,7 @@ Deno.serve(async (req) => {
 
     if (!alreadyEmailed) {
       try {
-        emailResult = await sendQuoteSummaryEmail({ firstName, email, quoteToken: cleanToken, appOrigin });
+        emailResult = await sendQuoteSummaryEmail({ firstName, email, quoteToken: cleanToken, appOrigin, priceSummary });
         if (emailResult.sent) {
           await base44.asServiceRole.entities.Lead.update(leadId, {
             quoteLinkEmailSentAt: new Date().toISOString(),

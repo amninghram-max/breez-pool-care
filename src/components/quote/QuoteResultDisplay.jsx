@@ -65,31 +65,33 @@ export default function QuoteResultDisplay({ result, firstName, email, leadId, q
       {/* CTA */}
       <div className="space-y-3">
         {!quoteToken ? (
-          <div className="rounded-lg bg-red-50 border border-red-200 p-4">
-            <p className="text-sm font-semibold text-red-900 mb-2">Quote token missing</p>
-            <p className="text-xs text-red-700 mb-3">Cannot proceed without a valid quote reference.</p>
-            <button
-              type="button"
-              onClick={() => window.location.href = '/PreQualification'}
-              className="w-full py-2 px-3 rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors"
-            >
-              Restart Quote
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => {
-              console.log('Schedule click token:', quoteToken);
-              window.location.href = `/ScheduleInspection?token=${encodeURIComponent(quoteToken)}`;
-            }}
-            className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-white text-base font-semibold shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5"
-            style={{ backgroundColor: TEAL }}
-          >
-            <Calendar className="w-5 h-5" />
-            Schedule Your Free Inspection
-          </button>
-        )}
+           <div className="rounded-lg bg-red-50 border border-red-200 p-4">
+             <p className="text-sm font-semibold text-red-900 mb-2">Quote token missing</p>
+             <p className="text-xs text-red-700 mb-3">Cannot proceed without a valid quote reference.</p>
+             <button
+               type="button"
+               onClick={() => window.location.href = '/PreQualification'}
+               className="w-full py-2 px-3 rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors"
+             >
+               Restart Quote
+             </button>
+           </div>
+         ) : (
+           <button
+             type="button"
+             onClick={() => {
+               const currentOrigin = window.location.origin;
+               const scheduleUrl = `${currentOrigin}/ScheduleInspection?token=${encodeURIComponent(quoteToken)}`;
+               console.log('Schedule click', { origin: currentOrigin, token: quoteToken.slice(0, 8), url: scheduleUrl });
+               window.location.href = scheduleUrl;
+             }}
+             className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-white text-base font-semibold shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5"
+             style={{ backgroundColor: TEAL }}
+           >
+             <Calendar className="w-5 h-5" />
+             Schedule Your Free Inspection
+           </button>
+         )}
         <p className="text-xs text-center text-gray-400">No obligation. Homeowner or designated caretaker must be present.</p>
       </div>
     </div>
