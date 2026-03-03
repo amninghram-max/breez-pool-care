@@ -572,21 +572,44 @@ Deno.serve(async (req) => {
       return json200({ success: false, error: 'Failed to persist quote', detail: e.message, build: BUILD });
     }
 
-    // ── Step 7: Update QuoteRequests with leadId + quoteToken linkage ──
+    // ── Step 7: Update QuoteRequests with leadId + quoteToken linkage (ALWAYS assert all 3) ──
     if (quoteRequest) {
       try {
-        const updateFields = {};
-        if (!quoteRequest.leadId) updateFields.leadId = leadId;
+        // ALWAYS re-assert all critical linkage fields for idempotent replay & repair path
+        const updateFields = {
+          leadId,
+          email,
+          firstName
+        };
         if (!quoteRequest.quoteToken) updateFields.quoteToken = cleanToken;
-        if (!quoteRequest.email || quoteRequest.email === 'guest@breezpoolcare.com') updateFields.email = email;
-        if (!quoteRequest.firstName) updateFields.firstName = firstName;
-        if (Object.keys(updateFields).length > 0) {
-          await base44.asServiceRole.entities.QuoteRequests.update(quoteRequest.id, updateFields);
-          console.log('FPQ_V2_QUOTE_REQUESTS_UPDATED', { id: quoteRequest.id, fields: Object.keys(updateFields) });
-        }
+        await base44.asServiceRole.entities.QuoteRequests.update(quoteRequest.id, updateFields);
+        console.log('FPQ_V2_QUOTE_REQUESTS_ASSERTED', { 
+          id: quoteRequest.id, 
+          leadId: leadId.slice(0, 8),
+          hasEmail: !!email,
+          hasFirstName: !!firstName
+        });
       } catch (e) {
         // Non-fatal: log but do not fail — quote + lead are already created
         console.warn('FPQ_V2_QUOTE_REQUESTS_UPDATE_FAILED', { error: e.message });
+      }
+    } else {
+      // No prior QuoteRequests row — create one for this token to enable future repair
+      try {
+        const newRequest = await base44.asServiceRole.entities.QuoteRequests.create({
+          token: cleanToken,
+          leadId,
+          email,
+          firstName,
+          status: 'COMPLETED'
+        });
+        console.log('FPQ_V2_QUOTE_REQUESTS_CREATED', { 
+          id: newRequest.id, 
+          token: cleanToken.slice(0, 8),
+          leadId: leadId.slice(0, 8)
+        });
+      } catch (e) {
+        console.warn('FPQ_V2_QUOTE_REQUESTS_CREATE_FAILED', { error: e.message });
       }
     }
 
