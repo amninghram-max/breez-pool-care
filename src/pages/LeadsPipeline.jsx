@@ -209,7 +209,7 @@ export default function LeadsPipeline() {
       {/* Compact Accordion Pipeline View */}
       <div className="space-y-2">
         {STAGES.map(stage => {
-          const stageLeads = getLeadsByStage(stage.key);
+          const stageLeads = getLeadsByStage(stage);
           const isExpanded = expandedStages.includes(stage.key);
           return (
             <div key={stage.key} className="border border-gray-200 rounded-lg overflow-hidden">
@@ -224,6 +224,13 @@ export default function LeadsPipeline() {
                   <Badge className={stage.color}>{stageLeads.length}</Badge>
                 </div>
               </button>
+
+              {/* Helper text for grouped section */}
+              {stage.grouped && isExpanded && (
+                <div className="bg-teal-50 border-b border-teal-200 px-4 py-2 text-xs text-teal-700">
+                  Shows both completed inspections and awaiting acceptance quotes.
+                </div>
+              )}
 
               {/* Stage Rows */}
               {isExpanded && (
