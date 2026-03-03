@@ -44,6 +44,11 @@ export default function LeadsPipeline() {
   const [undoAction, setUndoAction] = useState(null);
   const undoTimer = useRef(null);
 
+  // Batch selection state
+  const [selectedLeadIds, setSelectedLeadIds] = useState(new Set());
+  const [batchConfirmation, setBatchConfirmation] = useState(null);
+  const [batchResults, setBatchResults] = useState(null);
+
   const repairMutation = useMutation({
     mutationFn: () => base44.functions.invoke('repairInspectionScheduledLeads', {}),
     onSuccess: (res) => {
