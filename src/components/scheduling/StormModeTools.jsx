@@ -486,7 +486,7 @@ export default function StormModeTools({ currentDate, onClose }) {
           <div className="space-y-3 text-sm">
             <div className="bg-gray-50 rounded-lg p-3 space-y-1.5">
               <div className="flex justify-between">
-                <span className="text-gray-500">Events selected</span>
+                <span className="text-gray-500">Events to reschedule</span>
                 <strong>{filteredEvents.length}</strong>
               </div>
               <div className="flex justify-between">
