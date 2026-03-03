@@ -535,9 +535,9 @@ Deno.serve(async (req) => {
     // ── Step 9: Send quote summary email (idempotent: skip if already sent for this lead) ──
     let emailResult = { sent: false, reason: 'skipped' };
     const appOrigin = resolveAppOrigin(req);
-    if (!appOrigin) {
-      console.error('FPQ_V2_CRITICAL_ORIGIN_MISSING', { requestHeaders: { host: req.headers.get('host'), origin: req.headers.get('origin') } });
-      return json200({ success: false, error: 'Cannot determine app origin from request (misconfigured environment)', build: BUILD });
+    // appOrigin can be null — fallback to relative links in email; do NOT fail quote finalization
+    if (appOrigin === null) {
+      console.warn('FPQ_V2_ORIGIN_RESOLUTION_FALLBACK', { msg: 'No absolute origin resolved; will use relative links in email' });
     }
 
     // Idempotency guard: check if email already sent for this lead
