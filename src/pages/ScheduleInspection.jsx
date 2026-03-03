@@ -239,6 +239,13 @@ export default function ScheduleInspection() {
               >
                 Go Home
               </Button>
+              <Button
+                onClick={() => window.location.href = '/PreQualification'}
+                variant="outline"
+                className="w-full"
+              >
+                Start New Quote
+              </Button>
             </CardContent>
           </Card>
         </div>
