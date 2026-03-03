@@ -238,17 +238,23 @@ export default function LeadsPipeline() {
                   {stageLeads.length === 0 ? (
                     <div className="p-4 text-center text-gray-400 text-sm">No leads</div>
                   ) : (
-                    stageLeads.map(lead => (
-                      <LeadRow
-                        key={lead.id}
-                        lead={lead}
-                        stage={stage}
-                        onAdvance={() => handleAdvance(lead)}
-                        onStageChange={(newStage) => handleStageChange(lead.id, newStage, lead.stage)}
-                        onEdit={() => setSelectedLead(lead)}
-                        queryClient={queryClient}
-                      />
-                    ))
+                    stageLeads.map(lead => {
+                      // For grouped stages, pass the original stage, not the group
+                      const leadActualStage = stage.grouped ? stage.grouped.find(s => s === lead.stage) : stage.key;
+                      const leadStageObj = STAGES.find(s => s.key === leadActualStage) || stage;
+                      return (
+                        <LeadRow
+                          key={lead.id}
+                          lead={lead}
+                          stage={leadStageObj}
+                          groupedSection={stage.grouped}
+                          onAdvance={() => handleAdvance(lead)}
+                          onStageChange={(newStage) => handleStageChange(lead.id, newStage, lead.stage)}
+                          onEdit={() => setSelectedLead(lead)}
+                          queryClient={queryClient}
+                        />
+                      );
+                    })
                   )}
                 </div>
               )}
