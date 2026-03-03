@@ -167,6 +167,13 @@ export default function ScheduleInspection() {
 
       if (data?.success === true) {
         setConfirmed(data);
+        // Best-effort email trigger — does not block success path
+        if (leadData?.leadId) {
+          setEmailStatus('sending');
+          base44.functions.invoke('sendInspectionConfirmation', { leadId: leadData.leadId })
+            .then(() => setEmailStatus('sent'))
+            .catch(() => setEmailStatus('failed'));
+        }
       } else {
         const errorMsg = data?.error || 'Failed to schedule inspection. Please call (321) 524-3838.';
         setError(errorMsg);

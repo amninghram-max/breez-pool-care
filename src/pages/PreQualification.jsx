@@ -33,6 +33,7 @@ export default function PreQualification() {
     currentStepName: ''
   };
   
+  const [creatingToken, setCreatingToken] = useState(false);
   const [user, setUser] = useState(undefined); // undefined = loading, null = guest
   const [quoteResult, setQuoteResult] = useState(null);
   const [answeredFormData, setAnsweredFormData] = useState(null);
