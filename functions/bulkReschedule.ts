@@ -1,5 +1,46 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+const BUILD = 'bulkRescheduleStormV2';
+
+// Helper: parse date string safely
+function parseDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  if (!Number.isFinite(d.getTime())) return null;
+  return d;
+}
+
+// Helper: format date as YYYY-MM-DD
+function formatDate(d) {
+  if (!(d instanceof Date) || !Number.isFinite(d.getTime())) return null;
+  return d.toISOString().split('T')[0];
+}
+
+// Helper: add days to date string
+function addDaysToDateStr(dateStr, n) {
+  const d = parseDate(dateStr);
+  if (!d) return null;
+  d.setDate(d.getDate() + n);
+  return formatDate(d);
+}
+
+// Conflict check: does event overlap with existing active event on new date for same lead?
+async function checkConflict(base44, leadId, newDate, newTimeWindow, eventDuration = 30) {
+  const existingEvents = await base44.asServiceRole.entities.CalendarEvent.filter({
+    leadId,
+    scheduledDate: newDate,
+    status: { $ne: 'cancelled' }
+  });
+  
+  if (existingEvents.length === 0) return null;
+  
+  // Simple check: if any non-cancelled event exists on same date for same lead, flag conflict
+  return {
+    type: 'overlap',
+    message: `Lead already has ${existingEvents.length} event(s) scheduled on ${newDate}`,
+    existingEventIds: existingEvents.map(e => e.id)
+  };
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -9,7 +50,17 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    const { fromDate, toDate, technicianName, sendNotifications } = await req.json();
+    const {
+      fromDate,
+      toDate,
+      eventTypes = [],
+      technicianFilter,
+      policy = 'shift_day',
+      dryRun = true,
+      sendNotifications = false,
+      idempotencyKey,
+      targetDate
+    } = await req.json();
 
     // Get storm impacted events
     const query = {
