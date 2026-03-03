@@ -178,6 +178,44 @@ export default function LeadsPipeline() {
     }
     return leads.filter(lead => lead.stage === stage.key);
   };
+
+  const toggleLeadSelect = (leadId) => {
+    setSelectedLeadIds(prev => {
+      const next = new Set(prev);
+      next.has(leadId) ? next.delete(leadId) : next.add(leadId);
+      return next;
+    });
+  };
+
+  const selectVisibleLeads = (visibleLeadIds) => {
+    setSelectedLeadIds(prev => {
+      const next = new Set(prev);
+      visibleLeadIds.forEach(id => {
+        next.has(id) ? next.delete(id) : next.add(id);
+      });
+      return next;
+    });
+  };
+
+  const handleBatchFollowUp = (templateType) => {
+    if (selectedLeadIds.size === 0) {
+      toast.error('No leads selected');
+      return;
+    }
+    setBatchConfirmation({
+      count: selectedLeadIds.size,
+      templateType
+    });
+  };
+
+  const confirmBatchFollowUp = () => {
+    if (batchConfirmation) {
+      batchFollowUpMutation.mutate({
+        leadIds: selectedLeadIds,
+        templateType: batchConfirmation.templateType
+      });
+    }
+  };
   
   const toggleStageExpand = (stageKey) => {
     setExpandedStages(prev => 
