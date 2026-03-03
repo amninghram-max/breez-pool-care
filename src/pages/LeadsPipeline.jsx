@@ -271,8 +271,131 @@ export default function LeadsPipeline() {
         </div>
       )}
 
+      {/* Batch Results Modal */}
+      {batchResults && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <CardHeader>
+              <CardTitle>Batch Send Results</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-green-50 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-green-700">{batchResults.sentCount}</div>
+                  <div className="text-xs text-gray-600">Sent</div>
+                </div>
+                <div className="bg-yellow-50 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-yellow-700">{batchResults.skippedCount}</div>
+                  <div className="text-xs text-gray-600">Skipped</div>
+                </div>
+                <div className="bg-red-50 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-red-700">{batchResults.failedCount}</div>
+                  <div className="text-xs text-gray-600">Failed</div>
+                </div>
+              </div>
+
+              {batchResults.failed && batchResults.failed.length > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 max-h-32 overflow-y-auto">
+                  <p className="text-xs font-semibold text-red-900 mb-2">Failed Leads:</p>
+                  <div className="text-xs text-red-700 space-y-1">
+                    {batchResults.failed.map(f => (
+                      <div key={f.leadId}>
+                        <strong>{f.leadName}</strong> ({f.email}): {f.error}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <Button onClick={() => setBatchResults(null)} className="w-full">
+                Close
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Batch Confirmation Modal */}
+      {batchConfirmation && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <CardHeader>
+              <CardTitle>Confirm Batch Send</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-sm text-blue-900">
+                  <strong>{batchConfirmation.count}</strong> lead{batchConfirmation.count > 1 ? 's' : ''} will receive{' '}
+                  <strong>
+                    {batchConfirmation.templateType === 'new_lead_followup' 
+                      ? 'new lead follow-up email'
+                      : 'quote follow-up email'}
+                  </strong>
+                </p>
+              </div>
+
+              <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                Duplicate sends within 24h will be skipped. Failed emails will be reported.
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setBatchConfirmation(null)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={confirmBatchFollowUp}
+                  disabled={batchFollowUpMutation.isPending}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                >
+                  {batchFollowUpMutation.isPending ? 'Sending...' : 'Send'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Batch Action Bar (sticky) */}
+      {selectedLeadIds.size > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-blue-900 text-white p-4 z-40 shadow-lg">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="text-sm">
+              <strong>{selectedLeadIds.size}</strong> lead{selectedLeadIds.size > 1 ? 's' : ''} selected
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setSelectedLeadIds(new Set())}
+                className="border-white text-white hover:bg-blue-800"
+              >
+                Clear Selection
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => handleBatchFollowUp('new_lead_followup')}
+                className="bg-blue-500 hover:bg-blue-600"
+              >
+                Follow Up New Leads
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => handleBatchFollowUp('quoted_followup')}
+                className="bg-teal-500 hover:bg-teal-600"
+              >
+                Follow Up Quoted Leads
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Compact Accordion Pipeline View */}
-      <div className="space-y-2">
+      <div className="space-y-2" style={{ paddingBottom: selectedLeadIds.size > 0 ? '80px' : '0' }}>
         {STAGES.map(stage => {
           const stageLeads = getLeadsByStage(stage);
           const isExpanded = expandedStages.includes(stage.key);
