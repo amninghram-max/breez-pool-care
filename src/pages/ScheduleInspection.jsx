@@ -44,8 +44,6 @@ export default function ScheduleInspection() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
 
-  console.log('ScheduleInspection mounted with token:', token);
-
   const [leadData, setLeadData] = useState(null);
   const [loadingLead, setLoadingLead] = useState(false);
   const [loadError, setLoadError] = useState('');
@@ -65,8 +63,6 @@ export default function ScheduleInspection() {
 
   // Load lead data from token
   useEffect(() => {
-    console.log('ScheduleInspection token:', token);
-    
     if (!token) {
       setLoadError('Missing token. Please follow the link from your quote email.');
       setLoadingLead(false);
@@ -87,7 +83,6 @@ export default function ScheduleInspection() {
         ]);
         
         const data = res?.data ?? res;
-        console.log('resolve token response:', data);
         
         if (data?.success === true && data.leadId && data.email) {
           setLeadData({
@@ -102,11 +97,9 @@ export default function ScheduleInspection() {
           }
         } else {
           const errorMsg = data?.error || data?.code || 'Invalid or expired token';
-          console.log('Token resolution failed:', { code: data?.code, error: data?.error });
           setLoadError(errorMsg);
         }
       } catch (err) {
-        console.error('ScheduleInspection load error:', err);
         setLoadError(err?.message || 'Failed to load request details');
       } finally {
         setLoadingLead(false);
@@ -170,18 +163,14 @@ export default function ScheduleInspection() {
       ]);
       
       const data = res?.data ?? res;
-      console.log('schedule inspection response:', data);
 
       if (data?.success === true) {
-        console.log('Scheduling succeeded', { leadId: leadData?.leadId, eventId: data.eventId });
         setConfirmed(data);
       } else {
         const errorMsg = data?.error || 'Failed to schedule inspection. Please call (321) 524-3838.';
-        console.log('Scheduling failed:', { code: data?.code, error: data?.error });
         setError(errorMsg);
       }
     } catch (e) {
-      console.error('Schedule submission error:', e);
       setError(e?.message || 'Something went wrong. Please call us at (321) 524-3838.');
     } finally {
       setLoading(false);
