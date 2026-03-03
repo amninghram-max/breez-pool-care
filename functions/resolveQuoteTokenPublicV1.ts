@@ -92,19 +92,31 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── Step 2b: Validate Lead is not deleted ──
+    // ── Step 2b: Validate Lead is not deleted (EXPLICIT UNAVAILABLE CHECK) ──
     if (leadId) {
       try {
         const leadRows = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
         const lead = leadRows?.[0];
-        if (!lead || lead.isDeleted === true) {
-          console.log('RESOLVE_TOKEN_V1_LEAD_DELETED_OR_MISSING', {
+        if (lead && lead.isDeleted === true) {
+          // Lead exists but is soft-deleted — explicit LEAD_UNAVAILABLE
+          console.log('RESOLVE_TOKEN_V1_LEAD_UNAVAILABLE', {
             token: cleanToken.slice(0, 8),
             leadId: leadId.slice(0, 8),
-            found: !!lead,
-            isDeleted: lead?.isDeleted ?? null
+            reason: 'lead_soft_deleted'
           });
-          leadId = null; // Force INCOMPLETE_DATA downstream
+          return json200({
+            success: false,
+            code: 'LEAD_UNAVAILABLE',
+            error: 'This quote is no longer active. Please contact Breez at (321) 524-3838 for assistance.',
+            build: BUILD
+          });
+        }
+        if (!lead) {
+          console.log('RESOLVE_TOKEN_V1_LEAD_NOT_FOUND', {
+            token: cleanToken.slice(0, 8),
+            leadId: leadId.slice(0, 8)
+          });
+          leadId = null; // Force INCOMPLETE_DATA (true missing-link case)
         }
       } catch (e) {
         console.warn('RESOLVE_TOKEN_V1_LEAD_CHECK_FAILED', { error: e.message });
