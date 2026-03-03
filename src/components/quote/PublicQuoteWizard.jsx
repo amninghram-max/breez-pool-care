@@ -122,7 +122,6 @@ function ThankYouDisplay({ firstName, email, leadId, quoteToken }) {
           type="button"
           onClick={() => {
             const schedulingUrl = `/ScheduleInspection?token=${encodeURIComponent(quoteToken || '')}`;
-            console.log('[ThankYouDisplay] Navigating to scheduling:', { quoteToken, schedulingUrl });
             window.location.href = schedulingUrl;
           }}
           className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-white text-base font-semibold shadow-md hover:shadow-lg transition-all"
@@ -221,8 +220,6 @@ export default function PublicQuoteWizard({
 
   const handleSubmit = async (e) => {
     if (e?.preventDefault) e.preventDefault();
-    console.log('DEBUG: Finish clicked');
-
     setError('');
 
     // Use resolved data from prefillData if token present, otherwise use form input
@@ -263,8 +260,6 @@ export default function PublicQuoteWizard({
           petsAccess: answers.petsAccess === true,
         }
       };
-      console.log('DEBUG: Finish payload', payload);
-
       // Validate payload has no invalid dates
       const hasInvalidDates = Object.values(payload.questionnaireData || {}).some(
         v => v instanceof Date && !Number.isFinite(v.getTime())
@@ -284,8 +279,6 @@ export default function PublicQuoteWizard({
       // STEP 1: Call publicGetQuote
       const res = await base44.functions.invoke('publicGetQuote', payload);
       const data = res?.data ?? res;
-      console.log('DEBUG: publicGetQuote raw response', res);
-      console.log('DEBUG: publicGetQuote parsed data', data);
 
       if (data?.success !== true) {
         setFinalizeError(data?.error || 'Failed to generate quote. Please try again.');
@@ -304,7 +297,6 @@ export default function PublicQuoteWizard({
           clientLastName: answers.lastName?.trim() || null,
           clientEmail: finalEmail.trim().toLowerCase()
         };
-        console.log('DEBUG: Calling finalizePrequalQuoteV2 with', finalizePayload);
         setLastFinalizeRequest(finalizePayload);
 
         const timeoutPromise = new Promise((_, reject) => {
@@ -315,9 +307,7 @@ export default function PublicQuoteWizard({
           base44.functions.invoke('finalizePrequalQuoteV2', finalizePayload),
           timeoutPromise
         ]);
-        console.log('DEBUG: Finalize raw response', finalizeRes);
         const finalizeData = finalizeRes?.data ?? finalizeRes;
-        console.log('DEBUG: Finalize parsed data', finalizeData);
         setLastFinalizeResponse(finalizeData);
 
         // MILESTONE: response_received
@@ -329,30 +319,25 @@ export default function PublicQuoteWizard({
             quote: finalizeData.quoteSnapshot || data.quote,
             priceSummary: finalizeData.priceSummary,
           };
-          console.log('DEBUG: Setting result after finalize success', normalizedResult);
           setResult(normalizedResult);
           setFinalizeState('done_success');
         } else {
           const errorMsg = `${finalizeData?.error || 'Failed to finalize quote'} (${finalizeData?.build || 'unknown'})`;
-          console.log('DEBUG: Finalize failed', errorMsg);
           setFinalizeError(errorMsg);
           setResult({ error: errorMsg });
           setFinalizeState('done_error');
         }
       } else if (data?.releaseReady) {
-        console.log('DEBUG: releaseReady but no quote, showing ThankYou');
         setLastFinalizeResponse(data);
         setFinalizeState('done_success');
         setResult(data);
       } else {
-        console.log('DEBUG: Not ready, showing ThankYou');
         setLastFinalizeResponse(data);
         setFinalizeState('done_success');
         setResult(data);
       }
     } catch (err) {
       const errorMsg = err?.message || 'Something went wrong. Please try again or call us at (321) 524-3838.';
-      console.log('DEBUG: Outer catch error', errorMsg);
       setFinalizeError(errorMsg);
       setResult({ error: errorMsg });
       setFinalizeState('done_error');
@@ -425,14 +410,6 @@ export default function PublicQuoteWizard({
 
   // ── Render result or error ──
   if (result) {
-    console.log('DEBUG: Completion Decision', {
-      result,
-      hasPriceSummary: !!result?.priceSummary,
-      hasQuote: !!result?.quote,
-      finalMonthly: result?.quote?.finalMonthlyPrice,
-      isRange: result?.isRange
-    });
-
     if (result.error) {
       return (
         <div className="space-y-4 text-center">
