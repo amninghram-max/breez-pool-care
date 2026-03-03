@@ -278,7 +278,7 @@ export default function LeadsPipeline() {
   );
 }
 
-function LeadRow({ lead, stage, onAdvance, onStageChange, onEdit, queryClient }) {
+function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit, queryClient }) {
   const [validationError, setValidationError] = React.useState(null);
   const [showSendQuoteModal, setShowSendQuoteModal] = React.useState(false);
   const [showSendInspectionModal, setShowSendInspectionModal] = React.useState(false);
