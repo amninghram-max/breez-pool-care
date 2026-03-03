@@ -85,14 +85,7 @@ export default function PublicHome() {
   return (
     <div className="min-h-screen bg-white font-sans text-gray-900" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
 
-      {/* ── Logo Banner ── */}
-      <div className="w-full bg-white border-b border-gray-100 py-6 flex items-center justify-center">
-        <img
-          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/697499e86_Breez1.png"
-          alt="Breez Pool Care"
-          className="h-28 w-auto"
-        />
-      </div>
+
 
       {/* ── Header ── */}
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-gray-100 shadow-sm">
