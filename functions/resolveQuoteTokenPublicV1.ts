@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
         const leadRows = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
         const lead = leadRows?.[0];
         if (!lead || lead.isDeleted === true) {
-          console.log('RQT_V1_LEAD_DELETED_OR_MISSING', {
+          console.log('RESOLVE_TOKEN_V1_LEAD_DELETED_OR_MISSING', {
             token: cleanToken.slice(0, 8),
             leadId: leadId.slice(0, 8),
             found: !!lead,
