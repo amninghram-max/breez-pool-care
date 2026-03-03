@@ -284,6 +284,15 @@ export default function PublicHome() {
         </div>
       </section>
 
+      {/* ── CPO Badge ── */}
+      <div className="flex justify-center py-10 bg-white">
+        <img
+          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/aed629531_CertifiedPoolSpaOperator.png"
+          alt="Certified Pool & Spa Operator"
+          className="h-80 w-auto"
+        />
+      </div>
+
       {/* ── Why Water Balance Matters ── */}
       <section className="py-20 px-4 bg-white">
         <div className="max-w-4xl mx-auto">
