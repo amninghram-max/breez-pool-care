@@ -81,6 +81,165 @@ export default function StormModeTools({ currentDate, onClose }) {
   });
   const technicians = settings?.technicians?.filter(t => t.active) || [];
 
+  // Template definitions
+  const templates = {
+    inspection_moved: {
+      label: 'Inspection Moved',
+      eventType: 'inspection',
+      subject: 'Your pool inspection has been rescheduled',
+      preview: 'Hi {firstName}, due to weather conditions, your inspection has been moved to {newDate}. Our technician will still provide excellent service.'
+    },
+    service_moved: {
+      label: 'Service Moved',
+      eventType: 'service',
+      subject: 'Your pool service appointment moved',
+      preview: 'Hi {firstName}, we\'ve rescheduled your service to {newDate} due to weather. We\'ll see you then!'
+    },
+    manual_review_pending: {
+      label: 'Manual Review Pending',
+      eventType: 'all',
+      subject: 'We\'re confirming your service date',
+      preview: 'Hi {firstName}, we\'re reviewing optimal times for your {eventType}. Our team will contact you within 24 hours.'
+    }
+  };
+
+  // Resolve template preview with sample data
+  const resolveTemplatePreview = (templateKey, sampleEvent) => {
+    const template = templates[templateKey];
+    if (!template) return '';
+    let preview = template.preview;
+    preview = preview.replace('{firstName}', 'John');
+    preview = preview.replace('{newDate}', sampleEvent?.scheduledDate || 'TBD');
+    preview = preview.replace('{eventType}', sampleEvent?.eventType || 'service');
+    return preview;
+  };
+
+  // Communication handler mutation
+  const communicationMutation = useMutation({
+    mutationFn: async (payload) => {
+      const { appliedItems, template, mode, reason } = payload;
+      const results = { sent: 0, queued: 0, skipped: 0, failed: 0, errors: [] };
+
+      // Group by event type
+      const grouped = {
+        inspection: appliedItems.filter(a => a.eventType === 'inspection'),
+        service: appliedItems.filter(a => a.eventType === 'service'),
+        other: appliedItems.filter(a => !['inspection', 'service'].includes(a.eventType))
+      };
+
+      for (const [groupType, items] of Object.entries(grouped)) {
+        if (items.length === 0) continue;
+
+        if (mode === 'skip_notification') {
+          results.skipped += items.length;
+        } else if (mode === 'send_now') {
+          // Fetch leads for notification data
+          const leadIds = [...new Set(items.map(a => a.leadId))];
+          const leadsData = await Promise.all(
+            leadIds.map(id => base44.entities.Lead.filter({ id }))
+          );
+          const leadMap = {};
+          leadsData.forEach(ld => {
+            if (ld.length > 0) leadMap[ld[0].id] = ld[0];
+          });
+
+          for (const item of items) {
+            try {
+              const lead = leadMap[item.leadId];
+              if (!lead?.email && !lead?.mobilePhone) {
+                results.skipped++;
+                continue;
+              }
+
+              const templateDef = templates[template];
+              const messageContent = resolveTemplatePreview(template, item).replace('{supportContact}', 'support@breez.com');
+
+              // Create notification log
+              await base44.entities.NotificationLog.create({
+                leadId: item.leadId,
+                eventId: item.eventId,
+                notificationType: 'reschedule_confirmation',
+                channel: lead.preferredContact || 'email',
+                recipient: lead.preferredContact === 'text' ? lead.mobilePhone : lead.email,
+                message: messageContent,
+                sentAt: new Date().toISOString(),
+                status: 'sent',
+                metadata: { template, originalDate: item.oldDate, newDate: item.newDate }
+              });
+
+              results.sent++;
+            } catch (err) {
+              console.error(`Notification error for ${item.eventId}:`, err);
+              results.failed++;
+              results.errors.push(`Event ${item.eventId}: ${err.message}`);
+            }
+          }
+        } else if (mode === 'queue_approval') {
+          // Create pending workflow items (use MessageThread or audit event for now)
+          for (const item of items) {
+            try {
+              await base44.entities.AnalyticsEvent.create({
+                eventName: 'storm_notification_pending',
+                properties: {
+                  eventId: item.eventId,
+                  leadId: item.leadId,
+                  eventType: item.eventType,
+                  template,
+                  originalDate: item.oldDate,
+                  newDate: item.newDate
+                },
+                metadata: {
+                  status: 'pending_approval',
+                  createdAt: new Date().toISOString()
+                }
+              });
+              results.queued++;
+            } catch (err) {
+              console.error(`Queue error for ${item.eventId}:`, err);
+              results.failed++;
+              results.errors.push(`Event ${item.eventId}: ${err.message}`);
+            }
+          }
+        }
+      }
+
+      // Audit log communication decision
+      try {
+        await base44.entities.AnalyticsEvent.create({
+          eventName: 'storm_communication_decision',
+          properties: {
+            template,
+            mode,
+            skipReason: reason || null,
+            sentCount: results.sent,
+            queuedCount: results.queued,
+            skippedCount: results.skipped,
+            failedCount: results.failed
+          },
+          metadata: {
+            operatorEmail: user.email,
+            appliedCount: appliedItems.length,
+            timestamp: new Date().toISOString()
+          }
+        });
+      } catch (auditErr) {
+        console.error('Audit log error:', auditErr);
+      }
+
+      return results;
+    },
+    onSuccess: (data) => {
+      setCommunicationResults(data);
+      queryClient.invalidateQueries({ queryKey: ['stormBatchAudit'] });
+      // Auto-close panel after delay
+      setTimeout(() => setShowCommunicationPanel(false), 3000);
+    },
+    onError: (error) => {
+      console.error('Communication execution failed:', error);
+      alert(`Communication failed: ${error.message}`);
+    }
+  });
+
   // Load audit log entries
   const { data: auditEntries = [], isLoading: auditLoading, error: auditError, refetch: refetchAudit } = useQuery({
     queryKey: ['stormBatchAudit'],
