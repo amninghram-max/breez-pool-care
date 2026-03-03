@@ -336,7 +336,7 @@ Deno.serve(async (req) => {
       skipped.sort((a, b) => a.eventId.localeCompare(b.eventId));
       conflicts.sort((a, b) => a.eventId.localeCompare(b.eventId));
 
-      return Response.json({
+      const dryRunResponse = {
         success: true,
         dryRun: true,
         applied: [],
@@ -349,7 +349,36 @@ Deno.serve(async (req) => {
           skippedCount: skipped.length + conflicts.length
         },
         idempotency: idempotencyInfo
-      });
+      };
+
+      // PERSIST DRY-RUN RESPONSE for replay
+      if (idempotencyKey) {
+        try {
+          await base44.asServiceRole.entities.AnalyticsEvent.create({
+            eventName: 'bulk_reschedule_idempotency',
+            properties: {
+              operationType: 'dryRun',
+              paramFromDate: fromDate,
+              paramToDate: toDate,
+              paramPolicy: policy
+            },
+            metadata: {
+              idempotencyKey,
+              fingerprint: effectiveFingerprint,
+              responseBody: dryRunResponse,
+              createdAt: new Date().toISOString()
+            }
+          });
+        } catch (analyticsErr) {
+          console.error(`Failed to persist dryRun idempotency record:`, analyticsErr);
+          dryRunResponse.warnings = [
+            ...dryRunResponse.warnings,
+            'WARNING: Idempotency persistence failed; replay protection unavailable for this request.'
+          ];
+        }
+      }
+
+      return Response.json(dryRunResponse);
     }
 
     // --- WRITE PATH: Apply rescheduling ---
