@@ -178,13 +178,7 @@ export default function PublicHome() {
               </div>
             ))}
           </div>
-          <div className="flex justify-center">
-            <img
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/aed629531_CertifiedPoolSpaOperator.png"
-              alt="Certified Pool & Spa Operator"
-              className="h-80 w-auto"
-            />
-          </div>
+
         </div>
       </section>
 
