@@ -108,11 +108,22 @@ Deno.serve(async (req) => {
     }
 
     if (!leadId || !tokenEmail) {
-      return json200({
+      // Return explicit code per resolve failure reason
+      const failureCode = !leadId ? 'INCOMPLETE_DATA' : 'TOKEN_NOT_FOUND';
+      const errorPayload = {
         success: false,
-        error: 'Token not found or invalid',
+        code: failureCode,
         build: BUILD
-      });
+      };
+      
+      if (failureCode === 'INCOMPLETE_DATA') {
+        errorPayload.error = 'Token does not have complete lead information. Please request a new quote or contact Breez at (321) 524-3838.';
+      } else {
+        errorPayload.error = 'Token not found or invalid. Please request a new quote link.';
+      }
+      
+      console.warn('SFI_V1_RESOLVE_FAILED', { code: failureCode, token: token.trim().slice(0, 8) });
+      return json200(errorPayload);
     }
 
     // Use provided email or fall back to token email
