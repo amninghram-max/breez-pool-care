@@ -466,13 +466,22 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── Step 8: Update Lead stage to 'quote_sent' ──
+    // ── Step 8: Update Lead stage to 'quote_sent' (explicit stage transition) ──
     try {
-      await base44.asServiceRole.entities.Lead.update(leadId, {
-        stage: 'quote_sent',
-        quoteGenerated: true,
-      });
-      console.log('FPQ_V2_STAGE_PROGRESSED', { leadId, newStage: 'quote_sent' });
+      const leadCheck = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
+      if (leadCheck?.[0]) {
+        const currentStage = leadCheck[0].stage || 'new_lead';
+        // Forward-only stage progression: new_lead -> quote_sent
+        if (currentStage !== 'quote_sent') {
+          await base44.asServiceRole.entities.Lead.update(leadId, {
+            stage: 'quote_sent',
+            quoteGenerated: true,
+          });
+          console.log('FPQ_V2_STAGE_PROGRESSED', { leadId, fromStage: currentStage, toStage: 'quote_sent' });
+        } else {
+          console.log('FPQ_V2_STAGE_ALREADY_SET', { leadId, stage: 'quote_sent' });
+        }
+      }
     } catch (e) {
       console.warn('FPQ_V2_STAGE_UPDATE_FAILED', { error: e.message });
     }
