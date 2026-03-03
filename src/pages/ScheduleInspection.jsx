@@ -297,6 +297,12 @@ export default function ScheduleInspection() {
                   <li>No obligation.</li>
                 </ul>
               </div>
+              {emailStatus === 'failed' && (
+                <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-left">
+                  <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-700">We scheduled your inspection, but email delivery may be delayed.</p>
+                </div>
+              )}
               <Button
                 onClick={() => navigate('/')}
                 className="w-full bg-teal-600 hover:bg-teal-700 text-white"
