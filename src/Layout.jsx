@@ -7,8 +7,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import CustomerNav from '../components/navigation/CustomerNav';
-import ProviderNav from '../components/navigation/ProviderNav';
+import CustomerNav from '@/components/navigation/CustomerNav';
+import ProviderNav from '@/components/navigation/ProviderNav';
 
 // Bootstrap: Log resolved API/asset URLs once at app startup
 if (typeof window !== 'undefined' && !window.__BASE44_BOOTSTRAP_LOGGED) {
