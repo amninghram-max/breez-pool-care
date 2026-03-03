@@ -452,6 +452,8 @@ export default function LeadsPipeline() {
                           onStageChange={(newStage) => handleStageChange(lead.id, newStage, lead.stage)}
                           onEdit={() => setSelectedLead(lead)}
                           queryClient={queryClient}
+                          isSelected={selectedLeadIds.has(lead.id)}
+                          onToggleSelect={() => toggleLeadSelect(lead.id)}
                         />
                       );
                     })
