@@ -118,94 +118,241 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get customer constraints to find next available slots
-    const rescheduledEvents = [];
-    const settings = await base44.asServiceRole.entities.SchedulingSettings.filter({ settingKey: 'default' });
-    const config = settings[0] || {};
+    // --- PHASE 2: Dry-run preview + policy-driven rescheduling ---
 
-    for (const event of events) {
-      // Get customer constraints
-      const constraints = await base44.asServiceRole.entities.CustomerConstraints.filter({ leadId: event.leadId });
-      const customerConstraints = constraints[0];
+    const applied = [];
+    const skipped = [];
+    const conflicts = [];
+    const warnings = [];
 
-      // Find next available date after toDate
-      let newDate = new Date(toDate);
-      newDate.setDate(newDate.getDate() + 1);
+    // Load inspection records (authoritative source)
+    const inspections = await base44.asServiceRole.entities.InspectionRecord.list('-created_date', 1000);
+    const inspectionByEventId = {};
+    inspections.forEach(ir => {
+      if (ir.calendarEventId) inspectionByEventId[ir.calendarEventId] = ir;
+    });
 
-      // Check recurrence pattern
-      if (event.recurrencePattern === 'weekly') {
-        // Schedule for same day next week
-        newDate.setDate(newDate.getDate() + 7);
-      } else if (event.recurrencePattern === 'biweekly') {
-        newDate.setDate(newDate.getDate() + 14);
+    // Check for pending reschedule requests
+    const pendingReschedules = await base44.asServiceRole.entities.RescheduleRequest.filter({ status: 'pending' });
+    const pendingByEventId = {};
+    pendingReschedules.forEach(pr => {
+      if (pr.calendarEventId) pendingByEventId[pr.calendarEventId] = pr;
+    });
+
+    // Process each event
+    for (const event of validEvents) {
+      const itemId = event.id;
+
+      // Skip: pending reschedule request
+      if (pendingByEventId[itemId]) {
+        skipped.push({
+          eventId: itemId,
+          leadId: event.leadId,
+          oldDate: event.scheduledDate,
+          reason: 'pending_reschedule_request',
+          message: 'Event has pending reschedule request'
+        });
+        continue;
       }
 
-      // Respect customer constraints
-      const dayOfWeek = newDate.toLocaleDateString('en-US', { weekday: 'lowercase' });
-      if (customerConstraints?.doNotScheduleDays?.includes(dayOfWeek)) {
-        // Move to next day
+      // Determine new date based on policy
+      let newDate = null;
+      let newDateStr = null;
+
+      if (policy === 'manual_review') {
+        // No reschedule; mark for manual review
+        skipped.push({
+          eventId: itemId,
+          leadId: event.leadId,
+          oldDate: event.scheduledDate,
+          reason: 'manual_review_required',
+          message: 'Flagged for manual review by supervisor'
+        });
+        warnings.push(`Event ${itemId} requires manual review before rescheduling.`);
+        continue;
+      } else if (policy === 'shift_day') {
+        // Shift to +1 day from original
+        newDate = parseDate(event.scheduledDate);
+        if (!newDate) {
+          skipped.push({ eventId: itemId, leadId: event.leadId, oldDate: event.scheduledDate, reason: 'invalid_date' });
+          continue;
+        }
         newDate.setDate(newDate.getDate() + 1);
-      }
-
-      // Check if newDate is not Sunday (skip to Monday)
-      if (newDate.getDay() === 0) {
+        newDateStr = formatDate(newDate);
+      } else if (policy === 'next_available') {
+        // Find next open slot after toDate, respecting constraints
+        newDate = parseDate(toDate);
+        if (!newDate) {
+          skipped.push({ eventId: itemId, leadId: event.leadId, oldDate: event.scheduledDate, reason: 'invalid_date' });
+          continue;
+        }
         newDate.setDate(newDate.getDate() + 1);
+
+        // Respect customer constraints and inspection priority
+        const isInspection = event.eventType === 'inspection';
+        const constraints = await base44.asServiceRole.entities.CustomerConstraints.filter({ leadId: event.leadId });
+        const custConstraints = constraints[0];
+
+        let attempts = 0;
+        while (attempts < 30) {
+          newDateStr = formatDate(newDate);
+          const dow = newDate.toLocaleDateString('en-US', { weekday: 'lowercase' });
+
+          // Skip Sunday
+          if (newDate.getDay() === 0) {
+            newDate.setDate(newDate.getDate() + 1);
+            attempts++;
+            continue;
+          }
+
+          // Respect do-not-schedule days
+          if (custConstraints?.doNotScheduleDays?.includes(dow)) {
+            newDate.setDate(newDate.getDate() + 1);
+            attempts++;
+            continue;
+          }
+
+          // Check conflicts
+          const conflict = await checkConflict(base44, event.leadId, newDateStr, event.timeWindow, event.estimatedDuration);
+          if (!conflict) break; // Found slot
+
+          newDate.setDate(newDate.getDate() + 1);
+          attempts++;
+        }
+
+        if (attempts >= 30) {
+          skipped.push({
+            eventId: itemId,
+            leadId: event.leadId,
+            oldDate: event.scheduledDate,
+            reason: 'no_available_slot',
+            message: 'No available slot found in next 30 days'
+          });
+          continue;
+        }
+
+        newDateStr = formatDate(newDate);
       }
 
-      const newDateStr = newDate.toISOString().split('T')[0];
+      if (!newDateStr) {
+        skipped.push({ eventId: itemId, leadId: event.leadId, oldDate: event.scheduledDate, reason: 'unknown' });
+        continue;
+      }
 
-      // Update event
-      await base44.asServiceRole.entities.CalendarEvent.update(event.id, {
-        originalScheduledDate: event.scheduledDate,
-        scheduledDate: newDateStr,
-        status: 'scheduled',
-        stormImpacted: false,
-        rescheduleReason: 'Storm/weather conditions'
-      });
+      // Final conflict check
+      const finalConflict = await checkConflict(base44, event.leadId, newDateStr, event.timeWindow, event.estimatedDuration);
+      if (finalConflict) {
+        conflicts.push({
+          eventId: itemId,
+          leadId: event.leadId,
+          newDate: newDateStr,
+          conflict: finalConflict
+        });
+        skipped.push({
+          eventId: itemId,
+          leadId: event.leadId,
+          oldDate: event.scheduledDate,
+          reason: 'conflict',
+          message: finalConflict.message
+        });
+        continue;
+      }
 
-      rescheduledEvents.push({
-        eventId: event.id,
+      // Ready to apply (or preview)
+      applied.push({
+        eventId: itemId,
+        eventType: event.eventType,
         leadId: event.leadId,
         oldDate: event.scheduledDate,
         newDate: newDateStr
       });
-
-      // Send reschedule notification
-      if (sendNotifications) {
-        const template = config.notificationTemplates?.reschedule_confirmation || 
-          "Breez: Your pool service has been rescheduled to {date} at {time}. Reply HELP if you have questions.";
-        
-        const message = template
-          .replace('{date}', new Date(newDateStr).toLocaleDateString())
-          .replace('{time}', event.timeWindow || 'your scheduled time');
-
-        try {
-          await base44.asServiceRole.functions.invoke('sendScheduleNotification', {
-            leadId: event.leadId,
-            eventId: event.id,
-            notificationType: 'reschedule_confirmation',
-            message
-          });
-        } catch (notifyError) {
-          console.error('Failed to send reschedule notification:', notifyError);
-        }
-      }
     }
 
-    // Update storm day reschedule count
-    if (rescheduledEvents.length > 0) {
-      const stormDays = await base44.asServiceRole.entities.StormDay.filter({ date: fromDate });
-      if (stormDays.length > 0) {
-        await base44.asServiceRole.entities.StormDay.update(stormDays[0].id, {
-          rescheduledCount: rescheduledEvents.length
+    // If dry run, return preview without writes
+    if (dryRun) {
+      return Response.json({
+        success: true,
+        dryRun: true,
+        applied: [],
+        skipped: [...skipped, ...conflicts.map(c => ({ eventId: c.eventId, leadId: c.leadId, oldDate: 'N/A', reason: 'conflict', message: c.conflict.message }))],
+        conflicts: conflicts.length > 0 ? conflicts : [],
+        warnings,
+        summary: {
+          selectedCount: validEvents.length,
+          applyEligibleCount: applied.length,
+          skippedCount: skipped.length + conflicts.length
+        }
+      });
+    }
+
+    // --- WRITE PATH: Apply rescheduling ---
+    const writeResults = [];
+
+    for (const item of applied) {
+      const event = validEvents.find(e => e.id === item.eventId);
+      if (!event) continue;
+
+      try {
+        // If inspection: update InspectionRecord first (source of truth)
+        if (event.eventType === 'inspection' && inspectionByEventId[event.id]) {
+          const inspection = inspectionByEventId[event.id];
+          await base44.asServiceRole.entities.InspectionRecord.update(inspection.id, {
+            scheduledDate: item.newDate,
+            appointmentStatus: 'scheduled'
+          });
+        }
+
+        // Update CalendarEvent projection
+        await base44.asServiceRole.entities.CalendarEvent.update(event.id, {
+          scheduledDate: item.newDate,
+          originalScheduledDate: event.scheduledDate,
+          status: 'scheduled',
+          stormImpacted: false,
+          rescheduleReason: 'Storm/weather conditions'
+        });
+
+        // Sync Lead mirror fields if inspection
+        if (event.eventType === 'inspection') {
+          const lead = leadMap[event.leadId];
+          if (lead) {
+            await base44.asServiceRole.entities.Lead.update(event.leadId, {
+              confirmedInspectionDate: new Date(item.newDate + 'T' + (event.startTime || '09:00') + ':00').toISOString()
+            });
+          }
+        }
+
+        writeResults.push({
+          eventId: item.eventId,
+          leadId: item.leadId,
+          oldDate: item.oldDate,
+          newDate: item.newDate,
+          status: 'success'
+        });
+      } catch (writeErr) {
+        console.error(`Write error for event ${item.eventId}:`, writeErr);
+        writeResults.push({
+          eventId: item.eventId,
+          leadId: item.leadId,
+          oldDate: item.oldDate,
+          newDate: item.newDate,
+          status: 'error',
+          error: writeErr.message
         });
       }
     }
 
     return Response.json({
-      success: true,
-      rescheduledCount: rescheduledEvents.length,
-      events: rescheduledEvents
+      success: writeResults.filter(r => r.status === 'success').length > 0,
+      dryRun: false,
+      applied: writeResults,
+      skipped,
+      conflicts: [],
+      warnings,
+      summary: {
+        selectedCount: validEvents.length,
+        applyEligibleCount: writeResults.filter(r => r.status === 'success').length,
+        skippedCount: skipped.length + conflicts.length
+      }
     });
 
   } catch (error) {
