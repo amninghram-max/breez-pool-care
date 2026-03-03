@@ -3,15 +3,21 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 /**
  * finalizePrequalQuoteV2
  * Called from PreQualification wizard on final submit.
- * 
- * Resolves token → leadId, computes quote, PERSISTS snapshot to Quote entity,
- * returns priceSummary with idempotency (no duplicate quotes for same token).
- * 
- * Input: { token, prequalAnswers, appOrigin? }
- * Output: { success, quoteToken, leadId, firstName, email, priceSummary, persisted, build }
+ *
+ * Flow:
+ * 1. Resolve token → QuoteRequests row
+ * 2. If no leadId: create Lead (firstName + email only, stage = 'new_lead')
+ * 3. Persist Quote snapshot (idempotent via quoteToken)
+ * 4. Update QuoteRequests.leadId + quoteToken linkage
+ * 5. Send quote summary email directly via Resend (no function-to-function call)
+ *    - Idempotent: skip email if Lead.quoteLinkEmailSentAt already set for this token
+ * 6. Return priceSummary + quoteToken + leadId
+ *
+ * Input:  { token, prequalAnswers, clientFirstName, clientEmail }
+ * Output: { success, quoteToken, leadId, firstName, email, priceSummary, persisted, emailSent, build }
  */
 
-const BUILD = "FPQ-V2-2026-03-02";
+const BUILD = "FPQ-V2-2026-03-03-A";
 const PRICING_ENGINE_VERSION = 'v2_tokens_risk_frequency';
 
 const json200 = (data) => new Response(
@@ -19,7 +25,8 @@ const json200 = (data) => new Response(
   { status: 200, headers: { "content-type": "application/json; charset=utf-8" } }
 );
 
-// Inline pricing engine (same as V1)
+// ── Inline pricing engine ─────────────────────────────────────────────────────
+
 function runPricingEngine(q, settings) {
   const baseTiers = JSON.parse(settings.baseTierPrices);
   const tokens = JSON.parse(settings.additiveTokens);
@@ -96,8 +103,7 @@ function runPricingEngine(q, settings) {
     if (sizeTier === 'tier_a') greenSizeGroup = 'small';
     else if (sizeTier === 'tier_b' || sizeTier === 'tier_c') greenSizeGroup = 'medium';
     else greenSizeGroup = 'large';
-    const severity = q.poolCondition === 'dark_algae' ? 'black_swamp' : 'moderate';
-    const feeKey = `green_${severity === 'black_swamp' ? 'black' : 'moderate'}_${greenSizeGroup}`;
+    const feeKey = `green_${q.poolCondition === 'dark_algae' ? 'black' : 'moderate'}_${greenSizeGroup}`;
     oneTimeFees += initialFees[feeKey] || (greenSizeGroup === 'small' ? 100 : greenSizeGroup === 'medium' ? 150 : 200);
   }
 
@@ -131,82 +137,160 @@ function runPricingRange(q, settings) {
   };
 }
 
+// ── Email sender (direct Resend API — no function-to-function call) ───────────
+
+async function sendQuoteSummaryEmail({ firstName, email, quoteToken, appOrigin }) {
+  const resendApiKey = Deno.env.get('RESEND_API_KEY');
+  if (!resendApiKey) {
+    console.warn('FPQ_V2_EMAIL_SKIP', { reason: 'RESEND_API_KEY not configured' });
+    return { sent: false, reason: 'RESEND_API_KEY not configured' };
+  }
+
+  const scheduleLink = `${appOrigin}/ScheduleInspection?token=${encodeURIComponent(quoteToken)}`;
+  const quoteLink = `${appOrigin}/PreQualification?token=${encodeURIComponent(quoteToken)}`;
+
+  const htmlBody = `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;line-height:1.6;color:#333;background:#f9fafb;">
+  <div style="max-width:560px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+    <div style="background:#1B9B9F;padding:24px 32px;">
+      <h2 style="color:#fff;margin:0;font-size:22px;font-weight:700;">Breez Pool Care</h2>
+    </div>
+    <div style="padding:32px;">
+      <p style="font-size:16px;margin:0 0 16px;">Hi ${firstName},</p>
+      <p style="font-size:15px;margin:0 0 24px;">Your personalized Breez Pool Care quote is ready. No login required — view it anytime with the link below.</p>
+      <div style="text-align:center;margin-bottom:24px;">
+        <a href="${quoteLink}" style="display:inline-block;background-color:#1B9B9F;color:white;padding:14px 32px;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px;">View My Quote</a>
+      </div>
+      <div style="background:#f0fdfd;border:1px solid #a7f3d0;border-radius:8px;padding:20px;text-align:center;margin-bottom:24px;">
+        <p style="margin:0 0 12px;font-size:15px;font-weight:600;color:#1B9B9F;">Ready to get started?</p>
+        <p style="margin:0 0 16px;font-size:13px;color:#555;">Schedule your free no-obligation pool inspection. No commitment required.</p>
+        <a href="${scheduleLink}" style="display:inline-block;background-color:#fff;color:#1B9B9F;padding:12px 28px;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px;border:2px solid #1B9B9F;">Schedule Free Inspection</a>
+      </div>
+      <p style="font-size:12px;color:#999;text-align:center;margin:0;">
+        Or copy this link to schedule: <a href="${scheduleLink}" style="color:#1B9B9F;word-break:break-all;">${scheduleLink}</a>
+      </p>
+    </div>
+    <div style="border-top:1px solid #eee;padding:20px 32px;text-align:center;color:#999;font-size:12px;">
+      <p style="margin:0;">Breez Pool Care LLC · Melbourne, FL · (321) 524-3838</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  const emailRes = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${resendApiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from: 'Breez Pool Care <info@breezpoolcare.com>',
+      to: [email],
+      subject: `${firstName}, your Breez Pool Care quote is ready`,
+      html: htmlBody,
+      text: `Hi ${firstName},\n\nYour Breez Pool Care quote is ready.\n\nView it here: ${quoteLink}\n\nSchedule your free inspection: ${scheduleLink}\n\nBreez Pool Care LLC · Melbourne, FL · (321) 524-3838`
+    })
+  });
+
+  const resendText = await emailRes.text();
+  let resendData = {};
+  try { resendData = JSON.parse(resendText); } catch {}
+
+  if (!emailRes.ok) {
+    console.error('FPQ_V2_EMAIL_RESEND_ERROR', { status: emailRes.status, body: resendText.slice(0, 200) });
+    return { sent: false, reason: `Resend API error ${emailRes.status}`, detail: resendText.slice(0, 200) };
+  }
+
+  console.log('FPQ_V2_EMAIL_SENT', { email: email.slice(0, 5), resendId: resendData.id });
+  return { sent: true, resendId: resendData.id || null };
+}
+
+// ── Resolve app origin from request ──────────────────────────────────────────
+
+function resolveAppOrigin(req) {
+  // Use the request's Host header to construct the origin
+  const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || '';
+  if (host && host.endsWith('.base44.app')) {
+    return `https://${host}`;
+  }
+  // Fallback: derive from Origin or Referer header
+  const origin = req.headers.get('origin') || '';
+  if (origin && origin.endsWith('.base44.app')) return origin;
+  const referer = req.headers.get('referer') || '';
+  if (referer) {
+    try {
+      const u = new URL(referer);
+      if (u.hostname.endsWith('.base44.app')) return `${u.protocol}//${u.host}`;
+    } catch {}
+  }
+  return null;
+}
+
+// ── Main handler ──────────────────────────────────────────────────────────────
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const payload = await req.json();
     const { token, prequalAnswers, clientFirstName: payloadFirstName, clientEmail: payloadEmail } = payload || {};
 
-    // Validate inputs
+    // ── Validate required inputs ──
     if (!token || typeof token !== 'string') {
-      return json200({
-        success: false,
-        error: 'token is required',
-        build: BUILD
-      });
+      return json200({ success: false, error: 'token is required', build: BUILD });
     }
-
     if (!prequalAnswers || typeof prequalAnswers !== 'object') {
-      return json200({
-        success: false,
-        error: 'prequalAnswers is required',
-        build: BUILD
-      });
+      return json200({ success: false, error: 'prequalAnswers is required', build: BUILD });
     }
 
-    // Use clientFirstName and clientEmail from payload
-    // Fall back to QuoteRequests only if not provided in payload
-    let firstName = payloadFirstName || null;
-    let email = payloadEmail || null;
-    let leadId = null;
+    const cleanToken = token.trim();
 
-    // Resolve leadId via token if needed
+    // ── Step 1: Resolve token → QuoteRequests row ──
+    let quoteRequest = null;
     try {
-      const requests = await base44.asServiceRole.entities.QuoteRequests.filter({ token: token.trim() }, null, 1);
-      if (requests && requests.length > 0) {
-        leadId = requests[0].leadId;
-        // Only use QuoteRequests email if not provided in payload
-        if (!email) email = requests[0].email;
-        // Only use QuoteRequests firstName if not provided in payload
-        if (!firstName) firstName = requests[0].firstName || null;
-        console.log('FPQ_V2_TOKEN_RESOLVED', { token: token.trim().slice(0, 8), leadId, email, fromPayload: !!payloadEmail });
-      }
+      const requests = await base44.asServiceRole.entities.QuoteRequests.filter({ token: cleanToken }, null, 1);
+      if (requests && requests.length > 0) quoteRequest = requests[0];
     } catch (e) {
       console.warn('FPQ_V2_TOKEN_RESOLUTION_FAILED', { error: e.message });
     }
 
-    // Validate that email is present
+    // Resolve contact fields: payload takes priority, fall back to QuoteRequests
+    let firstName = (payloadFirstName || '').trim() || (quoteRequest?.firstName || '').trim() || null;
+    let email = (payloadEmail || '').trim().toLowerCase() || (quoteRequest?.email || '').trim().toLowerCase() || null;
+    // Strip placeholder email
+    if (email === 'guest@breezpoolcare.com') email = null;
+
+    let leadId = quoteRequest?.leadId || null;
+
+    console.log('FPQ_V2_TOKEN_RESOLVED', {
+      token: cleanToken.slice(0, 8),
+      leadId,
+      hasEmail: !!email,
+      hasFirstName: !!firstName,
+      fromPayload: !!payloadEmail
+    });
+
     if (!email) {
-      return json200({
-        success: false,
-        error: 'Email is required (from payload or token)',
-        build: BUILD
-      });
+      return json200({ success: false, error: 'Email is required (from payload or token)', build: BUILD });
+    }
+    if (!firstName) {
+      return json200({ success: false, error: 'First name is required', build: BUILD });
     }
 
-    // Check if quote already exists for this token (idempotency)
+    // ── Step 2: Idempotency — check for existing Quote ──
     let existingQuote = null;
     try {
-      const existing = await base44.asServiceRole.entities.Quote.filter(
-        { quoteToken: token.trim() },
-        '-created_date',
-        1
-      );
-      if (existing && existing.length > 0) {
-        existingQuote = existing[0];
-        console.log('FPQ_V2_IDEMPOTENCY_HIT', { token: token.trim().slice(0, 8), quoteId: existingQuote.id });
-      }
+      const existing = await base44.asServiceRole.entities.Quote.filter({ quoteToken: cleanToken }, '-created_date', 1);
+      if (existing && existing.length > 0) existingQuote = existing[0];
     } catch (e) {
       console.warn('FPQ_V2_IDEMPOTENCY_CHECK_FAILED', { error: e.message });
     }
 
-    // If quote exists, return it
     if (existingQuote) {
+      console.log('FPQ_V2_IDEMPOTENCY_HIT', { token: cleanToken.slice(0, 8), quoteId: existingQuote.id });
       const priceSummary = {
         monthlyPrice: existingQuote.outputMonthlyPrice ? `$${existingQuote.outputMonthlyPrice}` : '$0',
         visitFrequency: existingQuote.outputFrequency === 'weekly' ? 'Weekly' : 'Twice Weekly',
         planName: 'Your Quote',
-        oneTimeFees: existingQuote.outputOneTimeFees && existingQuote.outputOneTimeFees > 0 ? `$${existingQuote.outputOneTimeFees}` : null,
+        oneTimeFees: existingQuote.outputOneTimeFees > 0 ? `$${existingQuote.outputOneTimeFees}` : null,
         frequencyAutoRequired: existingQuote.outputFrequencyAutoRequired || false
       };
       return json200({
@@ -216,30 +300,23 @@ Deno.serve(async (req) => {
         firstName: existingQuote.clientFirstName || firstName,
         email: existingQuote.clientEmail,
         priceSummary,
-        persisted: false, // existing, not newly persisted
+        persisted: false,
+        emailSent: false,
+        note: 'idempotency_hit',
         build: BUILD
       });
     }
 
-    // Load AdminSettings for pricing
+    // ── Step 3: Load AdminSettings ──
     let settings = null;
     try {
       const rows = await base44.asServiceRole.entities.AdminSettings.list('-created_date', 1);
       settings = rows[0];
       if (!settings) {
-        return json200({
-          success: false,
-          error: 'Pricing configuration not found',
-          build: BUILD
-        });
+        return json200({ success: false, error: 'Pricing configuration not found', build: BUILD });
       }
     } catch (e) {
-      return json200({
-        success: false,
-        error: 'Failed to load pricing configuration',
-        detail: e.message,
-        build: BUILD
-      });
+      return json200({ success: false, error: 'Failed to load pricing configuration', detail: e.message, build: BUILD });
     }
 
     // Validate settings integrity
@@ -247,71 +324,76 @@ Deno.serve(async (req) => {
       const riskEngine = JSON.parse(settings.riskEngine);
       const baseTiers = JSON.parse(settings.baseTierPrices);
       const brackets = riskEngine?.escalation_brackets;
-      const bracketsOk = Array.isArray(brackets) && brackets.length >= 5;
-      const multipliersOk = riskEngine?.size_multipliers && Object.keys(riskEngine.size_multipliers).length >= 4;
-      const baseTiersOk = baseTiers?.tier_a_10_15k > 0 && baseTiers?.absolute_floor > 0;
-      
-      if (!bracketsOk || !multipliersOk || !baseTiersOk) {
-        return json200({
-          success: false,
-          error: 'Pricing configuration is incomplete or invalid',
-          build: BUILD
-        });
-      }
+      if (!Array.isArray(brackets) || brackets.length < 5) throw new Error('escalation_brackets invalid');
+      if (!riskEngine?.size_multipliers || Object.keys(riskEngine.size_multipliers).length < 4) throw new Error('size_multipliers invalid');
+      if (!baseTiers?.tier_a_10_15k || !baseTiers?.absolute_floor) throw new Error('baseTierPrices invalid');
     } catch (e) {
-      return json200({
-        success: false,
-        error: 'Failed to validate pricing configuration',
-        detail: e.message,
-        build: BUILD
-      });
+      return json200({ success: false, error: 'Pricing configuration is incomplete or invalid', detail: e.message, build: BUILD });
     }
 
-    // Call pricing engine
+    // ── Step 4: Run pricing engine ──
     let quoteResult = null;
+    const isNotSure = prequalAnswers.poolSize === 'not_sure';
     try {
-      const isNotSure = prequalAnswers.poolSize === 'not_sure';
-      if (isNotSure) {
-        quoteResult = runPricingRange(prequalAnswers, settings);
-      } else {
-        quoteResult = runPricingEngine(prequalAnswers, settings);
-      }
-      console.log('FPQ_V2_PRICING_COMPUTED', { monthly: isNotSure ? `${quoteResult.minMonthly}-${quoteResult.maxMonthly}` : quoteResult.finalMonthlyPrice });
+      quoteResult = isNotSure
+        ? runPricingRange(prequalAnswers, settings)
+        : runPricingEngine(prequalAnswers, settings);
+      console.log('FPQ_V2_PRICING_COMPUTED', {
+        monthly: isNotSure ? `${quoteResult.minMonthly}-${quoteResult.maxMonthly}` : quoteResult.finalMonthlyPrice
+      });
     } catch (e) {
       console.error('FPQ_V2_PRICING_ERROR', { error: e.message });
-      return json200({
-        success: false,
-        error: 'Failed to calculate pricing',
-        detail: e.message,
-        build: BUILD
-      });
+      return json200({ success: false, error: 'Failed to calculate pricing', detail: e.message, build: BUILD });
     }
 
-    // Build priceSummary
-    const isNotSure = prequalAnswers.poolSize === 'not_sure';
     const priceSummary = {
-      monthlyPrice: isNotSure 
-        ? `$${quoteResult.minMonthly}–$${quoteResult.maxMonthly}` 
+      monthlyPrice: isNotSure
+        ? `$${quoteResult.minMonthly}–$${quoteResult.maxMonthly}`
         : `$${quoteResult.finalMonthlyPrice}`,
       visitFrequency: quoteResult.frequency === 'weekly' ? 'Weekly' : 'Twice Weekly',
       planName: isNotSure ? 'Estimated' : 'Your Quote',
-      oneTimeFees: isNotSure 
-        ? (quoteResult.minOneTimeFees > 0 ? `$${quoteResult.minOneTimeFees}–$${quoteResult.maxOneTimeFees}` : null) 
+      oneTimeFees: isNotSure
+        ? (quoteResult.minOneTimeFees > 0 ? `$${quoteResult.minOneTimeFees}–$${quoteResult.maxOneTimeFees}` : null)
         : (quoteResult.oneTimeFees > 0 ? `$${quoteResult.oneTimeFees}` : null),
       frequencyAutoRequired: quoteResult.frequencyAutoRequired
     };
 
-    // Persist quote snapshot to Quote entity
+    // ── Step 5: Create Lead if missing ──
+    if (!leadId) {
+      try {
+        // Dedup: check if lead already exists for this email
+        const existingLeads = await base44.asServiceRole.entities.Lead.filter({ email }, '-created_date', 1);
+        if (existingLeads && existingLeads.length > 0) {
+          leadId = existingLeads[0].id;
+          console.log('FPQ_V2_LEAD_DEDUP', { leadId, email: email.slice(0, 5) });
+        } else {
+          const newLead = await base44.asServiceRole.entities.Lead.create({
+            firstName,
+            email,
+            stage: 'new_lead',
+            quoteGenerated: true,
+            isEligible: true,
+            isDeleted: false,
+          });
+          leadId = newLead.id;
+          console.log('FPQ_V2_LEAD_CREATED', { leadId, email: email.slice(0, 5) });
+        }
+      } catch (e) {
+        console.error('FPQ_V2_LEAD_CREATE_FAILED', { error: e.message });
+        return json200({ success: false, error: 'Failed to create lead record', detail: e.message, build: BUILD });
+      }
+    }
+
+    // ── Step 6: Persist Quote snapshot ──
     let persistedQuote = null;
     try {
       const quoteData = {
-        leadId: leadId || null,
+        leadId,
         clientEmail: email,
         clientFirstName: firstName,
-        quoteToken: token.trim(),
+        quoteToken: cleanToken,
         status: 'quoted',
         pricingEngineVersion: PRICING_ENGINE_VERSION,
-        // Store inputs
         inputPoolSize: prequalAnswers.poolSize,
         inputEnclosure: prequalAnswers.enclosure,
         inputChlorinationMethod: prequalAnswers.chlorinationMethod,
@@ -319,7 +401,6 @@ Deno.serve(async (req) => {
         inputTreesOverhead: prequalAnswers.treesOverhead,
         inputPetsAccess: prequalAnswers.petsAccess === true,
         inputPoolCondition: prequalAnswers.poolCondition,
-        // Store outputs (handle range)
         outputMonthlyPrice: isNotSure ? null : quoteResult.finalMonthlyPrice,
         outputPerVisitPrice: isNotSure ? null : quoteResult.perVisitPrice,
         outputOneTimeFees: isNotSure ? null : quoteResult.oneTimeFees,
@@ -331,39 +412,83 @@ Deno.serve(async (req) => {
       };
 
       persistedQuote = await base44.asServiceRole.entities.Quote.create(quoteData);
-      console.log('FPQ_V2_QUOTE_PERSISTED', { quoteId: persistedQuote.id, token: token.trim().slice(0, 8) });
-
-      // Auto-stage progression: update Lead to 'quote_sent' after quote persistence
-      if (leadId) {
-        try {
-          await base44.functions.invoke('updateLeadStagePublicV1', {
-            token: token.trim(),
-            newStage: 'quote_sent',
-            context: 'prequal-completion'
-          });
-          console.log('FPQ_V2_STAGE_PROGRESSED', { leadId, newStage: 'quote_sent' });
-        } catch (stageErr) {
-          console.warn('FPQ_V2_STAGE_UPDATE_FAILED', { error: stageErr.message });
-          // Non-fatal: continue even if stage update fails
-        }
-      }
+      console.log('FPQ_V2_QUOTE_PERSISTED', { quoteId: persistedQuote.id, token: cleanToken.slice(0, 8), leadId });
     } catch (e) {
       console.error('FPQ_V2_PERSIST_FAILED', { error: e.message });
-      // Don't fail the response; still return the computed quote
+      return json200({ success: false, error: 'Failed to persist quote', detail: e.message, build: BUILD });
     }
 
-    const response = {
+    // ── Step 7: Update QuoteRequests with leadId + quoteToken linkage ──
+    if (quoteRequest) {
+      try {
+        const updateFields = {};
+        if (!quoteRequest.leadId) updateFields.leadId = leadId;
+        if (!quoteRequest.quoteToken) updateFields.quoteToken = cleanToken;
+        if (!quoteRequest.email || quoteRequest.email === 'guest@breezpoolcare.com') updateFields.email = email;
+        if (!quoteRequest.firstName) updateFields.firstName = firstName;
+        if (Object.keys(updateFields).length > 0) {
+          await base44.asServiceRole.entities.QuoteRequests.update(quoteRequest.id, updateFields);
+          console.log('FPQ_V2_QUOTE_REQUESTS_UPDATED', { id: quoteRequest.id, fields: Object.keys(updateFields) });
+        }
+      } catch (e) {
+        // Non-fatal: log but do not fail — quote + lead are already created
+        console.warn('FPQ_V2_QUOTE_REQUESTS_UPDATE_FAILED', { error: e.message });
+      }
+    }
+
+    // ── Step 8: Update Lead stage to 'quote_sent' ──
+    try {
+      await base44.asServiceRole.entities.Lead.update(leadId, {
+        stage: 'quote_sent',
+        quoteGenerated: true,
+      });
+      console.log('FPQ_V2_STAGE_PROGRESSED', { leadId, newStage: 'quote_sent' });
+    } catch (e) {
+      console.warn('FPQ_V2_STAGE_UPDATE_FAILED', { error: e.message });
+    }
+
+    // ── Step 9: Send quote summary email (idempotent: skip if already sent for this lead) ──
+    let emailResult = { sent: false, reason: 'skipped' };
+    const appOrigin = resolveAppOrigin(req) || 'https://699a2b2056054b0207cea969.base44.app';
+
+    // Idempotency guard: check if email already sent for this lead
+    let alreadyEmailed = false;
+    try {
+      const leadCheck = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
+      if (leadCheck?.[0]?.quoteLinkEmailSentAt) alreadyEmailed = true;
+    } catch {}
+
+    if (!alreadyEmailed) {
+      try {
+        emailResult = await sendQuoteSummaryEmail({ firstName, email, quoteToken: cleanToken, appOrigin });
+        if (emailResult.sent) {
+          await base44.asServiceRole.entities.Lead.update(leadId, {
+            quoteLinkEmailSentAt: new Date().toISOString(),
+            quoteLinkEmailResendId: emailResult.resendId || null,
+            quoteEmailSent: true,
+          });
+        }
+      } catch (e) {
+        console.warn('FPQ_V2_EMAIL_FAILED', { error: e.message });
+        emailResult = { sent: false, reason: e.message };
+      }
+    } else {
+      emailResult = { sent: false, reason: 'already_sent' };
+      console.log('FPQ_V2_EMAIL_SKIP', { leadId, reason: 'quoteLinkEmailSentAt already set' });
+    }
+
+    return json200({
       success: true,
-      quoteToken: token.trim(),
-      leadId: leadId || null,
-      firstName: firstName,
+      quoteToken: cleanToken,
+      leadId,
+      firstName,
       email,
       priceSummary,
-      persisted: !!persistedQuote,
+      persisted: true,
+      emailSent: emailResult.sent,
+      emailResult,
       build: BUILD
-    };
-
-    return json200(response);
+    });
 
   } catch (error) {
     console.error('FPQ_V2_CRASH', { error: error?.message });
