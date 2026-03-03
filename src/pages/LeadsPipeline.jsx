@@ -666,8 +666,16 @@ function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit
 
       {/* Mobile layout (shown on mobile only) */}
       <div className="sm:hidden space-y-3">
-        {/* Lead Info */}
-        <div className="cursor-pointer" onClick={onEdit}>
+        {/* Checkbox + Lead Info */}
+        <div className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={onToggleSelect}
+            className="w-4 h-4 rounded cursor-pointer mt-1 flex-shrink-0"
+            aria-label="Select lead"
+          />
+          <div className="flex-1 cursor-pointer" onClick={onEdit}>
           <p className="font-medium text-gray-900">{lead.firstName} {lead.lastName}</p>
           <p className="text-xs text-gray-600 truncate">{addressLine}</p>
           <div className="flex items-center gap-2 mt-2">
