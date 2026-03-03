@@ -565,6 +565,156 @@ export default function StormModeTools({ currentDate, onClose }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ── Audit Log Modal ──────────────────────────────────── */}
+      <Dialog open={showAuditModal} onOpenChange={setShowAuditModal}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="w-5 h-5 text-orange-600" />
+              Storm Batch Audit Log
+            </DialogTitle>
+          </DialogHeader>
+
+          {auditLoading && (
+            <div className="flex items-center justify-center py-8">
+              <p className="text-gray-500">Loading audit entries…</p>
+            </div>
+          )}
+
+          {auditError && (
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4">
+                <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-red-900">Failed to load audit log</p>
+                  <p className="text-sm text-red-700 mt-1">{auditError?.message || 'Unknown error'}</p>
+                </div>
+              </div>
+              <Button onClick={() => refetchAudit()} variant="outline" className="w-full">
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Retry
+              </Button>
+            </div>
+          )}
+
+          {!auditLoading && !auditError && auditEntries.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-12">
+              <History className="w-12 h-12 text-gray-300 mb-3" />
+              <p className="text-gray-500 text-center">No storm audit entries yet.</p>
+              <p className="text-sm text-gray-400 text-center mt-1">Storm batch operations will appear here.</p>
+            </div>
+          )}
+
+          {!auditLoading && !auditError && auditEntries.length > 0 && (
+            <div className="space-y-3">
+              <div className="text-xs text-gray-500">Showing {auditEntries.length} entries</div>
+              <div className="space-y-2 overflow-y-auto max-h-[60vh]">
+                {auditEntries.map((entry) => {
+                  const meta = entry.data?.metadata || {};
+                  const counts = meta.responseBody?.summary || {};
+                  const hasWarnings = (meta.responseBody?.warnings || []).length > 0;
+                  const hasErrors = (meta.responseBody?.applied || []).some(a => a.status === 'error');
+
+                  return (
+                    <div key={entry.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 space-y-2">
+                          {/* Row 1: Timestamp + Operator */}
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">
+                              {new Date(entry.created_date).toLocaleString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit'
+                              })}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {entry.created_by || 'System'}
+                            </span>
+                          </div>
+
+                          {/* Row 2: Policy + Date Range */}
+                          <div className="flex flex-wrap gap-4 text-sm">
+                            <div>
+                              <span className="text-gray-500">Policy:</span>
+                              <span className="font-semibold ml-2">{meta.paramPolicy || '—'}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Range:</span>
+                              <span className="font-semibold ml-2">{meta.paramFromDate} → {meta.paramToDate}</span>
+                            </div>
+                          </div>
+
+                          {/* Row 3: Counts */}
+                          <div className="flex flex-wrap gap-4 text-sm">
+                            <div className="bg-gray-50 px-3 py-1 rounded">
+                              <span className="text-gray-500">Selected:</span>
+                              <strong className="ml-1">{counts.selectedCount || 0}</strong>
+                            </div>
+                            <div className="bg-green-50 px-3 py-1 rounded">
+                              <span className="text-gray-500">Applied:</span>
+                              <strong className="ml-1 text-green-700">{counts.applyEligibleCount || 0}</strong>
+                            </div>
+                            <div className="bg-yellow-50 px-3 py-1 rounded">
+                              <span className="text-gray-500">Skipped:</span>
+                              <strong className="ml-1 text-yellow-700">{counts.skippedCount || 0}</strong>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Status badge */}
+                        <div>
+                          {hasErrors ? (
+                            <Badge className="bg-red-100 text-red-800">Errors</Badge>
+                          ) : hasWarnings ? (
+                            <Badge className="bg-amber-100 text-amber-800">Warnings</Badge>
+                          ) : (
+                            <Badge className="bg-green-100 text-green-800">Success</Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Expandable warnings/errors */}
+                      {(hasWarnings || hasErrors) && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          {hasWarnings && meta.responseBody?.warnings?.length > 0 && (
+                            <div className="mb-2">
+                              <p className="text-xs font-semibold text-amber-700 mb-1">Warnings:</p>
+                              <ul className="text-xs text-amber-700 space-y-0.5 ml-4 list-disc">
+                                {meta.responseBody.warnings.map((w, i) => (
+                                  <li key={i}>{w}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {hasErrors && (
+                            <div>
+                              <p className="text-xs font-semibold text-red-700 mb-1">Errors:</p>
+                              <div className="text-xs text-red-700 bg-red-50 p-2 rounded font-mono whitespace-pre-wrap overflow-auto max-h-24">
+                                {JSON.stringify(meta.responseBody.applied.filter(a => a.status === 'error'), null, 2)}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAuditModal(false)} className="w-full">
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
