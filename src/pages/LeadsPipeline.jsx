@@ -145,7 +145,12 @@ export default function LeadsPipeline() {
     }
   };
 
-  const getLeadsByStage = (stage) => leads.filter(lead => lead.stage === stage);
+  const getLeadsByStage = (stage) => {
+    if (stage.grouped) {
+      return leads.filter(lead => stage.grouped.includes(lead.stage));
+    }
+    return leads.filter(lead => lead.stage === stage.key);
+  };
   
   const toggleStageExpand = (stageKey) => {
     setExpandedStages(prev => 
