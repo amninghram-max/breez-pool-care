@@ -91,7 +91,7 @@ export default function Layout({ children, currentPageName }) {
   const [layoutTimedOut, setLayoutTimedOut] = useState(false);
 
   // Public pages that do NOT require authentication
-  const allowedPublicPages = ['Home', 'PublicHome', 'PreQualification', 'QuoteView', 'Activate'];
+  const allowedPublicPages = ['Home', 'PublicHome', 'PreQualification', 'QuoteView', 'Activate', 'ScheduleInspection'];
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -215,7 +215,7 @@ export default function Layout({ children, currentPageName }) {
   }
 
   // Public pages: PublicHome, PreQualification, QuoteView — allow unauthenticated access
-  const publicPages = ['PublicHome', 'PreQualification', 'QuoteView'];
+  const publicPages = ['PublicHome', 'PreQualification', 'QuoteView', 'ScheduleInspection'];
   const isPublicPage = publicPages.includes(currentPageName);
 
   // Minimal layout for Activate page - no header/sidebar chrome

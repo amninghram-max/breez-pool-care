@@ -42,7 +42,8 @@ function toISODate(d) {
 export default function ScheduleInspection() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const token = searchParams.get('token');
+  // Accept either ?token= or ?quoteToken= (from quote result CTA)
+  const token = searchParams.get('token') || searchParams.get('quoteToken');
 
   const [leadData, setLeadData] = useState(null);
   const [loadingLead, setLoadingLead] = useState(false);
@@ -58,7 +59,7 @@ export default function ScheduleInspection() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [confirmed, setConfirmed] = useState(null);
-  const [emailStatus, setEmailStatus] = useState('idle'); // idle | sending | sent | failed
+  const [emailStatus, setEmailStatus] = useState('idle'); // idle | sent | failed
 
   const dates = getAvailableDates();
 
@@ -167,13 +168,8 @@ export default function ScheduleInspection() {
 
       if (data?.success === true) {
         setConfirmed(data);
-        // Best-effort email trigger — does not block success path
-        if (leadData?.leadId) {
-          setEmailStatus('sending');
-          base44.functions.invoke('sendInspectionConfirmation', { leadId: leadData.leadId })
-            .then(() => setEmailStatus('sent'))
-            .catch(() => setEmailStatus('failed'));
-        }
+        // Email was triggered server-side; consume the returned status
+        setEmailStatus(data.emailStatus === 'failed' ? 'failed' : 'sent');
       } else {
         const errorMsg = data?.error || 'Failed to schedule inspection. Please call (321) 524-3838.';
         setError(errorMsg);
