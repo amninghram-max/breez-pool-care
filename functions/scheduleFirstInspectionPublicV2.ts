@@ -414,13 +414,26 @@ Deno.serve(async (req) => {
     // Resolve token (inlined — no function invoke)
     const resolved = await resolveToken(entities, token);
     if (!resolved.leadId) {
-      console.warn('SFI_V2_TOKEN_RESOLUTION_FAILED', { code: resolved.code });
-      return json200({
+      // Return explicit code per resolve failure reason
+      const errorPayload = {
         success: false,
-        code: resolved.code,
-        error: resolved.error || 'Token not found or invalid',
+        code: resolved.code || 'TOKEN_RESOLUTION_FAILED',
         build: BUILD
-      });
+      };
+      
+      // Map resolution error to user-friendly message
+      if (resolved.code === 'TOKEN_NOT_FOUND') {
+        errorPayload.error = 'Token not found or invalid. Please request a new quote link.';
+      } else if (resolved.code === 'INCOMPLETE_DATA') {
+        errorPayload.error = 'Token does not have complete lead information. Please request a new quote or contact Breez at (321) 524-3838.';
+      } else if (resolved.code === 'LEAD_UNAVAILABLE') {
+        errorPayload.error = 'This quote is no longer active. Please contact Breez at (321) 524-3838 for assistance.';
+      } else {
+        errorPayload.error = resolved.error || 'Failed to resolve token. Please contact support.';
+      }
+      
+      console.warn('SFI_V2_RESOLVE_FAILED', { code: resolved.code, token: token.slice(0, 8) });
+      return json200(errorPayload);
     }
     const { leadId, email: tokenEmail, firstName: tokenFirstName } = resolved;
     const finalEmail     = email || tokenEmail;
