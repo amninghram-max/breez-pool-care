@@ -53,7 +53,8 @@ Deno.serve(async (req) => {
       
       if (!dryRun && activeLeads.length > 0) {
         for (const lead of activeLeads) {
-          await base44.asServiceRole.entities.Lead.update(lead.id, {
+          // Use authenticated admin context for Lead writes (RLS policy)
+          await base44.entities.Lead.update(lead.id, {
             isDeleted: true,
             deletedAt: timestamp,
             deletedBy: user.email,
