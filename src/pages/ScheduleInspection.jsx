@@ -51,13 +51,54 @@ export default function ScheduleInspection() {
   const [zip, setZip] = useState('');
 
   const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedSlot, setSelectedSlot] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [confirmed, setConfirmed] = useState(null);
-  const [emailStatus, setEmailStatus] = useState(null);
+   const [selectedSlot, setSelectedSlot] = useState(null);
+   const [loading, setLoading] = useState(false);
+   const [error, setError] = useState('');
+   const [confirmed, setConfirmed] = useState(null);
+   const [emailStatus, setEmailStatus] = useState(null);
+   const [unavailableSlots, setUnavailableSlots] = useState({});
 
-  const dates = getAvailableDates();
+   const dates = getAvailableDates();
+
+   // Check drive time conflicts when date changes
+   useEffect(() => {
+     if (!selectedDate) return;
+     (async () => {
+       try {
+         const isoDate = toISODate(selectedDate);
+         const events = await base44.entities.CalendarEvent.filter(
+           { scheduledDate: isoDate, status: { $ne: 'cancelled' } },
+           'startTime',
+           100
+         );
+
+         const START_TIMES = { morning: 9, midday: 12, afternoon: 14 };
+         const BUFFER = 30;
+         const INSPECTION_DURATION = 30;
+         const conflictingSlots = {};
+
+         for (const slot of TIME_SLOTS) {
+           const reqMinutes = START_TIMES[slot.value] * 60;
+           let hasConflict = false;
+
+           for (const evt of events || []) {
+             if (!evt.startTime) continue;
+             const [h, m] = evt.startTime.split(':').map(Number);
+             const evtMinutes = h * 60 + m;
+             const evtDuration = evt.estimatedDuration || 45;
+             if (reqMinutes >= evtMinutes - BUFFER && reqMinutes <= evtMinutes + evtDuration + BUFFER) {
+               hasConflict = true;
+               break;
+             }
+           }
+           if (hasConflict) conflictingSlots[slot.value] = true;
+         }
+         setUnavailableSlots(conflictingSlots);
+       } catch (e) {
+         console.warn('Failed to check slot availability:', e?.message);
+       }
+     })();
+   }, [selectedDate]);
 
   useEffect(() => {
     if (!token) {
