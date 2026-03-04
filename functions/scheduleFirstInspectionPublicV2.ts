@@ -236,6 +236,8 @@ async function checkDriveTimeFeasibility(entities, requestedDate, startTime) {
 
 // ── Confirmation email ──
 async function sendConfirmationEmail(entities, integrations, { leadId, firstName, email, inspectionDate, inspectionTime, force, token }) {
+  console.log('SFI_V2_EMAIL_FUNC_ENTRY', { leadId, email: email?.slice(0, 5), force });
+  
   try {
     console.log('SFI_V2_EMAIL_SENDING_START', { leadId, email: email.slice(0, 5), inspectionDate, inspectionTime });
     
@@ -247,13 +249,7 @@ async function sendConfirmationEmail(entities, integrations, { leadId, firstName
       }
     }
 
-    // Delegate to the sendInspectionConfirmation function which has full HTML email + reschedule link
-    try {
-      const base44Client = await import('npm:@base44/sdk@0.8.20');
-      // We'll just call resend directly here since we're already in the function
-      // Build the email inline to avoid circular dependency
-    } catch (_) { /* continue inline */ }
-
+    // Build the email inline
     const dateFormatted = inspectionDate
       ? new Date(inspectionDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
       : 'To be scheduled';
