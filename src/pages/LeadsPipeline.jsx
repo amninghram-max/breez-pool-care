@@ -1,10 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Phone, Mail, MessageSquare, AlertCircle, Check, Wrench, Plus, RefreshCw, ChevronDown, Eye, Settings, Trash2 } from 'lucide-react';
 import { Phone, Mail, MessageSquare, Calendar, AlertCircle, Check, Wrench, Plus, FileText, RefreshCw, ChevronDown, ArrowRight, Eye, Settings, Trash2, Send, MoreVertical, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
@@ -38,14 +39,17 @@ const STAGES = [
   { key: 'lost', label: 'Lost', color: 'bg-gray-100 text-gray-800', defaultExpanded: false }
 ];
 
+const STAGE_OPTIONS = [
+  ...STAGES,
+  { key: 'quote_sent', label: 'Pending Acceptance (Post-Inspection)', color: 'bg-indigo-100 text-indigo-800' }
+];
+
 export default function LeadsPipeline() {
   const queryClient = useQueryClient();
   const [selectedLead, setSelectedLead] = useState(null);
   const [repairResult, setRepairResult] = useState(null);
   const [showNewLead, setShowNewLead] = useState(false);
   const [expandedStages, setExpandedStages] = useState(STAGES.filter(s => s.defaultExpanded).map(s => s.key));
-  const [undoAction, setUndoAction] = useState(null);
-  const undoTimer = useRef(null);
 
   // Batch selection state
   const [selectedLeadIds, setSelectedLeadIds] = useState(new Set());
@@ -168,11 +172,11 @@ export default function LeadsPipeline() {
     });
   };
 
-  const handleAdvance = (lead) => {
-    const currentIdx = STAGES.findIndex(s => s.key === lead.stage);
-    if (currentIdx >= 0 && currentIdx < STAGES.length - 1) {
-      handleStageChange(lead.id, STAGES[currentIdx + 1].key, lead.stage);
+  const getLeadsByStage = (stage) => {
+    if (stage === 'inspection_confirmed') {
+      return leads.filter((lead) => lead.stage === 'inspection_confirmed' || lead.stage === 'quote_sent');
     }
+    return leads.filter((lead) => lead.stage === stage);
   };
 
   const getLeadsByStage = (stage) => {
@@ -468,6 +472,7 @@ export default function LeadsPipeline() {
   );
 }
 
+function LeadRow({ lead, onStageChange, onEdit, queryClient }) {
 function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit, queryClient, isSelected, onToggleSelect }) {
   const [validationError, setValidationError] = React.useState(null);
   const [showSendQuoteModal, setShowSendQuoteModal] = React.useState(false);
@@ -478,9 +483,6 @@ function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit
     queryKey: ['user'],
     queryFn: () => base44.auth.me()
   });
-  
-  const isLost = lead.stage === 'lost';
-  const canAdvance = !isLost && lead.stage !== 'inspection_scheduled' && STAGES.findIndex(s => s.key === lead.stage) < STAGES.length - 1;
   
   // Extract first line of address
   const addressLine = lead.serviceAddress?.split(',')[0] || 'No address';
@@ -505,6 +507,8 @@ function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit
 
   const lastEmailSent = getLastEmailSent();
 
+  const handleStageAction = (newStage) => {
+    onStageChange(newStage);
   const handleStageAction = (newStage, data) => {
     if (newStage) {
       onStageChange(newStage);
@@ -614,7 +618,7 @@ function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {STAGES.map(s => (
+            {STAGE_OPTIONS.map(s => (
               <SelectItem key={s.key} value={s.key}>
                 {s.label}
               </SelectItem>
@@ -812,7 +816,7 @@ function LeadDetailModal({ lead, onClose, onUpdate, onSendAcceptance, onRemoved 
       } else {
         toast.error(res.data?.error || 'Failed to resend');
       }
-    } catch (e) {
+    } catch {
       toast.error('Failed to resend confirmation');
     } finally {
       setResendingConfirmation(false);

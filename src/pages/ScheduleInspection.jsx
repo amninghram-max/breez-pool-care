@@ -155,6 +155,7 @@ export default function ScheduleInspection() {
       );
 
       const schedulePayload = {
+        token: token,
         token,
         firstName: firstName.trim(),
         phone: phone.trim(),
@@ -298,6 +299,18 @@ export default function ScheduleInspection() {
               {emailStatus !== 'failed' && leadData?.email && (
                 <p className="text-gray-500 text-sm mt-1">A confirmation has been sent to {leadData.email}.</p>
               )}
+              {degradedMode && (
+                <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-left">
+                  <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-700">Scheduling confirmed; internal sync pending.</p>
+                </div>
+              )}
+              <Button
+                onClick={() => navigate('/')}
+                className="w-full bg-teal-600 hover:bg-teal-700 text-white"
+              >
+                Back Home
+              </Button>
             </div>
             <div className="rounded-2xl border-2 p-5 text-left space-y-3" style={{ borderColor: TEAL, backgroundColor: '#f0fdfd' }}>
               <div className="flex items-center gap-3">
