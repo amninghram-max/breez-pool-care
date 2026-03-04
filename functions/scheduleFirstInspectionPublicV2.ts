@@ -109,6 +109,10 @@ async function resolveToken(entities, token) {
 }
 
 // ── Token lifecycle validation ──
+// NOTE: The scheduling token IS the quoteToken (QuoteRequests.token == Quote.quoteToken).
+// scheduleTokenUsedAt on Quote is set AFTER scheduling succeeds — we only block if
+// an InspectionRecord already exists (handled by idempotency check above).
+// We only check hard expiry here, not used-at, to avoid false rejections.
 async function validateTokenLifecycle(entities, token) {
   try {
     const quotes = await entities.Quote.filter({ quoteToken: token.trim() }, null, 1);
@@ -117,7 +121,8 @@ async function validateTokenLifecycle(entities, token) {
     const quote = quotes[0];
     const now = new Date();
 
-    if (quote.scheduleTokenExpiresAt) {
+    // Only check expiry if a dedicated scheduleTokenExpiresAt was set (not quoteToken expiry)
+    if (quote.scheduleTokenExpiresAt && quote.scheduleToken) {
       const expiryTime = new Date(quote.scheduleTokenExpiresAt);
       if (now > expiryTime) {
         console.warn('SFI_V2_TOKEN_EXPIRED', { tokenPrefix: token.trim().slice(0, 8), expiresAt: quote.scheduleTokenExpiresAt });
@@ -125,11 +130,7 @@ async function validateTokenLifecycle(entities, token) {
       }
     }
 
-    if (quote.scheduleTokenUsedAt) {
-      console.warn('SFI_V2_TOKEN_ALREADY_USED', { tokenPrefix: token.trim().slice(0, 8) });
-      return { valid: false, code: 'TOKEN_ALREADY_USED', message: 'This scheduling link has already been used. To reschedule, please contact us at (321) 524-3838.' };
-    }
-
+    // Do NOT block on scheduleTokenUsedAt here — idempotency check (InspectionRecord) handles deduplication
     return { valid: true };
   } catch (e) {
     console.warn('SFI_V2_TOKEN_LIFECYCLE_CHECK_FAILED', { error: e.message });
