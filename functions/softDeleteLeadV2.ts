@@ -50,11 +50,11 @@ Deno.serve(async (req) => {
       return json200({ success: false, error: 'Failed to fetch Lead', detail: e.message, build: BUILD });
     }
 
-    // Mark Lead as deleted (service role bypasses RLS)
+    // Mark Lead as deleted (use authenticated admin context, not service role)
     console.log('DEBUG_DELETE_TARGET', { leadId });
-    console.log('DEBUG_DELETE_UPDATE_PATH', { path: 'serviceBase44.asServiceRole.entities.Lead.update' });
+    console.log('LEAD_UPDATE_CONTEXT_AUTH_USER', { path: 'base44.entities.Lead.update', operator: user.email, leadId: leadId.slice(0, 8) });
     try {
-      await serviceBase44.asServiceRole.entities.Lead.update(leadId, {
+      await base44.entities.Lead.update(leadId, {
         isDeleted: true,
         deletedAt: new Date().toISOString(),
         deletedBy: user.email,

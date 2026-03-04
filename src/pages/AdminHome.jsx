@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Settings, BarChart3, Users, Shield, FileText, Zap, Eye } from 'lucide-react';
+import { Settings, BarChart3, Users, Shield, FileText, Zap, Eye, Trash2 } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -27,6 +27,8 @@ import TechnicianHome from './TechnicianHome';
 export default function AdminHome() {
   const [showInPerson, setShowInPerson] = useState(false);
   const [viewAsTech, setViewAsTech] = useState(false);
+  const [showClearDialog, setShowClearDialog] = useState(false);
+  const [clearLoading, setClearLoading] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -49,6 +51,28 @@ export default function AdminHome() {
   const openLeads = leads.filter(l =>
     !l.isDeleted && ['new_lead', 'contacted', 'inspection_scheduled', 'inspection_confirmed', 'quote_sent'].includes(l.stage)
   ).length;
+
+  const handleClearData = async () => {
+    setClearLoading(true);
+    try {
+      const res = await base44.functions.invoke('clearAllTestData', {
+        confirmCode: 'CLEAR_ALL_TEST_DATA_CONFIRMED'
+      });
+      
+      if (res?.data?.success) {
+        alert('✓ All test data cleared successfully');
+        setShowClearDialog(false);
+        // Refresh queries
+        window.location.reload();
+      } else {
+        alert('Error: ' + (res?.data?.error || 'Unknown error'));
+      }
+    } catch (error) {
+      alert('Error: ' + error.message);
+    } finally {
+      setClearLoading(false);
+    }
+  };
 
   // "View as Technician" mode — renders TechnicianHome in a sandboxed view
   if (viewAsTech) {
@@ -147,6 +171,58 @@ export default function AdminHome() {
           </Link>
         ))}
       </div>
+
+      {/* Debug: Clear all test data */}
+      <div className="border-t pt-6 mt-6">
+        <h3 className="text-sm font-semibold text-gray-600 mb-3">Developer Tools</h3>
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={() => setShowClearDialog(true)}
+          className="flex items-center gap-2"
+        >
+          <Trash2 className="w-4 h-4" />
+          Clear All Test Data
+        </Button>
+      </div>
+
+      {/* Confirmation Dialog */}
+      {showClearDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-sm w-full p-6 space-y-4">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">Clear All Test Data?</h3>
+              <p className="text-sm text-gray-500 mt-1">This will permanently delete all records from:</p>
+              <ul className="text-xs text-gray-600 mt-2 ml-4 list-disc space-y-1">
+                <li>Lead</li>
+                <li>CalendarEvent</li>
+                <li>Quote</li>
+                <li>QuoteRequests</li>
+                <li>InspectionRecord</li>
+              </ul>
+            </div>
+            <p className="text-xs text-red-600 font-medium">This action cannot be undone.</p>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowClearDialog(false)}
+                disabled={clearLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleClearData}
+                disabled={clearLoading}
+              >
+                {clearLoading ? 'Clearing...' : 'Clear All Data'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       <InPersonSalesModal open={showInPerson} onOpenChange={setShowInPerson} />
