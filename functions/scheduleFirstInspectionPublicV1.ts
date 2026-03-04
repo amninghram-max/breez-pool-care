@@ -109,14 +109,13 @@ Deno.serve(async (req) => {
 
     if (!leadId || !tokenEmail) {
       const code = resolved.code || 'INCOMPLETE_DATA';
-      let errorMsg;
-      if (code === 'TOKEN_NOT_FOUND') {
-        errorMsg = 'Invalid or expired token. Please request a new quote link.';
-      } else if (code === 'LEAD_UNAVAILABLE') {
-        errorMsg = 'This quote is no longer active. Please contact Breez at (321) 524-3838 for assistance.';
-      } else {
-        errorMsg = 'Token does not have complete lead information. Please request a new quote or contact Breez at (321) 524-3838.';
-      }
+      const ERROR_MESSAGES = {
+        TOKEN_NOT_FOUND:  'Invalid or expired token.',
+        INCOMPLETE_DATA:  'Token does not have complete lead information.',
+        QUERY_ERROR:      'Failed to resolve token.',
+        LEAD_LOOKUP_FAILED: 'Platform temporarily unavailable. Please try again.',
+      };
+      const errorMsg = ERROR_MESSAGES[code] || 'Token does not have complete lead information.';
       console.warn('SFI_V1_RESOLVE_FAILED', { code, tokenPrefix: token.trim().slice(0, 8), runtimeVersion, requestId });
       return json200({ success: false, code, error: errorMsg, ...meta });
     }
