@@ -17,7 +17,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
-const BUILD = "SFI-V2-2026-03-04-D";
+const BUILD = "SFI-V2-2026-03-04-E";
 
 const json200 = (data) => new Response(
   JSON.stringify(data),
