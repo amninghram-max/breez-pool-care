@@ -67,19 +67,14 @@ export default function SendQuoteModal({ lead, isOpen, onClose, onSuccess }) {
         }
       }
 
-      const r = await fetch(`/api/apps/699a2b2056054b0207cea969/functions/sendQuoteLinkEmailV2`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ leadId: lead.id, firstName: lead.firstName, email, appOrigin: window.location.origin })
+      const res = await base44.functions.invoke('sendQuoteLinkEmailV3', {
+        leadId: lead.id,
+        quoteId: lead.acceptedQuoteId || lead.id,
+        firstName: lead.firstName,
+        email,
+        appOrigin: window.location.origin
       });
-      const ct = r.headers.get("content-type");
-      const text = await r.text();
-      console.log("V2_SEND_FETCH", { status: r.status, ct });
-      console.log("V2_SEND_BODYLEN", { len: text.length, preview: text.slice(0, 200) });
-
-      let data = null;
-      try { data = text ? JSON.parse(text) : null; } catch {}
-      console.log("V2_SEND_PARSED", { data });
+      const data = res.data;
 
       if (data?.success === true) {
         toast.success('Quote link sent');

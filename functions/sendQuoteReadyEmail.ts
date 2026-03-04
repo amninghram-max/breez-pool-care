@@ -1,4 +1,7 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
+import { Resend } from 'npm:resend@4.0.0';
+
+const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 
 /**
  * sendQuoteReadyEmail
@@ -48,20 +51,39 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'clientEmail required' }, { status: 400 });
     }
 
-    // Generate token + expiry (7 days)
-    const token = generateScheduleToken();
+    // Generate schedule token + expiry (7 days)
+    const scheduleToken = generateScheduleToken();
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-    // Update quote with token and sent flags
+    // The scheduling page resolves via QuoteRequests.token (quoteToken), not scheduleToken.
+    // We store scheduleToken on Quote for lifecycle tracking, but the link uses quoteToken.
+    let schedulingToken = quote.quoteToken || null;
+
+    // If no quoteToken on the Quote record, fall back to scheduleToken stored in QuoteRequests
+    if (!schedulingToken) {
+      try {
+        const qrs = await base44.asServiceRole.entities.QuoteRequests.filter({ leadId: quote.leadId }, '-created_date', 1);
+        if (qrs?.[0]?.token) schedulingToken = qrs[0].token;
+      } catch (e) {
+        console.warn('Could not find QuoteRequests token, using generated scheduleToken');
+      }
+    }
+
+    // Fallback: use the generated scheduleToken (store it in QuoteRequests too)
+    if (!schedulingToken) {
+      schedulingToken = scheduleToken;
+    }
+
+    // Update quote with schedule token lifecycle fields
     await base44.asServiceRole.entities.Quote.update(quoteId, {
-      scheduleToken: token,
-      scheduleTokenExpiresAt: expiresAt, // 7 days from now
+      scheduleToken,
+      scheduleTokenExpiresAt: expiresAt,
       quoteEmailSent: true,
       quoteEmailSentAt: new Date().toISOString()
     });
 
     const appOrigin = getAppOrigin(req);
-    const scheduleLink = `${appOrigin}/ScheduleInspection?token=${encodeURIComponent(token)}`;
+    const scheduleLink = `${appOrigin}/ScheduleInspection?token=${encodeURIComponent(schedulingToken)}`;
 
     const subject = 'Your Breez Quote Is Ready!';
     const body = `
@@ -90,11 +112,11 @@ Questions? Reply to this email or call us anytime.
 — The Breez Team
     `.trim();
 
-    await base44.asServiceRole.integrations.Core.SendEmail({
+    await resend.emails.send({
+      from: 'Breez Pool Care <noreply@breezpoolcare.com>',
       to: clientEmail,
       subject,
-      body,
-      from_name: 'Breez Pool Care'
+      text: body,
     });
 
     console.log(`✅ Quote ready email sent: quoteId=${quoteId}, email=${clientEmail}, token=${token.slice(0, 16)}...`);
