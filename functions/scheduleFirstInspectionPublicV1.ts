@@ -50,10 +50,10 @@ async function resolveTokenInline(entities, token) {
     try {
       const leadRows = await entities.Lead.filter({ id: leadId }, null, 1);
       const lead = leadRows?.[0];
-      if (lead && lead.isDeleted === true) return { code: 'LEAD_UNAVAILABLE', error: 'This quote is no longer active.' };
-      if (!lead) leadId = null;
+      // Deleted or missing lead → INCOMPLETE_DATA (no email rebound)
+      if (!lead || lead.isDeleted === true) leadId = null;
     } catch (e) {
-      return { code: 'LEAD_LOOKUP_FAILED', error: 'Platform temporarily unavailable' };
+      return { code: 'QUERY_ERROR', error: 'Failed to resolve token' };
     }
   }
 
