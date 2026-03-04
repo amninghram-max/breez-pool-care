@@ -359,41 +359,46 @@ ${rescheduleUrl ? `
 
     const text = `Hi ${finalFirstName},\n\nYour free pool inspection with Breez Pool Care is confirmed!\n\nDate: ${dateFormatted}\nArrival Window: ${inspectionTime || 'To be confirmed'}\nInspector: ${inspectorName}, ${inspectorTitle}\n\nWHAT TO EXPECT\n• Test your water and review water balance\n• Inspect equipment (pump, filter, timer, valves)\n• Check circulation and system function\n• Answer your questions\n\nMost inspections take about 20–30 minutes.\n\nBEFORE WE ARRIVE\nWe will call you about 1 hour before arrival.\n\nNO OBLIGATION\nThis inspection is completely free with no obligation.\n\n${rescheduleUrl ? `To reschedule: ${rescheduleUrl}\n\n` : ''}Questions? Call/text ${phone}\n\nThank you,\nBreez Pool Care LLC\n${phone} | breezpoolcare.com\n${serviceArea}`;
 
-    try {
-      const emailResult = await resend.emails.send({
-        from: 'Breez Pool Care <noreply@breezpoolcare.com>',
-        to: email,
-        subject,
-        html,
-        text,
-      });
-
-      const resendId = emailResult?.id;
-      console.log('SFI_V2_EMAIL_SEND_RESULT', { 
-        leadId, 
-        emailPrefix: email.slice(0, 5), 
-        resendId,
-        resendError: emailResult?.error
-      });
-
-      if (!resendId && emailResult?.error) {
-        console.error('SFI_V2_EMAIL_SEND_FAILED', { error: emailResult.error });
-        return 'failed';
-      }
-
-      if (leadId) {
-        await entities.Lead.update(leadId, {
-          inspectionConfirmationSent: true,
-          confirmationSentAt: new Date().toISOString()
-        }).catch(e => console.warn('SFI_V2_CONFIRMATION_FLAG_FAILED', { error: e.message }));
-      }
-
-      console.log('SFI_V2_EMAIL_SENT', { leadId, emailPrefix: email.slice(0, 5), resendId });
-      return 'sent';
-    } catch (e) {
-      console.error('SFI_V2_EMAIL_FAILED', { error: e.message, stack: e.stack });
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    if (!resendApiKey) {
+      console.error('SFI_V2_RESEND_KEY_MISSING');
       return 'failed';
     }
+
+    const emailRes = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${resendApiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: 'Breez Pool Care <noreply@breezpoolcare.com>',
+        to: [email],
+        subject,
+        html,
+        text
+      })
+    });
+
+    const resendText = await emailRes.text();
+    let resendData = {};
+    if (resendText?.trim()) {
+      try { resendData = JSON.parse(resendText); } catch {}
+    }
+
+    if (!emailRes.ok) {
+      console.error('SFI_V2_EMAIL_FAILED', { status: emailRes.status, error: resendText.slice(0, 200) });
+      return 'failed';
+    }
+
+    const resendId = resendData.id ?? null;
+    console.log('SFI_V2_EMAIL_SENT', { leadId, emailPrefix: email.slice(0, 5), resendId });
+
+    if (leadId) {
+      await entities.Lead.update(leadId, {
+        inspectionConfirmationSent: true,
+        confirmationSentAt: new Date().toISOString()
+      }).catch(e => console.warn('SFI_V2_CONFIRMATION_FLAG_FAILED', { error: e.message }));
+    }
+
+    return 'sent';
 }
 
 // ── Main Handler ──
