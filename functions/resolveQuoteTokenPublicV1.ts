@@ -16,6 +16,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  *      OR { success:false, code, error }
  */
 
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
+
 const BUILD = "RESOLVE_TOKEN_V1-2026-03-03-A";
 
 const json200 = (data) => new Response(
