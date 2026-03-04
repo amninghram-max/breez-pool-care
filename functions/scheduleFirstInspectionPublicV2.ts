@@ -666,15 +666,23 @@ Deno.serve(async (req) => {
     }
 
     // Step 6: Send confirmation email — always force=true since we just created a new inspection
-    const emailStatus = await sendConfirmationEmail(entities, integrations, {
-      leadId,
-      firstName: finalFirstName,
-      email: finalEmail,
-      inspectionDate: requestedDate,
-      inspectionTime: timeWindow,
-      force: true,
-      token: token.trim()
-    });
+    console.log('SFI_V2_BEFORE_EMAIL_SEND', { leadId, requestId });
+    let emailStatus = 'unknown';
+    try {
+      emailStatus = await sendConfirmationEmail(entities, integrations, {
+        leadId,
+        firstName: finalFirstName,
+        email: finalEmail,
+        inspectionDate: requestedDate,
+        inspectionTime: timeWindow,
+        force: true,
+        token: token.trim()
+      });
+      console.log('SFI_V2_AFTER_EMAIL_SEND', { emailStatus, leadId, requestId });
+    } catch (emailErr) {
+      console.error('SFI_V2_EMAIL_FUNCTION_FAILED', { error: emailErr?.message, leadId, requestId });
+      emailStatus = 'failed';
+    }
 
     console.log('SFI_V2_SUCCESS', { leadIdPrefix: leadId.slice(0, 8), inspectionId: inspection.id, eventId: calendarEvent.id, scheduledDate: requestedDate, emailStatus, requestId });
 
