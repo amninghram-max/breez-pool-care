@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getAppOrigin } from './_getAppOrigin.js';
 
 /**
  * finalizePrequalQuoteV2
@@ -159,30 +160,109 @@ Deno.serve(async (req) => {
     let firstName = payloadFirstName || null;
     let email = payloadEmail || null;
     let leadId = null;
+    let quoteRequest = null;
 
-    // Resolve leadId via token if needed
+    // Resolve QuoteRequests row via token (required)
     try {
       const requests = await base44.asServiceRole.entities.QuoteRequests.filter({ token: token.trim() }, null, 1);
       if (requests && requests.length > 0) {
-        leadId = requests[0].leadId;
+        quoteRequest = requests[0];
+        leadId = quoteRequest.leadId || null;
         // Only use QuoteRequests email if not provided in payload
-        if (!email) email = requests[0].email;
+        if (!email) email = quoteRequest.email;
         // Only use QuoteRequests firstName if not provided in payload
-        if (!firstName) firstName = requests[0].firstName || null;
-        console.log('FPQ_V2_TOKEN_RESOLVED', { token: token.trim().slice(0, 8), leadId, email, fromPayload: !!payloadEmail });
+        if (!firstName) firstName = quoteRequest.firstName || null;
+        console.log('FPQ_V2_TOKEN_RESOLVED', { token: token.trim().slice(0, 8), leadId, hasEmail: !!email, fromPayload: !!payloadEmail });
       }
     } catch (e) {
       console.warn('FPQ_V2_TOKEN_RESOLUTION_FAILED', { error: e.message });
     }
 
-    // Validate that email is present
-    if (!email) {
+    if (!quoteRequest) {
       return json200({
         success: false,
-        error: 'Email is required (from payload or token)',
+        error: 'Invalid or expired token',
+        code: 'TOKEN_NOT_FOUND',
         build: BUILD
       });
     }
+
+    // Repair missing QuoteRequests contact fields from latest Quote snapshot before validation.
+    // This avoids blocking tokenized users when QuoteRequests has a placeholder/empty email.
+    if (!email || email === 'guest@breezpoolcare.com') {
+      try {
+        const quotes = await base44.asServiceRole.entities.Quote.filter({ quoteToken: token.trim() }, '-created_date', 1);
+        const latestQuote = quotes?.[0] || null;
+        if (latestQuote) {
+          if ((!email || email === 'guest@breezpoolcare.com') && latestQuote.clientEmail) {
+            email = latestQuote.clientEmail;
+          }
+          if (!firstName && latestQuote.clientFirstName) {
+            firstName = latestQuote.clientFirstName;
+          }
+          if (!leadId && latestQuote.leadId) {
+            leadId = latestQuote.leadId;
+          }
+
+          const patch = {};
+          if (leadId && quoteRequest.leadId !== leadId) patch.leadId = leadId;
+          if (email && quoteRequest.email !== email) patch.email = email;
+          if (firstName && quoteRequest.firstName !== firstName) patch.firstName = firstName;
+          if (Object.keys(patch).length > 0) {
+            await base44.asServiceRole.entities.QuoteRequests.update(quoteRequest.id, patch);
+            console.log('FPQ_V2_REPAIRED_FROM_QUOTE', { token: token.trim().slice(0, 8), repaired: Object.keys(patch) });
+          }
+        }
+      } catch (repairErr) {
+        console.warn('FPQ_V2_REPAIR_FROM_QUOTE_FAILED', { error: repairErr.message, token: token.trim().slice(0, 8) });
+      }
+    }
+
+    // Validate that email is present and normalize placeholders
+    if (!email || email === 'guest@breezpoolcare.com') {
+      return json200({
+        success: false,
+        error: 'Email is required (from payload, token, or quote snapshot)',
+        code: 'INCOMPLETE_DATA',
+        build: BUILD
+      });
+    }
+    email = email.trim().toLowerCase();
+
+
+    const sendQuoteReadyEmail = async ({ quoteToken, summary, targetLeadId }) => {
+      try {
+        const appOrigin = getAppOrigin(req);
+        const scheduleLink = `${appOrigin}/ScheduleInspection?token=${encodeURIComponent(quoteToken.trim())}`;
+        const monthlyText = summary?.monthlyPrice || 'TBD';
+        const oneTimeText = summary?.oneTimeFees ? `\n• One-time fees: ${summary.oneTimeFees}` : '';
+        const emailBody = `Hi ${firstName || 'there'},\n\nYour Breez quote is ready.\n\n• Monthly: ${monthlyText}\n• Frequency: ${summary?.visitFrequency || 'Weekly'}${oneTimeText}\n\nSchedule your free inspection here:\n${scheduleLink}\n\n— Breez Pool Care`;
+
+        await base44.asServiceRole.integrations.Core.SendEmail({
+          to: email,
+          from_name: 'Breez Pool Care',
+          subject: 'Your Breez Quote Is Ready — Schedule Your Free Inspection',
+          body: emailBody
+        });
+
+        if (targetLeadId) {
+          try {
+            const leads = await base44.asServiceRole.entities.Lead.filter({ id: targetLeadId }, null, 1);
+            const lead = leads?.[0] || null;
+            if (lead) {
+              const notes = `${lead.notes || ''}\n[QUOTE_EMAIL_SENT] ${new Date().toISOString()}`.trim();
+              await base44.asServiceRole.entities.Lead.update(targetLeadId, { notes });
+            }
+          } catch (noteErr) {
+            console.warn('FPQ_V2_QUOTE_EMAIL_NOTE_FAILED', { error: noteErr.message });
+          }
+        }
+
+        console.log('FPQ_V2_QUOTE_EMAIL_SENT', { leadId: targetLeadId || null, token: quoteToken.trim().slice(0, 8) });
+      } catch (emailErr) {
+        console.warn('FPQ_V2_QUOTE_EMAIL_FAILED', { error: emailErr.message, token: quoteToken.trim().slice(0, 8) });
+      }
+    };
 
     // Check if quote already exists for this token (idempotency)
     let existingQuote = null;
@@ -200,8 +280,64 @@ Deno.serve(async (req) => {
       console.warn('FPQ_V2_IDEMPOTENCY_CHECK_FAILED', { error: e.message });
     }
 
-    // If quote exists, return it
+    // If quote exists, return it (after ensuring linkage is still usable)
     if (existingQuote) {
+      if (!leadId && existingQuote.leadId) {
+        leadId = existingQuote.leadId;
+      }
+
+      // Repair/create lead linkage for scheduling reliability
+      try {
+        let lead = null;
+        if (leadId) {
+          const rows = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
+          lead = rows?.[0] || null;
+        }
+
+        if (!lead) {
+          const activeRows = await base44.asServiceRole.entities.Lead.filter({ email, isDeleted: false }, '-created_date', 1);
+          lead = activeRows?.[0] || null;
+        }
+
+        if (!lead) {
+          const deletedRows = await base44.asServiceRole.entities.Lead.filter({ email, isDeleted: true }, '-created_date', 1);
+          const deletedLead = deletedRows?.[0] || null;
+          if (deletedLead) {
+            lead = await base44.asServiceRole.entities.Lead.update(deletedLead.id, {
+              isDeleted: false,
+              firstName: firstName || deletedLead.firstName || 'Customer',
+              email
+            });
+          }
+        }
+
+        if (!lead) {
+          lead = await base44.asServiceRole.entities.Lead.create({
+            firstName: firstName || 'Customer',
+            email,
+            stage: 'contacted',
+            quoteGenerated: true,
+            isDeleted: false
+          });
+        } else {
+          lead = await base44.asServiceRole.entities.Lead.update(lead.id, {
+            firstName: firstName || lead.firstName || 'Customer',
+            email,
+            quoteGenerated: true,
+            ...(lead.stage === 'new_lead' ? { stage: 'contacted' } : {})
+          });
+        }
+
+        leadId = lead.id;
+        await base44.asServiceRole.entities.QuoteRequests.update(quoteRequest.id, {
+          leadId,
+          email,
+          firstName: firstName || lead.firstName || null
+        });
+      } catch (linkErr) {
+        console.warn('FPQ_V2_LINKAGE_REPAIR_FAILED', { error: linkErr.message });
+      }
+
       const priceSummary = {
         monthlyPrice: existingQuote.outputMonthlyPrice ? `$${existingQuote.outputMonthlyPrice}` : '$0',
         visitFrequency: existingQuote.outputFrequency === 'weekly' ? 'Weekly' : 'Twice Weekly',
@@ -209,12 +345,19 @@ Deno.serve(async (req) => {
         oneTimeFees: existingQuote.outputOneTimeFees && existingQuote.outputOneTimeFees > 0 ? `$${existingQuote.outputOneTimeFees}` : null,
         frequencyAutoRequired: existingQuote.outputFrequencyAutoRequired || false
       };
+
+      await sendQuoteReadyEmail({
+        quoteToken: existingQuote.quoteToken || token.trim(),
+        summary: priceSummary,
+        targetLeadId: leadId || existingQuote.leadId || null
+      });
+
       return json200({
         success: true,
         quoteToken: existingQuote.quoteToken,
-        leadId: existingQuote.leadId,
+        leadId: leadId || existingQuote.leadId || null,
         firstName: existingQuote.clientFirstName || firstName,
-        email: existingQuote.clientEmail,
+        email: existingQuote.clientEmail || email,
         priceSummary,
         persisted: false, // existing, not newly persisted
         build: BUILD
@@ -301,6 +444,59 @@ Deno.serve(async (req) => {
       frequencyAutoRequired: quoteResult.frequencyAutoRequired
     };
 
+    // Ensure lead linkage is available for downstream scheduling
+    try {
+      let lead = null;
+      if (leadId) {
+        const rows = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
+        lead = rows?.[0] || null;
+      }
+
+      if (!lead) {
+        const activeRows = await base44.asServiceRole.entities.Lead.filter({ email, isDeleted: false }, '-created_date', 1);
+        lead = activeRows?.[0] || null;
+      }
+
+      if (!lead) {
+        const deletedRows = await base44.asServiceRole.entities.Lead.filter({ email, isDeleted: true }, '-created_date', 1);
+        const deletedLead = deletedRows?.[0] || null;
+        if (deletedLead) {
+          lead = await base44.asServiceRole.entities.Lead.update(deletedLead.id, {
+            isDeleted: false,
+            firstName: firstName || deletedLead.firstName || 'Customer',
+            email
+          });
+        }
+      }
+
+      if (!lead) {
+        lead = await base44.asServiceRole.entities.Lead.create({
+          firstName: firstName || 'Customer',
+          email,
+          stage: 'contacted',
+          quoteGenerated: true,
+          isDeleted: false
+        });
+      } else {
+        lead = await base44.asServiceRole.entities.Lead.update(lead.id, {
+          firstName: firstName || lead.firstName || 'Customer',
+          email,
+          quoteGenerated: true,
+          ...(lead.stage === 'new_lead' ? { stage: 'contacted' } : {})
+        });
+      }
+
+      leadId = lead.id;
+      await base44.asServiceRole.entities.QuoteRequests.update(quoteRequest.id, {
+        leadId,
+        email,
+        firstName: firstName || lead.firstName || null
+      });
+      console.log('FPQ_V2_QUOTEREQUEST_LINKED', { quoteRequestId: quoteRequest.id, leadId });
+    } catch (linkErr) {
+      console.warn('FPQ_V2_LEAD_LINKAGE_FAILED', { error: linkErr.message });
+    }
+
     // Persist quote snapshot to Quote entity
     let persistedQuote = null;
     try {
@@ -333,20 +529,28 @@ Deno.serve(async (req) => {
       persistedQuote = await base44.asServiceRole.entities.Quote.create(quoteData);
       console.log('FPQ_V2_QUOTE_PERSISTED', { quoteId: persistedQuote.id, token: token.trim().slice(0, 8) });
 
-      // Auto-stage progression: update Lead to 'quote_sent' after quote persistence
+      // Auto-stage progression: update Lead to 'contacted' after quote persistence
       if (leadId) {
         try {
-          await base44.functions.invoke('updateLeadStagePublicV1', {
-            token: token.trim(),
-            newStage: 'quote_sent',
-            context: 'prequal-completion'
-          });
-          console.log('FPQ_V2_STAGE_PROGRESSED', { leadId, newStage: 'quote_sent' });
+          const leadRows = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
+          const lead = leadRows?.[0] || null;
+          const currentStage = lead?.stage || 'new_lead';
+          if (currentStage === 'new_lead') {
+            await base44.asServiceRole.entities.Lead.update(leadId, { stage: 'contacted' });
+            console.log('FPQ_V2_STAGE_PROGRESSED', { leadId, oldStage: currentStage, newStage: 'contacted' });
+          }
         } catch (stageErr) {
           console.warn('FPQ_V2_STAGE_UPDATE_FAILED', { error: stageErr.message });
           // Non-fatal: continue even if stage update fails
         }
       }
+
+      // Send quote-ready scheduling email (non-blocking)
+      await sendQuoteReadyEmail({
+        quoteToken: token.trim(),
+        summary: priceSummary,
+        targetLeadId: leadId || null
+      });
     } catch (e) {
       console.error('FPQ_V2_PERSIST_FAILED', { error: e.message });
       // Don't fail the response; still return the computed quote
