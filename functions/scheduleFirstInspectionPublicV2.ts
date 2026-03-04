@@ -90,16 +90,10 @@ async function resolveToken(entities, token) {
     try {
       const leadRows = await entities.Lead.filter({ id: leadId }, null, 1);
       const lead = leadRows?.[0];
-      if (lead && lead.isDeleted === true) {
-        console.log('SFI_V2_LEAD_UNAVAILABLE', {
-          tokenPrefix: cleanToken.slice(0, 8),
-          leadIdPrefix: leadId.slice(0, 8),
-          reason: 'lead_soft_deleted'
-        });
-        return { code: 'LEAD_UNAVAILABLE', error: 'This quote is no longer active. Please contact Breez at (321) 524-3838 for assistance.' };
-      }
-      if (!lead) {
-        leadId = null; // Force INCOMPLETE_DATA
+      // Deleted or missing lead → INCOMPLETE_DATA (no email rebound)
+      if (!lead || lead.isDeleted === true) {
+        console.log('SFI_V2_LEAD_UNAVAILABLE', { tokenPrefix: cleanToken.slice(0, 8), reason: lead ? 'lead_soft_deleted' : 'lead_not_found' });
+        leadId = null;
       }
     } catch (e) {
       console.warn('SFI_V2_LEAD_VALIDATE_FAILED', { error: e.message });
