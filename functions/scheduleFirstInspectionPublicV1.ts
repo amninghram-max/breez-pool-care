@@ -53,54 +53,26 @@ Deno.serve(async (req) => {
       return json200({ success: false, error: 'requestedTimeSlot must be one of: morning, midday, afternoon', ...meta });
     }
 
-    // Resolve leadId + contact via token using versioned resolver
-    let leadId = null;
-    let tokenEmail = null;
-    let resolverCode = null;
-    try {
-      const resolveRes = await base44.asServiceRole.functions.invoke('resolveQuoteTokenPublicV1', { token: token.trim() });
-      const resolveData = resolveRes?.data ?? resolveRes;
-
-      if (resolveData?.success === true && resolveData.leadId && resolveData.email) {
-        leadId = resolveData.leadId;
-        tokenEmail = resolveData.email;
-        console.log('SFI_V1_TOKEN_RESOLVED', {
-          tokenPrefix: token.trim().slice(0, 8),
-          leadId,
-          hasFirstName: !!resolveData.firstName,
-          hasPhone: !!resolveData.phone,
-          requestId
-        });
-      } else {
-        resolverCode = resolveData?.code || 'UNKNOWN';
-        console.warn('SFI_V1_TOKEN_RESOLUTION_FAILED', {
-          code: resolverCode,
-          error: resolveData?.error,
-          tokenPrefix: token.trim().slice(0, 8),
-          requestId
-        });
-      }
-    } catch (e) {
-      resolverCode = 'RESOLVER_CRASHED';
-      console.error('SFI_V1_TOKEN_RESOLUTION_CRASHED', { error: e.message, requestId });
-    }
+    // Resolve leadId + contact via inlined token resolution (no function invoke)
+    const resolved = await resolveTokenInline(base44.asServiceRole.entities, token.trim());
+    const leadId = resolved.leadId || null;
+    const tokenEmail = resolved.email || null;
 
     if (!leadId || !tokenEmail) {
-      // Deterministic mapping: pass through exact resolver code
-      const failureCode = resolverCode || 'INCOMPLETE_DATA';
+      const code = resolved.code || 'INCOMPLETE_DATA';
       let errorMsg;
-      if (failureCode === 'TOKEN_NOT_FOUND') {
+      if (code === 'TOKEN_NOT_FOUND') {
         errorMsg = 'Invalid or expired token. Please request a new quote link.';
-      } else if (failureCode === 'LEAD_UNAVAILABLE') {
+      } else if (code === 'LEAD_UNAVAILABLE') {
         errorMsg = 'This quote is no longer active. Please contact Breez at (321) 524-3838 for assistance.';
       } else {
-        // INCOMPLETE_DATA or any other code
         errorMsg = 'Token does not have complete lead information. Please request a new quote or contact Breez at (321) 524-3838.';
       }
-
-      console.warn('SFI_V1_RESOLVE_FAILED', { code: failureCode, tokenPrefix: token.trim().slice(0, 8), runtimeVersion, requestId });
-      return json200({ success: false, code: failureCode, error: errorMsg, ...meta });
+      console.warn('SFI_V1_RESOLVE_FAILED', { code, tokenPrefix: token.trim().slice(0, 8), runtimeVersion, requestId });
+      return json200({ success: false, code, error: errorMsg, ...meta });
     }
+
+    console.log('SFI_V1_TOKEN_RESOLVED', { tokenPrefix: token.trim().slice(0, 8), leadId, requestId });
 
     const finalEmail = email || tokenEmail;
 
