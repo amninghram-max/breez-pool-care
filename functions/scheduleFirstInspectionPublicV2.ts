@@ -366,7 +366,7 @@ ${rescheduleUrl ? `
     }
 
     const emailResult = await resend.emails.send({
-      from: 'Breez Pool Care <noreply@breezpoolcare.com>',
+      from: 'Breez Pool Care <onboarding@resend.dev>',
       to: email,
       subject,
       html,
