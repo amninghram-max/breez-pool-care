@@ -94,7 +94,9 @@ Deno.serve(async (req) => {
 
     console.log('[submitInspection] Creating record for leadId:', leadId, 'by:', user.email, 'role:', user.role);
 
-    const record = await base44.asServiceRole.entities.InspectionRecord.create(recordData);
+    // Use a fresh service-role-only client to bypass RLS
+    const svcClient = createClient({ appId: Deno.env.get('BASE44_APP_ID'), serviceRole: true });
+    const record = await svcClient.entities.InspectionRecord.create(recordData);
     console.log('[submitInspection] Created InspectionRecord, id:', record.id);
 
     // Mark calendar event completed
