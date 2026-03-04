@@ -3,7 +3,7 @@ import { Calendar, CheckCircle2 } from 'lucide-react';
 
 const TEAL = '#1B9B9F';
 
-export default function QuoteResultDisplay({ result, firstName, email, leadId, quoteToken }) {
+export default function QuoteResultDisplay({ result, firstName, email, leadId, quoteToken, token }) {
   const { isRange, quote, priceSummary: resultPriceSummary } = result;
   // Prefer priceSummary from result, fallback to quote fields
   const priceSummary = resultPriceSummary || {};
