@@ -365,6 +365,8 @@ ${rescheduleUrl ? `
       return 'failed';
     }
 
+    console.log('SFI_V2_EMAIL_FETCH_START', { to: email, subject });
+
     const emailRes = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${resendApiKey}`, 'Content-Type': 'application/json' },
@@ -377,18 +379,29 @@ ${rescheduleUrl ? `
       })
     });
 
+    console.log('SFI_V2_EMAIL_RESPONSE', { status: emailRes.status, statusOk: emailRes.ok });
+
     const resendText = await emailRes.text();
     let resendData = {};
     if (resendText?.trim()) {
-      try { resendData = JSON.parse(resendText); } catch {}
+      try { resendData = JSON.parse(resendText); } catch (e) {
+        console.warn('SFI_V2_PARSE_ERROR', { rawText: resendText.slice(0, 100) });
+      }
     }
 
+    console.log('SFI_V2_RESEND_DATA', { id: resendData?.id, error: resendData?.error });
+
     if (!emailRes.ok) {
-      console.error('SFI_V2_EMAIL_FAILED', { status: emailRes.status, error: resendText.slice(0, 200) });
+      console.error('SFI_V2_EMAIL_HTTP_FAILED', { status: emailRes.status, resendError: resendData?.error || resendText.slice(0, 200) });
       return 'failed';
     }
 
     const resendId = resendData.id ?? null;
+    if (!resendId) {
+      console.error('SFI_V2_EMAIL_NO_ID', { resendData });
+      return 'failed';
+    }
+
     console.log('SFI_V2_EMAIL_SENT', { leadId, emailPrefix: email.slice(0, 5), resendId });
 
     if (leadId) {
