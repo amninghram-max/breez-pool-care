@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Phone, Mail, MessageSquare, AlertCircle, Check, Wrench, Plus, RefreshCw, ChevronDown, Eye, Settings, Trash2 } from 'lucide-react';
 import { Phone, Mail, MessageSquare, AlertCircle, Check, Wrench, Plus, RefreshCw, ChevronDown, Eye, Settings, Trash2, Calendar, FileText, ArrowRight, Send, MoreVertical, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
@@ -39,6 +40,11 @@ const STAGES = [
 ];
 
 const STAGE_OPTIONS = [
+  ...STAGES
+];
+
+const getCanonicalStage = (stage) => (stage === 'quote_sent' ? 'inspection_confirmed' : stage);
+
   ...STAGES,
   { key: 'quote_sent', label: 'Pending Acceptance (Post-Inspection)', color: 'bg-indigo-100 text-indigo-800' }
 ];
@@ -172,6 +178,8 @@ export default function LeadsPipeline() {
   };
 
   const getLeadsByStage = (stage) => {
+    return leads.filter((lead) => getCanonicalStage(lead.stage) === stage);
+  };
     if (stage === 'inspection_confirmed') {
       return leads.filter((lead) => lead.stage === 'inspection_confirmed' || lead.stage === 'quote_sent');
     }
@@ -467,6 +475,7 @@ export default function LeadsPipeline() {
   );
 }
 
+function LeadRow({ lead, onStageChange, onEdit, queryClient }) {
 function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit, queryClient, isSelected, onToggleSelect }) {
   const [validationError, setValidationError] = React.useState(null);
   const [showSendQuoteModal, setShowSendQuoteModal] = React.useState(false);
@@ -501,6 +510,8 @@ function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit
 
   const lastEmailSent = getLastEmailSent();
 
+  const handleStageAction = (newStage) => {
+    onStageChange(newStage);
   const handleStageAction = (newStage, data) => {
     if (newStage) {
       onStageChange(newStage);
@@ -605,6 +616,8 @@ function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit
         </div>
 
         {/* Stage Dropdown */}
+        <Select value={getCanonicalStage(lead.stage)} onValueChange={onStageChange}>
+          <SelectTrigger className="w-32 h-8 text-xs">
         <Select value={lead.stage} onValueChange={onStageChange}>
           <SelectTrigger className="w-28 h-8 text-xs flex-shrink-0">
             <SelectValue />

@@ -85,6 +85,7 @@ export default function StageActionButton({ lead, currentStage, onAction, onVali
         
         if (res.data?.success) {
           const newNotes = (lead.notes || '') + `\n[INVITE_SENT] ${new Date().toISOString()}`;
+          onAction('inspection_confirmed', { notes: newNotes });
           onAction('quote_sent', { notes: newNotes });
           toast.success('Invite sent');
           toast.success('Acceptance link sent');

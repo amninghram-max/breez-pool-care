@@ -12,6 +12,9 @@ const BUILD = "SFI-V1-2026-03-04-F";
  */
 
 const BUILD = "SFI-V1-2026-03-04-F";
+ */
+
+const BUILD = "SFI-V1-2026-03-04-F";
  * IDEMPOTENT: Checks for existing inspection scheduling and returns cached state.
  * Side effects (email, stage update) only occur on first scheduling.
  *
@@ -274,6 +277,27 @@ Deno.serve(async (req) => {
             ...meta
           });
         }
+    }
+
+    const leadId = resolveData.leadId;
+    const finalEmail = email || resolveData.email;
+
+    let existingLead = null;
+    try {
+      existingLead = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
+      if (existingLead && existingLead.length > 0) {
+        const lead = existingLead[0];
+        if (lead.inspectionScheduled === true && lead.inspectionEventId) {
+          return json200({
+            success: true,
+            alreadyScheduled: true,
+            scheduledDate: lead.requestedInspectionDate,
+            timeWindow: lead.requestedInspectionTime,
+            email: finalEmail,
+            firstName: lead.firstName || firstName,
+            ...meta
+          });
+        }
 
     // Resolve leadId + contact via inlined token resolution (no function invoke)
     const resolved = await resolveTokenInline(base44.asServiceRole.entities, token.trim());
@@ -367,6 +391,8 @@ Deno.serve(async (req) => {
       });
     } catch (e) {
       console.warn('SFI_V1_LEAD_UPDATE_FAILED', { requestId, error: e.message });
+    }
+
     }
 
     }

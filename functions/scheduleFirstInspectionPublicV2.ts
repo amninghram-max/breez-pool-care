@@ -820,6 +820,8 @@ Deno.serve(async (req) => {
 
     }
 
+    }
+
       console.log('SFI_V2_EVENT_CREATED', { leadIdPrefix: leadId.slice(0, 8), eventId: calendarEvent.id, requestId });
     } catch (e) {
       console.error('SFI_V2_EVENT_CREATE_FAILED', { error: e.message, requestId });
@@ -854,6 +856,18 @@ Deno.serve(async (req) => {
           requestedInspectionTime: requestedTimeSlot,
           serviceAddress: serviceAddressStr,
         });
+      }
+    } catch (e) {
+      console.warn('SFI_V2_LEAD_SYNC_FAILED', { requestId, error: e.message });
+    }
+
+    const emailStatus = await sendConfirmationEmail(base44, {
+      email: finalEmail,
+      firstName: firstName.trim(),
+      requestedDate,
+      timeWindow,
+      serviceAddress: serviceAddressStr
+    }, requestId);
       }
     } catch (e) {
       console.warn('SFI_V2_LEAD_SYNC_FAILED', { requestId, error: e.message });
@@ -925,6 +939,13 @@ Deno.serve(async (req) => {
       email: finalEmail,
       firstName,
       inspectionId: inspection?.id || null,
+      eventId: calendarEvent.id,
+      shouldSendNotification,
+      emailStatus,
+      ...(degradedMode && {
+        degradedMode: true,
+        degradedReason: 'INSPECTION_RECORD_CREATE_FAILED'
+      }),
       eventId: calendarEvent.id,
       shouldSendNotification,
       emailStatus,
