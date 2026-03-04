@@ -150,12 +150,6 @@ export default function ScheduleInspection() {
     );
 
     try {
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Request timed out. Please try again.')), 15000)
-      );
-
-      const schedulePayload = {
-        token: token,
       const schedulePayload = {
         token,
         firstName: firstName.trim(),
