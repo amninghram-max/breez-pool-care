@@ -11,6 +11,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
  *           emailStatus?, build, runtimeVersion, requestId }
  */
 
+// FORCE_REDEPLOY
 const BUILD = "SFI-V2-2026-03-04-F";
 
 const json200 = (data) => new Response(
