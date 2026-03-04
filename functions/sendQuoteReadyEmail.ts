@@ -112,11 +112,11 @@ Questions? Reply to this email or call us anytime.
 — The Breez Team
     `.trim();
 
-    await base44.asServiceRole.integrations.Core.SendEmail({
+    await resend.emails.send({
+      from: 'Breez Pool Care <noreply@breezpoolcare.com>',
       to: clientEmail,
       subject,
-      body,
-      from_name: 'Breez Pool Care'
+      text: body,
     });
 
     console.log(`✅ Quote ready email sent: quoteId=${quoteId}, email=${clientEmail}, token=${token.slice(0, 16)}...`);
