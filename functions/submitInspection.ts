@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
 /**
  * submitInspection
@@ -94,16 +94,8 @@ Deno.serve(async (req) => {
 
     console.log('[submitInspection] Creating record for leadId:', leadId, 'by:', user.email, 'role:', user.role);
 
-    // Try service role first, fall back to user-scoped
-    let record;
-    try {
-      record = await base44.asServiceRole.entities.InspectionRecord.create(recordData);
-      console.log('[submitInspection] Created via asServiceRole, id:', record.id);
-    } catch (srErr) {
-      console.warn('[submitInspection] asServiceRole failed, trying user-scoped:', srErr.message);
-      record = await base44.entities.InspectionRecord.create(recordData);
-      console.log('[submitInspection] Created via user-scoped, id:', record.id);
-    }
+    const record = await base44.asServiceRole.entities.InspectionRecord.create(recordData);
+    console.log('[submitInspection] Created InspectionRecord, id:', record.id);
 
     // Mark calendar event completed
     if (calendarEventId) {
@@ -113,10 +105,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Advance lead stage to inspection_confirmed
-    await base44.asServiceRole.entities.Lead.update(leadId, {
-      stage: 'inspection_confirmed',
-    });
+    // Advance lead stage to inspection_confirmed (only if not already further along)
+    const lead = await base44.asServiceRole.entities.Lead.get(leadId);
+    const advancedStages = ['quote_sent', 'converted', 'lost'];
+    if (lead && !advancedStages.includes(lead.stage)) {
+      await base44.asServiceRole.entities.Lead.update(leadId, {
+        stage: 'inspection_confirmed',
+      });
+    }
 
     console.log(`[submitInspection] Success: recordId=${record.id}, leadId=${leadId}, by=${user.email}`);
 

@@ -1099,3 +1099,67 @@ This protocol prevents:
 - Prop/payload mismatch bugs
 - Undetected invariant violations
 - Scope creep in implementation mode
+
+- ------------------------------------------------------------------
+QUOTE → SCHEDULE HARDENING ADDENDUM (2026-03-03)
+------------------------------------------------------------------
+
+Purpose:
+Lock the public pre-account quote-to-inspection workflow so it remains deterministic, user-safe, and architecture-compliant.
+
+QUOTE FINALIZATION INVARIANTS (PUBLIC)
+- finalizePrequalQuoteV2 must support firstName + email-only submissions (no account required).
+- If leadId is missing at finalize time, a Lead must be created deterministically and linked.
+- QuoteRequests and Quote must both be linked to the same leadId + quoteToken after finalize.
+- Quote summary email must be sent from finalize flow and include:
+  - quote view link
+  - Schedule Free Inspection link with token
+- Finalize replay with same token must be idempotent:
+  - no duplicate lead
+  - no duplicate quote email
+
+TOKEN RESOLUTION INVARIANTS
+- resolveQuoteTokenPublicV1 must return explicit failure codes only (no silent fallback):
+  - INVALID_TOKEN
+  - TOKEN_NOT_FOUND
+  - INCOMPLETE_DATA
+  - LEAD_LOOKUP_FAILED
+- If QuoteRequests.leadId is missing and Quote has leadId for same token, deterministic repair is allowed.
+- Soft-deleted or missing Lead must resolve as INCOMPLETE_DATA.
+- Lead lookup platform/read failures must resolve as LEAD_LOOKUP_FAILED (not INCOMPLETE_DATA).
+
+PUBLIC SCHEDULING INVARIANTS (LOCKED)
+- Public schedule UI must call scheduleFirstInspectionPublicV2 (not V1).
+- scheduleFirstInspectionPublicV2 must not invoke other backend functions.
+- V2 must inline:
+  - token resolution semantics
+  - stage update semantics (non-regression for public path)
+  - inspection confirmation email send
+- V2 must preserve:
+  - InspectionRecord authoritative source
+  - CalendarEvent projection sync
+  - Lead mirror sync
+  - duplicate active event cancellation
+  - idempotent alreadyScheduled behavior
+
+FRONTEND ERROR UX CONTRACT (PUBLIC)
+- ScheduleInspection must map backend error codes to user-friendly messages.
+- Raw backend codes must never be displayed to customers.
+- Error state must include direct recovery CTA:
+  - Start New Quote (public quote entry)
+  - Go Home
+- Missing token param must show clear recovery guidance.
+
+NON-FATAL WARNING BEHAVIOR (ALLOWED)
+- Stage update failure: scheduling remains successful; log warning.
+- Confirmation email failure: scheduling remains successful; return emailStatus="failed" and show warning UX.
+- CalendarEvent projection write failure: InspectionRecord remains authoritative; replay/idempotency must still hold.
+
+OPERATIONS + MONITORING (FIRST 72 HOURS)
+Track warning/error events:
+- SFI_V2_STAGE_UPDATE_FAILED
+- SFI_V2_EMAIL_FAILED
+- SFI_V2_CANCELLED_DUPLICATE
+- SFI_V2_TOKEN_REPAIR_WRITE_FAILED
+- SFI_V2_TOKEN_REPAIR_FAILED
+Escalate on sustained spikes above baseline.
