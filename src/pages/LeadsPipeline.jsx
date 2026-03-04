@@ -176,11 +176,7 @@ export default function LeadsPipeline() {
       return leads.filter((lead) => lead.stage === 'inspection_confirmed' || lead.stage === 'quote_sent');
     }
     return leads.filter((lead) => lead.stage === stage);
-  };
-
-  const getLeadsByStage = (stage) => {
-    return leads.filter(lead => lead.stage === stage.key);
-  };
+    };
 
   const toggleLeadSelect = (leadId) => {
     setSelectedLeadIds(prev => {
