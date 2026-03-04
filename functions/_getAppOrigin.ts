@@ -1,21 +1,24 @@
 /**
  * Determines the application origin for constructing email links and resources.
- * Priority: PUBLIC_APP_URL env var → request headers (x-forwarded-proto, x-forwarded-host, host) → error
+ * Priority: APP_ORIGIN env var → PUBLIC_APP_URL env var → request headers (x-forwarded-proto, x-forwarded-host, host) → error
  * @param {Request} req - Incoming request object
  * @returns {string} Origin string without trailing slash (e.g., "https://breezpoolcare.com")
  */
 export function getAppOrigin(req) {
+  const appOrigin = Deno.env.get("APP_ORIGIN");
   const publicAppUrl = Deno.env.get("PUBLIC_APP_URL");
+  const configuredOrigin = appOrigin || publicAppUrl;
   
-  if (publicAppUrl) {
+  if (configuredOrigin) {
     try {
-      const u = new URL(publicAppUrl);
+      const u = new URL(configuredOrigin);
       if (!["http:", "https:"].includes(u.protocol)) {
         throw new Error(`Invalid protocol: ${u.protocol}. Must be http or https.`);
       }
       return `${u.protocol}//${u.host}`;
     } catch (e) {
-      throw new Error(`PUBLIC_APP_URL is invalid: ${publicAppUrl}. Error: ${e.message}`);
+      const configuredName = appOrigin ? "APP_ORIGIN" : "PUBLIC_APP_URL";
+      throw new Error(`${configuredName} is invalid: ${configuredOrigin}. Error: ${e.message}`);
     }
   }
 
@@ -26,7 +29,7 @@ export function getAppOrigin(req) {
   if (!host || !host.trim()) {
     throw new Error(
       "PUBLIC_APP_URL not configured and request origin could not be derived. " +
-      "Set PUBLIC_APP_URL in environment variables (e.g., https://breezpoolcare.com)."
+      "Set APP_ORIGIN (or PUBLIC_APP_URL) in environment variables (e.g., https://breezpoolcare.com)."
     );
   }
 
@@ -49,7 +52,7 @@ export function getAppOrigin(req) {
   if (url.hostname === "deno.dev" || url.hostname.endsWith(".deno.dev")) {
     throw new Error(
       `Resolved origin is a deno.dev host ("${url.host}"), which must not be used for outbound links. ` +
-      `Set PUBLIC_APP_URL to the app's public URL (e.g., https://preview--breez-pool-care.base44.app).`
+      `Set APP_ORIGIN (or PUBLIC_APP_URL) to the app's public URL (e.g., https://preview--breez-pool-care.base44.app).`
     );
   }
 

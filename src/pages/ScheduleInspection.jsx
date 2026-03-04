@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Loader2, CheckCircle2, AlertCircle, Calendar, Clock } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, Calendar, Clock } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -60,6 +60,7 @@ export default function ScheduleInspection() {
   const [error, setError] = useState('');
   const [confirmed, setConfirmed] = useState(null);
   const [emailStatus, setEmailStatus] = useState('idle'); // idle | sent | failed
+  const [degradedMode, setDegradedMode] = useState(false);
 
   const dates = getAvailableDates();
 
@@ -146,32 +147,59 @@ export default function ScheduleInspection() {
         setTimeout(() => reject(new Error('Request timed out. Please try again.')), 15000)
       );
 
-      const res = await Promise.race([
-        base44.functions.invoke('scheduleFirstInspectionPublicV1', {
-          token: token,
-          firstName: firstName.trim(),
-          phone: phone.trim(),
-          email: leadData?.email,
-          serviceAddress: {
-            street: street.trim(),
-            city: city.trim(),
-            state: state.trim(),
-            zip: zip.trim()
-          },
-          requestedDate: isoDate,
-          requestedTimeSlot: selectedSlot,
-        }),
-        timeoutPromise
-      ]);
-      
-      const data = res?.data ?? res;
+      const schedulePayload = {
+        token: token,
+        firstName: firstName.trim(),
+        phone: phone.trim(),
+        email: leadData?.email,
+        serviceAddress: {
+          street: street.trim(),
+          city: city.trim(),
+          state: state.trim(),
+          zip: zip.trim()
+        },
+        requestedDate: isoDate,
+        requestedTimeSlot: selectedSlot,
+      };
+
+      let data;
+      try {
+        const res = await Promise.race([
+          base44.functions.invoke('scheduleFirstInspectionPublicV2', schedulePayload),
+          timeoutPromise
+        ]);
+        data = res?.data ?? res;
+      } catch (v2Err) {
+        const msg = String(v2Err?.message || v2Err || '');
+        const shouldFallback = msg.includes('timed out') || msg.includes('Deployment does not exist') || msg.includes('FUNCTION_NOT_FOUND');
+        if (!shouldFallback) throw v2Err;
+      }
+
+      // Fallback to V1 if V2 unavailable/timed out or V2 is blocked by platform create permissions
+      const v2Unavailable = !data || (data?.success !== true && (String(data?.error || '').includes('Deployment does not exist') || data?.code === 'FUNCTION_NOT_FOUND'));
+      const v2CreateBlocked = data?.success !== true && ['INSPECTION_CREATE_FAILED', 'INSPECTION_CREATE_FORBIDDEN'].includes(data?.code);
+      if (v2Unavailable || v2CreateBlocked) {
+        const v1Res = await Promise.race([
+          base44.functions.invoke('scheduleFirstInspectionPublicV1', schedulePayload),
+          timeoutPromise
+        ]);
+        data = v1Res?.data ?? v1Res;
+      }
 
       if (data?.success === true) {
         setConfirmed(data);
+        setDegradedMode(data?.degradedMode === true);
         // Email was triggered server-side; consume the returned status
         setEmailStatus(data.emailStatus === 'failed' ? 'failed' : 'sent');
       } else {
-        const errorMsg = data?.error || 'Failed to schedule inspection. Please call (321) 524-3838.';
+        const codeMessages = {
+          TOKEN_NOT_FOUND: 'Invalid or expired token.',
+          INCOMPLETE_DATA: 'Token does not have complete lead information.',
+          QUERY_ERROR: 'We could not verify your quote token. Please try again.',
+          INSPECTION_CREATE_FAILED: "We couldn't create your inspection. Please contact Breez at (321) 524-3838.",
+          INSPECTION_CREATE_FORBIDDEN: "We couldn't create your inspection. Please contact Breez at (321) 524-3838."
+        };
+        const errorMsg = codeMessages[data?.code] || data?.error || 'Failed to schedule inspection. Please call (321) 524-3838.';
         setError(errorMsg);
       }
     } catch (e) {
@@ -297,6 +325,12 @@ export default function ScheduleInspection() {
                 <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-left">
                   <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                   <p className="text-xs text-amber-700">We scheduled your inspection, but email delivery may be delayed.</p>
+                </div>
+              )}
+              {degradedMode && (
+                <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-left">
+                  <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-700">Scheduling confirmed; internal sync pending.</p>
                 </div>
               )}
               <Button
