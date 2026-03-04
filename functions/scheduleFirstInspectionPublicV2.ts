@@ -521,7 +521,6 @@ Deno.serve(async (req) => {
           requestedInspectionDate: requestedDate,
           requestedInspectionTime: requestedTimeSlot,
           serviceAddress: serviceAddressStr,
-          ...(shouldSendNotification && { confirmationSentAt: new Date().toISOString() })
         });
         console.log('SFI_V2_LEAD_SYNCED', { leadIdPrefix: leadId.slice(0, 8), shouldSendNotification, requestId });
 
