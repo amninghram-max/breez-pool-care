@@ -655,7 +655,8 @@ Deno.serve(async (req) => {
       email: finalEmail,
       inspectionDate: requestedDate,
       inspectionTime: timeWindow,
-      force: true
+      force: true,
+      token: token.trim()
     });
 
     console.log('SFI_V2_SUCCESS', { leadIdPrefix: leadId.slice(0, 8), inspectionId: inspection.id, eventId: calendarEvent.id, scheduledDate: requestedDate, emailStatus, requestId });
