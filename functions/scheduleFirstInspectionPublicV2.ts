@@ -235,7 +235,7 @@ async function checkDriveTimeFeasibility(entities, requestedDate, startTime) {
 }
 
 // ── Confirmation email ──
-async function sendConfirmationEmail(entities, integrations, { leadId, firstName, email, inspectionDate, inspectionTime, force }) {
+async function sendConfirmationEmail(entities, integrations, { leadId, firstName, email, inspectionDate, inspectionTime, force, token }) {
   try {
     if (leadId && !force) {
       const lead = await entities.Lead.get(leadId).catch(() => null);
@@ -245,45 +245,128 @@ async function sendConfirmationEmail(entities, integrations, { leadId, firstName
       }
     }
 
+    // Delegate to the sendInspectionConfirmation function which has full HTML email + reschedule link
+    try {
+      const base44Client = await import('npm:@base44/sdk@0.8.20');
+      // We'll just call resend directly here since we're already in the function
+      // Build the email inline to avoid circular dependency
+    } catch (_) { /* continue inline */ }
+
     const dateFormatted = inspectionDate
       ? new Date(inspectionDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
       : 'To be scheduled';
 
+    const TEAL = '#1B9B9F';
+    const LIGHT_TEAL = '#e8f8f9';
+    const phone = '(321) 524-3838';
+    const website = 'https://breezpoolcare.com';
+    const serviceArea = 'Space Coast, FL · Mon–Sat 8am–6pm';
+    const inspectorName = 'Matt Inghram';
+    const inspectorTitle = 'Owner/Operator';
+    const finalFirstName = firstName || 'Customer';
+
+    // Build reschedule URL
+    let rescheduleUrl = null;
+    if (token) {
+      const appOrigin = Deno.env.get('PUBLIC_APP_URL')?.replace(/\/$/, '') || '';
+      if (appOrigin) {
+        rescheduleUrl = `${appOrigin}/RescheduleInspection?token=${encodeURIComponent(token)}`;
+      }
+    }
+
     const subject = `Inspection Confirmed — ${dateFormatted} · Breez Pool Care`;
-    const body = `Hi ${firstName || 'Customer'},
 
-Your free pool inspection with Breez Pool Care is confirmed!
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/></head>
+<body style="margin:0;padding:0;background-color:#f4f7f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1f2937;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f7f8;padding:32px 16px;">
+<tr><td align="center">
+<table width="100%" style="max-width:600px;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+<tr><td style="background-color:${TEAL};padding:32px 40px;text-align:center;">
+  <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/0b0c31666_Breez2.png" alt="Breez Pool Care" height="48" style="display:block;margin:0 auto 16px;"/>
+  <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;">Inspection Confirmed ✓</h1>
+  <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">Your free pool inspection is booked</p>
+</td></tr>
+<tr><td style="padding:32px 40px 0;">
+  <p style="margin:0;font-size:16px;color:#1f2937;line-height:1.6;">Hi <strong>${finalFirstName}</strong>,</p>
+  <p style="margin:12px 0 0;font-size:15px;color:#374151;line-height:1.7;">This is a confirmation that your <strong>free pool inspection</strong> with <strong>Breez Pool Care</strong> is scheduled for:</p>
+</td></tr>
+<tr><td style="padding:20px 40px;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:${LIGHT_TEAL};border:2px solid ${TEAL};border-radius:12px;">
+    <tr><td style="padding:24px 28px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr><td style="padding-bottom:14px;border-bottom:1px solid rgba(27,155,159,0.2);">
+          <p style="margin:0 0 3px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:${TEAL};">Date</p>
+          <p style="margin:0;font-size:17px;font-weight:700;color:#1f2937;">${dateFormatted}</p>
+        </td></tr>
+        <tr><td style="padding:14px 0;border-bottom:1px solid rgba(27,155,159,0.2);">
+          <p style="margin:0 0 3px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:${TEAL};">Arrival Window</p>
+          <p style="margin:0;font-size:17px;font-weight:700;color:#1f2937;">${inspectionTime || 'To be confirmed'}</p>
+        </td></tr>
+        <tr><td style="padding-top:14px;">
+          <p style="margin:0 0 3px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:${TEAL};">Inspector</p>
+          <p style="margin:0;font-size:17px;font-weight:700;color:#1f2937;">${inspectorName}, <span style="font-weight:400;font-size:15px;color:#4b5563;">${inspectorTitle}</span></p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</td></tr>
+<tr><td style="padding:4px 40px 0;">
+  <h2 style="margin:0 0 12px;font-size:16px;font-weight:700;color:#1f2937;border-bottom:2px solid #e5e7eb;padding-bottom:8px;">What to expect</h2>
+  <p style="margin:0 0 10px;font-size:14px;color:#374151;">During the visit, we'll:</p>
+  <table cellpadding="0" cellspacing="0" width="100%">
+    <tr><td style="padding:5px 0;font-size:14px;color:#374151;line-height:1.6;"><span style="color:${TEAL};font-weight:700;margin-right:8px;">•</span><strong>Test your water</strong> and review basic water balance</td></tr>
+    <tr><td style="padding:5px 0;font-size:14px;color:#374151;line-height:1.6;"><span style="color:${TEAL};font-weight:700;margin-right:8px;">•</span><strong>Inspect your pool equipment</strong> (pump, filter, timer, valves, etc.)</td></tr>
+    <tr><td style="padding:5px 0;font-size:14px;color:#374151;line-height:1.6;"><span style="color:${TEAL};font-weight:700;margin-right:8px;">•</span>Check <strong>circulation and overall system function</strong></td></tr>
+    <tr><td style="padding:5px 0;font-size:14px;color:#374151;line-height:1.6;"><span style="color:${TEAL};font-weight:700;margin-right:8px;">•</span>Answer any questions you have and discuss any concerns you've noticed</td></tr>
+  </table>
+  <p style="margin:12px 0 0;font-size:14px;color:#374151;">Most inspections take <strong>about 20–30 minutes</strong>, depending on access and equipment layout.</p>
+</td></tr>
+<tr><td style="padding:24px 40px 0;">
+  <h2 style="margin:0 0 10px;font-size:16px;font-weight:700;color:#1f2937;border-bottom:2px solid #e5e7eb;padding-bottom:8px;">Before we arrive</h2>
+  <p style="margin:0;font-size:14px;color:#374151;line-height:1.7;">We will <strong>call you about 1 hour before arrival</strong> to confirm that you (or a designated caretaker) will be home and that we can access the pool and equipment area.</p>
+</td></tr>
+<tr><td style="padding:24px 40px 0;">
+  <h2 style="margin:0 0 10px;font-size:16px;font-weight:700;color:#1f2937;border-bottom:2px solid #e5e7eb;padding-bottom:8px;">No obligation</h2>
+  <p style="margin:0;font-size:14px;color:#374151;line-height:1.7;">This inspection is <strong>completely free</strong> and there is <strong>no obligation</strong> to sign up for service. Our goal is simply to give you a clear picture of your pool's condition and answer your questions.</p>
+</td></tr>
+${rescheduleUrl ? `
+<tr><td style="padding:28px 40px 0;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;">
+    <tr><td style="padding:20px 24px;text-align:center;">
+      <p style="margin:0 0 4px;font-size:14px;font-weight:600;color:#374151;">Need to change your appointment?</p>
+      <p style="margin:0 0 14px;font-size:13px;color:#6b7280;">If you need to reschedule, use the button below or call/text us.</p>
+      <a href="${rescheduleUrl}" style="display:inline-block;background-color:#ffffff;color:${TEAL};border:2px solid ${TEAL};border-radius:8px;padding:10px 24px;font-size:14px;font-weight:600;text-decoration:none;">Reschedule My Inspection</a>
+    </td></tr>
+  </table>
+</td></tr>` : ''}
+<tr><td style="padding:28px 40px 0;">
+  <p style="margin:0;font-size:14px;color:#374151;line-height:1.7;">If you need to reschedule or update access instructions, reply to this email or call/text us at <strong>${phone}</strong>.</p>
+  <p style="margin:18px 0 0;font-size:14px;color:#374151;">Thank you,<br/><strong>Breez Pool Care</strong></p>
+</td></tr>
+<tr><td style="padding:28px 40px 32px;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e5e7eb;padding-top:20px;">
+    <tr><td style="text-align:center;">
+      <p style="margin:0 0 4px;font-size:13px;color:#6b7280;"><strong style="color:#374151;">Breez Pool Care LLC</strong> &nbsp;|&nbsp; ${phone} &nbsp;|&nbsp; <a href="${website}" style="color:${TEAL};text-decoration:none;">breezpoolcare.com</a></p>
+      <p style="margin:4px 0 0;font-size:12px;color:#9ca3af;">${serviceArea}</p>
+    </td></tr>
+  </table>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
 
-DATE: ${dateFormatted}
-TIME WINDOW: ${inspectionTime || 'To be confirmed'}
-INSPECTOR: Matt
-
-WHAT TO EXPECT
---------------
-• We will call approximately one hour before arrival.
-• The inspection typically takes 20–30 minutes.
-• We will test your water chemistry, inspect equipment and circulation, and answer any questions you have.
-• No obligation — this visit is completely free.
-
-WHAT TO PREPARE
----------------
-• Homeowner or designated caretaker must be present.
-• Please ensure we can access the pool area.
-
-If you need to reschedule or have any questions, call us at (321) 524-3838 or reply to this email.
-
-We look forward to meeting you!
-
-Breez Pool Care LLC
-Owner/Operator: Matt Inghram
-(321) 524-3838
-Mon–Sat: 8am–6pm`;
+    const text = `Hi ${finalFirstName},\n\nYour free pool inspection with Breez Pool Care is confirmed!\n\nDate: ${dateFormatted}\nArrival Window: ${inspectionTime || 'To be confirmed'}\nInspector: ${inspectorName}, ${inspectorTitle}\n\nWHAT TO EXPECT\n• Test your water and review water balance\n• Inspect equipment (pump, filter, timer, valves)\n• Check circulation and system function\n• Answer your questions\n\nMost inspections take about 20–30 minutes.\n\nBEFORE WE ARRIVE\nWe will call you about 1 hour before arrival.\n\nNO OBLIGATION\nThis inspection is completely free with no obligation.\n\n${rescheduleUrl ? `To reschedule: ${rescheduleUrl}\n\n` : ''}Questions? Call/text ${phone}\n\nThank you,\nBreez Pool Care LLC\n${phone} | breezpoolcare.com\n${serviceArea}`;
 
     await resend.emails.send({
       from: 'Breez Pool Care <noreply@breezpoolcare.com>',
       to: email,
       subject,
-      text: body,
+      html,
+      text,
     });
 
     if (leadId) {
