@@ -404,14 +404,11 @@ Deno.serve(async (req) => {
       return json200({ success: false, error: 'requestedTimeSlot must be one of: morning, midday, afternoon', build: BUILD });
     }
 
-    // CRITICAL: Create pure service-role client independent of request context
-    // This ensures entity operations work correctly on unauthenticated public endpoints
     const base44Request = createClientFromRequest(req);
-    const serviceBase44 = base44Request.asServiceRole;
-    const entities = serviceBase44.entities;
-    const integrations = serviceBase44.integrations;
+    const entities = base44Request.asServiceRole.entities;
+    const integrations = base44Request.asServiceRole.integrations;
     
-    console.log('SFI_V2_CLIENT_MODE', { mode: 'pure_service', tokenPrefix: token.slice(0, 8) });
+    console.log('SFI_V2_CLIENT_MODE', { build: BUILD, mode: 'service_role', tokenPrefix: token.slice(0, 8) });
 
     // Resolve token (inlined — no function invoke)
     const resolved = await resolveToken(entities, token);
