@@ -424,15 +424,19 @@ export default function ScheduleInspection() {
             <div className="space-y-2">
               {TIME_SLOTS.map((slot) => {
                 const isSelected = selectedSlot === slot.value;
+                const isUnavailable = unavailableSlots[slot.value];
                 return (
                   <button
                     key={slot.value}
-                    onClick={() => setSelectedSlot(slot.value)}
-                    className={`w-full text-left px-5 py-4 rounded-xl border-2 transition-all ${isSelected ? 'shadow-sm' : 'border-gray-200 hover:border-gray-300'}`}
+                    onClick={() => !isUnavailable && setSelectedSlot(slot.value)}
+                    disabled={isUnavailable}
+                    className={`w-full text-left px-5 py-4 rounded-xl border-2 transition-all ${isUnavailable ? 'opacity-50 cursor-not-allowed border-gray-200' : isSelected ? 'shadow-sm' : 'border-gray-200 hover:border-gray-300'}`}
                     style={isSelected ? { borderColor: TEAL, backgroundColor: '#f0fdfd' } : {}}
                   >
                     <div className="font-semibold text-gray-900">{slot.label}</div>
-                    <div className="text-sm text-gray-500">{slot.sub}</div>
+                    <div className={`text-sm ${isUnavailable ? 'text-red-500' : 'text-gray-500'}`}>
+                      {isUnavailable ? 'Not available' : slot.sub}
+                    </div>
                   </button>
                 );
               })}
