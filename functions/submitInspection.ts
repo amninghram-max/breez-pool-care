@@ -105,10 +105,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Advance lead stage to inspection_confirmed
-    await base44.asServiceRole.entities.Lead.update(leadId, {
-      stage: 'inspection_confirmed',
-    });
+    // Advance lead stage to inspection_confirmed (only if not already further along)
+    const lead = await base44.asServiceRole.entities.Lead.get(leadId);
+    const advancedStages = ['quote_sent', 'converted', 'lost'];
+    if (lead && !advancedStages.includes(lead.stage)) {
+      await base44.asServiceRole.entities.Lead.update(leadId, {
+        stage: 'inspection_confirmed',
+      });
+    }
 
     console.log(`[submitInspection] Success: recordId=${record.id}, leadId=${leadId}, by=${user.email}`);
 
