@@ -44,10 +44,6 @@ const STAGE_OPTIONS = [
 
 const getCanonicalStage = (stage) => (stage === 'quote_sent' ? 'inspection_confirmed' : stage);
 
-  ...STAGES,
-  { key: 'quote_sent', label: 'Pending Acceptance (Post-Inspection)', color: 'bg-indigo-100 text-indigo-800' }
-];
-
 export default function LeadsPipeline() {
   const queryClient = useQueryClient();
   const [selectedLead, setSelectedLead] = useState(null);
