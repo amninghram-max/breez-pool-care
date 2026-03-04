@@ -155,8 +155,6 @@ export default function ScheduleInspection() {
       );
 
       const schedulePayload = {
-        token: token,
-      const schedulePayload = {
         token,
         firstName: firstName.trim(),
         phone: phone.trim(),
