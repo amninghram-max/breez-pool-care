@@ -465,13 +465,14 @@ Deno.serve(async (req) => {
         const insp = existing[0];
         console.log('SFI_V2_ALREADY_SCHEDULED', { leadIdPrefix: leadId.slice(0, 8), inspectionId: insp.id, requestId });
         // Still send confirmation email in case it wasn't sent on the original attempt
-        const emailStatus = await sendConfirmationEmail(entities, {
+        const emailStatus = await sendConfirmationEmail(entities, null, {
           leadId,
           firstName: finalFirstName,
           email: finalEmail,
           inspectionDate: insp.scheduledDate,
           inspectionTime: insp.timeWindow,
-          force: false  // skip if already sent
+          force: false,
+          token: token.trim()
         });
         return json200({
           success: true,
