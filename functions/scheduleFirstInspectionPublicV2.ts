@@ -622,6 +622,7 @@ Deno.serve(async (req) => {
       console.log('SFI_V2_INSPECTION_LINKED', { inspectionId: inspection.id, calendarEventId: calendarEvent.id });
     } catch (e) {
       console.warn('SFI_V2_LINK_FAILED', { error: e.message });
+      // Don't throw - continue even if link fails
     }
 
     // Step 5: Sync Lead + stage update + consume token
