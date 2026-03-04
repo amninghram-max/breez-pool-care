@@ -308,9 +308,9 @@ export default function ScheduleInspection() {
                 <div>
                   <div className="text-xs text-gray-400 uppercase tracking-wide">Time Window</div>
                   <div className="font-semibold text-gray-900">{confirmed.timeWindow}</div>
-                </div>
-              )}
-              {degradedMode && (
+                  </div>
+                  </div>
+                  {degradedMode && (
                 <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-left">
                   <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                   <p className="text-xs text-amber-700">Scheduling confirmed; internal sync pending.</p>
