@@ -609,7 +609,7 @@ function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {STAGE_OPTIONS.map(s => (
+            {STAGES.map(s => (
               <SelectItem key={s.key} value={s.key}>
                 {s.label}
               </SelectItem>
