@@ -94,16 +94,9 @@ Deno.serve(async (req) => {
 
     console.log('[submitInspection] Creating record for leadId:', leadId, 'by:', user.email, 'role:', user.role);
 
-    // Try service role first, fall back to user-scoped
-    let record;
-    try {
-      record = await base44.asServiceRole.entities.InspectionRecord.create(recordData);
-      console.log('[submitInspection] Created via asServiceRole, id:', record.id);
-    } catch (srErr) {
-      console.warn('[submitInspection] asServiceRole failed, trying user-scoped:', srErr.message);
-      record = await base44.entities.InspectionRecord.create(recordData);
-      console.log('[submitInspection] Created via user-scoped, id:', record.id);
-    }
+    // Use service role for create
+    const record = await base44.asServiceRole.entities.InspectionRecord.create(recordData);
+    console.log('[submitInspection] Created InspectionRecord, id:', record.id);
 
     // Mark calendar event completed
     if (calendarEventId) {
