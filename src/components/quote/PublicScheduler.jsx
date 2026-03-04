@@ -187,6 +187,53 @@ export default function PublicScheduler({ leadId, clientEmail, clientFirstName, 
         <p className="text-sm text-gray-500 mt-0.5">No obligation. Homeowner or caretaker must be present.</p>
       </div>
 
+      {/* Phone & address */}
+      <div className="space-y-3">
+        <p className="text-sm font-medium text-gray-700">Your Information</p>
+        <input
+          type="tel"
+          placeholder="Phone number"
+          value={phone}
+          onChange={e => setPhone(e.target.value)}
+          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+        />
+      </div>
+
+      {/* Service address */}
+      <div className="space-y-3">
+        <p className="text-sm font-medium text-gray-700">Service Address</p>
+        <input
+          type="text"
+          placeholder="Street address"
+          value={street}
+          onChange={e => setStreet(e.target.value)}
+          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+        />
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            type="text"
+            placeholder="City"
+            value={city}
+            onChange={e => setCity(e.target.value)}
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+          />
+          <input
+            type="text"
+            placeholder="ZIP"
+            value={zip}
+            onChange={e => setZip(e.target.value)}
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+          />
+        </div>
+        <input
+          type="text"
+          placeholder="State"
+          value={state}
+          onChange={e => setState(e.target.value)}
+          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+        />
+      </div>
+
       {/* Date picker */}
       <div>
         <p className="text-sm font-medium text-gray-700 mb-2">Select a date</p>
