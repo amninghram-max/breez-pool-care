@@ -279,7 +279,12 @@ Owner/Operator: Matt Inghram
 (321) 524-3838
 Mon–Sat: 8am–6pm`;
 
-    await integrations.Core.SendEmail({ to: email, subject, body, from_name: 'Breez Pool Care' });
+    await resend.emails.send({
+      from: 'Breez Pool Care <noreply@breezpoolcare.com>',
+      to: email,
+      subject,
+      text: body,
+    });
 
     if (leadId) {
       await entities.Lead.update(leadId, {
