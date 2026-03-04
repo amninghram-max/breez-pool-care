@@ -9,7 +9,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
  * Input:  { token, firstName, phone, email, serviceAddress: { street, city, state, zip }, requestedDate (YYYY-MM-DD), requestedTimeSlot }
  * Output: { success, scheduledDate?, timeWindow?, email?, firstName?, alreadyScheduled?, inspectionId?, eventId?,
  *           emailStatus?, build, runtimeVersion, requestId }
- */
+ */ 
 
 const BUILD = "SFI-V2-2026-03-04-F";
 
