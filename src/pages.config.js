@@ -88,6 +88,7 @@ import PublicHome from './pages/PublicHome';
 import QuoteView from './pages/QuoteView';
 import ReleaseReadiness from './pages/ReleaseReadiness';
 import RescheduleInspection from './pages/RescheduleInspection';
+import ScheduleInspection from './pages/ScheduleInspection';
 import ServiceReinstatement from './pages/ServiceReinstatement';
 import ServiceVisitEntry from './pages/ServiceVisitEntry';
 import ServiceVisitFlow from './pages/ServiceVisitFlow';
@@ -97,7 +98,6 @@ import TechnicianHome from './pages/TechnicianHome';
 import TechnicianRoute from './pages/TechnicianRoute';
 import TestDashboard from './pages/TestDashboard';
 import architectureContext from './pages/_ARCHITECTURE_CONTEXT';
-import ScheduleInspection from './pages/ScheduleInspection';
 import __Layout from './Layout.jsx';
 
 
@@ -143,6 +143,7 @@ export const PAGES = {
     "QuoteView": QuoteView,
     "ReleaseReadiness": ReleaseReadiness,
     "RescheduleInspection": RescheduleInspection,
+    "ScheduleInspection": ScheduleInspection,
     "ServiceReinstatement": ServiceReinstatement,
     "ServiceVisitEntry": ServiceVisitEntry,
     "ServiceVisitFlow": ServiceVisitFlow,
@@ -152,7 +153,6 @@ export const PAGES = {
     "TechnicianRoute": TechnicianRoute,
     "TestDashboard": TestDashboard,
     "_ARCHITECTURE_CONTEXT": architectureContext,
-    "ScheduleInspection": ScheduleInspection,
 }
 
 export const pagesConfig = {

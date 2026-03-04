@@ -503,8 +503,14 @@ function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit
   const lastEmailSent = getLastEmailSent();
 
   const handleStageAction = (newStage, data) => {
-    onStageChange(newStage);
+    if (newStage) {
+      onStageChange(newStage);
+    }
     setValidationError(null);
+    // Refresh leads if notes updated
+    if (data?.notes) {
+      queryClient?.invalidateQueries({ queryKey: ['leads'] });
+    }
   };
 
   const handleValidationError = (msg) => {
