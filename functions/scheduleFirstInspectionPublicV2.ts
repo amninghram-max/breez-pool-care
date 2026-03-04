@@ -472,8 +472,13 @@ Deno.serve(async (req) => {
     }
 
     const { leadId, email: tokenEmail } = resolved;
-    const finalEmail     = email || tokenEmail;
+    const finalEmail     = email?.trim() || tokenEmail;
     const finalFirstName = firstName.trim();
+
+    if (!finalEmail) {
+      console.warn('SFI_V2_NO_EMAIL', { leadId, tokenEmail, payloadEmail: email });
+      return json200({ success: false, code: 'NO_EMAIL', error: 'No email address found', ...meta });
+    }
 
     // Token lifecycle check
     const lifecycleCheck = await validateTokenLifecycle(entities, token);
