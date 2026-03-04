@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
 import { ChevronLeft, Loader2, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import PublicScheduler from './PublicScheduler';
 import QuoteResultDisplay from './QuoteResultDisplay';
 
 const TEAL = '#1B9B9F';
@@ -105,7 +102,7 @@ function ProgressBar({ current, total }) {
 
 // ── Thank you (not ready) ─────────────────────────────────────────────────────
 
-function ThankYouDisplay({ firstName, email, leadId, quoteToken }) {
+function ThankYouDisplay({ firstName, _email, _leadId, quoteToken }) {
   return (
     <div className="space-y-6 text-center">
       <div className="inline-flex items-center justify-center w-14 h-14 rounded-full mb-2" style={{ backgroundColor: '#e8f8f9' }}>
@@ -140,31 +137,31 @@ function ThankYouDisplay({ firstName, email, leadId, quoteToken }) {
 
 export default function PublicQuoteWizard({ 
   prefillData,
+  token,
   finalizing,
   setFinalizing,
-  finalizeState,
+  finalizeState: _finalizeState,
   setFinalizeState,
   finalizeError,
   setFinalizeError,
-  lastFinalizeRequest,
+  lastFinalizeRequest: _lastFinalizeRequest,
   setLastFinalizeRequest,
-  lastFinalizeResponse,
+  lastFinalizeResponse: _lastFinalizeResponse,
   setLastFinalizeResponse,
-  finishClickedAt,
+  finishClickedAt: _finishClickedAt,
   setFinishClickedAt
 }) {
-  const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
   const [firstName, setFirstName] = useState(prefillData?.firstName || '');
   const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null); // { releaseReady, quote?, isRange?, priceSummary? }
   const [error, setError] = useState('');
 
   // Determine steps dynamically (trees only shown if unscreened, contact skipped if token present)
   const showTrees = answers.enclosure === 'unscreened';
-  const hasToken = prefillData?.token;
+  const effectiveToken = prefillData?.token || token || null;
+  const hasToken = !!effectiveToken;
   const [disqualified, setDisqualified] = useState(null); // null, 'pool_type', 'filter_type'
 
   const baseSteps = [
@@ -295,7 +292,7 @@ export default function PublicQuoteWizard({
       // STEP 2: If releaseReady with quote, persist to V2
       if (data?.releaseReady && data?.quote) {
         const finalizePayload = {
-          token: prefillData?.token || null,
+          token: effectiveToken,
           prequalAnswers: answers,
           clientFirstName: finalFirstName.trim(),
           clientLastName: answers.lastName?.trim() || null,
