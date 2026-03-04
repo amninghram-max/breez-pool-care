@@ -1,44 +1,38 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
+import { Resend } from 'npm:resend@4.0.0';
+
+const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { leadId, firstName, email, inspectionDate, inspectionTime, serviceAddress, force } = await req.json();
+    const { leadId, firstName, email, inspectionDate, inspectionTime, force } = await req.json();
 
-    // ── Load Lead if leadId provided (Lead is source of truth) ──
     let lead = null;
     if (leadId) {
       lead = await base44.asServiceRole.entities.Lead.get(leadId).catch(() => null);
     }
 
-    // Resolve fields: Lead wins when available, fallback to params
     const finalFirstName = lead ? (lead.firstName || 'Customer') : (firstName || 'Customer');
-    const finalEmail = lead ? lead.email : email;
-    const finalInspectionDate = lead
-      ? (lead.confirmedInspectionDate ? lead.confirmedInspectionDate.split('T')[0] : inspectionDate)
-      : inspectionDate;
-    const finalInspectionTime = lead
-      ? (lead.confirmedInspectionTimeWindow || inspectionTime || 'To be confirmed')
-      : (inspectionTime || 'To be confirmed');
+    const finalEmail = (lead ? lead.email : email) || email;
+    const finalInspectionDate = inspectionDate || (lead?.confirmedInspectionDate?.split('T')[0]);
+    const finalInspectionTime = inspectionTime || 'To be confirmed';
 
     if (!finalEmail) {
       return Response.json({ error: 'Missing email: provide leadId or email param' }, { status: 400 });
     }
 
-    // ── Idempotency check ──
     if (leadId && !force && lead?.inspectionConfirmationSent) {
       console.log(`Confirmation already sent for leadId=${leadId}, skipping.`);
       return Response.json({ success: true, skipped: true, reason: 'already_sent' });
     }
 
-    // ── Format date for display ──
     const dateFormatted = finalInspectionDate
       ? new Date(finalInspectionDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
       : 'To be scheduled';
 
-    const emailSubject = `Inspection Confirmed — ${dateFormatted} · Breez Pool Care`;
-
-    const emailBody = `Hi ${finalFirstName},
+    const subject = `Inspection Confirmed — ${dateFormatted} · Breez Pool Care`;
+    const body = `Hi ${finalFirstName},
 
 Your free pool inspection with Breez Pool Care is confirmed!
 
@@ -67,12 +61,11 @@ Owner/Operator: Matt Inghram
 (321) 524-3838
 Mon–Sat: 8am–6pm`;
 
-    // ── Send email (flag set only on success) ──
-    await base44.asServiceRole.integrations.Core.SendEmail({
+    await resend.emails.send({
+      from: 'Breez Pool Care <noreply@breezpoolcare.com>',
       to: finalEmail,
-      subject: emailSubject,
-      body: emailBody,
-      from_name: 'Breez Pool Care'
+      subject,
+      text: body,
     });
 
     if (leadId) {
@@ -82,6 +75,7 @@ Mon–Sat: 8am–6pm`;
       }).catch(e => console.warn('Could not update Lead confirmation flag:', e.message));
     }
 
+    console.log('sendInspectionConfirmation: email sent to', finalEmail);
     return Response.json({ success: true, emailSent: true });
   } catch (error) {
     console.error('sendInspectionConfirmation error:', error);
