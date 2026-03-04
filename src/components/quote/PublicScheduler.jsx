@@ -36,9 +36,14 @@ function toISODate(d) {
   return d.toISOString().split('T')[0];
 }
 
-export default function PublicScheduler({ leadId, clientEmail, clientFirstName, onSuccess }) {
+export default function PublicScheduler({ leadId, clientEmail, clientFirstName, onSuccess, token }) {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedSlot, setSelectedSlot] = useState(null);
+  const [phone, setPhone] = useState('');
+  const [street, setStreet] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('FL');
+  const [zip, setZip] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [confirmed, setConfirmed] = useState(null);
@@ -46,6 +51,14 @@ export default function PublicScheduler({ leadId, clientEmail, clientFirstName, 
   const dates = getAvailableDates();
 
   const handleSubmit = async () => {
+    if (!phone.trim()) {
+      setError('Please enter your phone number.');
+      return;
+    }
+    if (!street.trim() || !city.trim() || !zip.trim()) {
+      setError('Please complete your service address.');
+      return;
+    }
     if (!selectedDate || !selectedSlot) {
       setError('Please select a date and time window.');
       return;
@@ -57,18 +70,67 @@ export default function PublicScheduler({ leadId, clientEmail, clientFirstName, 
     }
     setError('');
     setLoading(true);
+
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Request timed out')), 25000)
+    );
+
     try {
-      const res = await base44.functions.invoke('schedulePublicInspection', {
-        leadId: leadId || null,
-        clientEmail,
-        clientFirstName,
+      const payload = {
+        token: token || null,
+        firstName: clientFirstName.trim(),
+        phone: phone.trim(),
+        email: clientEmail,
+        serviceAddress: {
+          street: street.trim(),
+          city: city.trim(),
+          state: state.trim(),
+          zip: zip.trim()
+        },
         requestedDate: isoDate,
         requestedTimeSlot: selectedSlot,
-      });
-      setConfirmed(res.data);
-      if (onSuccess) onSuccess(res.data);
+      };
+
+      let data;
+      try {
+        const res = await Promise.race([
+          base44.functions.invoke('scheduleFirstInspectionPublicV2', payload),
+          timeoutPromise
+        ]);
+        data = res?.data ?? res;
+      } catch (v2Err) {
+        const msg = String(v2Err?.message || v2Err || '');
+        const shouldFallback = msg.includes('timed out') || msg.includes('Deployment does not exist') || msg.includes('FUNCTION_NOT_FOUND');
+        if (!shouldFallback) throw v2Err;
+      }
+
+      // Fallback to V1 if V2 unavailable/timed out or V2 is blocked by platform create permissions
+      const v2Unavailable = !data || (data?.success !== true && (String(data?.error || '').includes('Deployment does not exist') || data?.code === 'FUNCTION_NOT_FOUND'));
+      const v2CreateBlocked = data?.success !== true && ['INSPECTION_CREATE_FAILED', 'INSPECTION_CREATE_FORBIDDEN'].includes(data?.code);
+      if (v2Unavailable || v2CreateBlocked) {
+        const v1Res = await Promise.race([
+          base44.functions.invoke('scheduleFirstInspectionPublicV1', payload),
+          timeoutPromise
+        ]);
+        data = v1Res?.data ?? v1Res;
+      }
+
+      if (data?.success === true) {
+        setConfirmed(data);
+        if (onSuccess) onSuccess(data);
+      } else {
+        const codeMessages = {
+          TOKEN_NOT_FOUND: 'Invalid or expired token.',
+          INCOMPLETE_DATA: 'Token does not have complete lead information.',
+          QUERY_ERROR: 'We could not verify your quote token. Please try again.',
+          INSPECTION_CREATE_FAILED: "We couldn't create your inspection. Please contact Breez at (321) 524-3838.",
+          INSPECTION_CREATE_FORBIDDEN: "We couldn't create your inspection. Please contact Breez at (321) 524-3838."
+        };
+        const errorMsg = codeMessages[data?.code] || data?.error || 'Failed to schedule inspection. Please call (321) 524-3838.';
+        setError(errorMsg);
+      }
     } catch (e) {
-      setError('Something went wrong. Please call us at (321) 524-3838.');
+      setError(e?.message || 'Something went wrong. Please call us at (321) 524-3838.');
     } finally {
       setLoading(false);
     }
@@ -128,6 +190,53 @@ export default function PublicScheduler({ leadId, clientEmail, clientFirstName, 
       <div>
         <h2 className="text-xl font-bold text-gray-900">Schedule Your Free Inspection</h2>
         <p className="text-sm text-gray-500 mt-0.5">No obligation. Homeowner or caretaker must be present.</p>
+      </div>
+
+      {/* Phone & address */}
+      <div className="space-y-3">
+        <p className="text-sm font-medium text-gray-700">Your Information</p>
+        <input
+          type="tel"
+          placeholder="Phone number"
+          value={phone}
+          onChange={e => setPhone(e.target.value)}
+          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+        />
+      </div>
+
+      {/* Service address */}
+      <div className="space-y-3">
+        <p className="text-sm font-medium text-gray-700">Service Address</p>
+        <input
+          type="text"
+          placeholder="Street address"
+          value={street}
+          onChange={e => setStreet(e.target.value)}
+          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+        />
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            type="text"
+            placeholder="City"
+            value={city}
+            onChange={e => setCity(e.target.value)}
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+          />
+          <input
+            type="text"
+            placeholder="ZIP"
+            value={zip}
+            onChange={e => setZip(e.target.value)}
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+          />
+        </div>
+        <input
+          type="text"
+          placeholder="State"
+          value={state}
+          onChange={e => setState(e.target.value)}
+          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+        />
       </div>
 
       {/* Date picker */}

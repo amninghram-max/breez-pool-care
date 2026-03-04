@@ -116,9 +116,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Perform update
+    // Perform update (use authenticated admin context for Lead write)
     try {
-      await base44.asServiceRole.entities.Lead.update(leadId, { stage: newStage });
+      console.log('LEAD_UPDATE_CONTEXT_AUTH_USER', { path: 'base44.entities.Lead.update', operator: user.email, leadId: leadId.slice(0, 8) });
+      await base44.entities.Lead.update(leadId, { stage: newStage });
       console.info('[updateLeadStageV1] Stage updated', { 
         leadId, 
         oldStage, 
