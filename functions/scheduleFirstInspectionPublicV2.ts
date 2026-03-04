@@ -237,6 +237,8 @@ async function checkDriveTimeFeasibility(entities, requestedDate, startTime) {
 // ── Confirmation email ──
 async function sendConfirmationEmail(entities, integrations, { leadId, firstName, email, inspectionDate, inspectionTime, force, token }) {
   try {
+    console.log('SFI_V2_EMAIL_SENDING_START', { leadId, email: email.slice(0, 5), inspectionDate, inspectionTime });
+    
     if (leadId && !force) {
       const lead = await entities.Lead.get(leadId).catch(() => null);
       if (lead?.inspectionConfirmationSent) {
