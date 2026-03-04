@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, CheckCircle2, AlertCircle, Calendar, Clock } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -150,6 +151,12 @@ export default function ScheduleInspection() {
     );
 
     try {
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timed out. Please try again.')), 15000)
+      );
+
+      const schedulePayload = {
+        token: token,
       const schedulePayload = {
         token,
         firstName: firstName.trim(),
@@ -325,6 +332,19 @@ export default function ScheduleInspection() {
                  Back Home
                 </Button>
                 </div>
+              )}
+              {degradedMode && (
+                <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-left">
+                  <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-700">Scheduling confirmed; internal sync pending.</p>
+                </div>
+              )}
+              <Button
+                onClick={() => navigate('/')}
+                className="w-full bg-teal-600 hover:bg-teal-700 text-white"
+              >
+                Back Home
+              </Button>
             <div className="rounded-xl bg-gray-50 p-4 text-left text-sm text-gray-600 space-y-2">
               <p className="font-semibold text-gray-800">What to expect:</p>
               <ul className="space-y-1 list-disc list-inside">

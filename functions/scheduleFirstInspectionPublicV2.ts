@@ -550,6 +550,11 @@ Deno.serve(async (req) => {
     const leadId = resolveData.leadId;
     const tokenEmail = resolveData.email;
     const finalEmail = email || tokenEmail;
+    }
+
+    const leadId = resolveData.leadId;
+    const tokenEmail = resolveData.email;
+    const finalEmail = email || tokenEmail;
     const base44Request = createClientFromRequest(req);
     const entities = base44Request.asServiceRole.entities;
     const integrations = base44Request.asServiceRole.integrations;
@@ -803,6 +808,8 @@ Deno.serve(async (req) => {
       }
     }
 
+    }
+
       console.log('SFI_V2_EVENT_CREATED', { leadIdPrefix: leadId.slice(0, 8), eventId: calendarEvent.id, requestId });
     } catch (e) {
       console.error('SFI_V2_EVENT_CREATE_FAILED', { error: e.message, requestId });
@@ -896,6 +903,13 @@ Deno.serve(async (req) => {
       email: finalEmail,
       firstName,
       inspectionId: inspection?.id || null,
+      eventId: calendarEvent.id,
+      shouldSendNotification,
+      emailStatus,
+      ...(degradedMode && {
+        degradedMode: true,
+        degradedReason: 'INSPECTION_RECORD_CREATE_FAILED'
+      }),
       eventId: calendarEvent.id,
       shouldSendNotification,
       emailStatus,
