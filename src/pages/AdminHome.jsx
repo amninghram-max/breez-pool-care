@@ -172,6 +172,58 @@ export default function AdminHome() {
         ))}
       </div>
 
+      {/* Debug: Clear all test data */}
+      <div className="border-t pt-6 mt-6">
+        <h3 className="text-sm font-semibold text-gray-600 mb-3">Developer Tools</h3>
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={() => setShowClearDialog(true)}
+          className="flex items-center gap-2"
+        >
+          <Trash2 className="w-4 h-4" />
+          Clear All Test Data
+        </Button>
+      </div>
+
+      {/* Confirmation Dialog */}
+      {showClearDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-sm w-full p-6 space-y-4">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">Clear All Test Data?</h3>
+              <p className="text-sm text-gray-500 mt-1">This will permanently delete all records from:</p>
+              <ul className="text-xs text-gray-600 mt-2 ml-4 list-disc space-y-1">
+                <li>Lead</li>
+                <li>CalendarEvent</li>
+                <li>Quote</li>
+                <li>QuoteRequests</li>
+                <li>InspectionRecord</li>
+              </ul>
+            </div>
+            <p className="text-xs text-red-600 font-medium">This action cannot be undone.</p>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowClearDialog(false)}
+                disabled={clearLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleClearData}
+                disabled={clearLoading}
+              >
+                {clearLoading ? 'Clearing...' : 'Clear All Data'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modals */}
       <InPersonSalesModal open={showInPerson} onOpenChange={setShowInPerson} />
     </div>
