@@ -28,10 +28,10 @@ import SendInspectionLinkModal from '@/components/admin/SendInspectionLinkModal'
 // Canonical stage order (business rule)
 const STAGES = [
   { key: 'new_lead', label: 'New (Uncontacted)', color: 'bg-blue-100 text-blue-800', defaultExpanded: true },
-  { key: 'contacted', label: 'Quoted/Contacted', color: 'bg-purple-100 text-purple-800', defaultExpanded: true },
+  { key: 'contacted', label: 'Quoted / Contacted', color: 'bg-purple-100 text-purple-800', defaultExpanded: true },
   { key: 'inspection_scheduled', label: 'Inspection Scheduled', color: 'bg-yellow-100 text-yellow-800', defaultExpanded: true },
-  { key: 'ready_for_conversion', label: 'Ready for Conversion', color: 'bg-teal-100 text-teal-800', defaultExpanded: false, grouped: ['inspection_confirmed', 'quote_sent'] },
-  { key: 'converted', label: 'Active', color: 'bg-emerald-100 text-emerald-800', defaultExpanded: false },
+  { key: 'inspection_confirmed', label: 'Ready for Conversion', color: 'bg-teal-100 text-teal-800', defaultExpanded: true },
+  { key: 'converted', label: 'Active Customer', color: 'bg-emerald-100 text-emerald-800', defaultExpanded: false },
   { key: 'lost', label: 'Lost', color: 'bg-gray-100 text-gray-800', defaultExpanded: false }
 ];
 
@@ -173,9 +173,6 @@ export default function LeadsPipeline() {
   };
 
   const getLeadsByStage = (stage) => {
-    if (stage.grouped) {
-      return leads.filter(lead => stage.grouped.includes(lead.stage));
-    }
     return leads.filter(lead => lead.stage === stage.key);
   };
 
@@ -425,38 +422,26 @@ export default function LeadsPipeline() {
                 )}
               </button>
 
-              {/* Helper text for grouped section */}
-              {stage.grouped && isExpanded && (
-                <div className="bg-teal-50 border-b border-teal-200 px-4 py-2 text-xs text-teal-700">
-                  Shows both completed inspections and awaiting acceptance quotes.
-                </div>
-              )}
-
               {/* Stage Rows */}
               {isExpanded && (
                 <div className="divide-y divide-gray-100 bg-white">
                   {stageLeads.length === 0 ? (
                     <div className="p-4 text-center text-gray-400 text-sm">No leads</div>
                   ) : (
-                    stageLeads.map(lead => {
-                      // For grouped stages, pass the original stage, not the group
-                      const leadActualStage = stage.grouped ? stage.grouped.find(s => s === lead.stage) : stage.key;
-                      const leadStageObj = STAGES.find(s => s.key === leadActualStage) || stage;
-                      return (
-                        <LeadRow
-                          key={lead.id}
-                          lead={lead}
-                          stage={leadStageObj}
-                          groupedSection={stage.grouped}
-                          onAdvance={() => handleAdvance(lead)}
-                          onStageChange={(newStage) => handleStageChange(lead.id, newStage, lead.stage)}
-                          onEdit={() => setSelectedLead(lead)}
-                          queryClient={queryClient}
-                          isSelected={selectedLeadIds.has(lead.id)}
-                          onToggleSelect={() => toggleLeadSelect(lead.id)}
-                        />
-                      );
-                    })
+                    stageLeads.map(lead => (
+                      <LeadRow
+                        key={lead.id}
+                        lead={lead}
+                        stage={stage}
+                        groupedSection={null}
+                        onAdvance={() => handleAdvance(lead)}
+                        onStageChange={(newStage) => handleStageChange(lead.id, newStage, lead.stage)}
+                        onEdit={() => setSelectedLead(lead)}
+                        queryClient={queryClient}
+                        isSelected={selectedLeadIds.has(lead.id)}
+                        onToggleSelect={() => toggleLeadSelect(lead.id)}
+                      />
+                    ))
                   )}
                 </div>
               )}
@@ -620,17 +605,11 @@ function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {STAGES.filter(s => !s.grouped).map(s => (
+            {STAGES.map(s => (
               <SelectItem key={s.key} value={s.key}>
                 {s.label}
               </SelectItem>
             ))}
-            {STAGES.find(s => s.grouped) && (
-              <>
-                <SelectItem value="inspection_confirmed">Inspection Completed</SelectItem>
-                <SelectItem value="quote_sent">Pending Acceptance</SelectItem>
-              </>
-            )}
           </SelectContent>
         </Select>
 
@@ -731,17 +710,11 @@ function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {STAGES.filter(s => !s.grouped).map(s => (
+                {STAGES.map(s => (
                   <SelectItem key={s.key} value={s.key}>
                     {s.label}
                   </SelectItem>
                 ))}
-                {STAGES.find(s => s.grouped) && (
-                  <>
-                    <SelectItem value="inspection_confirmed">Inspection Completed</SelectItem>
-                    <SelectItem value="quote_sent">Pending Acceptance</SelectItem>
-                  </>
-                )}
               </SelectContent>
             </Select>
 

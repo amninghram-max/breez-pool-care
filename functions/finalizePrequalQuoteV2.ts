@@ -252,7 +252,7 @@ async function sendQuoteSummaryEmail({ firstName, email, quoteToken, appOrigin, 
       to: [email],
       subject: `${firstName}, your Breez Pool Care quote is ready`,
       html: htmlBody,
-      text: `Hi ${firstName},\n\nYour Breez Pool Care quote is ready.\n\nView it here: ${quoteLink}\n\nSchedule your free inspection: ${scheduleLink}\n\nBreez Pool Care LLC · Melbourne, FL · (321) 524-3838`
+      text: `Hi ${firstName},\n\nYour Breez Pool Care quote is ready.\n\nSchedule your free inspection: ${scheduleLink}\n\nBreez Pool Care LLC · Melbourne, FL · (321) 524-3838`
     })
   });
 
@@ -613,20 +613,22 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── Step 8: Update Lead stage to 'quote_sent' (explicit stage transition) ──
+    // ── Step 8: Update Lead stage to 'contacted' (quoted/contacted bucket) ──
+    // Business rule: after quote is generated/sent, lead is in 'contacted' bucket.
+    // Do NOT advance past inspection stages. Forward-only: new_lead → contacted.
     try {
       const leadCheck = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
       if (leadCheck?.[0]) {
         const currentStage = leadCheck[0].stage || 'new_lead';
-        // Forward-only stage progression: new_lead -> quote_sent
-        if (currentStage !== 'quote_sent') {
+        const PRE_QUOTE_STAGES = ['new_lead'];
+        if (PRE_QUOTE_STAGES.includes(currentStage)) {
           await base44.asServiceRole.entities.Lead.update(leadId, {
-            stage: 'quote_sent',
+            stage: 'contacted',
             quoteGenerated: true,
           });
-          console.log('FPQ_V2_STAGE_PROGRESSED', { leadId, fromStage: currentStage, toStage: 'quote_sent' });
+          console.log('FPQ_V2_STAGE_PROGRESSED', { leadId, fromStage: currentStage, toStage: 'contacted' });
         } else {
-          console.log('FPQ_V2_STAGE_ALREADY_SET', { leadId, stage: 'quote_sent' });
+          console.log('FPQ_V2_STAGE_ALREADY_SET', { leadId, stage: currentStage });
         }
       }
     } catch (e) {

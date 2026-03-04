@@ -194,11 +194,7 @@ Deno.serve(async (req) => {
 
         if (shouldSendNotification) {
           try {
-            await base44.functions.invoke('updateLeadStagePublicV1', {
-              token: token.trim(),
-              newStage: 'inspection_scheduled',
-              context: 'schedule-success'
-            });
+            await base44.asServiceRole.entities.Lead.update(leadId, { stage: 'inspection_scheduled' });
             console.log('SFI_V1_STAGE_PROGRESSED', { leadId, newStage: 'inspection_scheduled', requestId });
           } catch (stageErr) {
             console.warn('SFI_V1_STAGE_UPDATE_FAILED', { error: stageErr.message, requestId });

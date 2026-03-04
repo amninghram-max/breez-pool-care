@@ -149,40 +149,73 @@ export default function ScheduleInspection() {
     setLoading(true);
     setError('');
     try {
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Request timed out. Please try again.')), 15000)
-      );
+      const schedulePayload = {
+        token: token,
+        firstName: firstName.trim(),
+        phone: phone.trim(),
+        email: leadData?.email,
+        serviceAddress: {
+          street: street.trim(),
+          city: city.trim(),
+          state: state.trim(),
+          zip: zip.trim()
+        },
+        requestedDate: isoDate,
+        requestedTimeSlot: selectedSlot,
+      };
 
-      const res = await Promise.race([
-        base44.functions.invoke('scheduleFirstInspectionPublicV2', {
-          token: token,
-          firstName: firstName.trim(),
-          phone: phone.trim(),
-          email: leadData?.email,
-          serviceAddress: {
-            street: street.trim(),
-            city: city.trim(),
-            state: state.trim(),
-            zip: zip.trim()
-          },
-          requestedDate: isoDate,
-          requestedTimeSlot: selectedSlot,
-        }),
-        timeoutPromise
-      ]);
-      
-      const data = res?.data ?? res;
+      const timeoutMs = 15000;
+      let data = null;
+
+      // Attempt V2 first; fall back to V1 on timeout or function-not-found
+      try {
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('__TIMEOUT__')), timeoutMs)
+        );
+        const res = await Promise.race([
+          base44.functions.invoke('scheduleFirstInspectionPublicV2', schedulePayload),
+          timeoutPromise
+        ]);
+        data = res?.data ?? res;
+      } catch (v2Err) {
+        const isTimeout = v2Err?.message === '__TIMEOUT__';
+        const isNotFound = v2Err?.message?.includes('not found') || v2Err?.status === 404;
+        if (isTimeout || isNotFound) {
+          console.warn('ScheduleInspection: V2 unavailable, falling back to V1', { reason: v2Err.message });
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Request timed out. Please try again.')), timeoutMs)
+          );
+          const res = await Promise.race([
+            base44.functions.invoke('scheduleFirstInspectionPublicV1', schedulePayload),
+            timeoutPromise
+          ]);
+          data = res?.data ?? res;
+        } else {
+          throw v2Err;
+        }
+      }
 
       if (data?.success === true) {
         setConfirmed(data);
-        // Email was triggered server-side; consume the returned status
         setEmailStatus(data.emailStatus === 'failed' ? 'failed' : 'sent');
       } else {
-        const errorMsg = data?.error || 'Failed to schedule inspection. Please call (321) 524-3838.';
+        // Preserve explicit error codes — never collapse to generic
+        const CODE_MESSAGES = {
+          TOKEN_NOT_FOUND: "We couldn't find this scheduling link. Please check your email or start a new quote.",
+          INCOMPLETE_DATA: "This quote is incomplete. Please contact Breez at (321) 524-3838.",
+          QUERY_ERROR: "We're having trouble completing your request. Please try again.",
+          TOKEN_EXPIRED: "This scheduling link has expired. Please contact Breez at (321) 524-3838.",
+          TOKEN_ALREADY_USED: data?.error || "This link has already been used.",
+          INSPECTION_CREATE_FORBIDDEN: "We couldn't create your inspection. Please contact Breez at (321) 524-3838.",
+          TECH_DAILY_CAP_REACHED: data?.error || "That date is fully booked. Please choose another date.",
+          INSPECTION_BLOCK_CAP_REACHED: data?.error || "That time slot is full. Please choose another time.",
+          DRIVE_TIME_CONFLICT: data?.error || "That time is unavailable. Please choose another time slot.",
+        };
+        const errorMsg = CODE_MESSAGES[data?.code] || data?.error || 'Failed to schedule inspection. Please call (321) 524-3838.';
         setError(errorMsg);
       }
     } catch (e) {
-      setError(e?.message || 'Something went wrong. Please call us at (321) 524-3838.');
+      setError(e?.message === '__TIMEOUT__' ? 'Request timed out. Please try again.' : (e?.message || 'Something went wrong. Please call us at (321) 524-3838.'));
     } finally {
       setLoading(false);
     }

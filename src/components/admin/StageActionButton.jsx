@@ -16,21 +16,17 @@ export default function StageActionButton({ lead, currentStage, onAction, onVali
       handler: 'sendQuote'
     },
     contacted: {
-      label: 'Schedule Inspection',
+      label: 'Send Inspection Link',
       handler: 'scheduleInspection'
     },
     inspection_confirmed: {
-      label: 'Send Invite',
+      label: 'Send Acceptance Link',
       handler: 'sendInvite'
     },
     quote_sent: {
-      label: 'Schedule Inspection',
-      handler: 'scheduleInspection'
-    },
-    pending: {
-      label: 'Resend Invite',
+      label: 'Send Acceptance Link',
       handler: 'sendInvite'
-    }
+    },
   };
 
   const action = actionMap[currentStage];
@@ -62,7 +58,7 @@ export default function StageActionButton({ lead, currentStage, onAction, onVali
 
         if (res.data?.success) {
           const newNotes = (lead.notes || '') + `\n[QUOTE_SENT] ${new Date().toISOString()}`;
-          onAction('quoted', { notes: newNotes });
+          onAction('contacted', { notes: newNotes });
           toast.success('Quote sent');
         } else {
           toast.error(res.data?.error || 'Failed to send quote');
@@ -88,7 +84,7 @@ export default function StageActionButton({ lead, currentStage, onAction, onVali
         
         if (res.data?.success) {
           const newNotes = (lead.notes || '') + `\n[INVITE_SENT] ${new Date().toISOString()}`;
-          onAction('pending', { notes: newNotes });
+          onAction('converted', { notes: newNotes });
           toast.success('Invite sent');
         } else {
           toast.error(res.data?.error || 'Failed to send invite');
