@@ -42,8 +42,6 @@ const STAGE_OPTIONS = [
 
 const getCanonicalStage = (stage) => (stage === 'quote_sent' ? 'inspection_confirmed' : stage);
 
-const STAGE_OPTIONS = [...STAGES];
-
 export default function LeadsPipeline() {
   const queryClient = useQueryClient();
   const [selectedLead, setSelectedLead] = useState(null);
