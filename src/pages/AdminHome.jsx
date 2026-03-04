@@ -52,6 +52,28 @@ export default function AdminHome() {
     !l.isDeleted && ['new_lead', 'contacted', 'inspection_scheduled', 'inspection_confirmed', 'quote_sent'].includes(l.stage)
   ).length;
 
+  const handleClearData = async () => {
+    setClearLoading(true);
+    try {
+      const res = await base44.functions.invoke('clearAllTestData', {
+        confirmCode: 'CLEAR_ALL_TEST_DATA_CONFIRMED'
+      });
+      
+      if (res?.data?.success) {
+        alert('✓ All test data cleared successfully');
+        setShowClearDialog(false);
+        // Refresh queries
+        window.location.reload();
+      } else {
+        alert('Error: ' + (res?.data?.error || 'Unknown error'));
+      }
+    } catch (error) {
+      alert('Error: ' + error.message);
+    } finally {
+      setClearLoading(false);
+    }
+  };
+
   // "View as Technician" mode — renders TechnicianHome in a sandboxed view
   if (viewAsTech) {
     return (
