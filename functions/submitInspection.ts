@@ -94,8 +94,9 @@ Deno.serve(async (req) => {
 
     console.log('[submitInspection] Creating record for leadId:', leadId, 'by:', user.email, 'role:', user.role);
 
-    // Use service role for create
-    const record = await base44.asServiceRole.entities.InspectionRecord.create(recordData);
+    // Create using admin service role
+    const base44Admin = createClientFromRequest(req);
+    const record = await base44Admin.asServiceRole.entities.InspectionRecord.create(recordData);
     console.log('[submitInspection] Created InspectionRecord, id:', record.id);
 
     // Mark calendar event completed
