@@ -102,61 +102,17 @@ Deno.serve(async (req) => {
         const leadRows = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
         const lead = leadRows?.[0];
         if (lead && lead.isDeleted === true) {
-          console.log('RQT_V1_LEAD_UNAVAILABLE', {
-            tokenPrefix: cleanToken.slice(0, 8),
-            leadIdPrefix: leadId.slice(0, 8),
-            reason: 'lead_soft_deleted',
-            requestId
-          });
-          return json200({
-            success: false,
-            code: 'LEAD_UNAVAILABLE',
-            error: 'This quote is no longer active. Please contact Breez at (321) 524-3838 for assistance.',
-            ...meta
-          });
+          console.log('RQT_V1_LEAD_UNAVAILABLE', { tokenPrefix: cleanToken.slice(0, 8), reason: 'lead_soft_deleted', requestId });
+          // Map deleted lead to INCOMPLETE_DATA — do not silently rebound by email
+          leadId = null;
         }
         if (!lead) {
-          console.log('RQT_V1_LEAD_NOT_FOUND', { tokenPrefix: cleanToken.slice(0, 8), leadIdPrefix: leadId.slice(0, 8), requestId });
-          leadId = null; // Will trigger rebound attempt below
+          console.log('RQT_V1_LEAD_NOT_FOUND', { tokenPrefix: cleanToken.slice(0, 8), requestId });
+          leadId = null;
         }
       } catch (e) {
         console.warn('RQT_V1_LEAD_CHECK_FAILED', { error: e.message, requestId });
         return json200({ success: false, code: 'LEAD_LOOKUP_FAILED', error: 'Platform temporarily unavailable', ...meta });
-      }
-    }
-
-    // ── Step 2c: Rebound to latest active lead by email (if leadId broken & email valid) ──
-    if (!leadId && email) {
-      console.log('RQT_V1_REBOUND_ATTEMPT', { tokenPrefix: cleanToken.slice(0, 8), reason: 'leadId missing or invalid', requestId });
-      try {
-        const activeLeads = await base44.asServiceRole.entities.Lead.filter(
-          { email, isDeleted: { $ne: true } },
-          '-created_date',
-          1
-        );
-        if (activeLeads && activeLeads.length > 0) {
-          const activeLead = activeLeads[0];
-          leadId = activeLead.id;
-          if (!firstName) firstName = activeLead.firstName || null;
-          console.log('RQT_V1_REBOUND_ACTIVE_LEAD', {
-            tokenPrefix: cleanToken.slice(0, 8),
-            leadId,
-            emailPrefix: email.slice(0, 5),
-            requestId
-          });
-
-          try {
-            const reboundFields = { leadId };
-            if (!request.email) reboundFields.email = email;
-            if (!request.firstName) reboundFields.firstName = firstName;
-            await base44.asServiceRole.entities.QuoteRequests.update(request.id, reboundFields);
-            console.log('RQT_V1_REBOUND_WRITTEN', { requestId: request.id });
-          } catch (reboundWriteErr) {
-            console.warn('RQT_V1_REBOUND_WRITE_FAILED', { error: reboundWriteErr.message, requestId });
-          }
-        }
-      } catch (reboundErr) {
-        console.warn('RQT_V1_REBOUND_FAILED', { error: reboundErr.message, requestId });
       }
     }
 
