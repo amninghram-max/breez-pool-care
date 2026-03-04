@@ -610,8 +610,6 @@ function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit
         </div>
 
         {/* Stage Dropdown */}
-        <Select value={getCanonicalStage(lead.stage)} onValueChange={onStageChange}>
-          <SelectTrigger className="w-32 h-8 text-xs">
         <Select value={lead.stage} onValueChange={onStageChange}>
           <SelectTrigger className="w-28 h-8 text-xs flex-shrink-0">
             <SelectValue />
