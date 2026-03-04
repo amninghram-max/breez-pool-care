@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Settings, BarChart3, Users, Shield, FileText, Zap, Eye } from 'lucide-react';
+import { Settings, BarChart3, Users, Shield, FileText, Zap, Eye, Trash2 } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
