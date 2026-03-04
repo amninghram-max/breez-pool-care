@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
 /**
  * resolveQuoteTokenPublicV1
@@ -8,17 +8,14 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  * Resolution order:
  * 1. Query QuoteRequests by token
  * 2. If QuoteRequests.leadId is missing, attempt repair from Quote entity
- *    (Quote.leadId where Quote.quoteToken = token)
  * 3. If still unresolvable, return INCOMPLETE_DATA
  *
  * Input:  { token }
- * Output: { success:true, leadId, email, firstName?, phone?, snapshotId? }
- *      OR { success:false, code, error }
+ * Output: { success:true, leadId, email, firstName?, phone?, snapshotId?, build, runtimeVersion, requestId }
+ *      OR { success:false, code, error, build, runtimeVersion, requestId }
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
-
-const BUILD = "RESOLVE_TOKEN_V1-2026-03-03-A";
+const BUILD = "RESOLVE_TOKEN_V1-2026-03-04-F";
 
 const json200 = (data) => new Response(
   JSON.stringify(data),
@@ -26,16 +23,21 @@ const json200 = (data) => new Response(
 );
 
 Deno.serve(async (req) => {
+  const requestId = crypto.randomUUID();
+  const runtimeVersion = BUILD;
+
+  const meta = { build: BUILD, runtimeVersion, requestId };
+
   try {
     const base44 = createClientFromRequest(req);
     const payload = await req.json();
     const { token } = payload || {};
 
-    console.log('RESOLVE_TOKEN_V1_ENTRY', { token: token ? token.slice(0, 8) : null });
+    console.log('RQT_V1_ENTRY_VERSION', { runtimeVersion, tokenPrefix: token ? token.slice(0, 8) : null, requestId });
 
     if (!token || typeof token !== 'string' || !token.trim()) {
-      console.log('RESOLVE_TOKEN_V1_INVALID', { reason: 'missing or empty token' });
-      return json200({ success: false, code: 'INVALID_TOKEN', error: 'Token is required', build: BUILD });
+      console.log('RQT_V1_INVALID', { reason: 'missing or empty token', requestId });
+      return json200({ success: false, code: 'INVALID_TOKEN', error: 'Token is required', ...meta });
     }
 
     const cleanToken = token.trim();
@@ -46,13 +48,13 @@ Deno.serve(async (req) => {
       const requests = await base44.asServiceRole.entities.QuoteRequests.filter({ token: cleanToken }, null, 1);
       if (requests && requests.length > 0) request = requests[0];
     } catch (e) {
-      console.error('RESOLVE_TOKEN_V1_QUERY_FAILED', { error: e.message });
-      return json200({ success: false, code: 'QUERY_ERROR', error: 'Failed to resolve token', build: BUILD });
+      console.error('RQT_V1_QUERY_FAILED', { error: e.message, requestId });
+      return json200({ success: false, code: 'QUERY_ERROR', error: 'Failed to resolve token', ...meta });
     }
 
     if (!request) {
-      console.log('RESOLVE_TOKEN_V1_NOT_FOUND', { token: cleanToken.slice(0, 8) });
-      return json200({ success: false, code: 'TOKEN_NOT_FOUND', error: 'Invalid or expired token', build: BUILD });
+      console.log('RQT_V1_NOT_FOUND', { tokenPrefix: cleanToken.slice(0, 8), requestId });
+      return json200({ success: false, code: 'TOKEN_NOT_FOUND', error: 'Invalid or expired token', ...meta });
     }
 
     let leadId = request.leadId || null;
@@ -66,7 +68,7 @@ Deno.serve(async (req) => {
 
     // ── Step 2: Repair path — if QuoteRequests.leadId is missing, check Quote entity ──
     if (!leadId) {
-      console.log('RESOLVE_TOKEN_V1_REPAIR_ATTEMPT', { token: cleanToken.slice(0, 8), reason: 'leadId null in QuoteRequests' });
+      console.log('RQT_V1_REPAIR_ATTEMPT', { tokenPrefix: cleanToken.slice(0, 8), reason: 'leadId null in QuoteRequests', requestId });
       try {
         const quotes = await base44.asServiceRole.entities.Quote.filter({ quoteToken: cleanToken }, '-created_date', 1);
         if (quotes && quotes.length > 0) {
@@ -75,7 +77,7 @@ Deno.serve(async (req) => {
             leadId = q.leadId;
             if (!email) email = q.clientEmail || null;
             if (!firstName) firstName = q.clientFirstName || null;
-            console.log('RESOLVE_TOKEN_V1_REPAIRED_FROM_QUOTE', { leadId, token: cleanToken.slice(0, 8) });
+            console.log('RQT_V1_REPAIRED_FROM_QUOTE', { leadId, tokenPrefix: cleanToken.slice(0, 8), requestId });
 
             // Write repair back to QuoteRequests so future calls are fast
             try {
@@ -83,14 +85,14 @@ Deno.serve(async (req) => {
               if (!request.email || request.email === 'guest@breezpoolcare.com') repairFields.email = email;
               if (!request.firstName) repairFields.firstName = firstName;
               await base44.asServiceRole.entities.QuoteRequests.update(request.id, repairFields);
-              console.log('RESOLVE_TOKEN_V1_REPAIR_WRITTEN', { requestId: request.id });
+              console.log('RQT_V1_REPAIR_WRITTEN', { requestId: request.id });
             } catch (repairWriteErr) {
-              console.warn('RESOLVE_TOKEN_V1_REPAIR_WRITE_FAILED', { error: repairWriteErr.message });
+              console.warn('RQT_V1_REPAIR_WRITE_FAILED', { error: repairWriteErr.message, requestId });
             }
           }
         }
       } catch (repairErr) {
-        console.warn('RESOLVE_TOKEN_V1_REPAIR_FAILED', { error: repairErr.message });
+        console.warn('RQT_V1_REPAIR_FAILED', { error: repairErr.message, requestId });
       }
     }
 
@@ -100,35 +102,32 @@ Deno.serve(async (req) => {
         const leadRows = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
         const lead = leadRows?.[0];
         if (lead && lead.isDeleted === true) {
-          // Lead exists but is soft-deleted — explicit LEAD_UNAVAILABLE
-          console.log('RESOLVE_TOKEN_V1_LEAD_UNAVAILABLE', {
-            token: cleanToken.slice(0, 8),
-            leadId: leadId.slice(0, 8),
-            reason: 'lead_soft_deleted'
+          console.log('RQT_V1_LEAD_UNAVAILABLE', {
+            tokenPrefix: cleanToken.slice(0, 8),
+            leadIdPrefix: leadId.slice(0, 8),
+            reason: 'lead_soft_deleted',
+            requestId
           });
           return json200({
             success: false,
             code: 'LEAD_UNAVAILABLE',
             error: 'This quote is no longer active. Please contact Breez at (321) 524-3838 for assistance.',
-            build: BUILD
+            ...meta
           });
         }
         if (!lead) {
-          console.log('RESOLVE_TOKEN_V1_LEAD_NOT_FOUND', {
-            token: cleanToken.slice(0, 8),
-            leadId: leadId.slice(0, 8)
-          });
+          console.log('RQT_V1_LEAD_NOT_FOUND', { tokenPrefix: cleanToken.slice(0, 8), leadIdPrefix: leadId.slice(0, 8), requestId });
           leadId = null; // Will trigger rebound attempt below
         }
       } catch (e) {
-        console.warn('RESOLVE_TOKEN_V1_LEAD_CHECK_FAILED', { error: e.message });
-        return json200({ success: false, code: 'LEAD_LOOKUP_FAILED', error: 'Platform temporarily unavailable', build: BUILD });
+        console.warn('RQT_V1_LEAD_CHECK_FAILED', { error: e.message, requestId });
+        return json200({ success: false, code: 'LEAD_LOOKUP_FAILED', error: 'Platform temporarily unavailable', ...meta });
       }
     }
 
     // ── Step 2c: Rebound to latest active lead by email (if leadId broken & email valid) ──
     if (!leadId && email) {
-      console.log('RESOLVE_TOKEN_V1_REBOUND_ATTEMPT', { token: cleanToken.slice(0, 8), reason: 'leadId missing or invalid' });
+      console.log('RQT_V1_REBOUND_ATTEMPT', { tokenPrefix: cleanToken.slice(0, 8), reason: 'leadId missing or invalid', requestId });
       try {
         const activeLeads = await base44.asServiceRole.entities.Lead.filter(
           { email, isDeleted: { $ne: true } },
@@ -139,51 +138,52 @@ Deno.serve(async (req) => {
           const activeLead = activeLeads[0];
           leadId = activeLead.id;
           if (!firstName) firstName = activeLead.firstName || null;
-          console.log('RESOLVE_TOKEN_V1_REBOUND_ACTIVE_LEAD', {
-            token: cleanToken.slice(0, 8),
+          console.log('RQT_V1_REBOUND_ACTIVE_LEAD', {
+            tokenPrefix: cleanToken.slice(0, 8),
             leadId,
-            email: email.slice(0, 5)
+            emailPrefix: email.slice(0, 5),
+            requestId
           });
 
-          // Write rebound back to QuoteRequests so future calls are fast
           try {
             const reboundFields = { leadId };
             if (!request.email) reboundFields.email = email;
             if (!request.firstName) reboundFields.firstName = firstName;
             await base44.asServiceRole.entities.QuoteRequests.update(request.id, reboundFields);
-            console.log('RESOLVE_TOKEN_V1_REBOUND_WRITTEN', { requestId: request.id });
+            console.log('RQT_V1_REBOUND_WRITTEN', { requestId: request.id });
           } catch (reboundWriteErr) {
-            console.warn('RESOLVE_TOKEN_V1_REBOUND_WRITE_FAILED', { error: reboundWriteErr.message });
+            console.warn('RQT_V1_REBOUND_WRITE_FAILED', { error: reboundWriteErr.message, requestId });
           }
         }
       } catch (reboundErr) {
-        console.warn('RESOLVE_TOKEN_V1_REBOUND_FAILED', { error: reboundErr.message });
+        console.warn('RQT_V1_REBOUND_FAILED', { error: reboundErr.message, requestId });
       }
     }
 
     // ── Step 3: Strict validation — both leadId and email must be present ──
     if (!leadId || !email) {
-      console.log('RESOLVE_TOKEN_V1_INCOMPLETE', { leadId, hasEmail: !!email, token: cleanToken.slice(0, 8) });
+      console.log('RQT_V1_INCOMPLETE', { hasLeadId: !!leadId, hasEmail: !!email, tokenPrefix: cleanToken.slice(0, 8), requestId });
       return json200({
         success: false,
         code: 'INCOMPLETE_DATA',
         error: 'Token does not have complete lead information',
-        build: BUILD
+        ...meta
       });
     }
 
-    console.log('RESOLVE_TOKEN_V1_SUCCESS', {
-      token: cleanToken.slice(0, 8),
+    console.log('RQT_V1_SUCCESS', {
+      tokenPrefix: cleanToken.slice(0, 8),
       leadId,
-      email: email.slice(0, 5),
+      emailPrefix: email.slice(0, 5),
       hasFirstName: !!firstName,
-      hasPhone: !!phone
+      hasPhone: !!phone,
+      requestId
     });
 
-    return json200({ success: true, leadId, email, firstName, phone, snapshotId, build: BUILD });
+    return json200({ success: true, leadId, email, firstName, phone, snapshotId, ...meta });
 
   } catch (error) {
-    console.error('RESOLVE_TOKEN_V1_CRASH', { error: error?.message });
-    return json200({ success: false, code: 'SERVER_ERROR', error: 'Failed to resolve token', build: BUILD });
+    console.error('RQT_V1_CRASH', { error: error?.message, requestId });
+    return json200({ success: false, code: 'SERVER_ERROR', error: 'Failed to resolve token', ...meta });
   }
 });

@@ -6,18 +6,12 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
  * Public endpoint to schedule an inspection via token (no login required).
  * NO backend-to-backend function invocations. All logic inlined.
  *
- * CRITICAL ARCHITECTURE FIX:
- * - Uses independent service-role client (NOT derived from request context)
- * - Separates request parsing from entity operations
- * - Ensures RLS policies work correctly for unauthenticated public endpoints
- *
  * Input:  { token, firstName, phone, email, serviceAddress: { street, city, state, zip }, requestedDate (YYYY-MM-DD), requestedTimeSlot }
- * Output: { success, scheduledDate?, timeWindow?, email?, firstName?, alreadyScheduled?, inspectionId?, eventId?, emailStatus?, build }
+ * Output: { success, scheduledDate?, timeWindow?, email?, firstName?, alreadyScheduled?, inspectionId?, eventId?,
+ *           emailStatus?, build, runtimeVersion, requestId }
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
-
-const BUILD = "SFI-V2-2026-03-04-E";
+const BUILD = "SFI-V2-2026-03-04-F";
 
 const json200 = (data) => new Response(
   JSON.stringify(data),
@@ -42,12 +36,11 @@ const STAGE_ORDER = {
   inspection_scheduled: 3, inspection_confirmed: 4, converted: 5, lost: -1
 };
 
-// ── Inlined: resolveQuoteTokenPublicV1 semantics + lifecycle validation ──
-// Returns { leadId, email, firstName } or throws with a code.
+// ── Inlined: resolveQuoteTokenPublicV1 semantics ──
+// Returns { leadId, email, firstName, quoteRequest } or { code, error }
 async function resolveToken(entities, token) {
   const cleanToken = token.trim();
 
-  // 1. Look up QuoteRequests
   let request = null;
   try {
     const rows = await entities.QuoteRequests.filter({ token: cleanToken }, null, 1);
@@ -67,7 +60,7 @@ async function resolveToken(entities, token) {
 
   if (email === 'guest@breezpoolcare.com') email = null;
 
-  // 2. Repair path: if leadId missing, try Quote entity
+  // Repair path: if leadId missing, try Quote entity
   if (!leadId) {
     try {
       const quotes = await entities.Quote.filter({ quoteToken: cleanToken }, '-created_date', 1);
@@ -77,7 +70,6 @@ async function resolveToken(entities, token) {
           leadId = q.leadId;
           if (!email)     email     = q.clientEmail     || null;
           if (!firstName) firstName = q.clientFirstName || null;
-          // Write repair back
           try {
             const repairFields = { leadId };
             if (!request.email || request.email === 'guest@breezpoolcare.com') repairFields.email = email;
@@ -93,22 +85,21 @@ async function resolveToken(entities, token) {
     }
   }
 
-  // 3. Validate lead is not soft-deleted (EXPLICIT UNAVAILABLE CHECK)
+  // Validate lead is not soft-deleted
   if (leadId) {
     try {
       const leadRows = await entities.Lead.filter({ id: leadId }, null, 1);
       const lead = leadRows?.[0];
       if (lead && lead.isDeleted === true) {
-        // Lead exists but is soft-deleted — explicit LEAD_UNAVAILABLE
         console.log('SFI_V2_LEAD_UNAVAILABLE', {
-          token: cleanToken.slice(0, 8),
-          leadId: leadId.slice(0, 8),
+          tokenPrefix: cleanToken.slice(0, 8),
+          leadIdPrefix: leadId.slice(0, 8),
           reason: 'lead_soft_deleted'
         });
         return { code: 'LEAD_UNAVAILABLE', error: 'This quote is no longer active. Please contact Breez at (321) 524-3838 for assistance.' };
       }
       if (!lead) {
-        leadId = null; // Force INCOMPLETE_DATA (true missing-link case)
+        leadId = null; // Force INCOMPLETE_DATA
       }
     } catch (e) {
       console.warn('SFI_V2_LEAD_VALIDATE_FAILED', { error: e.message });
@@ -124,56 +115,40 @@ async function resolveToken(entities, token) {
 }
 
 // ── Token lifecycle validation ──
-// Check expiry and consumption state of scheduleToken
 async function validateTokenLifecycle(entities, token) {
   try {
     const quotes = await entities.Quote.filter({ quoteToken: token.trim() }, null, 1);
-    if (!quotes || quotes.length === 0) {
-      // Token not found in Quote; not an error here (resolveToken handles it)
-      return { valid: true };
-    }
+    if (!quotes || quotes.length === 0) return { valid: true };
 
     const quote = quotes[0];
     const now = new Date();
 
-    // Check expiry
     if (quote.scheduleTokenExpiresAt) {
       const expiryTime = new Date(quote.scheduleTokenExpiresAt);
       if (now > expiryTime) {
-        console.warn('SFI_V2_TOKEN_EXPIRED', { token: token.trim().slice(0, 8), expiresAt: quote.scheduleTokenExpiresAt });
-        return {
-          valid: false,
-          code: 'TOKEN_EXPIRED',
-          message: 'This scheduling link has expired. Please request a new quote or contact support.'
-        };
+        console.warn('SFI_V2_TOKEN_EXPIRED', { tokenPrefix: token.trim().slice(0, 8), expiresAt: quote.scheduleTokenExpiresAt });
+        return { valid: false, code: 'TOKEN_EXPIRED', message: 'This scheduling link has expired. Please request a new quote or contact support.' };
       }
     }
 
-    // Check consumed
     if (quote.scheduleTokenUsedAt) {
-      console.warn('SFI_V2_TOKEN_ALREADY_USED', { token: token.trim().slice(0, 8) });
-      return {
-        valid: false,
-        code: 'TOKEN_ALREADY_USED',
-        message: 'This scheduling link has already been used. To reschedule, please contact us at (321) 524-3838.'
-      };
+      console.warn('SFI_V2_TOKEN_ALREADY_USED', { tokenPrefix: token.trim().slice(0, 8) });
+      return { valid: false, code: 'TOKEN_ALREADY_USED', message: 'This scheduling link has already been used. To reschedule, please contact us at (321) 524-3838.' };
     }
 
     return { valid: true };
   } catch (e) {
     console.warn('SFI_V2_TOKEN_LIFECYCLE_CHECK_FAILED', { error: e.message });
-    // Non-fatal: allow to proceed
     return { valid: true };
   }
 }
 
-// ── Inlined: updateLeadStagePublicV1 semantics ──
-// Non-regression forward-only stage update. Failures are non-fatal (warn only).
+// ── Non-regression stage update ──
 async function updateLeadStage(entities, leadId, newStage) {
   try {
     const lead = await entities.Lead.get(leadId);
     const oldStage = lead?.stage || 'new_lead';
-    if (oldStage === newStage) return; // idempotent
+    if (oldStage === newStage) return;
     const oldOrder = STAGE_ORDER[oldStage] ?? -999;
     const newOrder = STAGE_ORDER[newStage] ?? -999;
     if (newOrder < oldOrder && newStage !== 'lost') {
@@ -187,37 +162,24 @@ async function updateLeadStage(entities, leadId, newStage) {
   }
 }
 
-// ── Capacity constraint checkers ──
-// Returns { allowed: true } or { allowed: false, code: string, message: string, details: object }
-
-// Conservative drive-time buffer (minutes) when historical data unavailable
+// ── Capacity checkers ──
 const DEFAULT_DRIVE_TIME_MINUTES = 30;
-const MAX_JOBS_PER_DAY = 10; // Default cap (can be overridden by SchedulingSettings.maxJobsPerDay)
+const MAX_JOBS_PER_DAY = 10;
 const MAX_INSPECTIONS_PER_BLOCK = 3;
 
 async function checkTechnicianDailyCapacity(entities, requestedDate, maxCap = MAX_JOBS_PER_DAY) {
   try {
     const events = await entities.CalendarEvent.filter(
-      { scheduledDate: requestedDate, status: { $ne: 'cancelled' } },
-      null,
-      1000
+      { scheduledDate: requestedDate, status: { $ne: 'cancelled' } }, null, 1000
     );
     const activeCount = (events || []).length;
-    
     if (activeCount >= maxCap) {
       console.warn('SFI_V2_TECH_DAILY_CAP', { date: requestedDate, count: activeCount, cap: maxCap });
-      return {
-        allowed: false,
-        code: 'TECH_DAILY_CAP_REACHED',
-        message: `Maximum ${maxCap} inspections/services reached for this date. Please choose another date.`,
-        details: { date: requestedDate, currentCount: activeCount, cap: maxCap }
-      };
+      return { allowed: false, code: 'TECH_DAILY_CAP_REACHED', message: `Maximum ${maxCap} inspections/services reached for this date. Please choose another date.`, details: { date: requestedDate, currentCount: activeCount, cap: maxCap } };
     }
-    
     return { allowed: true };
   } catch (e) {
     console.warn('SFI_V2_TECH_DAILY_CAP_CHECK_FAILED', { error: e.message });
-    // Non-fatal: allow booking to proceed on check failure
     return { allowed: true };
   }
 }
@@ -226,24 +188,13 @@ async function checkInspectionBlockCapacity(entities, requestedDate, requestedTi
   try {
     const timeWindow = timeWindowMap[requestedTimeSlot];
     const blockEvents = await entities.CalendarEvent.filter(
-      { scheduledDate: requestedDate, eventType: 'inspection', status: { $ne: 'cancelled' } },
-      null,
-      1000
+      { scheduledDate: requestedDate, eventType: 'inspection', status: { $ne: 'cancelled' } }, null, 1000
     );
-    
-    // Count inspections in the same time block
     const blockCount = (blockEvents || []).filter(e => e.timeWindow === timeWindow).length;
-    
     if (blockCount >= maxCap) {
       console.warn('SFI_V2_INSPECTION_BLOCK_CAP', { date: requestedDate, timeWindow, count: blockCount, cap: maxCap });
-      return {
-        allowed: false,
-        code: 'INSPECTION_BLOCK_CAP_REACHED',
-        message: `Maximum ${maxCap} inspections available for this time slot. Please choose another time.`,
-        details: { date: requestedDate, timeWindow, currentCount: blockCount, cap: maxCap }
-      };
+      return { allowed: false, code: 'INSPECTION_BLOCK_CAP_REACHED', message: `Maximum ${maxCap} inspections available for this time slot. Please choose another time.`, details: { date: requestedDate, timeWindow, currentCount: blockCount, cap: maxCap } };
     }
-    
     return { allowed: true };
   } catch (e) {
     console.warn('SFI_V2_INSPECTION_BLOCK_CAP_CHECK_FAILED', { error: e.message });
@@ -253,51 +204,31 @@ async function checkInspectionBlockCapacity(entities, requestedDate, requestedTi
 
 async function checkDriveTimeFeasibility(entities, requestedDate, startTime) {
   try {
-    // Fetch all events on the same day (sorted by time)
     const dayEvents = await entities.CalendarEvent.filter(
-      { scheduledDate: requestedDate, status: { $ne: 'cancelled' } },
-      'startTime',
-      1000
+      { scheduledDate: requestedDate, status: { $ne: 'cancelled' } }, 'startTime', 1000
     );
-    
-    if (!dayEvents || dayEvents.length === 0) {
-      // No existing events, always feasible
-      return { allowed: true };
-    }
-    
-    // Check feasibility with adjacent events
+    if (!dayEvents || dayEvents.length === 0) return { allowed: true };
+
     const reqHours = parseInt(startTime.split(':')[0]);
     const reqMinutes = parseInt(startTime.split(':')[1] || 0);
     const reqTimeInMinutes = reqHours * 60 + reqMinutes;
-    
-    // Simplified check: verify no back-to-back conflicts
-    // (assume 30 min inspection + 30 min drive-time buffer)
     const INSPECTION_DURATION = 30;
     const DRIVE_BUFFER = DEFAULT_DRIVE_TIME_MINUTES;
-    const REQUIRED_WINDOW = INSPECTION_DURATION + DRIVE_BUFFER * 2;
-    
+
     for (const evt of dayEvents) {
       if (!evt.startTime) continue;
       const evtHours = parseInt(evt.startTime.split(':')[0]);
       const evtMinutes = parseInt(evt.startTime.split(':')[1] || 0);
       const evtTimeInMinutes = evtHours * 60 + evtMinutes;
       const evtDuration = evt.estimatedDuration || 45;
-      
-      // Check overlap: requested time within existing event's window (with buffer)
       const evtStart = evtTimeInMinutes - DRIVE_BUFFER;
       const evtEnd = evtTimeInMinutes + evtDuration + DRIVE_BUFFER;
-      
+
       if (reqTimeInMinutes >= evtStart && reqTimeInMinutes <= evtEnd) {
         console.warn('SFI_V2_DRIVE_TIME_CONFLICT', { date: requestedDate, reqTime: startTime, existingEvent: evt.id });
-        return {
-          allowed: false,
-          code: 'DRIVE_TIME_CONFLICT',
-          message: 'Insufficient travel time between appointments. Please choose another time slot.',
-          details: { date: requestedDate, requestedTime: startTime, buffer: DRIVE_BUFFER }
-        };
+        return { allowed: false, code: 'DRIVE_TIME_CONFLICT', message: 'Insufficient travel time between appointments. Please choose another time slot.', details: { date: requestedDate, requestedTime: startTime, buffer: DRIVE_BUFFER } };
       }
     }
-    
     return { allowed: true };
   } catch (e) {
     console.warn('SFI_V2_DRIVE_TIME_CHECK_FAILED', { error: e.message });
@@ -305,11 +236,9 @@ async function checkDriveTimeFeasibility(entities, requestedDate, startTime) {
   }
 }
 
-// ── Inlined: sendInspectionConfirmation semantics ──
-// Returns 'sent' | 'skipped' | 'failed'. Non-fatal.
+// ── Confirmation email ──
 async function sendConfirmationEmail(entities, integrations, { leadId, firstName, email, inspectionDate, inspectionTime, force }) {
   try {
-    // Idempotency: skip if already sent and not forced
     if (leadId && !force) {
       const lead = await entities.Lead.get(leadId).catch(() => null);
       if (lead?.inspectionConfirmationSent) {
@@ -352,12 +281,7 @@ Owner/Operator: Matt Inghram
 (321) 524-3838
 Mon–Sat: 8am–6pm`;
 
-    await integrations.Core.SendEmail({
-      to: email,
-      subject,
-      body,
-      from_name: 'Breez Pool Care'
-    });
+    await integrations.Core.SendEmail({ to: email, subject, body, from_name: 'Breez Pool Care' });
 
     if (leadId) {
       await entities.Lead.update(leadId, {
@@ -366,7 +290,7 @@ Mon–Sat: 8am–6pm`;
       }).catch(e => console.warn('SFI_V2_CONFIRMATION_FLAG_FAILED', { error: e.message }));
     }
 
-    console.log('SFI_V2_EMAIL_SENT', { leadId, email: email.slice(0, 5) });
+    console.log('SFI_V2_EMAIL_SENT', { leadId, emailPrefix: email.slice(0, 5) });
     return 'sent';
   } catch (e) {
     console.error('SFI_V2_EMAIL_FAILED', { error: e.message });
@@ -376,78 +300,75 @@ Mon–Sat: 8am–6pm`;
 
 // ── Main Handler ──
 Deno.serve(async (req) => {
+  const requestId = crypto.randomUUID();
+  const runtimeVersion = BUILD;
+  const meta = { build: BUILD, runtimeVersion, requestId };
+
   try {
     const payload = await req.json();
     const { token, firstName, phone, email, serviceAddress, requestedDate, requestedTimeSlot } = payload || {};
 
+    console.log('SFI_V2_ENTRY_VERSION', { runtimeVersion, tokenPrefix: token ? token.slice(0, 8) : null, requestId });
+
     // Input validation
     if (!token || typeof token !== 'string') {
-      return json200({ success: false, error: 'token is required', build: BUILD });
+      return json200({ success: false, error: 'token is required', ...meta });
     }
     if (!firstName || typeof firstName !== 'string' || !firstName.trim()) {
-      return json200({ success: false, error: 'firstName is required', build: BUILD });
+      return json200({ success: false, error: 'firstName is required', ...meta });
     }
     if (!phone || typeof phone !== 'string' || !phone.trim()) {
-      return json200({ success: false, error: 'phone is required', build: BUILD });
+      return json200({ success: false, error: 'phone is required', ...meta });
     }
     if (!serviceAddress || typeof serviceAddress !== 'object') {
-      return json200({ success: false, error: 'serviceAddress object is required', build: BUILD });
+      return json200({ success: false, error: 'serviceAddress object is required', ...meta });
     }
     const { street, city, state, zip } = serviceAddress;
     if (!street?.trim() || !city?.trim() || !state?.trim() || !zip?.trim()) {
-      return json200({ success: false, error: 'serviceAddress must include street, city, state, and zip', build: BUILD });
+      return json200({ success: false, error: 'serviceAddress must include street, city, state, and zip', ...meta });
     }
     if (!requestedDate || typeof requestedDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(requestedDate)) {
-      return json200({ success: false, error: 'requestedDate must be in YYYY-MM-DD format', build: BUILD });
+      return json200({ success: false, error: 'requestedDate must be in YYYY-MM-DD format', ...meta });
     }
     if (!requestedTimeSlot || !['morning', 'midday', 'afternoon'].includes(requestedTimeSlot)) {
-      return json200({ success: false, error: 'requestedTimeSlot must be one of: morning, midday, afternoon', build: BUILD });
+      return json200({ success: false, error: 'requestedTimeSlot must be one of: morning, midday, afternoon', ...meta });
     }
 
     const base44Request = createClientFromRequest(req);
     const entities = base44Request.asServiceRole.entities;
     const integrations = base44Request.asServiceRole.integrations;
-    
-    console.log('SFI_V2_CLIENT_MODE', { build: BUILD, mode: 'service_role', tokenPrefix: token.slice(0, 8) });
 
-    // Resolve token (inlined — no function invoke)
+    console.log('SFI_V2_CLIENT_MODE', { runtimeVersion, mode: 'service_role', tokenPrefix: token.slice(0, 8), requestId });
+
+    // Resolve token (inlined)
     const resolved = await resolveToken(entities, token);
     if (!resolved.leadId) {
-      // Return explicit code per resolve failure reason
-      const errorPayload = {
-        success: false,
-        code: resolved.code || 'TOKEN_RESOLUTION_FAILED',
-        build: BUILD
-      };
-      
-      // Map resolution error to user-friendly message
-      if (resolved.code === 'TOKEN_NOT_FOUND') {
-        errorPayload.error = 'Token not found or invalid. Please request a new quote link.';
-      } else if (resolved.code === 'INCOMPLETE_DATA') {
-        errorPayload.error = 'Token does not have complete lead information. Please request a new quote or contact Breez at (321) 524-3838.';
-      } else if (resolved.code === 'LEAD_UNAVAILABLE') {
-        errorPayload.error = 'This quote is no longer active. Please contact Breez at (321) 524-3838 for assistance.';
+      // Deterministic code mapping — never collapse to generic
+      const code = resolved.code || 'TOKEN_RESOLUTION_FAILED';
+      let errorMsg;
+      if (code === 'TOKEN_NOT_FOUND') {
+        errorMsg = 'Invalid or expired token.';
+      } else if (code === 'LEAD_UNAVAILABLE') {
+        errorMsg = 'This quote is no longer active. Please contact Breez at (321) 524-3838 for assistance.';
+      } else if (code === 'INCOMPLETE_DATA') {
+        errorMsg = 'Token does not have complete lead information. Please contact Breez at (321) 524-3838.';
       } else {
-        errorPayload.error = resolved.error || 'Failed to resolve token. Please contact support.';
+        errorMsg = resolved.error || 'Failed to resolve token. Please contact support.';
       }
-      
-      console.warn('SFI_V2_RESOLVE_FAILED', { code: resolved.code, token: token.slice(0, 8) });
-      return json200(errorPayload);
+
+      console.warn('SFI_V2_RESOLVE_FAILED', { code, tokenPrefix: token.slice(0, 8), runtimeVersion, requestId });
+      return json200({ success: false, code, error: errorMsg, ...meta });
     }
-    const { leadId, email: tokenEmail, firstName: tokenFirstName } = resolved;
+
+    const { leadId, email: tokenEmail } = resolved;
     const finalEmail     = email || tokenEmail;
     const finalFirstName = firstName.trim();
 
-    // Validate token lifecycle (expiry + consumption)
+    // Token lifecycle check
     const lifecycleCheck = await validateTokenLifecycle(entities, token);
     if (!lifecycleCheck.valid) {
-      console.log('SFI_V2_TOKEN_LIFECYCLE_FAILED', { code: lifecycleCheck.code });
-      return json200({
-        success: false,
-        code: lifecycleCheck.code,
-        error: lifecycleCheck.message,
-        build: BUILD
-      });
+      console.log('SFI_V2_TOKEN_LIFECYCLE_FAILED', { code: lifecycleCheck.code, requestId });
+      return json200({ success: false, code: lifecycleCheck.code, error: lifecycleCheck.message, ...meta });
     }
 
     const serviceAddressStr = `${street.trim()}, ${city.trim()}, ${state.trim()} ${zip.trim()}`;
@@ -457,13 +378,11 @@ Deno.serve(async (req) => {
     // IDEMPOTENCY: check existing non-cancelled InspectionRecord
     try {
       const existing = await entities.InspectionRecord.filter(
-        { leadId, appointmentStatus: { $ne: 'cancelled' } },
-        '-created_date',
-        1
+        { leadId, appointmentStatus: { $ne: 'cancelled' } }, '-created_date', 1
       );
       if (existing && existing.length > 0) {
         const insp = existing[0];
-        console.log('SFI_V2_ALREADY_SCHEDULED', { leadId: leadId.slice(0, 8), inspectionId: insp.id });
+        console.log('SFI_V2_ALREADY_SCHEDULED', { leadIdPrefix: leadId.slice(0, 8), inspectionId: insp.id, requestId });
         return json200({
           success: true,
           alreadyScheduled: true,
@@ -473,119 +392,90 @@ Deno.serve(async (req) => {
           firstName: finalFirstName,
           inspectionId: insp.id,
           eventId: insp.calendarEventId,
-          build: BUILD
+          ...meta
         });
       }
     } catch (e) {
-      console.warn('SFI_V2_IDEMPOTENCY_CHECK_FAILED', { error: e.message });
+      console.warn('SFI_V2_IDEMPOTENCY_CHECK_FAILED', { error: e.message, requestId });
     }
 
-    // CAPACITY CONSTRAINTS: Check before creating booking
-    // Load max cap from SchedulingSettings if available, otherwise use default
+    // Capacity constraints
     let maxJobsPerDay = MAX_JOBS_PER_DAY;
     try {
       const settings = await entities.SchedulingSettings.filter({ settingKey: 'default' }, null, 1);
-      if (settings?.[0]?.maxJobsPerDay) {
-        maxJobsPerDay = settings[0].maxJobsPerDay;
-      }
+      if (settings?.[0]?.maxJobsPerDay) maxJobsPerDay = settings[0].maxJobsPerDay;
     } catch (e) {
       console.warn('SFI_V2_SETTINGS_LOAD_FAILED', { error: e.message });
     }
 
-    // Check 1: Per-technician daily capacity
     const dailyCapCheck = await checkTechnicianDailyCapacity(entities, requestedDate, maxJobsPerDay);
     if (!dailyCapCheck.allowed) {
-      console.log('SFI_V2_CAPACITY_CONSTRAINT_VIOLATED', { code: dailyCapCheck.code });
-      return json200({
-        success: false,
-        code: dailyCapCheck.code,
-        error: dailyCapCheck.message,
-        details: dailyCapCheck.details,
-        build: BUILD
-      });
+      return json200({ success: false, code: dailyCapCheck.code, error: dailyCapCheck.message, details: dailyCapCheck.details, ...meta });
     }
 
-    // Check 2: Initial inspection time-block capacity
     const blockCapCheck = await checkInspectionBlockCapacity(entities, requestedDate, requestedTimeSlot);
     if (!blockCapCheck.allowed) {
-      console.log('SFI_V2_CAPACITY_CONSTRAINT_VIOLATED', { code: blockCapCheck.code });
-      return json200({
-        success: false,
-        code: blockCapCheck.code,
-        error: blockCapCheck.message,
-        details: blockCapCheck.details,
-        build: BUILD
-      });
+      return json200({ success: false, code: blockCapCheck.code, error: blockCapCheck.message, details: blockCapCheck.details, ...meta });
     }
 
-    // Check 3: Drive-time feasibility
     const driveTimeCheck = await checkDriveTimeFeasibility(entities, requestedDate, startTime);
     if (!driveTimeCheck.allowed) {
-      console.log('SFI_V2_CAPACITY_CONSTRAINT_VIOLATED', { code: driveTimeCheck.code });
-      return json200({
-        success: false,
-        code: driveTimeCheck.code,
-        error: driveTimeCheck.message,
-        details: driveTimeCheck.details,
-        build: BUILD
-      });
+      return json200({ success: false, code: driveTimeCheck.code, error: driveTimeCheck.message, details: driveTimeCheck.details, ...meta });
     }
 
-    // Step 1: Create InspectionRecord (authoritative source)
+    // Step 1: Create InspectionRecord
+    const createPayload = {
+      leadId,
+      scheduledDate: requestedDate,
+      startTime,
+      timeWindow,
+      appointmentStatus: 'scheduled',
+      submittedByUserId: 'system_scheduler',
+      submittedByName: 'Public Scheduler',
+      submittedAt: new Date().toISOString(),
+      finalizationStatus: 'pending_finalization',
+      customerPresent: true
+    };
+
     let inspection = null;
     try {
-      inspection = await entities.InspectionRecord.create({
-        leadId,
-        scheduledDate: requestedDate,
-        startTime,
-        timeWindow,
-        appointmentStatus: 'scheduled',
-        submittedByUserId: 'system_scheduler',
-        submittedByName: 'Public Scheduler',
-        submittedAt: new Date().toISOString(),
-        finalizationStatus: 'pending_finalization',
-        customerPresent: true
-      });
-      console.log('SFI_V2_INSPECTION_CREATED', { leadId: leadId.slice(0, 8), inspectionId: inspection.id });
+      inspection = await entities.InspectionRecord.create(createPayload);
+      console.log('SFI_V2_INSPECTION_CREATED', { leadIdPrefix: leadId.slice(0, 8), inspectionId: inspection.id, requestId });
     } catch (e) {
-      // Classify error: permission/403 vs other failures
       const isPermissionError = e?.status === 403 || e?.message?.includes('Permission denied');
-      
-      if (isPermissionError) {
-        // Permission failure: fail fast, no downstream writes
-        console.error('SFI_V2_INSPECTION_CREATE_FORBIDDEN', {
-          error: e.message,
-          leadId: leadId.slice(0, 8),
-          token: token.slice(0, 8),
-          status: e?.status
-        });
-        return json200({
-          success: false,
-          code: 'INSPECTION_CREATE_FORBIDDEN',
-          error: 'Unable to schedule inspection right now. Please contact Breez at (321) 524-3838.',
-          build: BUILD
-        });
-      } else {
-        // Non-permission failure (network, validation, etc.)
-        console.error('SFI_V2_INSPECTION_CREATE_FAILED', {
-          error: e.message,
-          leadId: leadId.slice(0, 8),
-          token: token.slice(0, 8)
-        });
-        return json200({
-          success: false,
-          code: 'INSPECTION_CREATE_FAILED',
-          error: 'Failed to create inspection record',
-          build: BUILD
-        });
-      }
+      const createPayloadShape = {
+        hasLeadId: !!createPayload.leadId,
+        appointmentStatus: createPayload.appointmentStatus,
+        finalizationStatus: createPayload.finalizationStatus,
+        submittedByUserId: createPayload.submittedByUserId,
+        submittedByName: createPayload.submittedByName,
+        customerPresent: createPayload.customerPresent
+      };
+
+      console.error('SFI_V2_INSPECTION_CREATE_FAILED_DIAG', {
+        isPermissionError,
+        errorMsg: e.message,
+        errorStatus: e?.status,
+        ...createPayloadShape,
+        runtimeVersion,
+        requestId
+      });
+
+      return json200({
+        success: false,
+        code: isPermissionError ? 'INSPECTION_CREATE_FORBIDDEN' : 'INSPECTION_CREATE_FAILED',
+        error: isPermissionError
+          ? 'Unable to schedule inspection right now. Please contact Breez at (321) 524-3838.'
+          : 'Failed to create inspection record',
+        detail: e.message,
+        createPayloadShape,
+        ...meta
+      });
     }
 
-    // Step 2: Cancel any existing active inspection CalendarEvents (single-event guarantee)
+    // Step 2: Cancel any existing active inspection CalendarEvents
     try {
-      const existing = await entities.CalendarEvent.filter(
-        { leadId, eventType: 'inspection' }, null, 100
-      );
+      const existing = await entities.CalendarEvent.filter({ leadId, eventType: 'inspection' }, null, 100);
       const active = (existing || []).filter(e => e.status !== 'cancelled');
       for (const ev of active) {
         await entities.CalendarEvent.update(ev.id, {
@@ -593,13 +483,13 @@ Deno.serve(async (req) => {
           cancelledAt: new Date().toISOString(),
           cancelReason: 'duplicate_inspection_event_cleanup'
         }).catch(e => console.warn('SFI_V2_DUPLICATE_CANCEL_FAILED', { eventId: ev.id, error: e.message }));
-        console.log('SFI_V2_CANCELLED_DUPLICATE', { leadId: leadId.slice(0, 8), eventId: ev.id });
+        console.log('SFI_V2_CANCELLED_DUPLICATE', { leadIdPrefix: leadId.slice(0, 8), eventId: ev.id });
       }
     } catch (e) {
       console.warn('SFI_V2_EXISTING_EVENTS_QUERY_FAILED', { error: e.message });
     }
 
-    // Step 3: Create CalendarEvent (projection from InspectionRecord)
+    // Step 3: Create CalendarEvent
     let calendarEvent = null;
     try {
       calendarEvent = await entities.CalendarEvent.create({
@@ -612,23 +502,21 @@ Deno.serve(async (req) => {
         serviceAddress: serviceAddressStr,
         customerNotes: `Name: ${finalFirstName}\nPhone: ${phone.trim()}\nEmail: ${finalEmail || 'N/A'}`
       });
-      console.log('SFI_V2_EVENT_CREATED', { leadId: leadId.slice(0, 8), eventId: calendarEvent.id });
+      console.log('SFI_V2_EVENT_CREATED', { leadIdPrefix: leadId.slice(0, 8), eventId: calendarEvent.id, requestId });
     } catch (e) {
-      console.error('SFI_V2_EVENT_CREATE_FAILED', { error: e.message });
-      return json200({ success: false, error: 'Failed to create calendar event', build: BUILD });
+      console.error('SFI_V2_EVENT_CREATE_FAILED', { error: e.message, requestId });
+      return json200({ success: false, error: 'Failed to create calendar event', detail: e.message, ...meta });
     }
 
     // Step 4: Link CalendarEvent → InspectionRecord
     try {
-      await entities.InspectionRecord.update(inspection.id, {
-        calendarEventId: calendarEvent.id
-      });
+      await entities.InspectionRecord.update(inspection.id, { calendarEventId: calendarEvent.id });
       console.log('SFI_V2_INSPECTION_LINKED', { inspectionId: inspection.id, calendarEventId: calendarEvent.id });
     } catch (e) {
       console.warn('SFI_V2_LINK_FAILED', { error: e.message });
     }
 
-    // Step 5: Sync Lead mirror fields + stage update + consume token (inlined — no function invoke)
+    // Step 5: Sync Lead + stage update + consume token
     let shouldSendNotification = false;
     try {
       const leads = await entities.Lead.filter({ id: leadId }, null, 1);
@@ -646,9 +534,8 @@ Deno.serve(async (req) => {
           serviceAddress: serviceAddressStr,
           ...(shouldSendNotification && { confirmationSentAt: new Date().toISOString() })
         });
-        console.log('SFI_V2_LEAD_SYNCED', { leadId: leadId.slice(0, 8), shouldSendNotification });
+        console.log('SFI_V2_LEAD_SYNCED', { leadIdPrefix: leadId.slice(0, 8), shouldSendNotification, requestId });
 
-        // Inline stage update (was: base44.functions.invoke('updateLeadStagePublicV1', ...))
         if (shouldSendNotification) {
           await updateLeadStage(entities, leadId, 'inspection_scheduled');
         }
@@ -657,23 +544,21 @@ Deno.serve(async (req) => {
       console.warn('SFI_V2_LEAD_SYNC_FAILED', { error: e.message });
     }
 
-    // Mark token as consumed (prevent accidental replay/duplicate scheduling)
+    // Consume token
     try {
       const quotes = await entities.Quote.filter({ quoteToken: token.trim() }, null, 1);
       if (quotes && quotes.length > 0) {
         const quote = quotes[0];
         if (!quote.scheduleTokenUsedAt) {
-          await entities.Quote.update(quote.id, {
-            scheduleTokenUsedAt: new Date().toISOString()
-          });
-          console.log('SFI_V2_TOKEN_CONSUMED', { quoteId: quote.id, token: token.trim().slice(0, 8) });
+          await entities.Quote.update(quote.id, { scheduleTokenUsedAt: new Date().toISOString() });
+          console.log('SFI_V2_TOKEN_CONSUMED', { quoteId: quote.id, tokenPrefix: token.trim().slice(0, 8) });
         }
       }
     } catch (e) {
       console.warn('SFI_V2_TOKEN_CONSUMPTION_FAILED', { error: e.message });
     }
 
-    // Step 6: Send confirmation email (inlined — no function invoke)
+    // Step 6: Send confirmation email
     const emailStatus = await sendConfirmationEmail(entities, integrations, {
       leadId,
       firstName: finalFirstName,
@@ -683,7 +568,7 @@ Deno.serve(async (req) => {
       force: shouldSendNotification
     });
 
-    console.log('SFI_V2_SUCCESS', { leadId: leadId.slice(0, 8), inspectionId: inspection.id, eventId: calendarEvent.id, scheduledDate: requestedDate, emailStatus });
+    console.log('SFI_V2_SUCCESS', { leadIdPrefix: leadId.slice(0, 8), inspectionId: inspection.id, eventId: calendarEvent.id, scheduledDate: requestedDate, emailStatus, requestId });
 
     return json200({
       success: true,
@@ -695,15 +580,11 @@ Deno.serve(async (req) => {
       eventId: calendarEvent.id,
       shouldSendNotification,
       emailStatus,
-      build: BUILD
+      ...meta
     });
 
   } catch (error) {
-    console.error('SFI_V2_CRASH', { error: error?.message });
-    return json200({
-      success: false,
-      error: 'Failed to schedule inspection',
-      build: BUILD
-    });
+    console.error('SFI_V2_CRASH', { error: error?.message, requestId });
+    return json200({ success: false, error: 'Failed to schedule inspection', ...meta });
   }
 });

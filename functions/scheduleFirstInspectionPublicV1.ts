@@ -1,16 +1,16 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
 /**
  * scheduleFirstInspectionPublicV1
  * Public endpoint to schedule an inspection via token (no login required).
  * IDEMPOTENT: Checks for existing inspection scheduling and returns cached state.
  * Side effects (email, stage update) only occur on first scheduling.
- * 
+ *
  * Input: { token, firstName, phone, email, serviceAddress: { street, city, state, zip }, requestedDate (YYYY-MM-DD), requestedTimeSlot }
- * Output: { success, scheduledDate?, timeWindow?, email?, firstName?, alreadyScheduled?, error?, build }
+ * Output: { success, scheduledDate?, timeWindow?, email?, firstName?, alreadyScheduled?, error?, build, runtimeVersion, requestId }
  */
 
-const BUILD = "SFI-V1-2026-03-02";
+const BUILD = "SFI-V1-2026-03-04-F";
 
 const json200 = (data) => new Response(
   JSON.stringify(data),
@@ -18,118 +18,93 @@ const json200 = (data) => new Response(
 );
 
 Deno.serve(async (req) => {
+  const requestId = crypto.randomUUID();
+  const runtimeVersion = BUILD;
+  const meta = { build: BUILD, runtimeVersion, requestId };
+
   try {
     const base44 = createClientFromRequest(req);
     const payload = await req.json();
     const { token, firstName, phone, email, serviceAddress, requestedDate, requestedTimeSlot } = payload || {};
 
+    console.log('SFI_V1_ENTRY_VERSION', { runtimeVersion, tokenPrefix: token ? token.slice(0, 8) : null, requestId });
+
     // Validate inputs
     if (!token || typeof token !== 'string') {
-      return json200({
-        success: false,
-        error: 'token is required',
-        build: BUILD
-      });
+      return json200({ success: false, error: 'token is required', ...meta });
     }
-
     if (!firstName || typeof firstName !== 'string' || !firstName.trim()) {
-      return json200({
-        success: false,
-        error: 'firstName is required',
-        build: BUILD
-      });
+      return json200({ success: false, error: 'firstName is required', ...meta });
     }
-
     if (!phone || typeof phone !== 'string' || !phone.trim()) {
-      return json200({
-        success: false,
-        error: 'phone is required',
-        build: BUILD
-      });
+      return json200({ success: false, error: 'phone is required', ...meta });
     }
-
     if (!serviceAddress || typeof serviceAddress !== 'object') {
-      return json200({
-        success: false,
-        error: 'serviceAddress object is required',
-        build: BUILD
-      });
+      return json200({ success: false, error: 'serviceAddress object is required', ...meta });
     }
-
     const { street, city, state, zip } = serviceAddress;
     if (!street?.trim() || !city?.trim() || !state?.trim() || !zip?.trim()) {
-      return json200({
-        success: false,
-        error: 'serviceAddress must include street, city, state, and zip',
-        build: BUILD
-      });
+      return json200({ success: false, error: 'serviceAddress must include street, city, state, and zip', ...meta });
     }
-
     if (!requestedDate || typeof requestedDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(requestedDate)) {
-      return json200({
-        success: false,
-        error: 'requestedDate must be in YYYY-MM-DD format',
-        build: BUILD
-      });
+      return json200({ success: false, error: 'requestedDate must be in YYYY-MM-DD format', ...meta });
     }
-
     if (!requestedTimeSlot || !['morning', 'midday', 'afternoon'].includes(requestedTimeSlot)) {
-      return json200({
-        success: false,
-        error: 'requestedTimeSlot must be one of: morning, midday, afternoon',
-        build: BUILD
-      });
+      return json200({ success: false, error: 'requestedTimeSlot must be one of: morning, midday, afternoon', ...meta });
     }
 
     // Resolve leadId + contact via token using versioned resolver
     let leadId = null;
     let tokenEmail = null;
+    let resolverCode = null;
     try {
       const resolveRes = await base44.asServiceRole.functions.invoke('resolveQuoteTokenPublicV1', { token: token.trim() });
       const resolveData = resolveRes?.data ?? resolveRes;
-      
+
       if (resolveData?.success === true && resolveData.leadId && resolveData.email) {
         leadId = resolveData.leadId;
         tokenEmail = resolveData.email;
-        console.log('SFI_V1_TOKEN_RESOLVED', { 
-          token: token.trim().slice(0, 8), 
+        console.log('SFI_V1_TOKEN_RESOLVED', {
+          tokenPrefix: token.trim().slice(0, 8),
           leadId,
           hasFirstName: !!resolveData.firstName,
-          hasPhone: !!resolveData.phone 
+          hasPhone: !!resolveData.phone,
+          requestId
         });
       } else {
-        console.warn('SFI_V1_TOKEN_RESOLUTION_FAILED', { 
-          code: resolveData?.code,
-          error: resolveData?.error 
+        resolverCode = resolveData?.code || 'UNKNOWN';
+        console.warn('SFI_V1_TOKEN_RESOLUTION_FAILED', {
+          code: resolverCode,
+          error: resolveData?.error,
+          tokenPrefix: token.trim().slice(0, 8),
+          requestId
         });
       }
     } catch (e) {
-      console.error('SFI_V1_TOKEN_RESOLUTION_CRASHED', { error: e.message });
+      resolverCode = 'RESOLVER_CRASHED';
+      console.error('SFI_V1_TOKEN_RESOLUTION_CRASHED', { error: e.message, requestId });
     }
 
     if (!leadId || !tokenEmail) {
-      // Return explicit code per resolve failure reason
-      const failureCode = !leadId ? 'INCOMPLETE_DATA' : 'TOKEN_NOT_FOUND';
-      const errorPayload = {
-        success: false,
-        code: failureCode,
-        build: BUILD
-      };
-      
-      if (failureCode === 'INCOMPLETE_DATA') {
-        errorPayload.error = 'Token does not have complete lead information. Please request a new quote or contact Breez at (321) 524-3838.';
+      // Deterministic mapping: pass through exact resolver code
+      const failureCode = resolverCode || 'INCOMPLETE_DATA';
+      let errorMsg;
+      if (failureCode === 'TOKEN_NOT_FOUND') {
+        errorMsg = 'Invalid or expired token. Please request a new quote link.';
+      } else if (failureCode === 'LEAD_UNAVAILABLE') {
+        errorMsg = 'This quote is no longer active. Please contact Breez at (321) 524-3838 for assistance.';
       } else {
-        errorPayload.error = 'Token not found or invalid. Please request a new quote link.';
+        // INCOMPLETE_DATA or any other code
+        errorMsg = 'Token does not have complete lead information. Please request a new quote or contact Breez at (321) 524-3838.';
       }
-      
-      console.warn('SFI_V1_RESOLVE_FAILED', { code: failureCode, token: token.trim().slice(0, 8) });
-      return json200(errorPayload);
+
+      console.warn('SFI_V1_RESOLVE_FAILED', { code: failureCode, tokenPrefix: token.trim().slice(0, 8), runtimeVersion, requestId });
+      return json200({ success: false, code: failureCode, error: errorMsg, ...meta });
     }
 
-    // Use provided email or fall back to token email
     const finalEmail = email || tokenEmail;
 
-    // IDEMPOTENCY CHECK: If this lead already has an inspection scheduled, return cached state
+    // IDEMPOTENCY CHECK
     let existingLead = null;
     if (leadId) {
       try {
@@ -137,11 +112,7 @@ Deno.serve(async (req) => {
         if (existingLead && existingLead.length > 0) {
           const lead = existingLead[0];
           if (lead.inspectionScheduled === true && lead.inspectionEventId) {
-            console.log('SFI_V1_ALREADY_SCHEDULED', { 
-              leadId, 
-              eventId: lead.inspectionEventId,
-              createdNewLead: false 
-            });
+            console.log('SFI_V1_ALREADY_SCHEDULED', { leadId, eventId: lead.inspectionEventId, requestId });
             return json200({
               success: true,
               alreadyScheduled: true,
@@ -149,28 +120,24 @@ Deno.serve(async (req) => {
               timeWindow: lead.requestedInspectionTime,
               email: finalEmail,
               firstName: lead.firstName || firstName,
-              build: BUILD
+              ...meta
             });
           }
         }
       } catch (e) {
-        console.warn('SFI_V1_IDEMPOTENCY_CHECK_FAILED', { error: e.message });
-        // Continue with normal flow
+        console.warn('SFI_V1_IDEMPOTENCY_CHECK_FAILED', { error: e.message, requestId });
       }
     }
 
-    // Map time slot to time window
     const timeWindowMap = {
       morning: '8:00 AM – 11:00 AM',
       midday: '11:00 AM – 2:00 PM',
       afternoon: '2:00 PM – 5:00 PM'
     };
     const timeWindow = timeWindowMap[requestedTimeSlot];
-
-    // Build service address string
     const serviceAddressStr = `${street.trim()}, ${city.trim()}, ${state.trim()} ${zip.trim()}`;
 
-    // Create CalendarEvent (service inspection) with all contact fields
+    // Create CalendarEvent
     let eventCreated = null;
     try {
       eventCreated = await base44.asServiceRole.entities.CalendarEvent.create({
@@ -182,19 +149,12 @@ Deno.serve(async (req) => {
         serviceAddress: serviceAddressStr,
         customerNotes: `Name: ${firstName.trim()}\nPhone: ${phone.trim()}\nEmail: ${finalEmail || 'N/A'}`,
       });
-      console.log('SFI_V1_EVENT_CREATED', { eventId: eventCreated.id, leadId, serviceAddress: serviceAddressStr });
+      console.log('SFI_V1_EVENT_CREATED', { eventId: eventCreated.id, leadId, requestId });
     } catch (e) {
-      console.error('SFI_V1_EVENT_CREATION_FAILED', { error: e.message });
-      return json200({
-        success: false,
-        error: 'Failed to create inspection event',
-        detail: e.message,
-        build: BUILD
-      });
+      console.error('SFI_V1_EVENT_CREATION_FAILED', { error: e.message, requestId });
+      return json200({ success: false, error: 'Failed to create inspection event', detail: e.message, ...meta });
     }
 
-    // IDEMPOTENT SIDE EFFECTS: Update Lead record (only if not already scheduled)
-    // This ensures email notifications + stage transitions happen exactly once
     const previousStage = existingLead?.[0]?.stage || null;
     const shouldSendNotification = previousStage !== 'inspection_scheduled';
 
@@ -208,12 +168,10 @@ Deno.serve(async (req) => {
           requestedInspectionDate: requestedDate,
           requestedInspectionTime: requestedTimeSlot,
           serviceAddress: serviceAddressStr,
-          // Only set notification flag if this is first scheduling
           ...(shouldSendNotification && { confirmationSentAt: new Date().toISOString() })
         });
-        console.log('SFI_V1_LEAD_UPDATED', { leadId, shouldSendNotification, serviceAddress: serviceAddressStr });
+        console.log('SFI_V1_LEAD_UPDATED', { leadId, shouldSendNotification, requestId });
 
-        // Auto-stage progression: update to 'inspection_scheduled' via public function
         if (shouldSendNotification) {
           try {
             await base44.functions.invoke('updateLeadStagePublicV1', {
@@ -221,25 +179,17 @@ Deno.serve(async (req) => {
               newStage: 'inspection_scheduled',
               context: 'schedule-success'
             });
-            console.log('SFI_V1_STAGE_PROGRESSED', { leadId, newStage: 'inspection_scheduled' });
+            console.log('SFI_V1_STAGE_PROGRESSED', { leadId, newStage: 'inspection_scheduled', requestId });
           } catch (stageErr) {
-            console.warn('SFI_V1_STAGE_UPDATE_FAILED', { error: stageErr.message });
-            // Non-fatal: continue even if stage update fails
+            console.warn('SFI_V1_STAGE_UPDATE_FAILED', { error: stageErr.message, requestId });
           }
         }
       } catch (e) {
-        console.warn('SFI_V1_LEAD_UPDATE_FAILED', { error: e.message });
-        // Don't fail the response; event is created
+        console.warn('SFI_V1_LEAD_UPDATE_FAILED', { error: e.message, requestId });
       }
     }
 
-    console.log('SFI_V1_SUCCESS', {
-      leadId,
-      eventId: eventCreated?.id,
-      createdNewLead: false,
-      scheduledDate: requestedDate,
-      timeWindow: requestedTimeSlot
-    });
+    console.log('SFI_V1_SUCCESS', { leadId, eventId: eventCreated?.id, scheduledDate: requestedDate, requestId });
 
     return json200({
       success: true,
@@ -249,16 +199,11 @@ Deno.serve(async (req) => {
       firstName: firstName,
       eventId: eventCreated?.id,
       shouldSendNotification: shouldSendNotification,
-      build: BUILD
+      ...meta
     });
 
   } catch (error) {
-    console.error('SFI_V1_CRASH', { error: error?.message });
-    return json200({
-      success: false,
-      error: 'Failed to schedule inspection',
-      detail: error?.message,
-      build: BUILD
-    });
+    console.error('SFI_V1_CRASH', { error: error?.message, requestId });
+    return json200({ success: false, error: 'Failed to schedule inspection', detail: error?.message, ...meta });
   }
 });
