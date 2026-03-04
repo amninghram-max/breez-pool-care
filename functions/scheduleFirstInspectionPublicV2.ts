@@ -363,6 +363,12 @@ ${rescheduleUrl ? `
 
     const text = `Hi ${finalFirstName},\n\nYour free pool inspection with Breez Pool Care is confirmed!\n\nDate: ${dateFormatted}\nArrival Window: ${inspectionTime || 'To be confirmed'}\nInspector: ${inspectorName}, ${inspectorTitle}\n\nWHAT TO EXPECT\n• Test your water and review water balance\n• Inspect equipment (pump, filter, timer, valves)\n• Check circulation and system function\n• Answer your questions\n\nMost inspections take about 20–30 minutes.\n\nBEFORE WE ARRIVE\nWe will call you about 1 hour before arrival.\n\nNO OBLIGATION\nThis inspection is completely free with no obligation.\n\n${rescheduleUrl ? `To reschedule: ${rescheduleUrl}\n\n` : ''}Questions? Call/text ${phone}\n\nThank you,\nBreez Pool Care LLC\n${phone} | breezpoolcare.com\n${serviceArea}`;
 
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    if (!resendApiKey) {
+      console.error('SFI_V2_EMAIL_FAILED', { reason: 'RESEND_API_KEY_NOT_SET' });
+      return 'failed';
+    }
+
     const emailResult = await resend.emails.send({
       from: 'Breez Pool Care <noreply@breezpoolcare.com>',
       to: email,
@@ -371,7 +377,13 @@ ${rescheduleUrl ? `
       text,
     });
 
-    console.log('SFI_V2_EMAIL_SEND_RESULT', { leadId, emailPrefix: email.slice(0, 5), resendId: emailResult?.id, resendError: emailResult?.error });
+    console.log('SFI_V2_EMAIL_SEND_RESULT', { 
+      leadId, 
+      emailPrefix: email.slice(0, 5), 
+      resendId: emailResult?.id, 
+      resendError: emailResult?.error,
+      fullResponse: JSON.stringify(emailResult)
+    });
 
     if (leadId) {
       await entities.Lead.update(leadId, {
