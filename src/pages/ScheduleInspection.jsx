@@ -309,40 +309,19 @@ export default function ScheduleInspection() {
               </div>
               <div className="flex items-center gap-3">
                 <Clock className="w-5 h-5 shrink-0" style={{ color: TEAL }} />
-                <div>
+                 <div>
                    <div className="text-xs text-gray-400 uppercase tracking-wide">Time Window</div>
                    <div className="font-semibold text-gray-900">{confirmed.timeWindow}</div>
                  </div>
-                </div>
-                {degradedMode && (
+               </div>
+               {degradedMode && (
                  <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-left">
                    <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                    <p className="text-xs text-amber-700">Scheduling confirmed; internal sync pending.</p>
                  </div>
-                )}
-                </div>
-                <div className="flex gap-3">
-                <Button
-                 onClick={() => navigate('/')}
-                 className="w-full bg-teal-600 hover:bg-teal-700 text-white"
-                >
-                 Back Home
-                </Button>
-                </div>
-              )}
-              {degradedMode && (
-                <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-left">
-                  <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                  <p className="text-xs text-amber-700">Scheduling confirmed; internal sync pending.</p>
-                </div>
-              )}
-              <Button
-                onClick={() => navigate('/')}
-                className="w-full bg-teal-600 hover:bg-teal-700 text-white"
-              >
-                Back Home
-              </Button>
-            <div className="rounded-xl bg-gray-50 p-4 text-left text-sm text-gray-600 space-y-2">
+               )}
+             </div>
+             <div className="rounded-xl bg-gray-50 p-4 text-left text-sm text-gray-600 space-y-2">
               <p className="font-semibold text-gray-800">What to expect:</p>
               <ul className="space-y-1 list-disc list-inside">
                 <li>We'll call approximately one hour before arrival.</li>
