@@ -546,14 +546,14 @@ Deno.serve(async (req) => {
       console.warn('SFI_V2_TOKEN_CONSUMPTION_FAILED', { error: e.message });
     }
 
-    // Step 6: Send confirmation email
+    // Step 6: Send confirmation email — always force=true since we just created a new inspection
     const emailStatus = await sendConfirmationEmail(entities, integrations, {
       leadId,
       firstName: finalFirstName,
       email: finalEmail,
       inspectionDate: requestedDate,
       inspectionTime: timeWindow,
-      force: shouldSendNotification
+      force: true
     });
 
     console.log('SFI_V2_SUCCESS', { leadIdPrefix: leadId.slice(0, 8), inspectionId: inspection.id, eventId: calendarEvent.id, scheduledDate: requestedDate, emailStatus, requestId });
