@@ -177,13 +177,11 @@ export default function LeadsPipeline() {
   };
 
   const getLeadsByStage = (stage) => {
-    return leads.filter((lead) => getCanonicalStage(lead.stage) === stage);
-  };
-    if (stage === 'inspection_confirmed') {
-      return leads.filter((lead) => lead.stage === 'inspection_confirmed' || lead.stage === 'quote_sent');
-    }
-    return leads.filter((lead) => lead.stage === stage);
-    };
+     if (stage.key === 'inspection_confirmed') {
+       return leads.filter((lead) => lead.stage === 'inspection_confirmed' || lead.stage === 'quote_sent');
+     }
+     return leads.filter((lead) => lead.stage === stage.key);
+   };
 
   const toggleLeadSelect = (leadId) => {
     setSelectedLeadIds(prev => {
