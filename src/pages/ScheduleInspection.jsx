@@ -322,20 +322,20 @@ export default function ScheduleInspection() {
                )}
              </div>
              <div className="rounded-xl bg-gray-50 p-4 text-left text-sm text-gray-600 space-y-2">
-              <p className="font-semibold text-gray-800">What to expect:</p>
-              <ul className="space-y-1 list-disc list-inside">
-                <li>We'll call approximately one hour before arrival.</li>
-                <li>Inspection typically takes 20–30 minutes.</li>
-                <li>We'll test water chemistry, inspect equipment, and answer questions.</li>
-                <li>No obligation — this visit is completely free.</li>
-              </ul>
-            </div>
-            <p className="text-xs text-gray-400">Questions? Call (321) 524-3838 · Mon–Sat 8am–6pm</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+               <p className="font-semibold text-gray-800">What to expect:</p>
+               <ul className="space-y-1 list-disc list-inside">
+                 <li>We'll call approximately one hour before arrival.</li>
+                 <li>Inspection typically takes 20–30 minutes.</li>
+                 <li>We'll test water chemistry, inspect equipment, and answer questions.</li>
+                 <li>No obligation — this visit is completely free.</li>
+               </ul>
+             </div>
+             <p className="text-xs text-gray-400">Questions? Call (321) 524-3838 · Mon–Sat 8am–6pm</p>
+             </div>
+             </div>
+             </div>
+             );
+             }
 
   // Main scheduling form
   return (
