@@ -27,6 +27,8 @@ import TechnicianHome from './TechnicianHome';
 export default function AdminHome() {
   const [showInPerson, setShowInPerson] = useState(false);
   const [viewAsTech, setViewAsTech] = useState(false);
+  const [showClearDialog, setShowClearDialog] = useState(false);
+  const [clearLoading, setClearLoading] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['user'],
