@@ -58,12 +58,7 @@ export default function ScheduleInspection() {
   const [confirmed, setConfirmed] = useState(null);
   const [emailStatus, setEmailStatus] = useState('idle'); // idle | sent | failed
   const [degradedMode, setDegradedMode] = useState(false);
-   const [selectedSlot, setSelectedSlot] = useState(null);
-   const [loading, setLoading] = useState(false);
-   const [error, setError] = useState('');
-   const [confirmed, setConfirmed] = useState(null);
-   const [emailStatus, setEmailStatus] = useState(null);
-   const [unavailableSlots, setUnavailableSlots] = useState({});
+  const [unavailableSlots, setUnavailableSlots] = useState({});
 
    const dates = getAvailableDates();
 
