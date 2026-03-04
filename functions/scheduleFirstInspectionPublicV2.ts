@@ -332,7 +332,7 @@ Deno.serve(async (req) => {
     const entities = base44Request.asServiceRole.entities;
     const integrations = base44Request.asServiceRole.integrations;
 
-    console.log('SFI_V2_CLIENT_MODE', { runtimeVersion, mode: 'service_role', tokenPrefix: token.slice(0, 8), requestId });
+    console.log('SFI_V2_ENTRY_VERSION', { runtimeVersion, mode: 'service_role', tokenPrefix: token.slice(0, 8), requestId });
 
     // Resolve token (inlined)
     const resolved = await resolveToken(entities, token);
