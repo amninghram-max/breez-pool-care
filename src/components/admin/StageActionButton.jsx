@@ -24,6 +24,7 @@ export default function StageActionButton({ lead, currentStage, onAction, onVali
       handler: 'sendInvite'
     },
     quote_sent: {
+      label: 'Resend Acceptance Link',
       label: 'Send Acceptance Link',
       handler: 'sendInvite'
     },
@@ -83,6 +84,9 @@ export default function StageActionButton({ lead, currentStage, onAction, onVali
         const res = await base44.functions.invoke('sendAcceptanceLink', { leadId: lead.id });
         
         if (res.data?.success) {
+          const newNotes = (lead.notes || '') + `\n[INVITE_SENT] ${new Date().toISOString()}`;
+          onAction('quote_sent', { notes: newNotes });
+          toast.success('Invite sent');
           toast.success('Acceptance link sent');
           // Do NOT advance stage — lead stays until agreements + payment completed
           onAction(null, { notes: (lead.notes || '') + `\n[INVITE_SENT] ${new Date().toISOString()}` });

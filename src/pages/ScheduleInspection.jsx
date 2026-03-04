@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Loader2, CheckCircle2, AlertCircle, Calendar, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Loader2, CheckCircle2, Calendar, Clock, AlertCircle } from 'lucide-react';
@@ -51,6 +53,12 @@ export default function ScheduleInspection() {
   const [zip, setZip] = useState('');
 
   const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [confirmed, setConfirmed] = useState(null);
+  const [emailStatus, setEmailStatus] = useState('idle'); // idle | sent | failed
+  const [degradedMode, setDegradedMode] = useState(false);
    const [selectedSlot, setSelectedSlot] = useState(null);
    const [loading, setLoading] = useState(false);
    const [error, setError] = useState('');
@@ -148,6 +156,12 @@ export default function ScheduleInspection() {
     );
 
     try {
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timed out. Please try again.')), 15000)
+      );
+
+      const schedulePayload = {
+        token: token,
       const schedulePayload = {
         token,
         firstName: firstName.trim(),
@@ -189,6 +203,8 @@ export default function ScheduleInspection() {
 
       if (data?.success === true) {
         setConfirmed(data);
+        setDegradedMode(data?.degradedMode === true);
+        // Email was triggered server-side; consume the returned status
         setEmailStatus(data.emailStatus === 'failed' ? 'failed' : 'sent');
       } else {
         const codeMessages = {
@@ -305,6 +321,19 @@ export default function ScheduleInspection() {
                   <div className="text-xs text-gray-400 uppercase tracking-wide">Time Window</div>
                   <div className="font-semibold text-gray-900">{confirmed.timeWindow}</div>
                 </div>
+              )}
+              {degradedMode && (
+                <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-left">
+                  <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-700">Scheduling confirmed; internal sync pending.</p>
+                </div>
+              )}
+              <Button
+                onClick={() => navigate('/')}
+                className="w-full bg-teal-600 hover:bg-teal-700 text-white"
+              >
+                Back Home
+              </Button>
               </div>
             </div>
             <div className="rounded-xl bg-gray-50 p-4 text-left text-sm text-gray-600 space-y-2">
