@@ -506,8 +506,6 @@ function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit
 
   const lastEmailSent = getLastEmailSent();
 
-  const handleStageAction = (newStage) => {
-    onStageChange(newStage);
   const handleStageAction = (newStage, data) => {
     if (newStage) {
       onStageChange(newStage);
