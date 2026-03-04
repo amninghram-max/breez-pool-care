@@ -76,7 +76,6 @@ import HelpSupport from './pages/HelpSupport';
 import Home from './pages/Home';
 import InspectionFinalization from './pages/InspectionFinalization';
 import InspectionSubmit from './pages/InspectionSubmit';
-import LeadsPipeline from './pages/LeadsPipeline';
 import MarginStressTest from './pages/MarginStressTest';
 import MessageThread from './pages/MessageThread';
 import Messages from './pages/Messages';
@@ -88,7 +87,6 @@ import PublicHome from './pages/PublicHome';
 import QuoteView from './pages/QuoteView';
 import ReleaseReadiness from './pages/ReleaseReadiness';
 import RescheduleInspection from './pages/RescheduleInspection';
-import ScheduleInspection from './pages/ScheduleInspection';
 import ServiceReinstatement from './pages/ServiceReinstatement';
 import ServiceVisitEntry from './pages/ServiceVisitEntry';
 import ServiceVisitFlow from './pages/ServiceVisitFlow';
@@ -98,6 +96,8 @@ import TechnicianHome from './pages/TechnicianHome';
 import TechnicianRoute from './pages/TechnicianRoute';
 import TestDashboard from './pages/TestDashboard';
 import architectureContext from './pages/_ARCHITECTURE_CONTEXT';
+import LeadsPipeline from './pages/LeadsPipeline';
+import ScheduleInspection from './pages/ScheduleInspection';
 import __Layout from './Layout.jsx';
 
 
@@ -131,7 +131,6 @@ export const PAGES = {
     "Home": Home,
     "InspectionFinalization": InspectionFinalization,
     "InspectionSubmit": InspectionSubmit,
-    "LeadsPipeline": LeadsPipeline,
     "MarginStressTest": MarginStressTest,
     "MessageThread": MessageThread,
     "Messages": Messages,
@@ -143,7 +142,6 @@ export const PAGES = {
     "QuoteView": QuoteView,
     "ReleaseReadiness": ReleaseReadiness,
     "RescheduleInspection": RescheduleInspection,
-    "ScheduleInspection": ScheduleInspection,
     "ServiceReinstatement": ServiceReinstatement,
     "ServiceVisitEntry": ServiceVisitEntry,
     "ServiceVisitFlow": ServiceVisitFlow,
@@ -153,6 +151,8 @@ export const PAGES = {
     "TechnicianRoute": TechnicianRoute,
     "TestDashboard": TestDashboard,
     "_ARCHITECTURE_CONTEXT": architectureContext,
+    "LeadsPipeline": LeadsPipeline,
+    "ScheduleInspection": ScheduleInspection,
 }
 
 export const pagesConfig = {
