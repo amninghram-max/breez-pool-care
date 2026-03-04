@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
       return json200({ success: false, error: 'Missing or invalid required fields', missingFields, build: BUILD });
     }
 
-    const originCheck = validateAppOrigin(appOriginRaw);
+    const originCheck = resolveAppOrigin(appOriginRaw);
     if (!originCheck.valid) {
       console.error('V3_ORIGIN_INVALID', { appOriginRaw, reason: originCheck.reason });
       return json200({ success: false, error: originCheck.reason, build: BUILD });
