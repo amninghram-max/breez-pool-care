@@ -8,26 +8,25 @@ const json200 = (data) => new Response(
   { status: 200, headers: { "content-type": "application/json; charset=utf-8" } }
 );
 
-function validateAppOrigin(appOrigin) {
-  if (!appOrigin || typeof appOrigin !== 'string') {
-    return { valid: false, reason: 'appOrigin is required in request body' };
+function resolveAppOrigin(appOriginRaw) {
+  // Priority 1: PUBLIC_APP_URL env var
+  const envUrl = Deno.env.get('PUBLIC_APP_URL');
+  if (envUrl) {
+    try {
+      const u = new URL(envUrl);
+      return { valid: true, origin: `${u.protocol}//${u.host}` };
+    } catch {}
   }
-  let u;
-  try {
-    u = new URL(appOrigin);
-  } catch {
-    return { valid: false, reason: `appOrigin is not a valid URL: ${appOrigin}` };
+  // Priority 2: appOrigin from request body
+  if (appOriginRaw && typeof appOriginRaw === 'string') {
+    try {
+      const u = new URL(appOriginRaw);
+      if (['http:', 'https:'].includes(u.protocol)) {
+        return { valid: true, origin: `${u.protocol}//${u.host}` };
+      }
+    } catch {}
   }
-  if (u.protocol !== 'https:') {
-    return { valid: false, reason: `appOrigin must use https, got: ${u.protocol}` };
-  }
-  if (!u.hostname.endsWith('.base44.app')) {
-    return { valid: false, reason: `appOrigin hostname must end with .base44.app, got: ${u.hostname}` };
-  }
-  if (u.pathname !== '/' || u.search || u.hash) {
-    return { valid: false, reason: `appOrigin must be origin-only (no path/search/hash), got: ${appOrigin}` };
-  }
-  return { valid: true, origin: `${u.protocol}//${u.host}` };
+  return { valid: false, reason: 'Could not resolve app origin. Set PUBLIC_APP_URL env variable.' };
 }
 
 function generateToken() {
