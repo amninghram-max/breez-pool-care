@@ -80,15 +80,16 @@ Deno.serve(async (req) => {
         monthlyServiceAmount: cleanedRate,
       };
       
-      // Overwrite pool questions with verified inspection inputs
-      if (inspectionData?.verifiedPoolType) leadUpdateData.poolType = inspectionData.verifiedPoolType;
-      if (inspectionData?.verifiedPoolSurface) leadUpdateData.poolSurface = inspectionData.verifiedPoolSurface;
-      if (inspectionData?.verifiedFilterType) leadUpdateData.filterType = inspectionData.verifiedFilterType;
-      if (inspectionData?.verifiedSanitizerType) leadUpdateData.sanitizerType = inspectionData.verifiedSanitizerType;
-      if (inspectionData?.verifiedScreenedArea) leadUpdateData.screenedArea = inspectionData.verifiedScreenedArea;
-      if (inspectionData?.verifiedTreesOverhead) leadUpdateData.treesOverhead = inspectionData.verifiedTreesOverhead;
-      if (inspectionData?.verifiedUsageFrequency) leadUpdateData.usageFrequency = inspectionData.verifiedUsageFrequency;
-      if (inspectionData?.verifiedPoolCondition) leadUpdateData.poolCondition = inspectionData.verifiedPoolCondition;
+      // Overwrite pool questions with confirmed inspection inputs
+      if (inspectionData?.confirmedPoolType) leadUpdateData.poolType = inspectionData.confirmedPoolType;
+      if (inspectionData?.confirmedFilterType) leadUpdateData.filterType = inspectionData.confirmedFilterType;
+      if (inspectionData?.confirmedEnclosure) leadUpdateData.screenedArea = inspectionData.confirmedEnclosure;
+      if (inspectionData?.confirmedTreesOverhead) leadUpdateData.treesOverhead = inspectionData.confirmedTreesOverhead;
+      if (inspectionData?.confirmedUsageFrequency) leadUpdateData.usageFrequency = inspectionData.confirmedUsageFrequency;
+      if (inspectionData?.confirmedPoolCondition) leadUpdateData.poolCondition = inspectionData.confirmedPoolCondition;
+      // Map simplified chlorination back to sanitizerType
+      if (inspectionData?.confirmedChlorinationMethod === 'saltwater') leadUpdateData.sanitizerType = 'saltwater';
+      else if (inspectionData?.confirmedChlorinationMethod === 'regular_chlorine') leadUpdateData.sanitizerType = 'tablets';
       
       // Ensure stage progresses forward (new_customer flow typically goes to converted)
       const curStage = lead.stage || 'new_lead';
