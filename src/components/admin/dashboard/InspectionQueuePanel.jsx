@@ -17,7 +17,8 @@ export default function InspectionQueuePanel() {
     queryKey: ['pendingInspections'],
     queryFn: () => base44.entities.InspectionRecord.filter(
       { finalizationStatus: 'pending_finalization' }, '-submittedAt'
-    )
+    ),
+    refetchInterval: 15000,
   });
 
   const { data: leads = [] } = useQuery({
