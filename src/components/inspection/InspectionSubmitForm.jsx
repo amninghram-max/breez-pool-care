@@ -107,14 +107,37 @@ export default function InspectionSubmitForm({ lead, calendarEvent, onSubmitted 
   };
 
   if (done) {
+    const monthly = priceSnapshot?.monthly ?? priceSnapshot?.outputMonthlyPrice ?? null;
+    const frequency = priceSnapshot?.frequency ?? priceSnapshot?.outputFrequency ?? 'weekly';
+    const oneTime = priceSnapshot?.oneTimeFees ?? priceSnapshot?.outputOneTimeFees ?? 0;
+
     return (
-      <div className="text-center py-10 space-y-3">
-        <div className="w-14 h-14 rounded-full bg-teal-100 flex items-center justify-center mx-auto">
-          <CheckCircle2 className="w-7 h-7 text-teal-600" />
-        </div>
-        <h3 className="font-bold text-gray-900">Inspection Submitted</h3>
-        <p className="text-sm text-gray-500">Pending finalization by admin.</p>
-      </div>
+      <Card>
+        <CardContent className="py-10 space-y-5">
+          <div className="text-center space-y-2">
+            <div className="w-14 h-14 rounded-full bg-teal-100 flex items-center justify-center mx-auto">
+              <CheckCircle2 className="w-7 h-7 text-teal-600" />
+            </div>
+            <h3 className="font-bold text-gray-900 text-lg">Inspection Submitted</h3>
+            <p className="text-sm text-gray-500">Pending finalization by admin.</p>
+          </div>
+
+          {monthly != null && (
+            <div className="border-2 rounded-xl p-5 text-center space-y-1" style={{ borderColor: TEAL, background: '#e8f8f9' }}>
+              <p className="text-xs uppercase tracking-wide font-semibold" style={{ color: TEAL }}>Updated Price Snapshot</p>
+              <p className="text-3xl font-bold" style={{ color: TEAL }}>
+                ${monthly.toFixed(2)}<span className="text-base font-normal text-gray-500">/mo</span>
+              </p>
+              <p className="text-sm text-gray-500 capitalize">{frequency === 'twice_weekly' ? 'Twice Weekly' : 'Weekly'} service</p>
+              {oneTime > 0 && (
+                <p className="text-sm text-gray-600 font-medium">One-time fee: ${oneTime.toFixed(2)}</p>
+              )}
+            </div>
+          )}
+
+          <p className="text-xs text-center text-gray-400">Admin will finalize and send the activation email.</p>
+        </CardContent>
+      </Card>
     );
   }
 
