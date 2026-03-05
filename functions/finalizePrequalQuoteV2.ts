@@ -107,11 +107,13 @@ Deno.serve(async (req) => {
         const monthlyText = summary?.monthlyPrice || 'TBD';
         const oneTimeText = summary?.oneTimeFees ? `\n• One-time fees: ${summary.oneTimeFees}` : '';
         const body = `Hi ${firstName || 'there'},\n\nYour Breez quote is ready.\n\n• Monthly: ${monthlyText}\n• Frequency: ${summary?.visitFrequency || 'Weekly'}${oneTimeText}\n\nSchedule your free inspection here:\n${scheduleLink}\n\n— Breez Pool Care`;
-        await base44.asServiceRole.integrations.Core.SendEmail({
+        const { Resend } = await import('npm:resend@4.0.0');
+        const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
+        await resend.emails.send({
+          from: 'Breez Pool Care <noreply@breezpoolcare.com>',
           to: email,
-          from_name: 'Breez Pool Care',
           subject: 'Your Breez Quote Is Ready — Schedule Your Free Inspection',
-          body
+          text: body,
         });
         if (targetLeadId) {
           try {
