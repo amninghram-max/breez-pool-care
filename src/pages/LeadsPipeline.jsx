@@ -171,19 +171,15 @@ export default function LeadsPipeline() {
     });
   };
 
+  // DB values that all map to the "Pending Acceptance" display bucket
+  const PENDING_ACCEPTANCE_DB_VALUES = ['inspection_confirmed', 'quote_sent', 'pending_acceptance'];
+
   const getLeadsByStage = (stage) => {
     if (stage.key === 'pending_acceptance') {
-      // Capture all DB values that belong to this display bucket
-      return leads.filter((lead) => ['inspection_confirmed', 'quote_sent', 'pending_acceptance'].includes(lead.stage));
+      return leads.filter((lead) => PENDING_ACCEPTANCE_DB_VALUES.includes(lead.stage));
     }
-    // For all other stages, exclude leads that belong to the pending_acceptance bucket
-    if (stage.key !== 'pending_acceptance') {
-      const pendingBucketValues = ['inspection_confirmed', 'quote_sent', 'pending_acceptance'];
-      if (!pendingBucketValues.includes(stage.key)) {
-        return leads.filter((lead) => lead.stage === stage.key && !pendingBucketValues.includes(lead.stage));
-      }
-    }
-    return leads.filter((lead) => lead.stage === stage.key);
+    // All other stages: only show leads whose DB stage matches exactly and is NOT in the pending bucket
+    return leads.filter((lead) => lead.stage === stage.key && !PENDING_ACCEPTANCE_DB_VALUES.includes(lead.stage));
   };
 
   const toggleLeadSelect = (leadId) => {
