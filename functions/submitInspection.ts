@@ -115,13 +115,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Advance lead stage to inspection_confirmed (only if not already further along)
+    // Advance lead stage and save access instructions to customer profile
     const lead = await base44.asServiceRole.entities.Lead.get(leadId);
     const advancedStages = ['quote_sent', 'converted', 'lost'];
-    if (lead && !advancedStages.includes(lead.stage)) {
-      await base44.asServiceRole.entities.Lead.update(leadId, {
-        stage: 'inspection_confirmed',
-      });
+    const leadUpdate = {};
+    if (!advancedStages.includes(lead?.stage || '')) {
+      leadUpdate.stage = 'inspection_confirmed';
+    }
+    if (accessInstructions) {
+      leadUpdate.gateCode = accessInstructions;
+    }
+    if (Object.keys(leadUpdate).length > 0) {
+      await base44.asServiceRole.entities.Lead.update(leadId, leadUpdate);
     }
 
     console.log(`[submitInspection] Success: recordId=${record.id}, leadId=${leadId}, by=${user.email}`);
