@@ -39,6 +39,7 @@ const STAGES = [
 // Map legacy DB values → display bucket
 const getDisplayStageKey = (dbStage) => {
   if (dbStage === 'inspection_confirmed') return 'pending_acceptance';
+  if (dbStage === 'quote_sent') return 'contacted';
   return dbStage;
 };
 
