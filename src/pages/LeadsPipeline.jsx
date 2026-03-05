@@ -173,8 +173,15 @@ export default function LeadsPipeline() {
 
   const getLeadsByStage = (stage) => {
     if (stage.key === 'pending_acceptance') {
-      // Capture all legacy DB values that belong to this bucket
+      // Capture all DB values that belong to this display bucket
       return leads.filter((lead) => ['inspection_confirmed', 'quote_sent', 'pending_acceptance'].includes(lead.stage));
+    }
+    // For all other stages, exclude leads that belong to the pending_acceptance bucket
+    if (stage.key !== 'pending_acceptance') {
+      const pendingBucketValues = ['inspection_confirmed', 'quote_sent', 'pending_acceptance'];
+      if (!pendingBucketValues.includes(stage.key)) {
+        return leads.filter((lead) => lead.stage === stage.key && !pendingBucketValues.includes(lead.stage));
+      }
     }
     return leads.filter((lead) => lead.stage === stage.key);
   };
