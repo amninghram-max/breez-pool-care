@@ -105,6 +105,31 @@ export default function Activate() {
     }
   };
 
+  const handleOtpVerifyAndLink = async (e) => {
+    e.preventDefault();
+    setAuthError('');
+    setAuthLoading(true);
+    try {
+      await base44.auth.verifyOtp({ email, otpCode });
+      // Log in after OTP verified
+      await base44.auth.loginViaEmailPassword(email, password);
+      // Link to lead immediately
+      if (leadId) {
+        const res = await base44.functions.invoke('linkUserToLead', { leadId });
+        if (!res.data?.ok) {
+          setAuthError(res.data?.error === 'role_not_allowed' ? 'This account cannot be linked.' : 'Failed to link account.');
+          setAuthLoading(false);
+          return;
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: ['activateUser'] });
+    } catch (err) {
+      setAuthError(err.message || 'Verification failed. Please check your code.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
   const handleOtpVerify = async (e) => {
     e.preventDefault();
     setAuthError('');
