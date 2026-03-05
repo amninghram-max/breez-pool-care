@@ -32,6 +32,7 @@ Deno.serve(async (req) => {
       greenToCleanFee,
       finalizationNotes,
       outcome, // 'new_customer' | 'open_lead'
+      priceSnapshot, // Optional: pre-calculated snapshot from submitInspection
     } = await req.json();
 
     if (!inspectionRecordId || !lockedMonthlyRate || !outcome) {
@@ -99,10 +100,11 @@ Deno.serve(async (req) => {
       }
       await base44.asServiceRole.entities.Lead.update(record.leadId, leadUpdateData);
 
-       // Send final quote email with agreement link
+       // Send final quote email with agreement link (pass priceSnapshot if available)
        await base44.asServiceRole.functions.invoke('sendFinalQuoteEmail', {
          inspectionRecordId,
          leadId: record.leadId,
+         priceSnapshot,
        });
 
        console.log(`✅ Finalized as new_customer: inspectionId=${inspectionRecordId}, leadId=${record.leadId}, stage=${leadUpdateData.stage}`);
