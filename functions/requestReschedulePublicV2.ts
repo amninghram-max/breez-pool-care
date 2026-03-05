@@ -74,39 +74,59 @@ Deno.serve(async (req) => {
       return json200({ success: false, code: 'LEAD_NOT_FOUND', error: 'Account not found', build: BUILD });
     }
 
-    // Find active InspectionRecord — fetch all for this lead, filter in code
+    // Find active InspectionRecord — try all non-cancelled records
     let inspection = null;
+    let inspectionSource = null;
     try {
       const inspections = await base44.asServiceRole.entities.InspectionRecord.filter(
         { leadId },
         '-created_date',
         10
       );
-      // Pick the most recent non-cancelled inspection
       inspection = (inspections || []).find(i => i.appointmentStatus !== 'cancelled') || null;
-      console.log('RESCHED_V2_INSPECTION_LOOKUP', { leadId, total: inspections?.length, found: !!inspection, status: inspection?.appointmentStatus });
+      if (inspection) inspectionSource = 'InspectionRecord';
+      console.log('RESCHED_V2_INSPECTION_LOOKUP', { leadId, total: inspections?.length, found: !!inspection });
     } catch (e) {
       console.warn('RESCHED_V2_INSPECTION_LOOKUP_FAILED', { error: e.message });
     }
 
+    // Fallback: check CalendarEvent for inspection type
+    let calendarEvent = null;
     if (!inspection) {
+      try {
+        const events = await base44.asServiceRole.entities.CalendarEvent.filter(
+          { leadId, eventType: 'inspection' },
+          '-created_date',
+          5
+        );
+        calendarEvent = (events || []).find(e => e.status !== 'cancelled') || null;
+        if (calendarEvent) inspectionSource = 'CalendarEvent';
+        console.log('RESCHED_V2_CALENDAR_FALLBACK', { leadId, total: events?.length, found: !!calendarEvent });
+      } catch (e) {
+        console.warn('RESCHED_V2_CALENDAR_FALLBACK_FAILED', { error: e.message });
+      }
+    }
+
+    if (!inspection && !calendarEvent) {
       return json200({ success: false, code: 'NO_APPOINTMENT', error: 'No scheduled inspection found to reschedule', build: BUILD });
     }
 
-    const oldDate = inspection.scheduledDate;
-    const oldTimeWindow = inspection.timeWindow;
-    const calendarEventId = inspection.calendarEventId || lead.inspectionEventId;
+    const oldDate = inspection?.scheduledDate || calendarEvent?.scheduledDate;
+    const oldTimeWindow = inspection?.timeWindow || calendarEvent?.timeWindow;
+    const calendarEventId = inspection?.calendarEventId || lead.inspectionEventId || calendarEvent?.id;
 
     const newTimeWindow = timeWindowMap[requestedTimeSlot];
     const newStartTime = timeSlotToStart[requestedTimeSlot];
 
-    // UPDATE 1: InspectionRecord
-    await base44.asServiceRole.entities.InspectionRecord.update(inspection.id, {
-      scheduledDate: requestedDate,
-      startTime: newStartTime,
-      timeWindow: newTimeWindow,
-      appointmentStatus: 'scheduled'
-    });
+    // UPDATE 1: InspectionRecord (if found)
+    if (inspection) {
+      await base44.asServiceRole.entities.InspectionRecord.update(inspection.id, {
+        scheduledDate: requestedDate,
+        startTime: newStartTime,
+        timeWindow: newTimeWindow,
+        appointmentStatus: 'scheduled'
+      });
+    }
 
     // UPDATE 2: CalendarEvent
     if (calendarEventId) {
