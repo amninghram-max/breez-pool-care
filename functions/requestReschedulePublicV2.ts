@@ -74,16 +74,20 @@ Deno.serve(async (req) => {
       return json200({ success: false, code: 'LEAD_NOT_FOUND', error: 'Account not found', build: BUILD });
     }
 
-    // Find active InspectionRecord
+    // Find active InspectionRecord — fetch all for this lead, filter in code
     let inspection = null;
     try {
       const inspections = await base44.asServiceRole.entities.InspectionRecord.filter(
-        { leadId, appointmentStatus: { $ne: 'cancelled' } },
+        { leadId },
         '-created_date',
-        1
+        10
       );
-      inspection = inspections?.[0] || null;
-    } catch (e) {}
+      // Pick the most recent non-cancelled inspection
+      inspection = (inspections || []).find(i => i.appointmentStatus !== 'cancelled') || null;
+      console.log('RESCHED_V2_INSPECTION_LOOKUP', { leadId, total: inspections?.length, found: !!inspection, status: inspection?.appointmentStatus });
+    } catch (e) {
+      console.warn('RESCHED_V2_INSPECTION_LOOKUP_FAILED', { error: e.message });
+    }
 
     if (!inspection) {
       return json200({ success: false, code: 'NO_APPOINTMENT', error: 'No scheduled inspection found to reschedule', build: BUILD });
