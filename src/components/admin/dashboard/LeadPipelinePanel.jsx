@@ -1,24 +1,61 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Users } from 'lucide-react';
+import { Users, FileText, Calendar, CheckCircle, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 
-const STAGES = [
-  { key: 'new_lead',               label: 'New',                color: 'bg-gray-100 text-gray-700' },
-  { key: 'contacted',              label: 'Contacted',          color: 'bg-blue-100 text-blue-700' },
-  { key: 'inspection_scheduled',   label: 'Insp. Scheduled',    color: 'bg-yellow-100 text-yellow-700' },
-  { key: 'inspection_confirmed',   label: 'Insp. Confirmed',    color: 'bg-orange-100 text-orange-700' },
-  { key: 'quote_sent',             label: 'Quote Sent',         color: 'bg-purple-100 text-purple-700' },
-  { key: 'converted',              label: 'Converted',          color: 'bg-green-100 text-green-700' },
-  { key: 'lost',                   label: 'Lost',               color: 'bg-red-100 text-red-700' },
+// These 4 buckets map to the business stages the user cares about on the dashboard
+const BUCKETS = [
+  {
+    key: 'quoted',
+    label: 'Quoted',
+    description: 'Quote sent, awaiting action',
+    stages: ['quote_sent'],
+    color: 'bg-purple-50 border-purple-200 text-purple-700',
+    numColor: 'text-purple-700',
+    icon: FileText,
+    iconColor: 'text-purple-500',
+    pipelineStage: 'quote_sent',
+  },
+  {
+    key: 'inspection_scheduled',
+    label: 'Inspection Scheduled',
+    description: 'Inspection booked or confirmed',
+    stages: ['inspection_scheduled', 'inspection_confirmed'],
+    color: 'bg-yellow-50 border-yellow-200 text-yellow-700',
+    numColor: 'text-yellow-700',
+    icon: Calendar,
+    iconColor: 'text-yellow-500',
+    pipelineStage: 'inspection_scheduled',
+  },
+  {
+    key: 'pending_acceptance',
+    label: 'Pending Acceptance',
+    description: 'Awaiting payment / activation',
+    stages: ['contacted'],
+    color: 'bg-orange-50 border-orange-200 text-orange-700',
+    numColor: 'text-orange-700',
+    icon: CheckCircle,
+    iconColor: 'text-orange-500',
+    pipelineStage: 'contacted',
+  },
+  {
+    key: 'converted',
+    label: 'Active Customers',
+    description: 'Paying, active service',
+    stages: ['converted'],
+    color: 'bg-teal-50 border-teal-200 text-teal-700',
+    numColor: 'text-teal-700',
+    icon: Star,
+    iconColor: 'text-teal-500',
+    pipelineStage: 'converted',
+  },
 ];
 
 export default function LeadPipelinePanel({ leads }) {
-  const counts = STAGES.map(s => ({
-    ...s,
-    count: leads.filter(l => !l.isDeleted && l.stage === s.key).length
+  const buckets = BUCKETS.map(b => ({
+    ...b,
+    count: leads.filter(l => !l.isDeleted && b.stages.includes(l.stage)).length,
   }));
 
   const total = leads.filter(l => !l.isDeleted).length;
@@ -36,21 +73,24 @@ export default function LeadPipelinePanel({ leads }) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
-          {counts.map(s => (
-            <Link
-              key={s.key}
-              to={`${createPageUrl('LeadsPipeline')}?stage=${s.key}`}
-              className="flex flex-col items-center bg-gray-50 hover:bg-gray-100 transition-colors rounded-lg p-2 text-center cursor-pointer"
-            >
-              <span className={`text-2xl font-bold ${s.count > 0 ? 'text-gray-900' : 'text-gray-300'}`}>
-                {s.count}
-              </span>
-              <Badge className={`mt-1 text-xs font-normal whitespace-normal text-center ${s.color}`}>
-                {s.label}
-              </Badge>
-            </Link>
-          ))}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {buckets.map(b => {
+            const Icon = b.icon;
+            return (
+              <Link
+                key={b.key}
+                to={`${createPageUrl('LeadsPipeline')}?stage=${b.pipelineStage}`}
+                className={`flex flex-col items-center border rounded-xl p-4 text-center transition-all hover:shadow-md hover:-translate-y-0.5 ${b.color}`}
+              >
+                <Icon className={`w-5 h-5 mb-2 ${b.iconColor}`} />
+                <span className={`text-3xl font-bold ${b.numColor} ${b.count === 0 ? 'opacity-30' : ''}`}>
+                  {b.count}
+                </span>
+                <span className="mt-1 text-xs font-semibold leading-tight">{b.label}</span>
+                <span className="mt-0.5 text-xs opacity-60 leading-tight hidden sm:block">{b.description}</span>
+              </Link>
+            );
+          })}
         </div>
         <p className="text-xs text-gray-400 mt-3 text-right">{total} total leads</p>
       </CardContent>
