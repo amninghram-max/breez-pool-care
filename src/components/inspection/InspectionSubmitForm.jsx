@@ -3,37 +3,64 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle2, Camera, Loader2, Upload } from 'lucide-react';
+import { CheckCircle2, Camera, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const TEAL = '#1B9B9F';
 
-function Field({ label, children }) {
+function Field({ label, sublabel, children }) {
   return (
     <div className="space-y-1.5">
       <Label className="text-sm font-medium text-gray-700">{label}</Label>
+      {sublabel && <p className="text-xs text-gray-400">{sublabel}</p>}
       {children}
     </div>
   );
 }
 
-export default function InspectionSubmitForm({ lead, calendarEvent, onSubmitted }) {
-  const [form, setForm] = useState({
-    confirmedPoolSize: lead?.inputPoolSize || '',
+function SectionHeader({ title }) {
+  return (
+    <div className="pt-2">
+      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide border-b pb-1">{title}</h3>
+    </div>
+  );
+}
+
+// Map lead fields to form defaults
+function getDefaults(lead) {
+  // Chlorination: map sanitizerType to simplified saltwater/regular_chlorine
+  const sanitizer = lead?.sanitizerType || '';
+  let chlorination = 'regular_chlorine';
+  if (sanitizer === 'saltwater') chlorination = 'saltwater';
+
+  return {
+    confirmedPoolSize: lead?.inputPoolSize || lead?.poolSize || '',
     confirmedPoolType: lead?.poolType || 'in_ground',
-    confirmedEnclosure: lead?.screenedArea || '',
-    confirmedFilterType: lead?.filterType || '',
-    confirmedChlorinationMethod: lead?.sanitizerType || '',
-    confirmedSpaPresent: lead?.spaPresent === 'true' ? true : false,
+    confirmedEnclosure: lead?.screenedArea || lead?.enclosure || '',
+    confirmedFilterType: lead?.filterType === 'de' ? '' : (lead?.filterType || ''),
+    confirmedChlorinationMethod: chlorination,
+    confirmedSpaPresent: lead?.spaPresent === 'true' || lead?.spaPresent === true,
     confirmedTreesOverhead: lead?.treesOverhead || 'no',
     confirmedPoolCondition: lead?.poolCondition || '',
+    confirmedUsageFrequency: lead?.usageFrequency || '',
     greenSeverity: '',
+    // Chemistry readings
+    freeChlorine: '',
+    pH: '',
+    totalAlkalinity: '',
+    salt: '',
+    // Notes
     equipmentNotes: '',
     techNotes: '',
-    customerPresent: true,
-  });
+    accessInstructions: lead?.gateCode || '',
+  };
+}
+
+export default function InspectionSubmitForm({ lead, calendarEvent, onSubmitted }) {
+  const [form, setForm] = useState(() => getDefaults(lead));
   const [photos, setPhotos] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -97,8 +124,10 @@ export default function InspectionSubmitForm({ lead, calendarEvent, onSubmitted 
       </CardHeader>
       <CardContent className="space-y-5">
 
+        <SectionHeader title="Pool Details (Confirmed)" />
+
         {/* Pool Size */}
-        <Field label="Pool Size (confirmed)">
+        <Field label="Pool Size">
           <Select value={form.confirmedPoolSize} onValueChange={v => set('confirmedPoolSize', v)}>
             <SelectTrigger><SelectValue placeholder="Select size" /></SelectTrigger>
             <SelectContent>
@@ -138,34 +167,30 @@ export default function InspectionSubmitForm({ lead, calendarEvent, onSubmitted 
         )}
 
         {/* Filter */}
-        <Field label="Filter Type (confirmed)">
+        <Field label="Filter Type">
           <Select value={form.confirmedFilterType} onValueChange={v => set('confirmedFilterType', v)}>
             <SelectTrigger><SelectValue placeholder="Select filter" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="sand">Sand</SelectItem>
               <SelectItem value="cartridge">Cartridge</SelectItem>
-              <SelectItem value="de">DE</SelectItem>
               <SelectItem value="not_sure">Not sure</SelectItem>
             </SelectContent>
           </Select>
         </Field>
 
-        {/* Chlorination */}
-        <Field label="Chlorination Method (confirmed)">
+        {/* Chlorination — simplified */}
+        <Field label="Chlorination Type">
           <Select value={form.confirmedChlorinationMethod} onValueChange={v => set('confirmedChlorinationMethod', v)}>
             <SelectTrigger><SelectValue placeholder="Select method" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="saltwater">Saltwater</SelectItem>
-              <SelectItem value="tablets">Tablets</SelectItem>
-              <SelectItem value="liquid_chlorine">Liquid Chlorine</SelectItem>
-              <SelectItem value="mineral">Mineral</SelectItem>
-              <SelectItem value="not_sure">Not sure</SelectItem>
+              <SelectItem value="saltwater">Saltwater Chlorinator</SelectItem>
+              <SelectItem value="regular_chlorine">Regular Chlorine</SelectItem>
             </SelectContent>
           </Select>
         </Field>
 
         {/* Pool Condition */}
-        <Field label="Pool Condition Observed *">
+        <Field label="Pool Condition *">
           <Select value={form.confirmedPoolCondition} onValueChange={v => set('confirmedPoolCondition', v)}>
             <SelectTrigger><SelectValue placeholder="Select condition" /></SelectTrigger>
             <SelectContent>
@@ -177,7 +202,6 @@ export default function InspectionSubmitForm({ lead, calendarEvent, onSubmitted 
           </Select>
         </Field>
 
-        {/* Green severity */}
         {form.confirmedPoolCondition === 'green' && (
           <Field label="Green Pool Severity">
             <Select value={form.greenSeverity} onValueChange={v => set('greenSeverity', v)}>
@@ -203,15 +227,75 @@ export default function InspectionSubmitForm({ lead, calendarEvent, onSubmitted 
           </Select>
         </Field>
 
-        {/* Customer Present */}
-        <Field label="Customer / Caretaker Present?">
-          <Select value={form.customerPresent ? 'yes' : 'no'} onValueChange={v => set('customerPresent', v === 'yes')}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+        {/* Pool Usage */}
+        <Field label="Pool Usage Frequency">
+          <Select value={form.confirmedUsageFrequency} onValueChange={v => set('confirmedUsageFrequency', v)}>
+            <SelectTrigger><SelectValue placeholder="Select usage" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="yes">Yes</SelectItem>
-              <SelectItem value="no">No</SelectItem>
+              <SelectItem value="rarely">Rarely (a few times a year)</SelectItem>
+              <SelectItem value="weekends">Weekends only</SelectItem>
+              <SelectItem value="several_week">Several times a week</SelectItem>
+              <SelectItem value="daily">Daily</SelectItem>
             </SelectContent>
           </Select>
+        </Field>
+
+        <SectionHeader title="Chemistry Readings" />
+
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Free Chlorine (ppm)">
+            <Input
+              type="number"
+              step="0.1"
+              placeholder="e.g. 2.5"
+              value={form.freeChlorine}
+              onChange={e => set('freeChlorine', e.target.value)}
+            />
+          </Field>
+          <Field label="pH">
+            <Input
+              type="number"
+              step="0.1"
+              placeholder="e.g. 7.4"
+              value={form.pH}
+              onChange={e => set('pH', e.target.value)}
+            />
+          </Field>
+          <Field label="Total Alkalinity (ppm)">
+            <Input
+              type="number"
+              step="1"
+              placeholder="e.g. 100"
+              value={form.totalAlkalinity}
+              onChange={e => set('totalAlkalinity', e.target.value)}
+            />
+          </Field>
+          {form.confirmedChlorinationMethod === 'saltwater' && (
+            <Field label="Salt (ppm)">
+              <Input
+                type="number"
+                step="10"
+                placeholder="e.g. 3200"
+                value={form.salt}
+                onChange={e => set('salt', e.target.value)}
+              />
+            </Field>
+          )}
+        </div>
+
+        <SectionHeader title="Notes" />
+
+        {/* Access Instructions — persists to customer profile */}
+        <Field
+          label="Access Instructions"
+          sublabel="Gate codes, lockbox combos, or access notes — saved to this customer's profile for every future service visit."
+        >
+          <Textarea
+            value={form.accessInstructions}
+            onChange={e => set('accessInstructions', e.target.value)}
+            placeholder="e.g. Gate code: 1234, lockbox on left side of fence..."
+            rows={2}
+          />
         </Field>
 
         {/* Equipment Notes */}

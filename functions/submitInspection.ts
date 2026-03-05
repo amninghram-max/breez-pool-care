@@ -31,11 +31,16 @@ Deno.serve(async (req) => {
       confirmedSpaPresent,
       confirmedTreesOverhead,
       confirmedPoolCondition,
+      confirmedUsageFrequency,
       greenSeverity,
       equipmentNotes,
       techNotes,
       photoBefore,
-      customerPresent,
+      accessInstructions,
+      freeChlorine,
+      pH,
+      totalAlkalinity,
+      salt,
     } = body;
 
     if (!leadId || !confirmedPoolCondition) {
