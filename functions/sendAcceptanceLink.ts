@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
     const proto = req.headers.get('x-forwarded-proto') ?? 'https';
     const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host') ?? '';
     const appOrigin = `${proto}://${host}`;
-    const acceptanceUrl = `${appOrigin}/Activate`;
+    const acceptanceUrl = `${appOrigin}/Activate?leadId=${leadId}`;
 
     const firstName = lead.firstName || 'there';
 
