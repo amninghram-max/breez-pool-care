@@ -46,12 +46,6 @@ export default function Activate() {
 
     const doLink = async () => {
       setStatus('linking');
-      // Try to fetch lead first name for personalization (via function to avoid header issues)
-      try {
-        const res = await base44.functions.invoke('linkUserToLead', { leadId, peekOnly: true });
-        if (res.data?.firstName) setLeadFirstName(res.data.firstName);
-      } catch { /* silent */ }
-
       try {
         const res = await base44.functions.invoke('linkUserToLead', { leadId });
 
