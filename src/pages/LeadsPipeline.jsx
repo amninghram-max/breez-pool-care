@@ -49,6 +49,7 @@ export default function LeadsPipeline() {
   const [showNewLead, setShowNewLead] = useState(false);
   const [expandedStages, setExpandedStages] = useState(STAGES.filter(s => s.defaultExpanded).map(s => s.key));
 
+
   // Batch selection state
   const [selectedLeadIds, setSelectedLeadIds] = useState(new Set());
   const [batchConfirmation, setBatchConfirmation] = useState(null);
