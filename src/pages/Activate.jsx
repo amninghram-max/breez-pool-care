@@ -130,21 +130,7 @@ export default function Activate() {
     }
   };
 
-  const handleOtpVerify = async (e) => {
-    e.preventDefault();
-    setAuthError('');
-    setAuthLoading(true);
-    try {
-      await base44.auth.verifyOtp({ email, otpCode });
-      // Log in after OTP verified
-      await base44.auth.loginViaEmailPassword(email, password);
-      queryClient.invalidateQueries({ queryKey: ['activateUser'] });
-    } catch (err) {
-      setAuthError(err.message || 'Verification failed. Please check your code.');
-    } finally {
-      setAuthLoading(false);
-    }
-  };
+
 
   const handleSignin = async (e) => {
     e.preventDefault();
