@@ -156,6 +156,14 @@ export default function Agreements() {
     }
   };
 
+  const handleQuickAgree = () => {
+    setAgreed({
+      serviceAgreement: true,
+      privacyPolicy: true,
+      photoConsent: false,
+    });
+  };
+
   return (
     <div className="max-w-3xl mx-auto py-8 px-4">
       <div className="text-center mb-8">
