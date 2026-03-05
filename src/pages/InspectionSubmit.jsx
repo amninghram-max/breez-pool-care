@@ -15,6 +15,8 @@ export default function InspectionSubmit() {
   const [selectedLead, setSelectedLead] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
 
+  const queryClient = useQueryClient();
+
   const { data: user } = useQuery({
     queryKey: ['user'],
     queryFn: () => base44.auth.me(),
