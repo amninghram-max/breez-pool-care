@@ -65,6 +65,7 @@ export default function InspectionSubmitForm({ lead, calendarEvent, onSubmitted 
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [priceSnapshot, setPriceSnapshot] = useState(null);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
@@ -97,6 +98,7 @@ export default function InspectionSubmitForm({ lead, calendarEvent, onSubmitted 
     setSubmitting(false);
     if (result.data?.success) {
       setDone(true);
+      setPriceSnapshot(result.data.priceSnapshot || null);
       toast.success('Inspection submitted');
       if (onSubmitted) onSubmitted(result.data.inspectionRecordId);
     } else {
