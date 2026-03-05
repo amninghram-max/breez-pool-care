@@ -46,11 +46,11 @@ export default function Activate() {
 
     const doLink = async () => {
       setStatus('linking');
-      // Try to fetch lead first name for personalization
+      // Try to fetch lead first name for personalization (via function to avoid header issues)
       try {
-        const lead = await base44.entities.Lead.get(leadId);
-        if (lead?.firstName) setLeadFirstName(lead.firstName);
-      } catch { /* RLS may block — silent */ }
+        const res = await base44.functions.invoke('linkUserToLead', { leadId, peekOnly: true });
+        if (res.data?.firstName) setLeadFirstName(res.data.firstName);
+      } catch { /* silent */ }
 
       try {
         const res = await base44.functions.invoke('linkUserToLead', { leadId });
