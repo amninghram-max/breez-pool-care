@@ -710,7 +710,7 @@ function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit
           )}
 
           <div className="flex gap-2">
-            <Select value={lead.stage} onValueChange={onStageChange}>
+            <Select value={getDisplayStageKey(lead.stage)} onValueChange={onStageChange}>
               <SelectTrigger className="flex-1 h-8 text-xs">
                 <SelectValue />
               </SelectTrigger>
