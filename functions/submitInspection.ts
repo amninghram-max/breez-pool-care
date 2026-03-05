@@ -153,20 +153,30 @@ Deno.serve(async (req) => {
         // Map confirmed chlorination back
         const sanitizer = confirmedChlorinationMethod === 'saltwater' ? 'saltwater' : 'tablets';
         const invokeResult = await base44.asServiceRole.functions.invoke('calculateQuoteOnly', {
-          poolSize: confirmedPoolSize || latestQuote.inputPoolSize,
-          poolType: confirmedPoolType || latestQuote.inputPoolType,
-          spaPresent: (confirmedSpaPresent === true || confirmedSpaPresent === 'true') ? 'true' : 'false',
-          enclosure: confirmedEnclosure || latestQuote.inputEnclosure,
-          treesOverhead: confirmedTreesOverhead || latestQuote.inputTreesOverhead,
-          filterType: confirmedFilterType || latestQuote.inputFilterType,
-          chlorinationMethod: sanitizer,
-          useFrequency: confirmedUsageFrequency || latestQuote.inputUseFrequency,
-          petsAccess: latestQuote.inputPetsAccess,
-          petSwimFrequency: latestQuote.inputPetSwimFrequency,
-          poolCondition: confirmedPoolCondition,
-          greenPoolSeverity: greenSeverity || latestQuote.inputGreenPoolSeverity,
+          questionnaireData: {
+            poolSize: confirmedPoolSize || latestQuote.inputPoolSize,
+            poolType: confirmedPoolType || latestQuote.inputPoolType,
+            spaPresent: (confirmedSpaPresent === true || confirmedSpaPresent === 'true') ? 'true' : 'false',
+            enclosure: confirmedEnclosure || latestQuote.inputEnclosure,
+            treesOverhead: confirmedTreesOverhead || latestQuote.inputTreesOverhead,
+            filterType: confirmedFilterType || latestQuote.inputFilterType,
+            chlorinationMethod: sanitizer,
+            useFrequency: confirmedUsageFrequency || latestQuote.inputUseFrequency,
+            petsAccess: latestQuote.inputPetsAccess,
+            petSwimFrequency: latestQuote.inputPetSwimFrequency,
+            poolCondition: confirmedPoolCondition,
+            greenPoolSeverity: greenSeverity || latestQuote.inputGreenPoolSeverity,
+          }
         });
-        priceSnapshot = invokeResult?.monthly ? invokeResult : null;
+        const quote = invokeResult?.data?.quote || invokeResult?.quote;
+        priceSnapshot = quote ? {
+          monthly: quote.finalMonthlyPrice || quote.estimatedMonthlyPrice,
+          frequency: quote.frequencySelectedOrRequired,
+          oneTimeFees: quote.estimatedOneTimeFees,
+          outputMonthlyPrice: quote.finalMonthlyPrice,
+          outputFrequency: quote.frequencySelectedOrRequired,
+          outputOneTimeFees: quote.estimatedOneTimeFees,
+        } : null;
       }
     } catch (e) {
       console.warn('[submitInspection] priceSnapshot failed (non-fatal):', e.message);
