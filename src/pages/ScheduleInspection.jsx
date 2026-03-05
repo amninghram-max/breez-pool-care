@@ -488,12 +488,19 @@ export default function ScheduleInspection() {
             </div>
           </div>
 
-          {error && (
+          {error === 'OUTSIDE_SERVICE_AREA' ? (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 text-center space-y-2">
+              <p className="font-semibold text-amber-900">Outside Our Service Area</p>
+              <p className="text-sm text-amber-800">
+                Unfortunately, we don't currently service that ZIP code. We serve select areas on the Space Coast, FL. Questions? Call <strong>(321) 524-3838</strong>.
+              </p>
+            </div>
+          ) : error ? (
             <div className="flex items-start gap-2 text-red-600 text-sm bg-red-50 rounded-xl px-4 py-3">
               <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
               <span>{error}</span>
             </div>
-          )}
+          ) : null}
 
           <button
             onClick={handleSubmit}
