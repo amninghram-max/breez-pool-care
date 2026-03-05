@@ -37,9 +37,9 @@ const FILTER_TYPE_OPTIONS = [
 ];
 
 const CHLORINATION_OPTIONS = [
-  { value: 'saltwater',    label: 'Saltwater System', sub: 'Salt chlorine generator' },
-  { value: 'traditional',  label: 'Traditional Chlorine', sub: 'Tablets, liquid, or inline feeder' },
-  { value: 'not_sure',     label: 'Not Sure', sub: "We'll assess at inspection" },
+  { value: 'saltwater',        label: 'Saltwater System', sub: 'Salt chlorine generator' },
+  { value: 'liquid_chlorine',  label: 'Traditional Chlorine', sub: 'Tablets, liquid, or inline feeder' },
+  { value: 'not_sure',         label: 'Not Sure', sub: "We'll assess at inspection" },
 ];
 
 const FREQUENCY_OPTIONS = [
