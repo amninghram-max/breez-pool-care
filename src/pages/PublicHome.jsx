@@ -25,8 +25,8 @@ function CTAButtons({ navigate }) {
         style={{ borderColor: TEAL, color: TEAL }}>
         Schedule a Free Inspection
       </button>
-    </div>
-  );
+    </div>);
+
 }
 
 function FAQItem({ q, a }) {
@@ -39,49 +39,49 @@ function FAQItem({ q, a }) {
         <span className="font-semibold text-gray-900 pr-4">{q}</span>
         {open ? <ChevronUp className="w-5 h-5 text-gray-400 shrink-0" /> : <ChevronDown className="w-5 h-5 text-gray-400 shrink-0" />}
       </button>
-      {open && (
-        <div className="px-6 pb-5 bg-white">
+      {open &&
+      <div className="px-6 pb-5 bg-white">
           <p className="text-gray-600 leading-relaxed" dangerouslySetInnerHTML={{ __html: a }} />
         </div>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }
 
 const faqs = [
-  {
-    q: 'How does the free instant quote work?',
-    a: 'Answer a few quick questions and get a fast estimate—no payment info and no commitment.'
-  },
-  {
-    q: 'Is Green-to-Clean included?',
-    a: 'Yes. Green-to-clean recovery is <strong>included in the initial quote</strong>, then <strong>confirmed during the inspection</strong> based on pool size and severity.'
-  },
-  {
-    q: 'What happens during the free inspection?',
-    a: 'We test the water, inspect equipment and circulation, confirm pool details, and answer questions. It typically takes <strong>20–30 minutes</strong>. We\'ll call about <strong>1 hour before arrival</strong> to confirm someone is home.'
-  },
-  {
-    q: 'Do I need to be home for service visits?',
-    a: '<strong>No.</strong> You only need to be home for the <strong>free inspection</strong> (or have a designated caretaker present). After that, we just need <strong>safe access</strong> to the pool and equipment area.'
-  },
-  {
-    q: 'How do payments work?',
-    a: 'Service is billed <strong>one month in advance</strong> for upcoming service. Payments are handled securely in your dashboard.'
-  },
-  {
-    q: 'Is AutoPay available?',
-    a: 'Yes—AutoPay is available and saves <strong>$10 per month</strong>.'
-  },
-  {
-    q: 'What if I\'m late on a payment?',
-    a: 'There are no late fees. You have a <strong>72-hour grace period</strong> to pay. If unpaid after that, service and dashboard access may be suspended until reinstated.'
-  },
-  {
-    q: 'Can I cancel anytime?',
-    a: 'Yes. You can cancel anytime and service ends at the end of your current billing cycle.'
-  }
-];
+{
+  q: 'How does the free instant quote work?',
+  a: 'Answer a few quick questions and get a fast estimate—no payment info and no commitment.'
+},
+{
+  q: 'Is Green-to-Clean included?',
+  a: 'Yes. Green-to-clean recovery is <strong>included in the initial quote</strong>, then <strong>confirmed during the inspection</strong> based on pool size and severity.'
+},
+{
+  q: 'What happens during the free inspection?',
+  a: 'We test the water, inspect equipment and circulation, confirm pool details, and answer questions. It typically takes <strong>20–30 minutes</strong>. We\'ll call about <strong>1 hour before arrival</strong> to confirm someone is home.'
+},
+{
+  q: 'Do I need to be home for service visits?',
+  a: '<strong>No.</strong> You only need to be home for the <strong>free inspection</strong> (or have a designated caretaker present). After that, we just need <strong>safe access</strong> to the pool and equipment area.'
+},
+{
+  q: 'How do payments work?',
+  a: 'Service is billed <strong>one month in advance</strong> for upcoming service. Payments are handled securely in your dashboard.'
+},
+{
+  q: 'Is AutoPay available?',
+  a: 'Yes—AutoPay is available and saves <strong>$10 per month</strong>.'
+},
+{
+  q: 'What if I\'m late on a payment?',
+  a: 'There are no late fees. You have a <strong>72-hour grace period</strong> to pay. If unpaid after that, service and dashboard access may be suspended until reinstated.'
+},
+{
+  q: 'Can I cancel anytime?',
+  a: 'Yes. You can cancel anytime and service ends at the end of your current billing cycle.'
+}];
+
 
 export default function PublicHome() {
   const navigate = useNavigate();
@@ -163,12 +163,12 @@ export default function PublicHome() {
         <div className="max-w-4xl mx-auto">
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { icon: ShieldCheck, title: 'No more dangerous chemicals.', desc: 'We bring them, handle them, and apply them safely.' },
-              { icon: Clock, title: 'Get your time back.', desc: 'No more weekends lost to brushing and guessing.' },
-              { icon: Droplets, title: 'Swim with confidence.', desc: 'Water is tested and balanced consistently by a pro.' },
-              { icon: Wrench, title: 'Fewer costly surprises.', desc: 'Stable chemistry + routine checks help prevent damage.' },
-            ].map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="flex gap-3 items-start">
+            { icon: ShieldCheck, title: 'No more dangerous chemicals.', desc: 'We bring them, handle them, and apply them safely.' },
+            { icon: Clock, title: 'Get your time back.', desc: 'No more weekends lost to brushing and guessing.' },
+            { icon: Droplets, title: 'Swim with confidence.', desc: 'Water is tested and balanced consistently by a pro.' },
+            { icon: Wrench, title: 'Fewer costly surprises.', desc: 'Stable chemistry + routine checks help prevent damage.' }].
+            map(({ icon: Icon, title, desc }) =>
+            <div key={title} className="flex gap-3 items-start">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: '#e8f8f9' }}>
                   <Icon className="w-5 h-5" style={{ color: TEAL }} />
                 </div>
@@ -177,7 +177,7 @@ export default function PublicHome() {
                   <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
                 </div>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>
@@ -193,21 +193,21 @@ export default function PublicHome() {
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              { icon: FileText, title: 'Visit Logs (Instant)', desc: "Each visit is recorded and available right after completion." },
-              { icon: Camera, title: 'Before & After Photos', desc: "Photos are taken at each visit so you can see the condition of your pool—not just read about it." },
-              { icon: Clock, title: 'Service Timestamps', desc: "See exactly when your technician arrived and when service was completed—on every visit." },
-              { icon: MessageSquare, title: 'Direct Messaging', desc: "Have a question between visits? Message us directly through the platform. No phone tag required." },
-              { icon: CreditCard, title: 'Secure Payments + AutoPay', desc: "Billing is handled securely through your dashboard. AutoPay saves $10/month." },
-              { icon: Wrench, title: 'Equipment Notes', desc: "If your technician observes something worth attention, it's noted and shared with you proactively." },
-            ].map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            { icon: FileText, title: 'Visit Logs (Instant)', desc: "Each visit is recorded and available right after completion." },
+            { icon: Camera, title: 'Before & After Photos', desc: "Photos are taken at each visit so you can see the condition of your pool—not just read about it." },
+            { icon: Clock, title: 'Service Timestamps', desc: "See exactly when your technician arrived and when service was completed—on every visit." },
+            { icon: MessageSquare, title: 'Direct Messaging', desc: "Have a question between visits? Message us directly through the platform. No phone tag required." },
+            { icon: CreditCard, title: 'Secure Payments + AutoPay', desc: "Billing is handled securely through your dashboard. AutoPay saves $10/month." },
+            { icon: Wrench, title: 'Equipment Notes', desc: "If your technician observes something worth attention, it's noted and shared with you proactively." }].
+            map(({ icon: Icon, title, desc }) =>
+            <div key={title} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                 <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: '#e8f8f9' }}>
                   <Icon className="w-5 h-5" style={{ color: TEAL }} />
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2">{title}</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
               </div>
-            ))}
+            )}
           </div>
           <p className="text-center text-gray-500 text-sm mt-8">
             Complete printable service reports are available anytime from your dashboard.
@@ -235,22 +235,22 @@ export default function PublicHome() {
             <p className="font-semibold text-gray-900 mb-5 text-lg">Every visit includes:</p>
             <div className="grid sm:grid-cols-2 gap-3">
               {[
-                'Skimming debris + clearing baskets',
-                'Brushing walls and tile line',
-                'Vacuuming the pool',
-                'Professional water testing + chemical balancing',
-                'Equipment & circulation checks',
-                'Full visit documentation in your dashboard',
-              ].map(item => (
-                <div key={item} className="flex items-center gap-3">
+              'Skimming debris + clearing baskets',
+              'Brushing walls and tile line',
+              'Vacuuming the pool',
+              'Professional water testing + chemical balancing',
+              'Equipment & circulation checks',
+              'Full visit documentation in your dashboard'].
+              map((item) =>
+              <div key={item} className="flex items-center gap-3">
                   <CheckCircle className="w-5 h-5 shrink-0" style={{ color: TEAL }} />
                   <span className="text-gray-700 text-sm">{item}</span>
                 </div>
-              ))}
+              )}
             </div>
-            <p className="text-gray-500 text-sm mt-6 pt-6 border-t border-gray-100">
-              <strong>Optional services</strong> (quoted as needed): filter cleans, salt system checks, green-to-clean recovery, and other specialty work.
-            </p>
+            
+
+
           </div>
         </div>
       </section>
@@ -264,11 +264,11 @@ export default function PublicHome() {
           <div className="grid md:grid-cols-2 gap-10 items-center">
             <div className="space-y-6">
               {[
-                { icon: ShieldCheck, title: 'Comfort & Safety', desc: "Out-of-balance water can irritate skin and eyes. Consistent sanitation and balance keeps swimming comfortable." },
-                { icon: Wrench, title: 'Protects Your Pool', desc: "Unstable chemistry can contribute to staining, scale, etching, and premature wear on equipment and plumbing." },
-                { icon: Droplets, title: 'No Guessing', desc: "We test and adjust based on real readings—visit after visit." },
-              ].map(({ icon: Icon, title, desc }) => (
-                <div key={title} className="flex gap-4">
+              { icon: ShieldCheck, title: 'Comfort & Safety', desc: "Out-of-balance water can irritate skin and eyes. Consistent sanitation and balance keeps swimming comfortable." },
+              { icon: Wrench, title: 'Protects Your Pool', desc: "Unstable chemistry can contribute to staining, scale, etching, and premature wear on equipment and plumbing." },
+              { icon: Droplets, title: 'No Guessing', desc: "We test and adjust based on real readings—visit after visit." }].
+              map(({ icon: Icon, title, desc }) =>
+              <div key={title} className="flex gap-4">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: '#e8f8f9' }}>
                     <Icon className="w-5 h-5" style={{ color: TEAL }} />
                   </div>
@@ -277,7 +277,7 @@ export default function PublicHome() {
                     <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
                   </div>
                 </div>
-              ))}
+              )}
             </div>
             <div className="rounded-3xl overflow-hidden shadow-xl aspect-[4/3]">
               <img
@@ -322,15 +322,15 @@ export default function PublicHome() {
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">Homeowners love the "set it and forget it" feeling</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
-            {[1,2,3].map(i => (
-              <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            {[1, 2, 3].map((i) =>
+            <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                 <div className="flex gap-1 mb-3">
-                  {[1,2,3,4,5].map(s => <Star key={s} className="w-4 h-4 fill-current text-yellow-400" />)}
+                  {[1, 2, 3, 4, 5].map((s) => <Star key={s} className="w-4 h-4 fill-current text-yellow-400" />)}
                 </div>
                 <p className="text-gray-500 text-sm italic leading-relaxed mb-3">"(Customer quote goes here — 1–2 sentences.)"</p>
                 <p className="text-gray-400 text-xs font-medium">— Name, City</p>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>
@@ -343,19 +343,19 @@ export default function PublicHome() {
           </div>
           <div className="grid md:grid-cols-4 gap-8">
             {[
-              { num: '1', title: 'Get a free instant quote', desc: 'No payment info, no commitment.' },
-              { num: '2', title: 'Schedule a free inspection', desc: 'We come to you at a convenient time.' },
-              { num: '3', title: 'We test water + check equipment', desc: 'About 20–30 minutes at your pool.' },
-              { num: '4', title: 'Start service', desc: 'Enjoy a pool that stays swim-ready week after week.' },
-            ].map(step => (
-              <div key={step.num} className="flex flex-col items-center text-center">
+            { num: '1', title: 'Get a free instant quote', desc: 'No payment info, no commitment.' },
+            { num: '2', title: 'Schedule a free inspection', desc: 'We come to you at a convenient time.' },
+            { num: '3', title: 'We test water + check equipment', desc: 'About 20–30 minutes at your pool.' },
+            { num: '4', title: 'Start service', desc: 'Enjoy a pool that stays swim-ready week after week.' }].
+            map((step) =>
+            <div key={step.num} className="flex flex-col items-center text-center">
                 <div className="w-14 h-14 rounded-full flex items-center justify-center text-white text-xl font-bold mb-4 shadow-md" style={{ backgroundColor: TEAL }}>
                   {step.num}
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2 text-sm">{step.title}</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">{step.desc}</p>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>
@@ -368,16 +368,16 @@ export default function PublicHome() {
           </div>
           <div className="space-y-4">
             {[
-              "We handle the chemicals (you don't touch the dangerous stuff)",
-              'Consistent weekly service that prevents problems instead of reacting to them',
-              'Clear communication and documentation after visits',
-              'Free inspection to confirm details and answer questions',
-            ].map(item => (
-              <div key={item} className="flex items-center gap-3 bg-white rounded-xl px-5 py-4 shadow-sm border border-gray-100">
+            "We handle the chemicals (you don't touch the dangerous stuff)",
+            'Consistent weekly service that prevents problems instead of reacting to them',
+            'Clear communication and documentation after visits',
+            'Free inspection to confirm details and answer questions'].
+            map((item) =>
+            <div key={item} className="flex items-center gap-3 bg-white rounded-xl px-5 py-4 shadow-sm border border-gray-100">
                 <CheckCircle className="w-5 h-5 shrink-0" style={{ color: TEAL }} />
                 <span className="text-gray-700">{item}</span>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>
@@ -389,9 +389,9 @@ export default function PublicHome() {
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">Frequently Asked Questions</h2>
           </div>
           <div className="space-y-3">
-            {faqs.map((faq) => (
-              <FAQItem key={faq.q} q={faq.q} a={faq.a} />
-            ))}
+            {faqs.map((faq) =>
+            <FAQItem key={faq.q} q={faq.q} a={faq.a} />
+            )}
           </div>
         </div>
       </section>
@@ -443,6 +443,6 @@ export default function PublicHome() {
           </button>
         </div>
       </footer>
-    </div>
-  );
+    </div>);
+
 }
