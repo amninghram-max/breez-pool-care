@@ -92,6 +92,8 @@ export default function PublicScheduler({ leadId, clientEmail, clientFirstName, 
       };
 
       let data;
+      let v2PlatformError = false;
+      
       try {
         const res = await Promise.race([
           base44.functions.invoke('scheduleFirstInspectionPublicV2', payload),
@@ -100,19 +102,35 @@ export default function PublicScheduler({ leadId, clientEmail, clientFirstName, 
         data = res?.data ?? res;
       } catch (v2Err) {
         const msg = String(v2Err?.message || v2Err || '');
-        const shouldFallback = msg.includes('timed out') || msg.includes('Deployment does not exist') || msg.includes('FUNCTION_NOT_FOUND');
-        if (!shouldFallback) throw v2Err;
+        const isPlatformError = msg.includes('timed out') || msg.includes('Deployment does not exist') || msg.includes('FUNCTION_NOT_FOUND');
+        console.log('SCHED_V2_FAIL', { error: msg, isPlatformError });
+        
+        if (!isPlatformError) {
+          throw v2Err;
+        }
+        v2PlatformError = true;
       }
 
-      // Fallback to V1 if V2 unavailable/timed out or V2 is blocked by platform create permissions
-      const v2Unavailable = !data || (data?.success !== true && (String(data?.error || '').includes('Deployment does not exist') || data?.code === 'FUNCTION_NOT_FOUND'));
-      const v2CreateBlocked = data?.success !== true && ['INSPECTION_CREATE_FAILED', 'INSPECTION_CREATE_FORBIDDEN'].includes(data?.code);
-      if (v2Unavailable || v2CreateBlocked) {
-        const v1Res = await Promise.race([
-          base44.functions.invoke('scheduleFirstInspectionPublicV1', payload),
-          timeoutPromise
-        ]);
-        data = v1Res?.data ?? v1Res;
+      // Fallback to V1 ONLY if V2 had a platform/deployment error AND no structured response
+      const isStructuredError = data && typeof data === 'object' && (data.success !== undefined || data.code !== undefined || data.error !== undefined);
+      const businessRuleFailure = isStructuredError && data?.success === false && ![
+        'FUNCTION_NOT_FOUND', 'INSPECTION_CREATE_FAILED', 'INSPECTION_CREATE_FORBIDDEN'
+      ].includes(data?.code);
+      
+      if ((v2PlatformError || !data) && !businessRuleFailure) {
+        console.log('SCHED_FALLBACK_V1_USED', { reason: v2PlatformError ? 'platform_error' : 'no_response' });
+        try {
+          const v1Res = await Promise.race([
+            base44.functions.invoke('scheduleFirstInspectionPublicV1', payload),
+            timeoutPromise
+          ]);
+          data = v1Res?.data ?? v1Res;
+        } catch (v1Err) {
+          console.warn('SCHED_V1_FALLBACK_FAILED', { error: String(v1Err?.message || v1Err || '') });
+          throw v1Err;
+        }
+      } else if (businessRuleFailure) {
+        console.log('SCHED_V2_BUSINESS_RULE_ERROR', { code: data?.code, error: data?.error });
       }
 
       if (data?.success === true) {
