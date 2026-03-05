@@ -170,14 +170,20 @@ Deno.serve(async (req) => {
           }
         });
         const quote = invokeResult?.data?.quote || invokeResult?.quote;
-        priceSnapshot = quote ? {
-          monthly: quote.finalMonthlyPrice,
-          frequency: quote.frequencySelectedOrRequired,
-          oneTimeFees: quote.estimatedOneTimeFees,
-          outputMonthlyPrice: quote.finalMonthlyPrice,
-          outputFrequency: quote.frequencySelectedOrRequired,
-          outputOneTimeFees: quote.estimatedOneTimeFees,
-        } : null;
+        if (quote) {
+          // Force weekly frequency for inspection snapshot — admins can manually escalate based on chemical trends
+          const weeklyPrice = (quote.finalMonthlyPrice / quote.frequencyMultiplier) * 1.0; // Normalize to weekly
+          priceSnapshot = {
+            monthly: weeklyPrice,
+            frequency: 'weekly',
+            oneTimeFees: quote.estimatedOneTimeFees,
+            outputMonthlyPrice: weeklyPrice,
+            outputFrequency: 'weekly',
+            outputOneTimeFees: quote.estimatedOneTimeFees,
+          };
+        } else {
+          priceSnapshot = null;
+        }
       }
     } catch (e) {
       console.warn('[submitInspection] priceSnapshot failed (non-fatal):', e.message);
