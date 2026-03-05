@@ -99,10 +99,14 @@ export default function PaymentSuccess() {
             <div className="flex items-start gap-3">
               <Calendar className="w-5 h-5 text-teal-600 mt-1" />
               <div>
-                <p className="font-medium">We're scheduling your first service</p>
-                <p className="text-sm text-gray-600">
-                  You'll receive an email with your appointment details within 24 hours.
-                </p>
+                <p className="font-medium">First service scheduled</p>
+                {firstServiceDate ? (
+                  <p className="text-sm font-semibold text-teal-700">
+                    {new Date(firstServiceDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                  </p>
+                ) : (
+                  <p className="text-sm text-gray-600">You'll receive an email with your appointment details shortly.</p>
+                )}
               </div>
             </div>
 
