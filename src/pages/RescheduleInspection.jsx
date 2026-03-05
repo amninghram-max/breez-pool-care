@@ -1,126 +1,126 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { Calendar, AlertCircle, CheckCircle2, Loader2, Clock } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 
 const TEAL = '#1B9B9F';
 
+const TIME_SLOTS = [
+  { value: 'morning',   label: 'Morning',   sub: '8:00 AM – 11:00 AM' },
+  { value: 'midday',    label: 'Midday',    sub: '11:00 AM – 2:00 PM' },
+  { value: 'afternoon', label: 'Afternoon', sub: '2:00 PM – 5:00 PM' },
+];
+
 export default function RescheduleInspection() {
-  const [state, setState] = useState('loading'); // loading, form, success, error
+  const [state, setState] = useState('loading');
   const [lead, setLead] = useState(null);
-  const [event, setEvent] = useState(null);
+  const [currentDate, setCurrentDate] = useState(null);
+  const [currentTimeWindow, setCurrentTimeWindow] = useState(null);
   const [error, setError] = useState(null);
   const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTime, setSelectedTime] = useState('');
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [requestId, setRequestId] = useState(null);
+  const [newTimeWindow, setNewTimeWindow] = useState('');
+  const [newDate, setNewDate] = useState('');
+
   const token = new URLSearchParams(window.location.search).get('token');
 
-  // Load lead + event on mount
   useEffect(() => {
-    const loadData = async () => {
-      if (!token) {
-        setError('Token is required');
-        setState('error');
-        return;
-      }
+    if (!token) {
+      setError('No scheduling token found. Please use the link from your confirmation email.');
+      setState('error');
+      return;
+    }
 
+    (async () => {
       try {
-        // Resolve token to leadId + fetch lead
-        const resolveRes = await base44.functions.invoke('resolveQuoteTokenPublicV1', { token });
-        if (!resolveRes.data?.success) {
-          setError(resolveRes.data?.error || 'Invalid token');
+        const res = await base44.functions.invoke('resolveQuoteTokenPublicV1', { token });
+        if (!res.data?.success) {
+          setError(res.data?.error || 'Invalid or expired link.');
           setState('error');
           return;
         }
 
-        const { leadId, firstName } = resolveRes.data;
+        const { leadId } = res.data;
         if (!leadId) {
-          setError('Lead information not found');
+          setError('Could not find your appointment details.');
           setState('error');
           return;
         }
 
-        // Load Lead details (public, no auth required via public function)
-        // For now, we'll call the public resolver which should give us minimal info
-        const leadInfo = resolveRes.data;
-        setLead(leadInfo);
+        // Load current inspection details
+        try {
+          const inspRes = await base44.functions.invoke('getPublicInspectionDetails', { leadId, token });
+          if (inspRes.data?.scheduledDate) {
+            setCurrentDate(inspRes.data.scheduledDate);
+            setCurrentTimeWindow(inspRes.data.timeWindow);
+          }
+        } catch (e) {
+          // Non-fatal — still show the form
+        }
 
-        // Try to load CalendarEvent via leadId (this is admin-only in real app)
-        // For public, we'd need a public function to fetch the event
-        // For MVP, assume event data comes from the resolve call or we show generic form
-
+        setLead(res.data);
         setState('form');
       } catch (err) {
-        console.error('Load error:', err);
-        setError(err.message || 'Failed to load appointment details');
+        setError('Failed to load appointment details. Please try again or call (321) 524-3838.');
         setState('error');
       }
-    };
-
-    loadData();
+    })();
   }, [token]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedDate || !selectedTime) {
-      setError('Please select a date and time');
+    if (!selectedDate || !selectedTimeSlot) {
+      setError('Please select a date and time slot.');
       return;
     }
-
+    setError(null);
     setSubmitting(true);
     try {
-      const requestedStart = new Date(`${selectedDate}T${selectedTime}`).toISOString();
-
-      const res = await base44.functions.invoke('requestReschedulePublicV1', {
+      const res = await base44.functions.invoke('requestReschedulePublicV2', {
         token,
-        requestedStart,
+        requestedDate: selectedDate,
+        requestedTimeSlot: selectedTimeSlot,
         note: note || null
       });
 
       if (!res.data?.success) {
         const code = res.data?.code;
-        if (code === 'LEAD_DELETED') {
-          setError('This account has been closed. You cannot request reschedules at this time.');
-        } else if (code === 'NO_APPOINTMENT') {
-          setError('No scheduled appointment found to reschedule.');
-        } else {
-          setError(res.data?.error || 'Failed to submit reschedule request');
-        }
-        setState('error');
+        if (code === 'NO_APPOINTMENT') setError('No scheduled inspection found to reschedule.');
+        else if (code === 'LEAD_NOT_FOUND') setError('Account not found.');
+        else setError(res.data?.error || 'Failed to reschedule. Please call (321) 524-3838.');
         return;
       }
 
-      setRequestId(res.data.requestId);
+      const slotLabel = TIME_SLOTS.find(s => s.value === selectedTimeSlot)?.sub || '';
+      setNewDate(selectedDate);
+      setNewTimeWindow(res.data.timeWindow || slotLabel);
       setState('success');
     } catch (err) {
-      console.error('Submit error:', err);
-      setError(err.message || 'Failed to submit request');
-      setState('error');
+      setError('Something went wrong. Please call us at (321) 524-3838.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  // ============ Loading ============
+  const minDate = format(addDays(new Date(), 2), 'yyyy-MM-dd');
+
   if (state === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: TEAL }} />
-          <p className="text-gray-600">Loading appointment details...</p>
+          <p className="text-gray-600">Loading your appointment...</p>
         </div>
       </div>
     );
   }
 
-  // ============ Error ============
   if (state === 'error') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -133,29 +133,17 @@ export default function RescheduleInspection() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-red-700">{error}</p>
-            <div className="flex gap-3">
-              <Button
-                onClick={() => window.history.back()}
-                variant="outline"
-                className="flex-1"
-              >
-                Go Back
-              </Button>
-              <Button
-                onClick={() => window.location.href = '/'}
-                className="flex-1 bg-red-600 hover:bg-red-700"
-              >
-                Home
-              </Button>
-            </div>
+            <p className="text-sm text-gray-600">Need help? Call or text us at <strong>(321) 524-3838</strong>.</p>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  // ============ Success ============
   if (state === 'success') {
+    const dateFormatted = newDate
+      ? new Date(newDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+      : newDate;
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <Card className="w-full max-w-md">
@@ -165,133 +153,122 @@ export default function RescheduleInspection() {
                 <CheckCircle2 className="w-8 h-8 text-green-600" />
               </div>
             </div>
-            <CardTitle className="text-green-900">Request Submitted</CardTitle>
+            <CardTitle className="text-green-900">Inspection Rescheduled!</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-center">
-            <p className="text-gray-700">
-              Your reschedule request has been submitted successfully.
-            </p>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <p className="text-sm text-gray-600 mb-1">Request ID</p>
-              <p className="font-mono text-sm text-gray-900">{requestId}</p>
+            <div style={{ backgroundColor: '#e8f8f9', border: `2px solid ${TEAL}` }} className="rounded-lg p-5">
+              <p className="text-xs uppercase tracking-wide font-semibold mb-1" style={{ color: TEAL }}>New Appointment</p>
+              <p className="text-lg font-bold text-gray-900">{dateFormatted}</p>
+              <p className="text-base text-gray-700 mt-1">{newTimeWindow}</p>
             </div>
             <p className="text-sm text-gray-600">
-              Our team will review your request and contact you within 24 hours to confirm your new appointment time.
+              Your calendar has been updated. We'll call about 1 hour before arrival. Questions? Call <strong>(321) 524-3838</strong>.
             </p>
-            <Button
-              onClick={() => window.location.href = '/'}
-              className="w-full"
-              style={{ backgroundColor: TEAL }}
-            >
-              Back to Home
-            </Button>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  // ============ Form ============
   return (
     <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-2xl mx-auto">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <Calendar className="w-6 h-6" style={{ color: TEAL }} />
-              <CardTitle>Reschedule Your Inspection</CardTitle>
-            </div>
-          </CardHeader>
+      <div className="max-w-lg mx-auto">
+        {/* Header */}
+        <div className="text-center mb-6">
+          <img
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/0b0c31666_Breez2.png"
+            alt="Breez Pool Care"
+            className="h-10 mx-auto mb-3"
+          />
+          <h1 className="text-xl font-bold text-gray-900">Reschedule Your Inspection</h1>
+          <p className="text-sm text-gray-500 mt-1">Choose a new date and arrival window</p>
+        </div>
 
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Current appointment summary */}
-              {lead && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm font-semibold text-blue-900 mb-2">Current Appointment</p>
-                  <p className="text-sm text-blue-800">
-                    We have you scheduled for a free pool inspection. 
+        <Card>
+          <CardContent className="pt-6">
+            {/* Current appointment */}
+            {currentDate && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-1">Current Appointment</p>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-blue-600" />
+                  <p className="text-sm text-blue-900 font-medium">
+                    {new Date(currentDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                    {currentTimeWindow ? ` · ${currentTimeWindow}` : ''}
                   </p>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Date selection */}
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Date */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Preferred New Date
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">New Date</label>
                 <Input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  min={format(new Date(), 'yyyy-MM-dd')}
+                  min={minDate}
                   className="w-full"
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">Select a date at least 2 days from today</p>
+                <p className="text-xs text-gray-500 mt-1">Must be at least 2 days from today</p>
               </div>
 
-              {/* Time selection */}
+              {/* Time slot */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Preferred Time
-                </label>
-                <Input
-                  type="time"
-                  value={selectedTime}
-                  onChange={(e) => setSelectedTime(e.target.value)}
-                  className="w-full"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">Times between 8 AM and 5 PM</p>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Arrival Window</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {TIME_SLOTS.map(slot => (
+                    <button
+                      key={slot.value}
+                      type="button"
+                      onClick={() => setSelectedTimeSlot(slot.value)}
+                      className={`rounded-lg border-2 p-3 text-center transition-all ${
+                        selectedTimeSlot === slot.value
+                          ? 'border-teal-500 bg-teal-50 text-teal-800'
+                          : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                      }`}
+                    >
+                      <p className="text-sm font-semibold">{slot.label}</p>
+                      <p className="text-xs mt-0.5 text-gray-500">{slot.sub}</p>
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {/* Optional note */}
+              {/* Note */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Reason for Reschedule (Optional)
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Reason (Optional)</label>
                 <Textarea
-                  placeholder="Tell us why you need to reschedule..."
+                  placeholder="e.g. conflict with work, family obligation..."
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  className="w-full h-24"
+                  className="w-full h-20 text-sm"
                 />
               </div>
 
-              {/* Disclaimer */}
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <p className="text-xs text-gray-600">
-                  Your reschedule request will be reviewed by our team. We'll contact you within 24 hours to confirm your new appointment time.
-                </p>
-              </div>
+              {error && (
+                <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <span>{error}</span>
+                </div>
+              )}
 
-              {/* Submit button */}
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => window.history.back()}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex-1"
-                  style={{ backgroundColor: TEAL }}
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    'Submit Request'
-                  )}
-                </Button>
-              </div>
+              <Button
+                type="submit"
+                disabled={submitting || !selectedDate || !selectedTimeSlot}
+                className="w-full text-white font-semibold"
+                style={{ backgroundColor: TEAL }}
+              >
+                {submitting ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Rescheduling...</>
+                ) : 'Confirm New Appointment'}
+              </Button>
+
+              <p className="text-center text-xs text-gray-500">
+                Need help? Call or text <strong>(321) 524-3838</strong>
+              </p>
             </form>
           </CardContent>
         </Card>
