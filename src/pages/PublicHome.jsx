@@ -176,35 +176,141 @@ export default function PublicHome() {
         </div>
       </section>
 
+      {/* ── The Problem + Relief ── */}
+      <section className="py-20 px-4" style={{ backgroundColor: '#f8fdfd' }}>
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">No more heavy jugs. No more guesswork. No more "is this safe?"</h2>
+            <p className="text-gray-600 text-lg max-w-2xl mx-auto">Pool ownership shouldn't feel like a chemistry class you didn't sign up for. With Breez, you don't have to:</p>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4 mb-8 max-w-2xl mx-auto">
+            {[
+              'Haul and store chlorine and acids',
+              'Wonder if you added the right amount',
+              'Stress about cloudy water, algae, or burning eyes',
+              'Lose your weekend to scrubbing, testing, and re-testing',
+            ].map(item =>
+              <div key={item} className="flex items-start gap-3 bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                <div className="w-2 h-2 rounded-full mt-2 shrink-0" style={{ backgroundColor: TEAL }} />
+                <span className="text-gray-700 text-sm">{item}</span>
+              </div>
+            )}
+          </div>
+          <p className="text-center text-gray-600 text-lg font-medium">We handle the work behind the scenes so you can enjoy the pool out front.</p>
+        </div>
+      </section>
+
+      {/* ── What We Offer ── */}
+      <section className="py-20 px-4 bg-white">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">What We Offer</h2>
+            <p className="text-gray-500 text-lg">Weekly residential pool service that keeps your pool consistently swim-ready.</p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-10 items-start">
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-4 text-lg">Most service visits include:</h3>
+              <div className="space-y-3">
+                {[
+                  { icon: ClipboardList, text: 'Skimming debris and clearing baskets' },
+                  { icon: Droplets, text: 'Brushing and vacuuming' },
+                  { icon: BarChart2, text: 'Professional water testing and chemical balancing' },
+                  { icon: Wrench, text: 'Equipment and circulation checks (so issues get spotted early)' },
+                  { icon: FileText, text: 'Visit documentation, so you always know what was done' },
+                ].map(({ icon: Icon, text }) =>
+                  <div key={text} className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: '#e8f8f9' }}>
+                      <Icon className="w-4 h-4" style={{ color: TEAL }} />
+                    </div>
+                    <span className="text-gray-700 text-sm leading-relaxed">{text}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+              <h3 className="font-semibold text-gray-900 mb-3">Optional services (quoted as needed):</h3>
+              <p className="text-gray-600 text-sm leading-relaxed">Filter cleans, salt system checks, green-to-clean recovery, and other specialty work.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Value: Family Time + Peace of Mind ── */}
+      <section className="py-20 px-4" style={{ backgroundColor: '#f8fdfd' }}>
+        <div className="max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-10">
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: '#e8f8f9' }}>
+                <Clock className="w-6 h-6" style={{ color: TEAL }} />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Get your time back</h3>
+              <p className="text-gray-600 text-sm leading-relaxed">Most homeowners don't want to spend their evenings chasing numbers and scrubbing walls. Breez saves you time so you can spend it where it matters: family, friends, weekends, and actually using the pool.</p>
+            </div>
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: '#e8f8f9' }}>
+                <ShieldCheck className="w-6 h-6" style={{ color: TEAL }} />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Swim with confidence</h3>
+              <p className="text-gray-600 text-sm leading-relaxed">We keep your chemistry in the safe zone and your pool consistently maintained, so you're not guessing before someone jumps in.</p>
+              <p className="text-gray-400 text-xs mt-3 leading-relaxed italic">Real talk: weather, rain, heavy use, and equipment issues can change water fast—so we focus on steady, professional care that keeps your pool stable and swim-ready over time.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Prevention Section ── */}
+      <section className="py-20 px-4 bg-white">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">Consistent care protects your pool (and your wallet)</h2>
+            <p className="text-gray-600 text-lg max-w-2xl mx-auto">Inconsistent maintenance isn't just an "ugly water" problem—it can create expensive ones.</p>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-6 mb-8">
+            {[
+              'Surface damage like staining, scaling, and etching',
+              'Premature wear on equipment and plumbing from imbalanced water and strain on the system',
+              'Small issues going unnoticed until they become costly repairs',
+            ].map(item =>
+              <div key={item} className="bg-red-50 border border-red-100 rounded-xl p-5">
+                <span className="text-gray-700 text-sm leading-relaxed">{item}</span>
+              </div>
+            )}
+          </div>
+          <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+            <p className="text-gray-700 text-sm leading-relaxed mb-2">Breez mitigates that risk by keeping your pool chemistry stable, your water moving, and your system monitored week after week—so problems get addressed early instead of exploding later.</p>
+            <p className="text-gray-400 text-xs italic">We can't prevent every issue—age, weather, and existing equipment conditions matter—but consistent professional care dramatically lowers the "surprise repair" odds.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Green-to-Clean ── */}
+      <section className="py-16 px-4" style={{ background: 'linear-gradient(135deg, #1a4a3a 0%, #1B9B9F 100%)' }}>
+        <div className="max-w-3xl mx-auto text-center text-white">
+          <h2 className="text-3xl md:text-4xl font-bold mb-3">Green pool? Algae? We handle recoveries too.</h2>
+          <p className="text-lg opacity-90 mb-6 max-w-xl mx-auto">If your pool is green or out of control, we can quote a Green-to-Clean recovery. Pricing depends on pool size and severity, because "mild haze" and "swamp creature habitat" are… different ecosystems.</p>
+          <button
+            onClick={() => navigate(createPageUrl('PreQualification'))}
+            className="px-8 py-4 rounded-xl text-lg font-semibold bg-white hover:bg-gray-50 transition-all hover:-translate-y-0.5 shadow-lg"
+            style={{ color: TEAL }}>
+            Request a Recovery Quote
+          </button>
+        </div>
+      </section>
+
       {/* ── How It Works ── */}
       <section className="py-20 px-4 bg-white">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">How It Works</h2>
-            <p className="text-gray-500 text-lg">From quote to clean pool — three simple steps.</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">Simple, professional, no-pressure</h2>
           </div>
-          <div className="grid md:grid-cols-3 gap-10">
+          <div className="grid md:grid-cols-4 gap-8">
             {[
-            {
-              icon: ClipboardList,
-              num: '1',
-              title: 'Tell Us About Your Pool',
-              desc: 'Answer a few quick questions about your pool size, type, and current condition. Takes about two minutes. No payment info needed.'
-            },
-            {
-              icon: BarChart2,
-              num: '2',
-              title: 'Get Your Quote',
-              desc: 'Receive a transparent, personalized quote instantly — built around your pool\'s specific characteristics, not a one-size-fits-all rate.'
-            },
-            {
-              icon: Calendar,
-              num: '3',
-              title: 'Schedule Your Free Inspection',
-              desc: 'We visit your pool, confirm the details, answer any questions, and get you set up. No pressure, no obligation.'
-            }].
-            map((step) =>
-            <div key={step.num} className="flex flex-col items-center text-center">
+              { icon: Calendar, num: '1', title: 'Schedule your free inspection' },
+              { icon: Droplets, num: '2', title: 'We test the water and check equipment/circulation (about 20–30 minutes)' },
+              { icon: BarChart2, num: '3', title: 'We recommend the right plan based on your pool and goals' },
+              { icon: ShieldCheck, num: '4', title: 'We start service and keep it consistent' },
+            ].map((step) =>
+              <div key={step.num} className="flex flex-col items-center text-center">
                 <div className="relative mb-5">
                   <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-md" style={{ backgroundColor: '#e8f8f9' }}>
                     <step.icon className="w-7 h-7" style={{ color: TEAL }} />
@@ -213,8 +319,7 @@ export default function PublicHome() {
                     {step.num}
                   </span>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{step.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{step.desc}</p>
+                <p className="text-gray-700 text-sm leading-relaxed">{step.title}</p>
               </div>
             )}
           </div>
