@@ -142,7 +142,11 @@ export default function PublicScheduler({ leadId, clientEmail, clientFirstName, 
           INCOMPLETE_DATA: 'Token does not have complete lead information.',
           QUERY_ERROR: 'We could not verify your quote token. Please try again.',
           INSPECTION_CREATE_FAILED: "We couldn't create your inspection. Please contact Breez at (321) 524-3838.",
-          INSPECTION_CREATE_FORBIDDEN: "We couldn't create your inspection. Please contact Breez at (321) 524-3838."
+          INSPECTION_CREATE_FORBIDDEN: "We couldn't create your inspection. Please contact Breez at (321) 524-3838.",
+          OUTSIDE_SERVICE_AREA: 'This address is outside our current service area. Please call (321) 524-3838 to verify.',
+          TECH_DAILY_CAP_REACHED: 'No availability on this date. Please select another date or call (321) 524-3838.',
+          INVALID_TIME_WINDOW: 'Selected time window is not available. Please choose another.',
+          VALIDATION_ERROR: 'Please verify your information and try again.'
         };
         const errorMsg = codeMessages[data?.code] || data?.error || 'Failed to schedule inspection. Please call (321) 524-3838.';
         setError(errorMsg);
