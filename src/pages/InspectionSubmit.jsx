@@ -67,8 +67,12 @@ export default function InspectionSubmit() {
           lead={selectedLead}
           calendarEvent={selectedEvent}
           onSubmitted={() => {
-            setSelectedLead(null);
-            setSelectedEvent(null);
+            // Invalidate queries so the list & admin dashboard refresh
+            queryClient.invalidateQueries({ queryKey: ['inspectionEvents'] });
+            queryClient.invalidateQueries({ queryKey: ['pendingInspections'] });
+            queryClient.invalidateQueries({ queryKey: ['leadsMinimal'] });
+            queryClient.invalidateQueries({ queryKey: ['leadsForInspection'] });
+            // Don't navigate away – show success screen within the form
           }}
         />
       </div>
