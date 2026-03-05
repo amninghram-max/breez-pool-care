@@ -234,14 +234,7 @@ export default function LeadsPipeline() {
           <p className="text-gray-600 mt-1">Manage customer onboarding and inspections</p>
         </div>
         <div className="flex items-center gap-4">
-          <div className="text-center">
-            <p className="text-2xl font-bold text-teal-600">{leads.filter(l => l.isEligible).length}</p>
-            <p className="text-xs text-gray-600">Eligible</p>
-          </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-gray-600">{leads.filter(l => !l.isEligible).length}</p>
-            <p className="text-xs text-gray-600">Disqualified</p>
-          </div>
+
           <Button
             size="sm"
             variant="outline"
