@@ -209,7 +209,7 @@ export default function Activate() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 text-center tracking-widest"
               />
               {authError && <p className="text-red-500 text-xs text-center">{authError}</p>}
-              <Button type="submit" disabled={authLoading} className="w-full bg-teal-600 hover:bg-teal-700 text-white">
+              <Button onClick={handleOtpVerifyAndLink} disabled={authLoading} className="w-full bg-teal-600 hover:bg-teal-700 text-white">
                 {authLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify & Continue'}
               </Button>
               <button type="button" className="text-xs text-gray-400 w-full text-center hover:underline" onClick={() => base44.auth.resendOtp(email)}>
