@@ -124,8 +124,8 @@ export default function Activate() {
           return;
         }
       }
-      // Navigate to Agreements page
-      navigate(createPageUrl('Agreements') + (leadId ? `?inspectionId=${leadId}` : ''), { replace: true });
+      // Invalidate user query to trigger useEffect navigation
+      queryClient.invalidateQueries({ queryKey: ['activateUser'] });
     } catch (err) {
       setAuthError(err.message || 'Verification failed. Please check your code.');
     } finally {
