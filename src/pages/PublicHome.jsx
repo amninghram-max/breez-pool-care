@@ -404,28 +404,23 @@ export default function PublicHome() {
       {/* ── Final CTA ── */}
       <section className="py-20 px-4 text-white" style={{ background: `linear-gradient(135deg, ${TEAL} 0%, #1688a0 100%)` }}>
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-3">Ready to Get Started?</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-3">Ready to stop worrying about your pool?</h2>
           <p className="text-lg opacity-90 mb-10 max-w-xl mx-auto">
-            Get your personalized quote in two minutes — no commitment, no payment info required.
+            Book a free inspection and we'll set you up with a plan that keeps your pool clean, balanced, and ready when you are.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <button
               onClick={() => navigate(createPageUrl('PreQualification'))}
               className="w-full sm:w-auto px-8 py-4 rounded-xl text-lg font-semibold bg-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
               style={{ color: TEAL }}>
-
-              Get Free Instant Quote
+              Book My Free Inspection
             </button>
-            <button
-              onClick={() => navigate(createPageUrl('PreQualification'))}
-              className="w-full sm:w-auto px-8 py-4 rounded-xl text-lg font-semibold border-2 border-white/60 hover:bg-white/10 transition-all hover:-translate-y-0.5 text-white">
-
-              Schedule Free Inspection
-            </button>
+            <a
+              href="tel:3215243838"
+              className="w-full sm:w-auto px-8 py-4 rounded-xl text-lg font-semibold border-2 border-white/60 hover:bg-white/10 transition-all hover:-translate-y-0.5 text-white text-center">
+              Contact Us: Breez Pool Services LLC
+            </a>
           </div>
-          <p className="text-xs opacity-60 mt-5">
-            Homeowner or designated caretaker must be present for inspection. No obligation required.
-          </p>
         </div>
       </section>
 
