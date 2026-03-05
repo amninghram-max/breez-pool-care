@@ -580,7 +580,7 @@ function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit
               className="gap-1"
             >
               <Send className="w-3 h-3" />
-              Quote
+              Send Quote
             </Button>
           ) : lead.stage === 'contacted' ? (
             <Button
@@ -594,6 +594,13 @@ function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit
             </Button>
           ) : lead.stage === 'inspection_scheduled' ? (
             <StartInspectionButton leadId={lead.id} />
+          ) : (lead.stage === 'inspection_confirmed' || lead.stage === 'quote_sent' || lead.stage === 'pending_acceptance') ? (
+            <StageActionButton
+              lead={lead}
+              currentStage="inspection_confirmed"
+              onAction={handleStageAction}
+              onValidationError={handleValidationError}
+            />
           ) : (
             <StageActionButton
               lead={lead}
