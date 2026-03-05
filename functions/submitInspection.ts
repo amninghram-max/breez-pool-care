@@ -88,13 +88,18 @@ Deno.serve(async (req) => {
       confirmedSpaPresent: confirmedSpaPresent === true,
       confirmedTreesOverhead: confirmedTreesOverhead || null,
       confirmedPoolCondition,
+      confirmedUsageFrequency: confirmedUsageFrequency || null,
       greenSeverity: confirmedPoolCondition === 'green' ? (greenSeverity || null) : null,
       equipmentNotes: equipmentNotes || null,
       techNotes: techNotes || null,
       photoBefore: photoBefore || [],
-      customerPresent: customerPresent !== false,
       finalizationStatus: 'pending_finalization',
       appointmentStatus: 'completed',
+      // Chemistry readings
+      ...(freeChlorine ? { freeChlorineAtInspection: parseFloat(freeChlorine) } : {}),
+      ...(pH ? { pHAtInspection: parseFloat(pH) } : {}),
+      ...(totalAlkalinity ? { totalAlkalinityAtInspection: parseFloat(totalAlkalinity) } : {}),
+      ...(salt ? { saltAtInspection: parseFloat(salt) } : {}),
     };
 
     console.log('[submitInspection] Creating record for leadId:', leadId, 'by:', user.email, 'role:', user.role);
