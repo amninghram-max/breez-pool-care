@@ -88,7 +88,7 @@ export default function Agreements() {
     setError(null);
 
     try {
-      // Create/upsert AgreementAcceptance record
+      // Get IP and user agent
       const ipAddress = await (async () => {
         try {
           const res = await fetch('https://api.ipify.org?format=json');
@@ -101,46 +101,14 @@ export default function Agreements() {
 
       const userAgent = navigator.userAgent;
 
-      // Check if acceptance record already exists
-      const existing = await base44.entities.AgreementAcceptance.filter({
+      // Call backend function to handle agreements + lead update safely
+      await base44.functions.invoke('acceptAgreements', {
         leadId: lead.id,
-        versionServiceAgreement: AGREEMENT_VERSIONS.serviceAgreement,
-        versionPrivacyPolicy: AGREEMENT_VERSIONS.privacyPolicy,
-        versionPhotoConsent: AGREEMENT_VERSIONS.photoConsent,
-      });
-
-      if (existing.length > 0) {
-        // Update existing record
-        await base44.entities.AgreementAcceptance.update(existing[0].id, {
-          agreedToServiceAgreement: agreed.serviceAgreement,
-          agreedToPrivacyPolicy: agreed.privacyPolicy,
-          photoConsent: agreed.photoConsent,
-          acceptedAt: new Date().toISOString(),
-          ipAddress,
-          userAgent,
-        });
-      } else {
-        // Create new record
-        await base44.entities.AgreementAcceptance.create({
-          leadId: lead.id,
-          email: lead.email,
-          serviceAddress: lead.serviceAddress,
-          agreedToServiceAgreement: agreed.serviceAgreement,
-          agreedToPrivacyPolicy: agreed.privacyPolicy,
-          photoConsent: agreed.photoConsent,
-          acceptedAt: new Date().toISOString(),
-          versionServiceAgreement: AGREEMENT_VERSIONS.serviceAgreement,
-          versionPrivacyPolicy: AGREEMENT_VERSIONS.privacyPolicy,
-          versionPhotoConsent: AGREEMENT_VERSIONS.photoConsent,
-          ipAddress,
-          userAgent,
-        });
-      }
-
-      // Update lead to mark agreements as accepted
-      await base44.entities.Lead.update(lead.id, {
-        agreementsAccepted: true,
-        agreementsAcceptedAt: new Date().toISOString(),
+        serviceAgreement: agreed.serviceAgreement,
+        privacyPolicy: agreed.privacyPolicy,
+        photoConsent: agreed.photoConsent,
+        ipAddress,
+        userAgent,
       });
 
       // Navigate to PaymentSetup
