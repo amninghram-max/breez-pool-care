@@ -42,17 +42,15 @@ Deno.serve(async (req) => {
     // Look up their accepted quote for price snapshot
     let quoteSnapshot = null;
     try {
+      const allQuotes = await base44.asServiceRole.entities.Quote.filter(
+        { clientEmail: email },
+        '-created_date',
+        5
+      );
       if (lead.acceptedQuoteId) {
-        const quotes = await base44.asServiceRole.entities.Quote.filter({ id: lead.acceptedQuoteId }, null, 1);
-        quoteSnapshot = quotes?.[0] ?? null;
+        quoteSnapshot = allQuotes?.find(q => q.id === lead.acceptedQuoteId) ?? null;
       }
-      // Fallback: find latest quote_sent or inspection_verified quote for this email
       if (!quoteSnapshot) {
-        const allQuotes = await base44.asServiceRole.entities.Quote.filter(
-          { clientEmail: email },
-          '-created_date',
-          5
-        );
         quoteSnapshot = allQuotes?.find(q => q.status === 'inspection_verified' || q.status === 'quoted') ?? allQuotes?.[0] ?? null;
       }
     } catch (e) {
