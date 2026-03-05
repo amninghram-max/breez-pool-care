@@ -212,7 +212,6 @@ Deno.serve(async (req) => {
       email: finalEmail,
       firstName,
       eventId: eventCreated?.id,
-      shouldSendNotification,
       ...meta
     });
   } catch (error) {
