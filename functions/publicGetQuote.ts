@@ -266,7 +266,11 @@ Deno.serve(async (req) => {
       }
 
       // ── Send quote email ──
-      const scheduleLink = 'https://app.breezpoolcare.com/PreQualification';
+      const quoteScheduleToken = quoteRecord?.quoteToken || null;
+      const appOriginForEmail = Deno.env.get('PUBLIC_APP_URL')?.replace(/\/$/, '') || 'https://app.breezpoolcare.com';
+      const scheduleLink = quoteScheduleToken
+        ? `${appOriginForEmail}/ScheduleInspection?token=${encodeURIComponent(quoteScheduleToken)}`
+        : `${appOriginForEmail}/PreQualification`;
       const priceDisplay = isNotSure
         ? `$${quoteResult.minMonthly}–$${quoteResult.maxMonthly}/month`
         : `$${quoteResult.finalMonthlyPrice}/month`;
