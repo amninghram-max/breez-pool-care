@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
     });
 
     await base44.asServiceRole.entities.AnalyticsEvent.create({
-      eventType: 'CustomerActivated',
+      eventType: 'ServiceStarted',
       leadId: leadId,
       source: 'system',
       metadata: {
