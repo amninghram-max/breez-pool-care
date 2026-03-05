@@ -368,7 +368,7 @@ export default function PublicHome() {
           </div>
           <div className="space-y-4">
             {[
-              'We handle the chemicals (you don't touch the dangerous stuff)',
+              "We handle the chemicals (you don't touch the dangerous stuff)",
               'Consistent weekly service that prevents problems instead of reacting to them',
               'Clear communication and documentation after visits',
               'Free inspection to confirm details and answer questions',
