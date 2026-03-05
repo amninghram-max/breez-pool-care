@@ -265,47 +265,7 @@ Deno.serve(async (req) => {
         console.warn('Quote persist failed (non-blocking):', e.message);
       }
 
-      // ── Send quote email ──
-      const quoteScheduleToken = quoteRecord?.quoteToken || null;
-      const appOriginForEmail = Deno.env.get('PUBLIC_APP_URL')?.replace(/\/$/, '') || 'https://app.breezpoolcare.com';
-      const scheduleLink = quoteScheduleToken
-        ? `${appOriginForEmail}/ScheduleInspection?token=${encodeURIComponent(quoteScheduleToken)}`
-        : `${appOriginForEmail}/PreQualification`;
-      const priceDisplay = isNotSure
-        ? `$${quoteResult.minMonthly}–$${quoteResult.maxMonthly}/month`
-        : `$${quoteResult.finalMonthlyPrice}/month`;
-      const freqDisplay = quoteResult.frequency === 'twice_weekly' ? 'Twice Weekly' : 'Weekly';
-      const oneTimeDisplay = isNotSure
-        ? (quoteResult.minOneTimeFees > 0 ? `$${quoteResult.minOneTimeFees}–$${quoteResult.maxOneTimeFees} one-time initial fee may apply` : '')
-        : (quoteResult.oneTimeFees > 0 ? `$${quoteResult.oneTimeFees} one-time initial fee` : '');
-
-      const emailBody = `Hi ${clientFirstName},
-
-Your Breez Pool Care quote is ready.
-
-Estimated Monthly Service: ${priceDisplay}
-Service Frequency: ${freqDisplay}
-${oneTimeDisplay ? oneTimeDisplay + '\n' : ''}
-*Final pricing is based on confirmation of pool size, condition, and equipment during inspection to ensure accuracy and consistency.
-
-Ready to move forward? Schedule your free, no-obligation inspection:
-${scheduleLink}
-
-Questions? Reply to this email or call us at (321) 524-3838.
-Mon–Sat: 8am–6pm
-
-Breez Pool Care LLC
-Owner/Operator: Matt Inghram`;
-
-      try {
-        await sendEmail(base44, {
-          to: clientEmail,
-          subject: `${clientFirstName}, your Breez Pool Care quote is ready`,
-          body: emailBody
-        });
-      } catch (e) {
-        console.warn('Quote email failed (non-blocking):', e.message);
-      }
+      // Note: quote email is sent by finalizePrequalQuoteV2 — no duplicate email here
 
       console.log('QUOTE_SUCCESS', { releaseReady: true, email: clientEmail });
       return new Response(JSON.stringify({
