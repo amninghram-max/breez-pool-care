@@ -22,7 +22,7 @@ export default function InspectionSubmit() {
     queryFn: () => base44.auth.me(),
   });
 
-  // Load scheduled inspection events (today + next 7 days)
+  // Load scheduled inspection events
   const { data: inspectionEvents = [], isLoading: loadingEvents } = useQuery({
     queryKey: ['inspectionEvents'],
     queryFn: () =>
@@ -31,6 +31,7 @@ export default function InspectionSubmit() {
         'scheduledDate',
         50
       ),
+    refetchInterval: 10000,
   });
 
   const { data: leads = [] } = useQuery({
