@@ -150,9 +150,7 @@ Deno.serve(async (req) => {
       const quotes = await base44.asServiceRole.entities.Quote.filter({ clientEmail: lead?.email }, '-created_date', 1);
       const latestQuote = quotes?.[0];
       if (latestQuote) {
-        // Map confirmed chlorination back
-        const sanitizer = confirmedChlorinationMethod === 'saltwater' ? 'saltwater' : 'tablets';
-        const invokeResult = await base44.asServiceRole.functions.invoke('calculateQuoteOnly', {
+        const invoiceResult = await base44.asServiceRole.functions.invoke('calculateQuoteOnly', {
           questionnaireData: {
             poolSize: confirmedPoolSize || latestQuote.inputPoolSize,
             poolType: confirmedPoolType || latestQuote.inputPoolType,
@@ -169,10 +167,10 @@ Deno.serve(async (req) => {
             greenPoolSeverity: (confirmedPoolCondition === 'green' || confirmedPoolCondition === 'green_algae') ? (greenSeverity || 'moderate') : null,
           }
         });
-        const quote = invokeResult?.data?.quote || invokeResult?.quote;
+        const quote = invoiceResult?.data?.quote || invoiceResult?.quote;
         if (quote) {
-          // Force weekly frequency for inspection snapshot — admins can manually escalate based on chemical trends
-          const weeklyPrice = (quote.finalMonthlyPrice / quote.frequencyMultiplier) * 1.0; // Normalize to weekly
+          // Always display weekly pricing in snapshot — admins can manually escalate based on chemical trends
+          const weeklyPrice = (quote.finalMonthlyPrice / quote.frequencyMultiplier) * 1.0;
           priceSnapshot = {
             monthly: weeklyPrice,
             frequency: 'weekly',
