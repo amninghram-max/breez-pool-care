@@ -105,25 +105,82 @@ Deno.serve(async (req) => {
 
     console.log('V3_SEND', { leadId, quoteId, quoteToken, email, link, build: BUILD });
 
+    const TEAL = '#1B9B9F';
     const htmlBody = `<!DOCTYPE html>
-<html>
+<html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;line-height:1.6;color:#333;">
-  <div style="max-width:600px;margin:0 auto;padding:20px;">
-    <div style="text-align:center;margin-bottom:30px;">
-      <h2 style="color:#1B9B9F;margin:0;font-size:24px;">Breez Pool Care</h2>
-    </div>
-    <p style="font-size:16px;margin-bottom:20px;">Hi ${firstName},</p>
-    <p style="font-size:15px;margin-bottom:20px;">Your personalized Breez Pool Care quote is ready. No account or login needed — just click the button below to view it.</p>
-    <div style="text-align:center;margin-bottom:20px;">
-      <a href="${link}" style="display:inline-block;background-color:#1B9B9F;color:white;padding:14px 32px;text-decoration:none;border-radius:6px;font-weight:600;font-size:16px;">View Your Quote</a>
-    </div>
-    <p style="font-size:13px;text-align:center;color:#666;margin-bottom:20px;">Or copy and paste this link:<br><a href="${link}" style="color:#1B9B9F;word-break:break-all;">${link}</a></p>
-    <p style="font-size:13px;text-align:center;color:#666;margin-bottom:30px;">Having trouble? <a href="${publicHomeLink}" style="color:#1B9B9F;">Visit our homepage</a></p>
-    <div style="border-top:1px solid #eee;padding-top:20px;text-align:center;color:#666;font-size:13px;">
-      <p style="margin:5px 0;">Questions? We're happy to help.<br><strong>Breez Pool Care Team</strong></p>
-    </div>
-  </div>
+<body style="margin:0;padding:0;background-color:#f4f7f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1f2937;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f7f8;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="100%" style="max-width:600px;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+
+        <!-- Header -->
+        <tr>
+          <td style="background-color:${TEAL};padding:32px 40px;text-align:center;">
+            <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/0b0c31666_Breez2.png" alt="Breez Pool Care" height="48" style="display:block;margin:0 auto 16px;" />
+            <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;">Your Quote is Ready! 🏊</h1>
+            <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">Personalized pool care pricing — no login needed</p>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:32px 40px;">
+            <p style="margin:0;font-size:16px;color:#1f2937;">Hi <strong>${firstName}</strong>,</p>
+            <p style="margin:12px 0 24px;font-size:15px;color:#374151;line-height:1.7;">
+              We've put together a custom quote based on your pool. It includes your estimated monthly rate, visit frequency, and any one-time fees — all transparent, no surprises.
+            </p>
+
+            <!-- CTA Button -->
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr><td align="center" style="padding:4px 0 28px;">
+                <a href="${link}" style="display:inline-block;background-color:${TEAL};color:#ffffff;padding:15px 40px;text-decoration:none;border-radius:10px;font-weight:700;font-size:16px;letter-spacing:0.3px;">
+                  View My Quote →
+                </a>
+              </td></tr>
+            </table>
+
+            <!-- What's included callout -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0fdfd;border:2px solid ${TEAL};border-radius:12px;margin-bottom:24px;">
+              <tr><td style="padding:20px 24px;">
+                <p style="margin:0 0 12px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:${TEAL};">Your quote includes</p>
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding:4px 0;font-size:14px;color:#374151;">✔&nbsp; Monthly service rate</td>
+                    <td style="padding:4px 0;font-size:14px;color:#374151;">✔&nbsp; Visit frequency</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:4px 0;font-size:14px;color:#374151;">✔&nbsp; One-time startup fees</td>
+                    <td style="padding:4px 0;font-size:14px;color:#374151;">✔&nbsp; Schedule inspection</td>
+                  </tr>
+                </table>
+              </td></tr>
+            </table>
+
+            <p style="margin:0 0 6px;font-size:13px;color:#9ca3af;text-align:center;">
+              Can't click the button? Copy this link into your browser:
+            </p>
+            <p style="margin:0;font-size:12px;color:${TEAL};text-align:center;word-break:break-all;">
+              <a href="${link}" style="color:${TEAL};text-decoration:none;">${link}</a>
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:0 40px 32px;border-top:1px solid #e5e7eb;">
+            <p style="margin:20px 0 4px;font-size:14px;color:#374151;">Questions? We're happy to help.</p>
+            <p style="margin:0;font-size:14px;color:#374151;">📞 <a href="tel:3215243838" style="color:${TEAL};text-decoration:none;">(321) 524-3838</a></p>
+            <p style="margin:16px 0 0;font-size:13px;color:#9ca3af;">
+              <strong style="color:#374151;">Breez Pool Care LLC</strong> &nbsp;·&nbsp; Space Coast, FL &nbsp;·&nbsp;
+              <a href="${publicHomeLink}" style="color:${TEAL};text-decoration:none;">breezpoolcare.com</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
 </body>
 </html>`;
 
