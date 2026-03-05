@@ -408,7 +408,10 @@ export default function LeadsPipeline() {
               >
                 <div className="flex items-center gap-3">
                   <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-0' : '-rotate-90'}`} />
-                  <h3 className="font-semibold text-gray-900">{stage.label}</h3>
+                  <div className="text-left">
+                    <h3 className="font-semibold text-gray-900">{stage.label}</h3>
+                    {stage.description && <p className="text-xs text-gray-400 font-normal">{stage.description}</p>}
+                  </div>
                   <Badge className={stage.color}>{stageLeads.length}</Badge>
                 </div>
                 {/* Select all for visible section */}
