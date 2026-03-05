@@ -207,12 +207,21 @@ export default function RescheduleInspection() {
                 <Input
                   type="date"
                   value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
+                  onChange={(e) => {
+                    const dateObj = new Date(e.target.value + 'T00:00:00');
+                    if (dateObj.getDay() === 0) {
+                      setError('Sundays are not available. Please select a weekday.');
+                      setSelectedDate('');
+                    } else {
+                      setError(null);
+                      setSelectedDate(e.target.value);
+                    }
+                  }}
                   min={minDate}
                   className="w-full"
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">Must be at least 2 days from today</p>
+                <p className="text-xs text-gray-500 mt-1">Must be at least 2 days from today. Sundays not available.</p>
               </div>
 
               {/* Time slot */}
