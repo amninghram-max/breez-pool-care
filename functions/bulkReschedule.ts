@@ -1,5 +1,64 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+const BUILD = 'bulkRescheduleStormV2';
+
+// Module-level in-memory guard for concurrent processing of same idempotencyKey
+const processingKeys = new Set();
+
+// Helper: parse date string safely
+function parseDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  if (!Number.isFinite(d.getTime())) return null;
+  return d;
+}
+
+// Helper: format date as YYYY-MM-DD
+function formatDate(d) {
+  if (!(d instanceof Date) || !Number.isFinite(d.getTime())) return null;
+  return d.toISOString().split('T')[0];
+}
+
+// Helper: add days to date string
+function addDaysToDateStr(dateStr, n) {
+  const d = parseDate(dateStr);
+  if (!d) return null;
+  d.setDate(d.getDate() + n);
+  return formatDate(d);
+}
+
+// Helper: compute deterministic fingerprint from request parameters
+function computeFingerprint(fromDate, toDate, eventTypes, technicianFilter, policy, targetDate, eventIds = []) {
+  const parts = [
+    fromDate || '',
+    toDate || '',
+    (eventTypes || []).sort().join('|'),
+    technicianFilter || 'all',
+    policy || 'shift_day',
+    targetDate || '',
+    eventIds.sort().join('|')
+  ];
+  // Simple hash: join + SHA256 (or just use JSON stringify for determinism)
+  return JSON.stringify(parts);
+}
+
+// Conflict check: does event overlap with existing active event on new date for same lead?
+async function checkConflict(base44, leadId, newDate, newTimeWindow, eventDuration = 30) {
+  const existingEvents = await base44.asServiceRole.entities.CalendarEvent.filter({
+    leadId,
+    scheduledDate: newDate,
+    status: { $ne: 'cancelled' }
+  });
+  
+  if (existingEvents.length === 0) return null;
+  
+  // Simple check: if any non-cancelled event exists on same date for same lead, flag conflict
+  return {
+    type: 'overlap',
+    message: `Lead already has ${existingEvents.length} event(s) scheduled on ${newDate}`,
+    existingEventIds: existingEvents.map(e => e.id)
+  };
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -9,118 +68,452 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    const { fromDate, toDate, technicianName, sendNotifications } = await req.json();
+    const {
+      fromDate,
+      toDate,
+      eventTypes = [],
+      technicianFilter,
+      policy = 'shift_day',
+      dryRun = false,
+      sendNotifications = false,
+      idempotencyKey,
+      targetDate
+    } = await req.json();
 
-    // Get storm impacted events
-    const query = {
-      scheduledDate: fromDate,
-      stormImpacted: true
-    };
+    // Input validation
+    if (!fromDate || !toDate) {
+      return Response.json({ error: 'fromDate and toDate required' }, { status: 400 });
+    }
+    if (!['shift_day', 'next_available', 'manual_review'].includes(policy)) {
+      return Response.json({ error: `Invalid policy: ${policy}` }, { status: 400 });
+    }
+
+    // IN-PROGRESS CONCURRENCY GUARD
+    if (idempotencyKey && processingKeys.has(idempotencyKey)) {
+      return Response.json({
+        success: false,
+        code: 'IDEMPOTENCY_IN_PROGRESS',
+        error: 'A request with this idempotency key is already being processed.',
+        idempotency: { key: idempotencyKey, fingerprint: null, replayed: false }
+      }, { status: 409 });
+    }
+
+    // Mark key as processing (no-op if no idempotencyKey)
+    if (idempotencyKey) {
+      processingKeys.add(idempotencyKey);
+    }
+
+    // Load all events in date range
+    const dayMap = {};
+    let d = parseDate(fromDate);
+    const endDate = parseDate(toDate);
+    while (d <= endDate) {
+      const dateStr = formatDate(d);
+      dayMap[dateStr] = [];
+      d.setDate(d.getDate() + 1);
+    }
+
+    // Fetch events per day
+    const allEventsRaw = [];
+    for (const dateStr of Object.keys(dayMap).sort()) {
+      const dayEvents = await base44.asServiceRole.entities.CalendarEvent.filter({ scheduledDate: dateStr });
+      allEventsRaw.push(...dayEvents);
+    }
+
+    // Filter by event type and technician
+    let allEvents = allEventsRaw;
+    if (eventTypes.length > 0) {
+      allEvents = allEvents.filter(e => eventTypes.includes(e.eventType));
+    }
+    if (technicianFilter && technicianFilter !== 'all') {
+      allEvents = allEvents.filter(e => e.assignedTechnician === technicianFilter);
+    }
+
+    // Exclude cancelled, deleted leads
+    const leads = await base44.asServiceRole.entities.Lead.list('-created_date', 1000);
+    const leadMap = {};
+    leads.forEach(l => { leadMap[l.id] = l; });
+
+    const validEvents = allEvents.filter(e => {
+      const lead = leadMap[e.leadId];
+      return lead && !lead.isDeleted && e.status !== 'cancelled';
+    });
+
+    // Deterministic sort: date asc, time asc, id asc
+    validEvents.sort((a, b) => {
+      if (a.scheduledDate !== b.scheduledDate) return a.scheduledDate.localeCompare(b.scheduledDate);
+      const aTime = a.startTime || '00:00';
+      const bTime = b.startTime || '00:00';
+      if (aTime !== bTime) return aTime.localeCompare(bTime);
+      return a.id.localeCompare(b.id);
+    });
+
+    // Compute idempotency fingerprint
+    const candidateEventIds = validEvents.map(e => e.id);
+    const effectiveFingerprint = computeFingerprint(fromDate, toDate, eventTypes, technicianFilter, policy, targetDate, candidateEventIds);
     
-    if (technicianName) {
-      query.assignedTechnician = technicianName;
-    }
+    // PERSISTED IDEMPOTENCY LOOKUP
+    let idempotencyInfo = { key: idempotencyKey || null, fingerprint: effectiveFingerprint, replayed: false };
 
-    const events = await base44.asServiceRole.entities.CalendarEvent.filter(query);
-
-    if (events.length === 0) {
-      return Response.json({ success: true, message: 'No events to reschedule' });
-    }
-
-    // Get customer constraints to find next available slots
-    const rescheduledEvents = [];
-    const settings = await base44.asServiceRole.entities.SchedulingSettings.filter({ settingKey: 'default' });
-    const config = settings[0] || {};
-
-    for (const event of events) {
-      // Get customer constraints
-      const constraints = await base44.asServiceRole.entities.CustomerConstraints.filter({ leadId: event.leadId });
-      const customerConstraints = constraints[0];
-
-      // Find next available date after toDate
-      let newDate = new Date(toDate);
-      newDate.setDate(newDate.getDate() + 1);
-
-      // Check recurrence pattern
-      if (event.recurrencePattern === 'weekly') {
-        // Schedule for same day next week
-        newDate.setDate(newDate.getDate() + 7);
-      } else if (event.recurrencePattern === 'biweekly') {
-        newDate.setDate(newDate.getDate() + 14);
-      }
-
-      // Respect customer constraints
-      const dayOfWeek = newDate.toLocaleDateString('en-US', { weekday: 'lowercase' });
-      if (customerConstraints?.doNotScheduleDays?.includes(dayOfWeek)) {
-        // Move to next day
-        newDate.setDate(newDate.getDate() + 1);
-      }
-
-      // Check if newDate is not Sunday (skip to Monday)
-      if (newDate.getDay() === 0) {
-        newDate.setDate(newDate.getDate() + 1);
-      }
-
-      const newDateStr = newDate.toISOString().split('T')[0];
-
-      // Update event
-      await base44.asServiceRole.entities.CalendarEvent.update(event.id, {
-        originalScheduledDate: event.scheduledDate,
-        scheduledDate: newDateStr,
-        status: 'scheduled',
-        stormImpacted: false,
-        rescheduleReason: 'Storm/weather conditions'
+    if (idempotencyKey) {
+      // Query AnalyticsEvent for prior execution with same key
+      const priorEvents = await base44.asServiceRole.entities.AnalyticsEvent.filter({
+        eventName: 'bulk_reschedule_idempotency',
+        'metadata.idempotencyKey': idempotencyKey
       });
 
-      rescheduledEvents.push({
-        eventId: event.id,
+      if (priorEvents.length > 0) {
+        const priorEvent = priorEvents[0];
+        const storedFingerprint = priorEvent.metadata?.fingerprint;
+
+        // Same fingerprint = replay stored response
+        if (storedFingerprint === effectiveFingerprint) {
+          idempotencyInfo.replayed = true;
+          const cachedResponse = priorEvent.metadata?.responseBody || {};
+          cachedResponse.idempotency = idempotencyInfo;
+          return Response.json(cachedResponse);
+        }
+
+        // Different fingerprint = conflict
+        return Response.json({
+          success: false,
+          error: 'IDEMPOTENCY_CONFLICT',
+          message: 'Same idempotencyKey provided but request parameters differ (fingerprint mismatch)',
+          idempotency: idempotencyInfo
+        }, { status: 400 });
+      }
+    }
+
+    if (validEvents.length === 0) {
+      return Response.json({
+        success: true,
+        dryRun,
+        applied: [],
+        skipped: [],
+        conflicts: [],
+        warnings: [],
+        summary: { selectedCount: 0, applyEligibleCount: 0, skippedCount: 0 },
+        idempotency: idempotencyInfo
+      });
+    }
+
+    // --- PHASE 2: Dry-run preview + policy-driven rescheduling ---
+
+    const applied = [];
+    const skipped = [];
+    const conflicts = [];
+    const warnings = [];
+
+    // Load inspection records (authoritative source)
+    const inspections = await base44.asServiceRole.entities.InspectionRecord.list('-created_date', 1000);
+    const inspectionByEventId = {};
+    inspections.forEach(ir => {
+      if (ir.calendarEventId) inspectionByEventId[ir.calendarEventId] = ir;
+    });
+
+    // Check for pending reschedule requests
+    const pendingReschedules = await base44.asServiceRole.entities.RescheduleRequest.filter({ status: 'pending' });
+    const pendingByEventId = {};
+    pendingReschedules.forEach(pr => {
+      if (pr.calendarEventId) pendingByEventId[pr.calendarEventId] = pr;
+    });
+
+    // Process each event
+    for (const event of validEvents) {
+      const itemId = event.id;
+
+      // Skip: pending reschedule request
+      if (pendingByEventId[itemId]) {
+        skipped.push({
+          eventId: itemId,
+          leadId: event.leadId,
+          oldDate: event.scheduledDate,
+          reason: 'pending_reschedule_request',
+          message: 'Event has pending reschedule request'
+        });
+        continue;
+      }
+
+      // Determine new date based on policy
+      let newDate = null;
+      let newDateStr = null;
+
+      if (policy === 'manual_review') {
+        // No reschedule; mark for manual review
+        skipped.push({
+          eventId: itemId,
+          leadId: event.leadId,
+          oldDate: event.scheduledDate,
+          reason: 'manual_review_required',
+          message: 'Flagged for manual review by supervisor'
+        });
+        warnings.push(`Event ${itemId} requires manual review before rescheduling.`);
+        continue;
+      } else if (policy === 'shift_day') {
+        // Shift to +1 day from original
+        newDate = parseDate(event.scheduledDate);
+        if (!newDate) {
+          skipped.push({ eventId: itemId, leadId: event.leadId, oldDate: event.scheduledDate, reason: 'invalid_date' });
+          continue;
+        }
+        newDate.setDate(newDate.getDate() + 1);
+        newDateStr = formatDate(newDate);
+      } else if (policy === 'next_available') {
+        // Find next open slot after toDate, respecting constraints
+        newDate = parseDate(toDate);
+        if (!newDate) {
+          skipped.push({ eventId: itemId, leadId: event.leadId, oldDate: event.scheduledDate, reason: 'invalid_date' });
+          continue;
+        }
+        newDate.setDate(newDate.getDate() + 1);
+
+        // Respect customer constraints and inspection priority
+        const isInspection = event.eventType === 'inspection';
+        const constraints = await base44.asServiceRole.entities.CustomerConstraints.filter({ leadId: event.leadId });
+        const custConstraints = constraints[0];
+
+        let attempts = 0;
+        while (attempts < 30) {
+          newDateStr = formatDate(newDate);
+          const dow = newDate.toLocaleDateString('en-US', { weekday: 'lowercase' });
+
+          // Skip Sunday
+          if (newDate.getDay() === 0) {
+            newDate.setDate(newDate.getDate() + 1);
+            attempts++;
+            continue;
+          }
+
+          // Respect do-not-schedule days
+          if (custConstraints?.doNotScheduleDays?.includes(dow)) {
+            newDate.setDate(newDate.getDate() + 1);
+            attempts++;
+            continue;
+          }
+
+          // Check conflicts
+          const conflict = await checkConflict(base44, event.leadId, newDateStr, event.timeWindow, event.estimatedDuration);
+          if (!conflict) break; // Found slot
+
+          newDate.setDate(newDate.getDate() + 1);
+          attempts++;
+        }
+
+        if (attempts >= 30) {
+          skipped.push({
+            eventId: itemId,
+            leadId: event.leadId,
+            oldDate: event.scheduledDate,
+            reason: 'no_available_slot',
+            message: 'No available slot found in next 30 days'
+          });
+          continue;
+        }
+
+        newDateStr = formatDate(newDate);
+      }
+
+      if (!newDateStr) {
+        skipped.push({ eventId: itemId, leadId: event.leadId, oldDate: event.scheduledDate, reason: 'unknown' });
+        continue;
+      }
+
+      // Final conflict check
+      const finalConflict = await checkConflict(base44, event.leadId, newDateStr, event.timeWindow, event.estimatedDuration);
+      if (finalConflict) {
+        conflicts.push({
+          eventId: itemId,
+          leadId: event.leadId,
+          newDate: newDateStr,
+          conflict: finalConflict
+        });
+        skipped.push({
+          eventId: itemId,
+          leadId: event.leadId,
+          oldDate: event.scheduledDate,
+          reason: 'conflict',
+          message: finalConflict.message
+        });
+        continue;
+      }
+
+      // Ready to apply (or preview)
+      applied.push({
+        eventId: itemId,
+        eventType: event.eventType,
         leadId: event.leadId,
         oldDate: event.scheduledDate,
         newDate: newDateStr
       });
-
-      // Send reschedule notification
-      if (sendNotifications) {
-        const template = config.notificationTemplates?.reschedule_confirmation || 
-          "Breez: Your pool service has been rescheduled to {date} at {time}. Reply HELP if you have questions.";
-        
-        const message = template
-          .replace('{date}', new Date(newDateStr).toLocaleDateString())
-          .replace('{time}', event.timeWindow || 'your scheduled time');
-
-        try {
-          await base44.asServiceRole.functions.invoke('sendScheduleNotification', {
-            leadId: event.leadId,
-            eventId: event.id,
-            notificationType: 'reschedule_confirmation',
-            message
-          });
-        } catch (notifyError) {
-          console.error('Failed to send reschedule notification:', notifyError);
-        }
-      }
     }
 
-    // Update storm day reschedule count
-    if (rescheduledEvents.length > 0) {
-      const stormDays = await base44.asServiceRole.entities.StormDay.filter({ date: fromDate });
-      if (stormDays.length > 0) {
-        await base44.asServiceRole.entities.StormDay.update(stormDays[0].id, {
-          rescheduledCount: rescheduledEvents.length
+    // If dry run, return preview without writes
+    if (dryRun) {
+      // Deterministic order
+      applied.sort((a, b) => a.eventId.localeCompare(b.eventId));
+      skipped.sort((a, b) => a.eventId.localeCompare(b.eventId));
+      conflicts.sort((a, b) => a.eventId.localeCompare(b.eventId));
+
+      const dryRunResponse = {
+        success: true,
+        dryRun: true,
+        applied: [],
+        skipped: [...skipped, ...conflicts.map(c => ({ eventId: c.eventId, leadId: c.leadId, oldDate: 'N/A', reason: 'conflict', message: c.conflict.message }))],
+        conflicts: conflicts.length > 0 ? conflicts : [],
+        warnings,
+        summary: {
+          selectedCount: validEvents.length,
+          applyEligibleCount: applied.length,
+          skippedCount: skipped.length + conflicts.length
+        },
+        idempotency: idempotencyInfo
+      };
+
+      // PERSIST DRY-RUN RESPONSE for replay
+      if (idempotencyKey) {
+        try {
+          await base44.asServiceRole.entities.AnalyticsEvent.create({
+            eventName: 'bulk_reschedule_idempotency',
+            properties: {
+              operationType: 'dryRun',
+              paramFromDate: fromDate,
+              paramToDate: toDate,
+              paramPolicy: policy
+            },
+            metadata: {
+              idempotencyKey,
+              fingerprint: effectiveFingerprint,
+              responseBody: dryRunResponse,
+              createdAt: new Date().toISOString()
+            }
+          });
+        } catch (analyticsErr) {
+          console.error(`Failed to persist dryRun idempotency record:`, analyticsErr);
+          dryRunResponse.warnings = [
+            ...dryRunResponse.warnings,
+            'WARNING: Idempotency persistence failed; replay protection unavailable for this request.'
+          ];
+        }
+      }
+
+      return Response.json(dryRunResponse);
+    }
+
+    // --- WRITE PATH: Apply rescheduling ---
+    const writeResults = [];
+
+    for (const item of applied) {
+      const event = validEvents.find(e => e.id === item.eventId);
+      if (!event) continue;
+
+      try {
+        // WRITE ORDER: InspectionRecord → CalendarEvent → Lead (for inspections)
+        if (event.eventType === 'inspection' && inspectionByEventId[event.id]) {
+          const inspection = inspectionByEventId[event.id];
+          await base44.asServiceRole.entities.InspectionRecord.update(inspection.id, {
+            scheduledDate: item.newDate,
+            appointmentStatus: 'scheduled'
+          });
+        }
+
+        // Update CalendarEvent projection (second)
+        await base44.asServiceRole.entities.CalendarEvent.update(event.id, {
+          scheduledDate: item.newDate,
+          originalScheduledDate: event.scheduledDate,
+          status: 'scheduled',
+          stormImpacted: false,
+          rescheduleReason: 'Storm/weather conditions'
+        });
+
+        // Sync Lead mirror fields if inspection (third)
+        if (event.eventType === 'inspection') {
+          const lead = leadMap[event.leadId];
+          if (lead) {
+            await base44.asServiceRole.entities.Lead.update(event.leadId, {
+              confirmedInspectionDate: new Date(item.newDate + 'T' + (event.startTime || '09:00') + ':00').toISOString()
+            });
+          }
+        }
+
+        writeResults.push({
+          eventId: item.eventId,
+          leadId: item.leadId,
+          oldDate: item.oldDate,
+          newDate: item.newDate,
+          status: 'success'
+        });
+      } catch (writeErr) {
+        console.error(`Write error for event ${item.eventId}:`, writeErr);
+        writeResults.push({
+          eventId: item.eventId,
+          leadId: item.leadId,
+          oldDate: item.oldDate,
+          newDate: item.newDate,
+          status: 'error',
+          error: writeErr.message
         });
       }
     }
 
-    return Response.json({
-      success: true,
-      rescheduledCount: rescheduledEvents.length,
-      events: rescheduledEvents
-    });
+    // Deterministic order
+    writeResults.sort((a, b) => a.eventId.localeCompare(b.eventId));
+    skipped.sort((a, b) => a.eventId.localeCompare(b.eventId));
+
+    const liveResponse = {
+      success: writeResults.filter(r => r.status === 'success').length > 0,
+      dryRun: false,
+      applied: writeResults,
+      skipped,
+      conflicts: [],
+      warnings,
+      summary: {
+        selectedCount: validEvents.length,
+        applyEligibleCount: writeResults.filter(r => r.status === 'success').length,
+        skippedCount: skipped.length + conflicts.length
+      },
+      idempotency: idempotencyInfo
+    };
+
+    // PERSIST LIVE RESPONSE for replay
+    if (idempotencyKey) {
+      try {
+        await base44.asServiceRole.entities.AnalyticsEvent.create({
+          eventName: 'bulk_reschedule_idempotency',
+          properties: {
+            operationType: 'live',
+            paramFromDate: fromDate,
+            paramToDate: toDate,
+            paramPolicy: policy
+          },
+          metadata: {
+            idempotencyKey,
+            fingerprint: effectiveFingerprint,
+            responseBody: liveResponse,
+            createdAt: new Date().toISOString()
+          }
+        });
+      } catch (analyticsErr) {
+        console.error(`Failed to persist live idempotency record:`, analyticsErr);
+        liveResponse.warnings = [
+          ...liveResponse.warnings,
+          'WARNING: Idempotency persistence failed; replay protection unavailable for this request.'
+        ];
+      }
+    }
+
+    return Response.json(liveResponse);
 
   } catch (error) {
-    console.error('Bulk reschedule error:', error);
-    return Response.json({ 
-      error: error.message || 'Failed to bulk reschedule'
+    console.error(`[${BUILD}] Unhandled error:`, error);
+    return Response.json({
+      success: false,
+      error: error.message || 'Internal server error',
+      build: BUILD
     }, { status: 500 });
+  } finally {
+    // Cleanup: always remove key from processing set
+    if (idempotencyKey) {
+      processingKeys.delete(idempotencyKey);
+    }
   }
 });

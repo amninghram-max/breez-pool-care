@@ -6,9 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Phone, Mail, MessageSquare, AlertCircle, Check, Wrench, Plus, RefreshCw, ChevronDown, Eye, Settings, Trash2 } from 'lucide-react';
+import { Phone, Mail, MessageSquare, AlertCircle, Check, Wrench, Plus, RefreshCw, ChevronDown, Eye, Settings, Trash2, Calendar, Send, MoreVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 import UnstickLeadPanel from '@/components/admin/UnstickLeadPanel';
 import NewLeadModal from '@/components/admin/NewLeadModal';
 import RemoveLeadPanel from '@/components/admin/RemoveLeadPanel';
@@ -22,10 +29,13 @@ import SendInspectionLinkModal from '@/components/admin/SendInspectionLinkModal'
 // Canonical stage order (business rule)
 const STAGES = [
   { key: 'new_lead', label: 'New (Uncontacted)', color: 'bg-blue-100 text-blue-800', defaultExpanded: true },
-  { key: 'contacted', label: 'Quoted/Contacted', color: 'bg-purple-100 text-purple-800', defaultExpanded: true },
+  { key: 'contacted', label: 'Quoted / Contacted', color: 'bg-purple-100 text-purple-800', defaultExpanded: true },
   { key: 'inspection_scheduled', label: 'Inspection Scheduled', color: 'bg-yellow-100 text-yellow-800', defaultExpanded: true },
   { key: 'inspection_confirmed', label: 'Pending Acceptance', color: 'bg-green-100 text-green-800', defaultExpanded: true },
   { key: 'converted', label: 'Active', color: 'bg-emerald-100 text-emerald-800', defaultExpanded: false },
+  { key: 'inspection_confirmed', label: 'Ready for Conversion', color: 'bg-green-100 text-green-800', defaultExpanded: true },
+  { key: 'quote_sent', label: 'Pending Acceptance (Post-Inspection)', color: 'bg-indigo-100 text-indigo-800', defaultExpanded: false },
+  { key: 'converted', label: 'Active Customer', color: 'bg-emerald-100 text-emerald-800', defaultExpanded: false },
   { key: 'lost', label: 'Lost', color: 'bg-gray-100 text-gray-800', defaultExpanded: false }
 ];
 
@@ -42,11 +52,29 @@ export default function LeadsPipeline() {
   const [showNewLead, setShowNewLead] = useState(false);
   const [expandedStages, setExpandedStages] = useState(STAGES.filter(s => s.defaultExpanded).map(s => s.key));
 
+  // Batch selection state
+  const [selectedLeadIds, setSelectedLeadIds] = useState(new Set());
+  const [batchConfirmation, setBatchConfirmation] = useState(null);
+  const [batchResults, setBatchResults] = useState(null);
+
   const repairMutation = useMutation({
     mutationFn: () => base44.functions.invoke('repairInspectionScheduledLeads', {}),
     onSuccess: (res) => {
-      setRepairResult(res.data?.summary);
+      const summary = res.data?.summary;
+      setRepairResult(summary);
       queryClient.invalidateQueries({ queryKey: ['leads'] });
+      
+      // Surface result to operator
+      if (summary?.repaired > 0) {
+        toast.success(`Repaired ${summary.repaired} lead(s) — ${summary.intact} already valid, ${summary.errors} errors`);
+      } else if (summary?.checked > 0) {
+        toast.info(`Scan complete: ${summary.checked} checked, all valid`);
+      } else {
+        toast.info('No leads in inspection_scheduled state');
+      }
+    },
+    onError: (error) => {
+      toast.error(`Repair failed: ${error.message}`);
     }
   });
 
@@ -87,6 +115,28 @@ export default function LeadsPipeline() {
     }
   });
 
+  const batchFollowUpMutation = useMutation({
+    mutationFn: ({ leadIds, templateType }) =>
+      base44.functions.invoke('batchFollowUpEmailV1', {
+        leadIds: Array.from(leadIds),
+        templateType,
+        initiatedBy: user?.email
+      }),
+    onSuccess: (res) => {
+      setBatchResults(res.data);
+      setSelectedLeadIds(new Set());
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      setTimeout(() => {
+        setBatchConfirmation(null);
+        setTimeout(() => setBatchResults(null), 4000);
+      }, 500);
+    },
+    onError: (err) => {
+      toast.error(`Batch send failed: ${err.message}`);
+      setBatchConfirmation(null);
+    }
+  });
+
   if (user?.role !== 'admin') {
     return (
       <div className="p-8 text-center">
@@ -97,13 +147,26 @@ export default function LeadsPipeline() {
   }
 
   const handleStageChange = (leadId, newStage, oldStage) => {
-    updateLeadStageMutation.mutate({ leadId, stage: newStage }, {
+    // Detect backward move (manual override) and allow regression
+    const oldIdx = STAGES.findIndex(s => s.key === oldStage);
+    const newIdx = STAGES.findIndex(s => s.key === newStage);
+    const isBackwardMove = newIdx < oldIdx && newStage !== 'lost';
+    
+    updateLeadStageMutation.mutate({ 
+      leadId, 
+      stage: newStage,
+      allowRegression: isBackwardMove 
+    }, {
       onSuccess: () => {
         const newStageLabel = STAGES.find(s => s.key === newStage)?.label || newStage;
         toast.success(`Moved to ${newStageLabel}`, {
           action: {
             label: 'Undo',
-            onClick: () => updateLeadStageMutation.mutate({ leadId, stage: oldStage })
+            onClick: () => updateLeadStageMutation.mutate({ 
+              leadId, 
+              stage: oldStage,
+              allowRegression: true 
+            })
           }
         });
       }
@@ -112,6 +175,49 @@ export default function LeadsPipeline() {
 
   const getLeadsByStage = (stage) => {
     return leads.filter((lead) => getCanonicalStage(lead.stage) === stage);
+  };
+     if (stage.key === 'inspection_confirmed') {
+       return leads.filter((lead) => lead.stage === 'inspection_confirmed' || lead.stage === 'quote_sent');
+     }
+     return leads.filter((lead) => lead.stage === stage.key);
+   };
+
+  const toggleLeadSelect = (leadId) => {
+    setSelectedLeadIds(prev => {
+      const next = new Set(prev);
+      next.has(leadId) ? next.delete(leadId) : next.add(leadId);
+      return next;
+    });
+  };
+
+  const selectVisibleLeads = (visibleLeadIds) => {
+    setSelectedLeadIds(prev => {
+      const next = new Set(prev);
+      visibleLeadIds.forEach(id => {
+        next.has(id) ? next.delete(id) : next.add(id);
+      });
+      return next;
+    });
+  };
+
+  const handleBatchFollowUp = (templateType) => {
+    if (selectedLeadIds.size === 0) {
+      toast.error('No leads selected');
+      return;
+    }
+    setBatchConfirmation({
+      count: selectedLeadIds.size,
+      templateType
+    });
+  };
+
+  const confirmBatchFollowUp = () => {
+    if (batchConfirmation) {
+      batchFollowUpMutation.mutate({
+        leadIds: selectedLeadIds,
+        templateType: batchConfirmation.templateType
+      });
+    }
   };
   
   const toggleStageExpand = (stageKey) => {
@@ -168,10 +274,133 @@ export default function LeadsPipeline() {
         </div>
       )}
 
+      {/* Batch Results Modal */}
+      {batchResults && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <CardHeader>
+              <CardTitle>Batch Send Results</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-green-50 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-green-700">{batchResults.sentCount}</div>
+                  <div className="text-xs text-gray-600">Sent</div>
+                </div>
+                <div className="bg-yellow-50 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-yellow-700">{batchResults.skippedCount}</div>
+                  <div className="text-xs text-gray-600">Skipped</div>
+                </div>
+                <div className="bg-red-50 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-red-700">{batchResults.failedCount}</div>
+                  <div className="text-xs text-gray-600">Failed</div>
+                </div>
+              </div>
+
+              {batchResults.failed && batchResults.failed.length > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 max-h-32 overflow-y-auto">
+                  <p className="text-xs font-semibold text-red-900 mb-2">Failed Leads:</p>
+                  <div className="text-xs text-red-700 space-y-1">
+                    {batchResults.failed.map(f => (
+                      <div key={f.leadId}>
+                        <strong>{f.leadName}</strong> ({f.email}): {f.error}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <Button onClick={() => setBatchResults(null)} className="w-full">
+                Close
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Batch Confirmation Modal */}
+      {batchConfirmation && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <CardHeader>
+              <CardTitle>Confirm Batch Send</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-sm text-blue-900">
+                  <strong>{batchConfirmation.count}</strong> lead{batchConfirmation.count > 1 ? 's' : ''} will receive{' '}
+                  <strong>
+                    {batchConfirmation.templateType === 'new_lead_followup' 
+                      ? 'new lead follow-up email'
+                      : 'quote follow-up email'}
+                  </strong>
+                </p>
+              </div>
+
+              <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                Duplicate sends within 24h will be skipped. Failed emails will be reported.
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setBatchConfirmation(null)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={confirmBatchFollowUp}
+                  disabled={batchFollowUpMutation.isPending}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                >
+                  {batchFollowUpMutation.isPending ? 'Sending...' : 'Send'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Batch Action Bar (sticky) */}
+      {selectedLeadIds.size > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-blue-900 text-white p-4 z-40 shadow-lg">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="text-sm">
+              <strong>{selectedLeadIds.size}</strong> lead{selectedLeadIds.size > 1 ? 's' : ''} selected
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setSelectedLeadIds(new Set())}
+                className="border-white text-white hover:bg-blue-800"
+              >
+                Clear Selection
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => handleBatchFollowUp('new_lead_followup')}
+                className="bg-blue-500 hover:bg-blue-600"
+              >
+                Follow Up New Leads
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => handleBatchFollowUp('quoted_followup')}
+                className="bg-teal-500 hover:bg-teal-600"
+              >
+                Follow Up Quoted Leads
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Compact Accordion Pipeline View */}
-      <div className="space-y-2">
+      <div className="space-y-2" style={{ paddingBottom: selectedLeadIds.size > 0 ? '80px' : '0' }}>
         {STAGES.map(stage => {
-          const stageLeads = getLeadsByStage(stage.key);
+          const stageLeads = getLeadsByStage(stage);
           const isExpanded = expandedStages.includes(stage.key);
           return (
             <div key={stage.key} className="border border-gray-200 rounded-lg overflow-hidden">
@@ -185,6 +414,18 @@ export default function LeadsPipeline() {
                   <h3 className="font-semibold text-gray-900">{stage.label}</h3>
                   <Badge className={stage.color}>{stageLeads.length}</Badge>
                 </div>
+                {/* Select all for visible section */}
+                {isExpanded && stageLeads.length > 0 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      selectVisibleLeads(stageLeads.map(l => l.id));
+                    }}
+                    className="text-xs text-blue-600 hover:text-blue-800"
+                  >
+                    Select All
+                  </button>
+                )}
               </button>
 
               {/* Stage Rows */}
@@ -197,9 +438,14 @@ export default function LeadsPipeline() {
                       <LeadRow
                         key={lead.id}
                         lead={lead}
+                        stage={stage}
+                        groupedSection={null}
+                        onAdvance={() => handleAdvance(lead)}
                         onStageChange={(newStage) => handleStageChange(lead.id, newStage, lead.stage)}
                         onEdit={() => setSelectedLead(lead)}
                         queryClient={queryClient}
+                        isSelected={selectedLeadIds.has(lead.id)}
+                        onToggleSelect={() => toggleLeadSelect(lead.id)}
                       />
                     ))
                   )}
@@ -226,6 +472,7 @@ export default function LeadsPipeline() {
 }
 
 function LeadRow({ lead, onStageChange, onEdit, queryClient }) {
+function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit, queryClient, isSelected, onToggleSelect }) {
   const [validationError, setValidationError] = React.useState(null);
   const [showSendQuoteModal, setShowSendQuoteModal] = React.useState(false);
   const [showSendInspectionModal, setShowSendInspectionModal] = React.useState(false);
@@ -261,7 +508,15 @@ function LeadRow({ lead, onStageChange, onEdit, queryClient }) {
 
   const handleStageAction = (newStage) => {
     onStageChange(newStage);
+  const handleStageAction = (newStage, data) => {
+    if (newStage) {
+      onStageChange(newStage);
+    }
     setValidationError(null);
+    // Refresh leads if notes updated
+    if (data?.notes) {
+      queryClient?.invalidateQueries({ queryKey: ['leads'] });
+    }
   };
 
   const handleValidationError = (msg) => {
@@ -282,14 +537,22 @@ function LeadRow({ lead, onStageChange, onEdit, queryClient }) {
   };
 
   return (
-    <div className="px-4 py-3 space-y-2 hover:bg-gray-50">
+    <div className={`px-4 py-3 space-y-2 transition-colors ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
       {/* Validation Error */}
       {validationError && (
         <StageValidationError error={validationError} onEditInfo={onEdit} />
       )}
 
-      {/* Row */}
-      <div className="flex items-center justify-between gap-3 text-sm">
+      {/* Row — Desktop layout (hidden on mobile) */}
+      <div className="hidden sm:flex items-center justify-between gap-2 text-sm">
+        {/* Checkbox */}
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={onToggleSelect}
+          className="w-4 h-4 rounded cursor-pointer flex-shrink-0"
+          aria-label="Select lead"
+        />
         {/* Lead Info */}
         <div className="flex-1 min-w-0 cursor-pointer" onClick={onEdit}>
           <div className="flex items-start gap-2">
@@ -304,8 +567,15 @@ function LeadRow({ lead, onStageChange, onEdit, queryClient }) {
           </div>
         </div>
 
+        {/* Grouped badge (if in merged section) */}
+        {groupedSection && (
+          <Badge variant="outline" className="text-xs flex-shrink-0">
+            {lead.stage === 'inspection_confirmed' ? 'Inspected' : 'Awaiting'}
+          </Badge>
+        )}
+
         {/* Metadata */}
-        <div className="text-xs text-gray-500 w-12 text-right">{timeStr}</div>
+        <div className="text-xs text-gray-500 w-12 text-right flex-shrink-0">{timeStr}</div>
 
         {/* Stage-Specific Primary Action */}
         <div className="flex-shrink-0">
@@ -314,18 +584,20 @@ function LeadRow({ lead, onStageChange, onEdit, queryClient }) {
               size="sm"
               variant="default"
               onClick={() => setShowSendQuoteModal(true)}
-              className="gap-2"
+              className="gap-1"
             >
-              Send Quote
+              <Send className="w-3 h-3" />
+              Quote
             </Button>
           ) : lead.stage === 'contacted' ? (
             <Button
               size="sm"
               variant="default"
               onClick={() => setShowSendInspectionModal(true)}
-              className="gap-2"
+              className="gap-1"
             >
-              Send Link
+              <Calendar className="w-3 h-3" />
+              Schedule
             </Button>
           ) : lead.stage === 'inspection_scheduled' ? (
             <StartInspectionButton leadId={lead.id} />
@@ -342,6 +614,8 @@ function LeadRow({ lead, onStageChange, onEdit, queryClient }) {
         {/* Stage Dropdown */}
         <Select value={getCanonicalStage(lead.stage)} onValueChange={onStageChange}>
           <SelectTrigger className="w-32 h-8 text-xs">
+        <Select value={lead.stage} onValueChange={onStageChange}>
+          <SelectTrigger className="w-28 h-8 text-xs flex-shrink-0">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -353,29 +627,139 @@ function LeadRow({ lead, onStageChange, onEdit, queryClient }) {
           </SelectContent>
         </Select>
 
-        {/* Actions */}
-        <div className="flex gap-1">
-          <Link to={createPageUrl('CustomerTimeline') + `?leadId=${lead.id}`}>
-            <Button size="icon" variant="outline" className="h-8 w-8" title="View Timeline">
-              <Eye className="w-3 h-3" />
+        {/* Actions Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="icon" variant="outline" className="h-8 w-8 flex-shrink-0">
+              <MoreVertical className="w-4 h-4" />
             </Button>
-          </Link>
-          <Link to={createPageUrl('EquipmentProfileAdmin') + `?leadId=${lead.id}`}>
-            <Button size="icon" variant="outline" className="h-8 w-8" title="Manage Equipment">
-              <Settings className="w-3 h-3" />
-            </Button>
-          </Link>
-          {user?.role === 'admin' && lead.stage === 'new_lead' && (
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link to={createPageUrl('CustomerTimeline') + `?leadId=${lead.id}`}>
+                <Eye className="w-3 h-3 mr-2" />
+                View Timeline
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to={createPageUrl('EquipmentProfileAdmin') + `?leadId=${lead.id}`}>
+                <Settings className="w-3 h-3 mr-2" />
+                Equipment
+              </Link>
+            </DropdownMenuItem>
+            {user?.role === 'admin' && lead.stage === 'new_lead' && (
+              <DropdownMenuItem onClick={() => setShowRemovePanel(true)} className="text-red-600">
+                <Trash2 className="w-3 h-3 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Mobile layout (shown on mobile only) */}
+      <div className="sm:hidden space-y-3">
+        {/* Checkbox + Lead Info */}
+        <div className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={onToggleSelect}
+            className="w-4 h-4 rounded cursor-pointer mt-1 flex-shrink-0"
+            aria-label="Select lead"
+          />
+          <div className="flex-1 cursor-pointer" onClick={onEdit}>
+            <div>
+              <p className="font-medium text-gray-900">{lead.firstName} {lead.lastName}</p>
+              <p className="text-xs text-gray-600 truncate">{addressLine}</p>
+              <div className="flex items-center gap-2 mt-2">
+                {groupedSection && (
+                  <Badge variant="outline" className="text-xs">
+                    {lead.stage === 'inspection_confirmed' ? 'Inspected' : 'Awaiting'}
+                  </Badge>
+                )}
+                <span className="text-xs text-gray-500">{timeStr}</span>
+                {!lead.isEligible && <AlertCircle className="w-3 h-3 text-red-600" />}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Actions Stack */}
+        <div className="flex flex-col gap-2">
+          {lead.stage === 'new_lead' ? (
             <Button
-              size="icon"
-              variant="outline"
-              className="h-8 w-8 text-red-600 hover:bg-red-50 border-red-200"
-              title="Delete Lead (NEW only)"
-              onClick={() => setShowRemovePanel(true)}
+              size="sm"
+              variant="default"
+              onClick={() => setShowSendQuoteModal(true)}
+              className="w-full gap-2 justify-center"
             >
-              <Trash2 className="w-3 h-3" />
+              <Send className="w-3 h-3" />
+              Send Quote
             </Button>
+          ) : lead.stage === 'contacted' ? (
+            <Button
+              size="sm"
+              variant="default"
+              onClick={() => setShowSendInspectionModal(true)}
+              className="w-full gap-2 justify-center"
+            >
+              <Calendar className="w-3 h-3" />
+              Schedule
+            </Button>
+          ) : lead.stage === 'inspection_scheduled' ? (
+            <StartInspectionButton leadId={lead.id} />
+          ) : (
+            <StageActionButton
+              lead={lead}
+              currentStage={lead.stage}
+              onAction={handleStageAction}
+              onValidationError={handleValidationError}
+            />
           )}
+
+          <div className="flex gap-2">
+            <Select value={lead.stage} onValueChange={onStageChange}>
+              <SelectTrigger className="flex-1 h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STAGES.map(s => (
+                  <SelectItem key={s.key} value={s.key}>
+                    {s.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="icon" variant="outline" className="h-8 w-8">
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link to={createPageUrl('CustomerTimeline') + `?leadId=${lead.id}`}>
+                    <Eye className="w-3 h-3 mr-2" />
+                    Timeline
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to={createPageUrl('EquipmentProfileAdmin') + `?leadId=${lead.id}`}>
+                    <Settings className="w-3 h-3 mr-2" />
+                    Equipment
+                  </Link>
+                </DropdownMenuItem>
+                {user?.role === 'admin' && lead.stage === 'new_lead' && (
+                  <DropdownMenuItem onClick={() => setShowRemovePanel(true)} className="text-red-600">
+                    <Trash2 className="w-3 h-3 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 

@@ -90,24 +90,40 @@ Deno.serve(async (req) => {
       if (inspectionData?.verifiedUsageFrequency) leadUpdateData.usageFrequency = inspectionData.verifiedUsageFrequency;
       if (inspectionData?.verifiedPoolCondition) leadUpdateData.poolCondition = inspectionData.verifiedPoolCondition;
       
+      // Ensure stage progresses forward (new_customer flow typically goes to converted)
+      const curStage = lead.stage || 'new_lead';
+      if (curStage !== 'quote_sent') {
+        leadUpdateData.stage = 'quote_sent';
+        console.log(`FI_STAGE_PROGRESSED_NEW_CUSTOMER: ${curStage} -> quote_sent`);
+      }
       await base44.asServiceRole.entities.Lead.update(record.leadId, leadUpdateData);
 
-      // Send final quote email with agreement link
-      await base44.asServiceRole.functions.invoke('sendFinalQuoteEmail', {
-        inspectionRecordId,
-        leadId: record.leadId,
-      });
+       // Send final quote email with agreement link
+       await base44.asServiceRole.functions.invoke('sendFinalQuoteEmail', {
+         inspectionRecordId,
+         leadId: record.leadId,
+       });
 
-      console.log(`✅ Finalized as new_customer: inspectionId=${inspectionRecordId}, leadId=${record.leadId}`);
-      return Response.json({ success: true, outcome: 'new_customer', inspectionRecordId });
+       console.log(`✅ Finalized as new_customer: inspectionId=${inspectionRecordId}, leadId=${record.leadId}, stage=${leadUpdateData.stage}`);
+       return Response.json({ success: true, outcome: 'new_customer', inspectionRecordId });
 
     } else {
       // Open lead: keep for follow-up
-      await base44.asServiceRole.entities.Lead.update(record.leadId, {
-        stage: 'contacted',
-      });
+      // Ensure stage transitions forward or stays at inspection_scheduled
+      const leadUpdate = {};
+      const curStage = lead.stage || 'new_lead';
+      if (curStage === 'inspection_scheduled' || curStage === 'inspection_confirmed') {
+        // Already at or past inspection_scheduled; stay there or move forward to inspection_confirmed
+        leadUpdate.stage = 'inspection_confirmed';
+        console.log(`FI_STAGE_PROGRESSED_OPEN_LEAD: ${curStage} -> inspection_confirmed`);
+      } else {
+        // For other stages, be conservative: don't regress
+        leadUpdate.stage = Math.max(curStage, 'inspection_confirmed') > curStage ? 'inspection_confirmed' : curStage;
+        console.log(`FI_STAGE_NO_REGRESSION_OPEN_LEAD: ${curStage} unchanged`);
+      }
+      await base44.asServiceRole.entities.Lead.update(record.leadId, leadUpdate);
 
-      console.log(`✅ Finalized as open_lead: inspectionId=${inspectionRecordId}, leadId=${record.leadId}`);
+      console.log(`✅ Finalized as open_lead: inspectionId=${inspectionRecordId}, leadId=${record.leadId}, stage=${leadUpdate.stage}`);
       return Response.json({ success: true, outcome: 'open_lead', inspectionRecordId });
     }
   } catch (error) {

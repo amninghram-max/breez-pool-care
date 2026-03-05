@@ -10,6 +10,7 @@ const STAGES = [
   { key: 'contacted', label: 'Contacted', color: 'bg-blue-100 text-blue-700' },
   { key: 'inspection_scheduled', label: 'Insp. Scheduled', color: 'bg-yellow-100 text-yellow-700' },
   { key: 'inspection_confirmed', label: 'Pending Acceptance', color: 'bg-orange-100 text-orange-700' },
+  { key: 'inspection_confirmed', label: 'Ready for Conversion', color: 'bg-orange-100 text-orange-700' },
   { key: 'converted', label: 'Converted', color: 'bg-green-100 text-green-700' },
   { key: 'lost', label: 'Lost / No Decision', color: 'bg-red-100 text-red-700' },
 ];
