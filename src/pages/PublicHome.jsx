@@ -18,18 +18,15 @@ function CTAButtons({ navigate }) {
         onClick={() => navigate(createPageUrl('PreQualification'))}
         className="w-full sm:w-auto px-8 py-4 rounded-xl text-white text-lg font-semibold shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
         style={{ backgroundColor: TEAL }}>
-
-        Get Free Instant Quote
+        Schedule a Free Inspection
       </button>
       <button
         onClick={() => navigate(createPageUrl('PreQualification'))}
         className="w-full sm:w-auto px-8 py-4 rounded-xl text-lg font-semibold border-2 bg-white hover:bg-gray-50 transition-all hover:-translate-y-0.5"
         style={{ borderColor: TEAL, color: TEAL }}>
-
-        Schedule Free Inspection
+        See Plans & Pricing
       </button>
     </div>);
-
 }
 
 function FAQItem({ q, a }) {
