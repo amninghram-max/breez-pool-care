@@ -352,8 +352,11 @@ Deno.serve(async (req) => {
       console.warn('FPQ_V3_QUOTE_PERSIST_FAILED', { error: e.message });
     }
 
-    // Send quote-ready email (non-blocking)
-    await sendQuoteReadyEmail({ quoteToken: token.trim(), summary: priceSummary, targetLeadId: leadId });
+    // Send quote-ready email (non-blocking) — ONLY if this is a new quote
+    // If quote already existed (idempotent), email was already sent above
+    if (!existingQuote) {
+      await sendQuoteReadyEmail({ quoteToken: token.trim(), summary: priceSummary, targetLeadId: leadId });
+    }
 
     return json200({
       success: true,
