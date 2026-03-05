@@ -282,23 +282,9 @@ Deno.serve(async (req) => {
       console.warn('FPQ_V3_CALC_FAILED', { error: e.message });
     }
 
-    // Fallback pricing if engine failed
+    // No fallback pricing — if engine fails, return error instead of showing fake $149
     if (!quoteResult) {
-      quoteResult = {
-        finalMonthlyPrice: 149,
-        perVisitPrice: 37.25,
-        oneTimeFees: 0,
-        firstMonthTotal: 149,
-        frequency: 'weekly',
-        frequencyAutoRequired: false,
-        sizeTier: 'tier_b',
-        greenSizeGroup: null,
-        isRange: false,
-        minMonthly: null,
-        maxMonthly: null,
-        minOneTimeFees: null,
-        maxOneTimeFees: null,
-      };
+      return json200({ success: false, error: 'Failed to calculate pricing', build: BUILD });
     }
 
     const isNotSure = prequalAnswers?.poolSize === 'not_sure';
