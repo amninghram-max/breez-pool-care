@@ -8,14 +8,14 @@ import { createPageUrl } from '@/utils';
 const BUCKETS = [
   {
     key: 'quoted',
-    label: 'Quoted',
-    description: 'Quote sent, awaiting action',
-    stages: ['quote_sent'],
+    label: 'Quoted / Contacted',
+    description: 'Quote sent, awaiting scheduling',
+    stages: ['quote_sent', 'contacted'],
     color: 'bg-purple-50 border-purple-200 text-purple-700',
     numColor: 'text-purple-700',
     icon: FileText,
     iconColor: 'text-purple-500',
-    pipelineStage: 'quote_sent',
+    pipelineStage: 'contacted',
   },
   {
     key: 'inspection_scheduled',
@@ -32,12 +32,12 @@ const BUCKETS = [
     key: 'pending_acceptance',
     label: 'Pending Acceptance',
     description: 'Awaiting payment / activation',
-    stages: ['contacted'],
+    stages: ['inspection_confirmed'],
     color: 'bg-orange-50 border-orange-200 text-orange-700',
     numColor: 'text-orange-700',
     icon: CheckCircle,
     iconColor: 'text-orange-500',
-    pipelineStage: 'contacted',
+    pipelineStage: 'pending_acceptance',
   },
   {
     key: 'converted',
