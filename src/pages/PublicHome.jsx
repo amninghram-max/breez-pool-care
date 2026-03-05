@@ -360,56 +360,14 @@ export default function PublicHome() {
 
       </div>
 
-      {/* ── Why Water Balance Matters ── */}
-      <section className="py-20 px-4 bg-white">
+      {/* ── Photo Section ── */}
+      <section className="py-12 px-4 bg-white">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">Why Water Balance Matters</h2>
-            <p className="text-gray-500 text-lg">Properly balanced water isn't just about clarity — it protects your family and your investment.</p>
-          </div>
-          <div className="grid md:grid-cols-2 gap-10 items-center">
-            <div className="space-y-6">
-              <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: '#e8f8f9' }}>
-                  <ShieldCheck className="w-5 h-5" style={{ color: TEAL }} />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-1">Safety First</h3>
-                  <p className="text-gray-500 text-sm leading-relaxed">
-                    Water that's out of balance — too acidic, too alkaline, or under-sanitized — can irritate skin, eyes, and respiratory systems. Consistently balanced water keeps everyone in your home comfortable and safe to swim.
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: '#e8f8f9' }}>
-                  <Wrench className="w-5 h-5" style={{ color: TEAL }} />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-1">Equipment Protection</h3>
-                  <p className="text-gray-500 text-sm leading-relaxed">
-                    Corrosive or scale-forming water accelerates wear on your pump, filter, heater, and surfaces. Maintaining proper balance extends the life of your equipment and helps you avoid costly early replacements.
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: '#e8f8f9' }}>
-                  <Droplets className="w-5 h-5" style={{ color: TEAL }} />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-1">Professional-Grade Care</h3>
-                  <p className="text-gray-500 text-sm leading-relaxed">
-                    We use professional-grade balancing agents and test your water with precision instruments at every visit. There's no guessing — your water chemistry is adjusted based on actual readings, not estimation.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="rounded-3xl overflow-hidden shadow-xl aspect-[4/3]">
-              <img
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/8f63f3f99_Skimming_pool.png"
-                alt="Breez Pool Care technician skimming pool"
-                className="w-full h-full object-cover" />
-
-            </div>
+          <div className="rounded-3xl overflow-hidden shadow-xl aspect-[16/7]">
+            <img
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/8f63f3f99_Skimming_pool.png"
+              alt="Breez Pool Care technician skimming pool"
+              className="w-full h-full object-cover" />
           </div>
         </div>
       </section>
