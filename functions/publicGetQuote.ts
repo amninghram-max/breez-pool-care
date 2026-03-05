@@ -130,8 +130,15 @@ function runPricingRange(q, settings) {
   };
 }
 
-async function sendEmail(base44, { to, subject, body }) {
-  await base44.asServiceRole.integrations.Core.SendEmail({ to, subject, body });
+async function sendEmail(_base44, { to, subject, body }) {
+  const { Resend } = await import('npm:resend@4.0.0');
+  const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
+  await resend.emails.send({
+    from: 'Breez Pool Care <noreply@breezpoolcare.com>',
+    to,
+    subject,
+    text: body,
+  });
 }
 
 Deno.serve(async (req) => {
