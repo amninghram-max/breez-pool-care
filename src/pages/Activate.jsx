@@ -8,14 +8,16 @@ import { Button } from '@/components/ui/button';
 
 export default function Activate() {
   const navigate = useNavigate();
-  const leadId = new URLSearchParams(window.location.search).get('leadId');
+  const searchParams = new URLSearchParams(window.location.search);
+  const leadId = searchParams.get('leadId');
+  const mode = searchParams.get('mode') || 'signup'; // Force signup unless explicitly set to signin
 
   const [status, setStatus] = useState('idle'); // idle | linking | success | error | role_blocked
   const [errorMsg, setErrorMsg] = useState('');
   const [leadFirstName, setLeadFirstName] = useState(null);
 
   // Auth form state
-  const [authMode, setAuthMode] = useState('signup'); // 'signup' | 'signin'
+  const [authMode, setAuthMode] = useState(mode); // 'signup' | 'signin'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
