@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, alreadySent: true });
     }
 
-    const { clientEmail, clientFirstName, outputMonthlyPrice, outputFrequency, outputOneTimeFees } = quote;
+    const { clientEmail, clientFirstName, outputMonthlyPrice, outputOneTimeFees, frequencyMultiplier } = quote;
 
     if (!clientEmail) {
       return Response.json({ error: 'clientEmail required' }, { status: 400 });
@@ -88,8 +88,10 @@ Deno.serve(async (req) => {
     const subject = 'Your Breez Quote Is Ready!';
     const TEAL = '#1B9B9F';
     const firstName = clientFirstName || 'there';
-    const monthly = outputMonthlyPrice ? `$${outputMonthlyPrice.toFixed(2)}` : 'TBD';
-    const freq = outputFrequency || 'weekly';
+    // Always display weekly pricing in quote email — admins can manually escalate based on chemical trends
+    const weeklyPrice = frequencyMultiplier && frequencyMultiplier > 1 ? (outputMonthlyPrice / frequencyMultiplier) : outputMonthlyPrice;
+    const monthly = weeklyPrice ? `$${weeklyPrice.toFixed(2)}` : 'TBD';
+    const freq = 'weekly';
     const firstMonth = `$${((outputMonthlyPrice || 0) + (outputOneTimeFees || 0)).toFixed(2)}`;
 
     const htmlBody = `<!DOCTYPE html>
