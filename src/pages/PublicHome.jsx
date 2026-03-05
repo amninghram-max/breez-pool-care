@@ -146,11 +146,9 @@ export default function PublicHome() {
             Breez Pool Care delivers consistent residential pool cleaning, professional water testing, and chemical balancing—so your pool stays clear, comfortable, and swim-ready without the stress.
           </p>
 
-          <CTAButtons navigate={navigate} />
-
-          <p className="text-xs text-gray-400 mt-5 max-w-sm mx-auto leading-relaxed">
-            Homeowner or designated caretaker must be present for inspection. No obligation required.
-          </p>
+          <div className="mb-10">
+            <CTAButtons navigate={navigate} />
+          </div>
         </div>
       </section>
 
