@@ -98,8 +98,7 @@ export default function PublicHome() {
                 onClick={() => navigate(createPageUrl('PreQualification'))}
                 className="hidden sm:inline-flex px-5 py-2 rounded-lg text-white text-sm font-semibold transition-all hover:opacity-90"
                 style={{ backgroundColor: TEAL }}>
-
-                Get Free Quote
+                Free Inspection
               </button>
               <button
                 onClick={() => base44.auth.redirectToLogin(window.location.href)}
