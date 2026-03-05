@@ -21,18 +21,6 @@ export default function PreQualification() {
   const [lastFinalizeResponse, setLastFinalizeResponse] = useState(null);
   const [finishClickedAt, setFinishClickedAt] = useState(null);
 
-  // Debug state for display
-  const debugState = {
-    finalizeState,
-    lastFinalizeRequest,
-    lastFinalizeResponse,
-    isFinalizing: finalizing,
-    finalizeError,
-    finishClickedAt,
-    currentStep: 0,
-    currentStepName: ''
-  };
-  
   const [creatingToken, setCreatingToken] = useState(false);
   const [user, setUser] = useState(undefined); // undefined = loading, null = guest
   const [quoteResult, setQuoteResult] = useState(null);
@@ -61,7 +49,7 @@ export default function PreQualification() {
         } else {
           setTokenCreationError(true);
         }
-      } catch (err) {
+      } catch {
         setTokenCreationError(true);
       } finally {
         setCreatingToken(false);
@@ -317,6 +305,7 @@ export default function PreQualification() {
             </div>
             <PublicQuoteWizard 
               prefillData={prefillData}
+              token={token}
               finalizing={finalizing}
               setFinalizing={setFinalizing}
               finalizeState={finalizeState}

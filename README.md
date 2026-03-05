@@ -20,11 +20,18 @@ Any change pushed to the repo will also be reflected in the Base44 Builder.
 ```
 VITE_BASE44_APP_ID=your_app_id
 VITE_BASE44_APP_BASE_URL=your_backend_url
+APP_ORIGIN=https://your-public-app-origin
+BASE_URL=https://your-public-app-origin
 
 e.g.
 VITE_BASE44_APP_ID=cbef744a8545c389ef439ea6
 VITE_BASE44_APP_BASE_URL=https://my-to-do-list-81bfaad7.base44.app
+APP_ORIGIN=https://breezpoolcare.com
+BASE_URL=https://breezpoolcare.com
 ```
+
+`APP_ORIGIN` is used by backend functions to build absolute links for redirects/emails.
+`BASE_URL` is used by legacy email content paths that still read this variable.
 
 Run the app: `npm run dev`
 

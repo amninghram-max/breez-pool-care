@@ -89,6 +89,11 @@ export default function PublicScheduler({ leadId, clientEmail, clientFirstName, 
           <h2 className="text-xl font-bold text-gray-900">Inspection Confirmed!</h2>
           <p className="text-gray-500 text-sm mt-1">A confirmation has been sent to {clientEmail}.</p>
         </div>
+        {confirmed?.degradedMode === true && (
+          <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-left">
+            <p className="text-xs text-amber-700">Scheduling confirmed; internal sync pending.</p>
+          </div>
+        )}
         <div className="rounded-2xl border-2 p-5 text-left space-y-3" style={{ borderColor: TEAL, backgroundColor: '#f0fdfd' }}>
           <div className="flex items-center gap-3">
             <Calendar className="w-5 h-5 shrink-0" style={{ color: TEAL }} />
