@@ -326,60 +326,28 @@ export default function PublicHome() {
         </div>
       </section>
 
-      {/* ── Digital Service Experience ── */}
+      {/* ── Why Breez ── */}
       <section className="py-20 px-4" style={{ backgroundColor: '#f8fdfd' }}>
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">A Service Experience Built for Homeowners</h2>
-            <p className="text-gray-500 text-lg max-w-2xl mx-auto">
-              We built a customer dashboard so you always know what's happening with your pool — without having to ask.
-            </p>
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">Why homeowners choose Breez Pool Care</h2>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 gap-6">
             {[
-            {
-              icon: FileText,
-              title: 'Visit Logs, Always On',
-              desc: 'Every service visit is recorded and accessible from your dashboard the moment it\'s completed.'
-            },
-            {
-              icon: Camera,
-              title: 'Before & After Photos',
-              desc: 'Photos are taken at each visit so you can see the condition of your pool, not just read about it.'
-            },
-            {
-              icon: Clock,
-              title: 'Service Completion Time',
-              desc: 'See exactly when your technician arrived and when service was completed — on every visit.'
-            },
-            {
-              icon: MessageSquare,
-              title: 'Direct Messaging',
-              desc: 'Have a question between visits? Message us directly through the platform. No phone tag required.'
-            },
-            {
-              icon: CreditCard,
-              title: 'Secure Payments',
-              desc: 'Billing is handled securely through your dashboard. AutoPay is available with a monthly discount.'
-            },
-            {
-              icon: Wrench,
-              title: 'Equipment Recommendations',
-              desc: 'If your technician observes something worth attention, it\'s noted and shared with you proactively.'
-            }].
-            map(({ icon: Icon, title, desc }) =>
-            <div key={title} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: '#e8f8f9' }}>
+              { icon: ShieldCheck, title: 'We handle the chemicals', desc: 'You don\'t touch the dangerous stuff.' },
+              { icon: Calendar, title: 'Consistent weekly service', desc: 'Prevents problems instead of reacting to them.' },
+              { icon: FileText, title: 'Clear communication', desc: 'Documentation and updates after every visit.' },
+              { icon: User, title: 'Free inspection', desc: 'To confirm details and answer questions before you commit.' },
+            ].map(({ icon: Icon, title, desc }) =>
+              <div key={title} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ backgroundColor: '#e8f8f9' }}>
                   <Icon className="w-5 h-5" style={{ color: TEAL }} />
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-2">{title}</h3>
+                <h3 className="font-semibold text-gray-900 mb-1">{title}</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
               </div>
             )}
           </div>
-          <p className="text-center text-gray-500 text-sm mt-8">
-            Complete printable service reports are available anytime from your dashboard.
-          </p>
         </div>
       </section>
 
