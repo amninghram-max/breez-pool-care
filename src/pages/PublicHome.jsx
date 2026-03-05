@@ -378,11 +378,11 @@ export default function PublicHome() {
           <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5" style={{ backgroundColor: 'white' }}>
             <ShieldCheck className="w-7 h-7" style={{ color: TEAL }} />
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">Now Serving Melbourne</h2>
-          <p className="text-gray-600 text-lg leading-relaxed max-w-xl mx-auto">
-            We are a growing company. Service areas will expand as we build our team.
-            If you're outside our current service area, enter your information and we'll reach out when we're in your neighborhood.
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">Proudly serving Palm Shores & nearby Melbourne, FL</h2>
+          <p className="text-gray-600 text-base leading-relaxed max-w-xl mx-auto mb-4">
+            Serving Palm Shores, Melbourne, West Melbourne, Rockledge, Satellite Beach, Indian Harbour Beach, Indialantic, Palm Bay, Viera, Suntree, Eau Gallie, South Patrick Shores, and nearby neighborhoods.
           </p>
+          <p className="text-gray-500 text-sm">If you're not sure whether you're in range, book a free inspection and we'll confirm availability.</p>
         </div>
       </section>
 
