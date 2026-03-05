@@ -251,6 +251,13 @@ Deno.serve(async (req) => {
     if (!street?.trim() || !city?.trim() || !state?.trim() || !zip?.trim()) {
       return json200({ success: false, error: 'serviceAddress must include street, city, state, and zip', ...meta });
     }
+
+    // ZIP code service area check
+    const ALLOWED_ZIPS = ['32940', '32934', '32935', '32937', '32952', '32925'];
+    const cleanZip = zip.trim().slice(0, 5);
+    if (!ALLOWED_ZIPS.includes(cleanZip)) {
+      return json200({ success: false, code: 'OUTSIDE_SERVICE_AREA', error: 'outside_service_area', ...meta });
+    }
     if (!requestedDate || !/^\d{4}-\d{2}-\d{2}$/.test(requestedDate)) {
       return json200({ success: false, error: 'requestedDate must be in YYYY-MM-DD format', ...meta });
     }
