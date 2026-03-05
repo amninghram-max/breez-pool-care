@@ -156,21 +156,22 @@ Deno.serve(async (req) => {
           questionnaireData: {
             poolSize: confirmedPoolSize || latestQuote.inputPoolSize,
             poolType: confirmedPoolType || latestQuote.inputPoolType,
-            spaPresent: (confirmedSpaPresent === true || confirmedSpaPresent === 'true') ? 'true' : 'false',
+            spaPresent: confirmedSpaPresent ? 'true' : 'false',
             enclosure: confirmedEnclosure || latestQuote.inputEnclosure,
             treesOverhead: confirmedTreesOverhead || latestQuote.inputTreesOverhead,
             filterType: confirmedFilterType || latestQuote.inputFilterType,
-            chlorinationMethod: sanitizer,
-            useFrequency: confirmedUsageFrequency || latestQuote.inputUseFrequency,
-            petsAccess: latestQuote.inputPetsAccess,
-            petSwimFrequency: latestQuote.inputPetSwimFrequency,
-            poolCondition: confirmedPoolCondition,
-            greenPoolSeverity: greenSeverity || latestQuote.inputGreenPoolSeverity,
+            chlorinationMethod: confirmedChlorinationMethod || latestQuote.inputChlorinationMethod || 'tablets',
+            chlorinatorType: latestQuote.inputChlorinatorType || 'n/a',
+            useFrequency: confirmedUsageFrequency || latestQuote.inputUseFrequency || 'weekends',
+            petsAccess: latestQuote.inputPetsAccess || false,
+            petSwimFrequency: latestQuote.inputPetSwimFrequency || 'never',
+            poolCondition: confirmedPoolCondition || 'clear',
+            greenPoolSeverity: (confirmedPoolCondition === 'green' || confirmedPoolCondition === 'green_algae') ? (greenSeverity || 'moderate') : null,
           }
         });
         const quote = invokeResult?.data?.quote || invokeResult?.quote;
         priceSnapshot = quote ? {
-          monthly: quote.finalMonthlyPrice || quote.estimatedMonthlyPrice,
+          monthly: quote.finalMonthlyPrice,
           frequency: quote.frequencySelectedOrRequired,
           oneTimeFees: quote.estimatedOneTimeFees,
           outputMonthlyPrice: quote.finalMonthlyPrice,
