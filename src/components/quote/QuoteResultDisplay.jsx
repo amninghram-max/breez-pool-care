@@ -1,4 +1,3 @@
-import React, { useEffect } from 'react';
 import { useState, useEffect } from 'react';
 import { Calendar, CheckCircle2 } from 'lucide-react';
 
