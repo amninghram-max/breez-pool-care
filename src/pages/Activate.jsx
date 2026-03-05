@@ -124,11 +124,10 @@ export default function Activate() {
           return;
         }
       }
-      // Invalidate user query to trigger useEffect navigation
-      queryClient.invalidateQueries({ queryKey: ['activateUser'] });
+      // Navigate directly to Agreements page
+      window.location.href = createPageUrl('Agreements') + (leadId ? `?inspectionId=${leadId}` : '');
     } catch (err) {
       setAuthError(err.message || 'Verification failed. Please check your code.');
-    } finally {
       setAuthLoading(false);
     }
   };
