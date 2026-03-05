@@ -21,7 +21,7 @@ const BUCKETS = [
     key: 'inspection_scheduled',
     label: 'Inspection Scheduled',
     description: 'Inspection booked or confirmed',
-    stages: ['inspection_scheduled', 'inspection_confirmed'],
+    stages: ['inspection_scheduled'],
     color: 'bg-yellow-50 border-yellow-200 text-yellow-700',
     numColor: 'text-yellow-700',
     icon: Calendar,
