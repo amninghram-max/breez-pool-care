@@ -218,8 +218,8 @@ export default function Layout({ children, currentPageName }) {
   const publicPages = ['PublicHome', 'PreQualification', 'QuoteView', 'ScheduleInspection', 'RescheduleInspection'];
   const isPublicPage = publicPages.includes(currentPageName);
 
-  // Minimal layout for Activate page - no header/sidebar chrome
-  if (currentPageName === 'Activate') {
+  // Minimal layout for Activate, Agreements, PaymentSetup pages - no header/sidebar chrome
+  if (['Activate', 'Agreements', 'PaymentSetup'].includes(currentPageName)) {
     return (
       <div className="min-h-screen bg-gray-50">
         <ErrorBoundary>
