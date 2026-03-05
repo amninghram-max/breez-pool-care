@@ -311,6 +311,12 @@ export default function ScheduleInspection() {
                   <p className="text-xs text-amber-700">Scheduling confirmed; internal sync pending.</p>
                 </div>
               )}
+              {degradedMode && (
+                <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-left">
+                  <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-700">Scheduling confirmed; internal sync pending.</p>
+                </div>
+              )}
               <Button
                 onClick={() => navigate('/')}
                 className="w-full bg-teal-600 hover:bg-teal-700 text-white"

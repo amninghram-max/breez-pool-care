@@ -810,6 +810,8 @@ Deno.serve(async (req) => {
 
     }
 
+    }
+
     if (inspection?.id) {
       try {
         await base44.asServiceRole.entities.InspectionRecord.update(inspection.id, { calendarEventId: calendarEvent.id });
@@ -939,6 +941,13 @@ Deno.serve(async (req) => {
       email: finalEmail,
       firstName,
       inspectionId: inspection?.id || null,
+      eventId: calendarEvent.id,
+      shouldSendNotification,
+      emailStatus,
+      ...(degradedMode && {
+        degradedMode: true,
+        degradedReason: 'INSPECTION_RECORD_CREATE_FAILED'
+      }),
       eventId: calendarEvent.id,
       shouldSendNotification,
       emailStatus,

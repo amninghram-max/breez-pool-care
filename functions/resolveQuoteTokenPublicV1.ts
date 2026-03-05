@@ -203,6 +203,8 @@ Deno.serve(async (req) => {
     console.error('RESOLVE_TOKEN_V1_CRASH', { requestId, error: error?.message });
   } catch (error) {
     console.error('RESOLVE_TOKEN_V1_CRASH', { requestId, error: error?.message });
+  } catch (error) {
+    console.error('RESOLVE_TOKEN_V1_CRASH', { requestId, error: error?.message });
     console.log('RQT_V1_SUCCESS', {
       tokenPrefix: cleanToken.slice(0, 8),
       leadId,

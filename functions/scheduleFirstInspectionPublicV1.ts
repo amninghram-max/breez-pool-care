@@ -15,6 +15,9 @@ const BUILD = "SFI-V1-2026-03-04-F";
  */
 
 const BUILD = "SFI-V1-2026-03-04-F";
+ */
+
+const BUILD = "SFI-V1-2026-03-04-F";
  * IDEMPOTENT: Checks for existing inspection scheduling and returns cached state.
  * Side effects (email, stage update) only occur on first scheduling.
  *
@@ -180,6 +183,41 @@ Deno.serve(async (req) => {
       return json200({ success: false, error: 'requestedTimeSlot must be one of: morning, midday, afternoon', ...meta });
     }
 
+    }
+
+    const resolveData = await resolveTokenInline(base44, token, requestId);
+    if (resolveData?.success !== true || !resolveData.leadId || !resolveData.email) {
+      const code = resolveData?.code || 'QUERY_ERROR';
+      const errorMap = {
+        TOKEN_NOT_FOUND: 'Invalid or expired token',
+        INCOMPLETE_DATA: 'Token does not have complete lead information',
+        QUERY_ERROR: 'Failed to resolve token'
+      };
+      console.warn('SFI_V1_RESOLVE_FAILED', { requestId, runtimeVersion, token: token.slice(0, 8), code });
+      return json200({ success: false, code, error: errorMap[code] || (resolveData?.error || 'Failed to resolve token'), ...meta });
+    }
+
+    const leadId = resolveData.leadId;
+    const finalEmail = email || resolveData.email;
+
+    let existingLead = null;
+    try {
+      existingLead = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
+      if (existingLead && existingLead.length > 0) {
+        const lead = existingLead[0];
+        if (lead.inspectionScheduled === true && lead.inspectionEventId) {
+          return json200({
+            success: true,
+            alreadyScheduled: true,
+            scheduledDate: lead.requestedInspectionDate,
+            timeWindow: lead.requestedInspectionTime,
+            email: finalEmail,
+            firstName: lead.firstName || firstName,
+            ...meta
+          });
+        }
+    }
+
     const resolveData = await resolveTokenInline(base44, token, requestId);
     if (resolveData?.success !== true || !resolveData.leadId || !resolveData.email) {
       const code = resolveData?.code || 'QUERY_ERROR';
@@ -244,18 +282,6 @@ Deno.serve(async (req) => {
             ...meta
           });
         }
-    }
-
-    const resolveData = await resolveTokenInline(base44, token, requestId);
-    if (resolveData?.success !== true || !resolveData.leadId || !resolveData.email) {
-      const code = resolveData?.code || 'QUERY_ERROR';
-      const errorMap = {
-        TOKEN_NOT_FOUND: 'Invalid or expired token',
-        INCOMPLETE_DATA: 'Token does not have complete lead information',
-        QUERY_ERROR: 'Failed to resolve token'
-      };
-      console.warn('SFI_V1_RESOLVE_FAILED', { requestId, runtimeVersion, token: token.slice(0, 8), code });
-      return json200({ success: false, code, error: errorMap[code] || (resolveData?.error || 'Failed to resolve token'), ...meta });
     }
 
     const leadId = resolveData.leadId;
@@ -391,6 +417,8 @@ Deno.serve(async (req) => {
       });
     } catch (e) {
       console.warn('SFI_V1_LEAD_UPDATE_FAILED', { requestId, error: e.message });
+    }
+
     }
 
     }

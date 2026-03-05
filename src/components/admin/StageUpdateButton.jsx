@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ChevronDown, Loader2 } from 'lucide-react';
 import {
@@ -15,13 +14,13 @@ import {
 
 const VALID_STAGES = [
   { value: 'new_lead', label: 'New Lead' },
-  { value: 'contacted', label: 'Contacted' },
-  { value: 'quote_sent', label: 'Quote Sent' },
+  { value: 'contacted', label: 'Quoted/Contacted' },
   { value: 'inspection_scheduled', label: 'Inspection Scheduled' },
-  { value: 'inspection_confirmed', label: 'Inspection Confirmed' },
+  { value: 'inspection_confirmed', label: 'Pending Acceptance' },
   { value: 'converted', label: 'Converted' },
   { value: 'lost', label: 'Lost' },
 ];
+const getCanonicalStage = (stage) => (stage === 'quote_sent' ? 'inspection_confirmed' : stage);
 
 export default function StageUpdateButton({ leadId, currentStage, onStageUpdated }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -59,7 +58,8 @@ export default function StageUpdateButton({ leadId, currentStage, onStageUpdated
     }
   };
 
-  const currentStageLabel = VALID_STAGES.find(s => s.value === currentStage)?.label || currentStage;
+  const canonicalCurrentStage = getCanonicalStage(currentStage);
+  const currentStageLabel = VALID_STAGES.find(s => s.value === canonicalCurrentStage)?.label || canonicalCurrentStage;
 
   return (
     <DropdownMenu>
@@ -77,11 +77,11 @@ export default function StageUpdateButton({ leadId, currentStage, onStageUpdated
           <DropdownMenuItem
             key={stage.value}
             onClick={() => handleStageChange(stage.value)}
-            disabled={stage.value === currentStage || isLoading}
-            className={stage.value === currentStage ? 'opacity-50' : ''}
+            disabled={stage.value === canonicalCurrentStage || isLoading}
+            className={stage.value === canonicalCurrentStage ? 'opacity-50' : ''}
           >
             {stage.label}
-            {stage.value === currentStage && <span className="ml-auto text-xs text-gray-400">current</span>}
+            {stage.value === canonicalCurrentStage && <span className="ml-auto text-xs text-gray-400">current</span>}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

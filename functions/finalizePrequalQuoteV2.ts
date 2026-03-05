@@ -464,6 +464,124 @@ Deno.serve(async (req) => {
       }
     }
 
+    if (!quoteRequest) {
+      return json200({
+        success: false,
+        error: 'Invalid or expired token',
+        code: 'TOKEN_NOT_FOUND',
+    // Final fallback: attempt to recover contact from linked Lead.
+    if ((!email || email === 'guest@breezpoolcare.com') && leadId) {
+      try {
+        const leadRows = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
+        const lead = leadRows?.[0] || null;
+        if (lead) {
+          if ((!email || email === 'guest@breezpoolcare.com') && lead.email) {
+            email = String(lead.email).trim().toLowerCase();
+          }
+          if (!firstName && lead.firstName) {
+            firstName = String(lead.firstName).trim() || null;
+          }
+
+          const patch = {};
+          if (email && quoteRequest?.email !== email) patch.email = email;
+          if (firstName && quoteRequest?.firstName !== firstName) patch.firstName = firstName;
+          if (quoteRequest?.id && Object.keys(patch).length > 0) {
+            await base44.asServiceRole.entities.QuoteRequests.update(quoteRequest.id, patch);
+            console.log('FPQ_V2_REPAIRED_FROM_LEAD', { token: token.trim().slice(0, 8), repaired: Object.keys(patch) });
+          }
+        }
+      } catch (leadRepairErr) {
+        console.warn('FPQ_V2_REPAIR_FROM_LEAD_FAILED', { error: leadRepairErr.message, token: token.trim().slice(0, 8) });
+      }
+    }
+
+    // Validate that email is present and normalize placeholders
+    if (!email || email === 'guest@breezpoolcare.com') {
+      return json200({
+        success: false,
+        error: 'Email is required (from payload, token, or quote snapshot)',
+        code: 'INCOMPLETE_DATA',
+        build: BUILD
+      });
+    }
+    email = email.trim().toLowerCase();
+
+
+    const sendQuoteReadyEmail = async ({ quoteToken, summary, targetLeadId }) => {
+      try {
+        const appOrigin = getAppOrigin(req);
+        const scheduleLink = `${appOrigin}/ScheduleInspection?token=${encodeURIComponent(quoteToken.trim())}`;
+        const monthlyText = summary?.monthlyPrice || 'TBD';
+        const oneTimeText = summary?.oneTimeFees ? `\n• One-time fees: ${summary.oneTimeFees}` : '';
+        const emailBody = `Hi ${firstName || 'there'},\n\nYour Breez quote is ready.\n\n• Monthly: ${monthlyText}\n• Frequency: ${summary?.visitFrequency || 'Weekly'}${oneTimeText}\n\nSchedule your free inspection here:\n${scheduleLink}\n\n— Breez Pool Care`;
+
+        await base44.asServiceRole.integrations.Core.SendEmail({
+          to: email,
+          from_name: 'Breez Pool Care',
+          subject: 'Your Breez Quote Is Ready — Schedule Your Free Inspection',
+          body: emailBody
+        });
+
+        if (targetLeadId) {
+          try {
+            const leads = await base44.asServiceRole.entities.Lead.filter({ id: targetLeadId }, null, 1);
+            const lead = leads?.[0] || null;
+            if (lead) {
+              const notes = `${lead.notes || ''}\n[QUOTE_EMAIL_SENT] ${new Date().toISOString()}`.trim();
+              await base44.asServiceRole.entities.Lead.update(targetLeadId, { notes });
+            }
+          } catch (noteErr) {
+            console.warn('FPQ_V2_QUOTE_EMAIL_NOTE_FAILED', { error: noteErr.message });
+          }
+        }
+
+        console.log('FPQ_V2_QUOTE_EMAIL_SENT', { leadId: targetLeadId || null, token: quoteToken.trim().slice(0, 8) });
+      } catch (emailErr) {
+        console.warn('FPQ_V2_QUOTE_EMAIL_FAILED', { error: emailErr.message, token: quoteToken.trim().slice(0, 8) });
+      }
+    };
+
+    // Normalize user-provided contact input before attempting fallbacks.
+    if (typeof email === 'string') {
+      const trimmedEmail = email.trim().toLowerCase();
+      email = trimmedEmail || null;
+    }
+    if (typeof firstName === 'string') {
+      const trimmedName = firstName.trim();
+      firstName = trimmedName || null;
+    }
+
+    // Repair missing QuoteRequests contact fields from latest Quote snapshot before validation.
+    // This avoids blocking tokenized users when QuoteRequests has a placeholder/empty email.
+    if (!email || email === 'guest@breezpoolcare.com') {
+      try {
+        const quotes = await base44.asServiceRole.entities.Quote.filter({ quoteToken: token.trim() }, '-created_date', 1);
+        const latestQuote = quotes?.[0] || null;
+        if (latestQuote) {
+          if ((!email || email === 'guest@breezpoolcare.com') && latestQuote.clientEmail) {
+            email = latestQuote.clientEmail;
+          }
+          if (!firstName && latestQuote.clientFirstName) {
+            firstName = latestQuote.clientFirstName;
+          }
+          if (!leadId && latestQuote.leadId) {
+            leadId = latestQuote.leadId;
+          }
+
+          const patch = {};
+          if (leadId && quoteRequest.leadId !== leadId) patch.leadId = leadId;
+          if (email && quoteRequest.email !== email) patch.email = email;
+          if (firstName && quoteRequest.firstName !== firstName) patch.firstName = firstName;
+          if (Object.keys(patch).length > 0) {
+            await base44.asServiceRole.entities.QuoteRequests.update(quoteRequest.id, patch);
+            console.log('FPQ_V2_REPAIRED_FROM_QUOTE', { token: token.trim().slice(0, 8), repaired: Object.keys(patch) });
+          }
+        }
+      } catch (repairErr) {
+        console.warn('FPQ_V2_REPAIR_FROM_QUOTE_FAILED', { error: repairErr.message, token: token.trim().slice(0, 8) });
+      }
+    }
+
     // Final fallback: attempt to recover contact from linked Lead.
     if ((!email || email === 'guest@breezpoolcare.com') && leadId) {
       try {
