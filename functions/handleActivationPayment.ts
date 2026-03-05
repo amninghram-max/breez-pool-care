@@ -182,7 +182,9 @@ Deno.serve(async (req) => {
     return Response.json({
       success: true,
       message: 'Customer activated successfully',
-      leadId: leadId
+      leadId,
+      firstServiceDate: scheduleResult?.firstServiceDate || null,
+      scheduledDayOfWeek: scheduleResult?.scheduledDayOfWeek || null,
     });
 
   } catch (error) {
