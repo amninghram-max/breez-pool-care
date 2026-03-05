@@ -31,11 +31,18 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Lead has no email' }, { status: 400 });
     }
 
-    // Derive app origin from request headers
-    const proto = req.headers.get('x-forwarded-proto') ?? 'https';
-    const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host') ?? '';
-    const appOrigin = `${proto}://${host}`;
+    // Derive app origin — prefer PUBLIC_APP_URL env var, fallback to request headers
+    const publicAppUrl = Deno.env.get('PUBLIC_APP_URL');
+    let appOrigin;
+    if (publicAppUrl) {
+      appOrigin = publicAppUrl.replace(/\/$/, '');
+    } else {
+      const proto = req.headers.get('x-forwarded-proto') ?? 'https';
+      const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host') ?? '';
+      appOrigin = `${proto}://${host}`;
+    }
     const acceptanceUrl = `${appOrigin}/Activate?leadId=${leadId}`;
+    console.log(`[sendAcceptanceLink] acceptanceUrl: ${acceptanceUrl}`);
 
     const firstName = lead.firstName || 'there';
 
