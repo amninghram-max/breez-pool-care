@@ -33,6 +33,10 @@ export default function PaymentSuccess() {
           setError(response.data.error);
         }
 
+        if (response.data.firstServiceDate) {
+          setFirstServiceDate(response.data.firstServiceDate);
+        }
+
         setProcessing(false);
       } catch (err) {
         setError(err.message || 'Failed to process activation');
