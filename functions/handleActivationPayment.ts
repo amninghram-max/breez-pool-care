@@ -80,10 +80,14 @@ Deno.serve(async (req) => {
       timestamp: new Date().toISOString()
     });
 
-    // Schedule first service (invoke scheduling function)
-    await base44.asServiceRole.functions.invoke('scheduleNewCustomer', {
-      leadId: leadId
-    });
+    // Schedule first service with route-efficient day assignment
+    let scheduleResult = null;
+    try {
+      scheduleResult = await base44.asServiceRole.functions.invoke('scheduleNewCustomer', { leadId });
+      console.log('[handleActivationPayment] scheduleNewCustomer result:', JSON.stringify(scheduleResult));
+    } catch (schedErr) {
+      console.warn('[handleActivationPayment] scheduleNewCustomer failed (non-fatal):', schedErr.message);
+    }
 
     // Send welcome email with payment receipt via Resend
     const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
