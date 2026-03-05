@@ -88,13 +88,6 @@ Deno.serve(async (req) => {
 
     console.log('SFI_V1_ENTRY_VERSION', { requestId, runtimeVersion, token: token ? token.slice(0, 8) : null });
 
-    if (!token || typeof token !== 'string') return json200({ success: false, error: 'token is required', ...meta });
-    if (!firstName || typeof firstName !== 'string' || !firstName.trim()) return json200({ success: false, error: 'firstName is required', ...meta });
-    if (!phone || typeof phone !== 'string' || !phone.trim()) return json200({ success: false, error: 'phone is required', ...meta });
-    if (!serviceAddress || typeof serviceAddress !== 'object') return json200({ success: false, error: 'serviceAddress object is required', ...meta });
-
-    console.log('SFI_V1_ENTRY_VERSION', { runtimeVersion, tokenPrefix: token ? token.slice(0, 8) : null, requestId });
-
     // Validate inputs
     if (!token || typeof token !== 'string') {
       return json200({ success: false, error: 'token is required', ...meta });
@@ -119,8 +112,6 @@ Deno.serve(async (req) => {
       return json200({ success: false, error: 'requestedTimeSlot must be one of: morning, midday, afternoon', ...meta });
     }
 
-    }
-
     const resolveData = await resolveTokenInline(base44, token, requestId);
     if (resolveData?.success !== true || !resolveData.leadId || !resolveData.email) {
       const code = resolveData?.code || 'QUERY_ERROR';
@@ -135,179 +126,28 @@ Deno.serve(async (req) => {
 
     const leadId = resolveData.leadId;
     const finalEmail = email || resolveData.email;
-
-    let existingLead = null;
-    try {
-      existingLead = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
-      if (existingLead && existingLead.length > 0) {
-        const lead = existingLead[0];
-        if (lead.inspectionScheduled === true && lead.inspectionEventId) {
-          return json200({
-            success: true,
-            alreadyScheduled: true,
-            scheduledDate: lead.requestedInspectionDate,
-            timeWindow: lead.requestedInspectionTime,
-            email: finalEmail,
-            firstName: lead.firstName || firstName,
-            ...meta
-          });
-        }
-    }
-
-    const resolveData = await resolveTokenInline(base44, token, requestId);
-    if (resolveData?.success !== true || !resolveData.leadId || !resolveData.email) {
-      const code = resolveData?.code || 'QUERY_ERROR';
-      const errorMap = {
-        TOKEN_NOT_FOUND: 'Invalid or expired token',
-        INCOMPLETE_DATA: 'Token does not have complete lead information',
-        QUERY_ERROR: 'Failed to resolve token'
-      };
-      console.warn('SFI_V1_RESOLVE_FAILED', { requestId, runtimeVersion, token: token.slice(0, 8), code });
-      return json200({ success: false, code, error: errorMap[code] || (resolveData?.error || 'Failed to resolve token'), ...meta });
-    }
-
-    const leadId = resolveData.leadId;
-    const finalEmail = email || resolveData.email;
-
-    let existingLead = null;
-    try {
-      existingLead = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
-      if (existingLead && existingLead.length > 0) {
-        const lead = existingLead[0];
-        if (lead.inspectionScheduled === true && lead.inspectionEventId) {
-          return json200({
-            success: true,
-            alreadyScheduled: true,
-            scheduledDate: lead.requestedInspectionDate,
-            timeWindow: lead.requestedInspectionTime,
-            email: finalEmail,
-            firstName: lead.firstName || firstName,
-            ...meta
-          });
-        }
-    }
-
-    const resolveData = await resolveTokenInline(base44, token, requestId);
-    if (resolveData?.success !== true || !resolveData.leadId || !resolveData.email) {
-      const code = resolveData?.code || 'QUERY_ERROR';
-      const errorMap = {
-        TOKEN_NOT_FOUND: 'Invalid or expired token',
-        INCOMPLETE_DATA: 'Token does not have complete lead information',
-        QUERY_ERROR: 'Failed to resolve token'
-      };
-      console.warn('SFI_V1_RESOLVE_FAILED', { requestId, runtimeVersion, token: token.slice(0, 8), code });
-      return json200({ success: false, code, error: errorMap[code] || (resolveData?.error || 'Failed to resolve token'), ...meta });
-    }
-
-    const leadId = resolveData.leadId;
-    const finalEmail = email || resolveData.email;
-
-    let existingLead = null;
-    try {
-      existingLead = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
-      if (existingLead && existingLead.length > 0) {
-        const lead = existingLead[0];
-        if (lead.inspectionScheduled === true && lead.inspectionEventId) {
-          return json200({
-            success: true,
-            alreadyScheduled: true,
-            scheduledDate: lead.requestedInspectionDate,
-            timeWindow: lead.requestedInspectionTime,
-            email: finalEmail,
-            firstName: lead.firstName || firstName,
-            ...meta
-          });
-        }
-    }
-
-    const leadId = resolveData.leadId;
-    const finalEmail = email || resolveData.email;
-
-    let existingLead = null;
-    try {
-      existingLead = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
-      if (existingLead && existingLead.length > 0) {
-        const lead = existingLead[0];
-        if (lead.inspectionScheduled === true && lead.inspectionEventId) {
-          return json200({
-            success: true,
-            alreadyScheduled: true,
-            scheduledDate: lead.requestedInspectionDate,
-            timeWindow: lead.requestedInspectionTime,
-            email: finalEmail,
-            firstName: lead.firstName || firstName,
-            ...meta
-          });
-        }
-    }
-
-    const leadId = resolveData.leadId;
-    const finalEmail = email || resolveData.email;
-
-    let existingLead = null;
-    try {
-      existingLead = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
-      if (existingLead && existingLead.length > 0) {
-        const lead = existingLead[0];
-        if (lead.inspectionScheduled === true && lead.inspectionEventId) {
-          return json200({
-            success: true,
-            alreadyScheduled: true,
-            scheduledDate: lead.requestedInspectionDate,
-            timeWindow: lead.requestedInspectionTime,
-            email: finalEmail,
-            firstName: lead.firstName || firstName,
-            ...meta
-          });
-        }
-
-    // Resolve leadId + contact via inlined token resolution (no function invoke)
-    const resolved = await resolveTokenInline(base44.asServiceRole.entities, token.trim());
-    const leadId = resolved.leadId || null;
-    const tokenEmail = resolved.email || null;
-
-    if (!leadId || !tokenEmail) {
-      const code = resolved.code || 'INCOMPLETE_DATA';
-      const ERROR_MESSAGES = {
-        TOKEN_NOT_FOUND:  'Invalid or expired token.',
-        INCOMPLETE_DATA:  'Token does not have complete lead information.',
-        QUERY_ERROR:      'Failed to resolve token.',
-        LEAD_LOOKUP_FAILED: 'Platform temporarily unavailable. Please try again.',
-      };
-      const errorMsg = ERROR_MESSAGES[code] || 'Token does not have complete lead information.';
-      console.warn('SFI_V1_RESOLVE_FAILED', { code, tokenPrefix: token.trim().slice(0, 8), runtimeVersion, requestId });
-      return json200({ success: false, code, error: errorMsg, ...meta });
-    }
-
-    console.log('SFI_V1_TOKEN_RESOLVED', { tokenPrefix: token.trim().slice(0, 8), leadId, requestId });
-
-    const finalEmail = email || tokenEmail;
 
     // IDEMPOTENCY CHECK
     let existingLead = null;
-    if (leadId) {
-      try {
-        existingLead = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
-        if (existingLead && existingLead.length > 0) {
-          const lead = existingLead[0];
-          if (lead.inspectionScheduled === true && lead.inspectionEventId) {
-            console.log('SFI_V1_ALREADY_SCHEDULED', { leadId, eventId: lead.inspectionEventId, requestId });
-            return json200({
-              success: true,
-              alreadyScheduled: true,
-              scheduledDate: lead.requestedInspectionDate,
-              timeWindow: lead.requestedInspectionTime,
-              email: finalEmail,
-              firstName: lead.firstName || firstName,
-              ...meta
-            });
-          }
+    try {
+      existingLead = await base44.asServiceRole.entities.Lead.filter({ id: leadId }, null, 1);
+      if (existingLead && existingLead.length > 0) {
+        const lead = existingLead[0];
+        if (lead.inspectionScheduled === true && lead.inspectionEventId) {
+          console.log('SFI_V1_ALREADY_SCHEDULED', { leadId, eventId: lead.inspectionEventId, requestId });
+          return json200({
+            success: true,
+            alreadyScheduled: true,
+            scheduledDate: lead.requestedInspectionDate,
+            timeWindow: lead.requestedInspectionTime,
+            email: finalEmail,
+            firstName: lead.firstName || firstName,
+            ...meta
+          });
         }
-      } catch (e) {
-        console.warn('SFI_V1_IDEMPOTENCY_CHECK_FAILED', { error: e.message, requestId });
       }
     } catch (e) {
-      console.warn('SFI_V1_IDEMPOTENCY_CHECK_FAILED', { requestId, error: e.message });
+      console.warn('SFI_V1_IDEMPOTENCY_CHECK_FAILED', { error: e.message, requestId });
     }
 
     const timeWindowMap = {
@@ -331,8 +171,6 @@ Deno.serve(async (req) => {
         customerNotes: `Name: ${firstName.trim()}\nPhone: ${phone.trim()}\nEmail: ${finalEmail || 'N/A'}`
       });
     } catch (e) {
-      console.log('SFI_V1_EVENT_CREATED', { eventId: eventCreated.id, leadId, requestId });
-    } catch (e) {
       console.error('SFI_V1_EVENT_CREATION_FAILED', { error: e.message, requestId });
       return json200({ success: false, error: 'Failed to create inspection event', detail: e.message, ...meta });
     }
@@ -351,43 +189,18 @@ Deno.serve(async (req) => {
         serviceAddress: serviceAddressStr,
         ...(shouldSendNotification && { confirmationSentAt: new Date().toISOString() })
       });
-    } catch (e) {
-      console.warn('SFI_V1_LEAD_UPDATE_FAILED', { requestId, error: e.message });
-    }
+      console.log('SFI_V1_LEAD_UPDATED', { leadId, shouldSendNotification, requestId });
 
-    }
-
-    }
-
-    }
-
-    }
-
-    if (leadId) {
-      try {
-        await base44.asServiceRole.entities.Lead.update(leadId, {
-          firstName: firstName.trim(),
-          mobilePhone: phone.trim(),
-          inspectionScheduled: true,
-          inspectionEventId: eventCreated.id,
-          requestedInspectionDate: requestedDate,
-          requestedInspectionTime: requestedTimeSlot,
-          serviceAddress: serviceAddressStr,
-          ...(shouldSendNotification && { confirmationSentAt: new Date().toISOString() })
-        });
-        console.log('SFI_V1_LEAD_UPDATED', { leadId, shouldSendNotification, requestId });
-
-        if (shouldSendNotification) {
-          try {
-            await base44.asServiceRole.entities.Lead.update(leadId, { stage: 'inspection_scheduled' });
-            console.log('SFI_V1_STAGE_PROGRESSED', { leadId, newStage: 'inspection_scheduled', requestId });
-          } catch (stageErr) {
-            console.warn('SFI_V1_STAGE_UPDATE_FAILED', { error: stageErr.message, requestId });
-          }
+      if (shouldSendNotification) {
+        try {
+          await base44.asServiceRole.entities.Lead.update(leadId, { stage: 'inspection_scheduled' });
+          console.log('SFI_V1_STAGE_PROGRESSED', { leadId, newStage: 'inspection_scheduled', requestId });
+        } catch (stageErr) {
+          console.warn('SFI_V1_STAGE_UPDATE_FAILED', { error: stageErr.message, requestId });
         }
-      } catch (e) {
-        console.warn('SFI_V1_LEAD_UPDATE_FAILED', { error: e.message, requestId });
       }
+    } catch (e) {
+      console.warn('SFI_V1_LEAD_UPDATE_FAILED', { error: e.message, requestId });
     }
 
     console.log('SFI_V1_SUCCESS', { leadId, eventId: eventCreated?.id, scheduledDate: requestedDate, requestId });
@@ -400,12 +213,10 @@ Deno.serve(async (req) => {
       firstName,
       eventId: eventCreated?.id,
       shouldSendNotification,
-      shouldSendNotification: shouldSendNotification,
       ...meta
     });
   } catch (error) {
     console.error('SFI_V1_CRASH', { requestId, error: error?.message });
-    console.error('SFI_V1_CRASH', { error: error?.message, requestId });
     return json200({ success: false, error: 'Failed to schedule inspection', detail: error?.message, ...meta });
   }
 });
