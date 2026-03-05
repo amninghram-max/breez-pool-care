@@ -217,10 +217,8 @@ Deno.serve(async (req) => {
 
     // Send admin notification email
     if (RESEND_API_KEY) {
-    if (RESEND_API_KEY) {
       try {
         const resend = new Resend(RESEND_API_KEY);
-        const dateFormatted = new Date(requestedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         const oldDateFormatted = oldDate ? new Date(oldDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : 'Unknown';
         const customerName = `${lead.firstName || ''} ${lead.lastName || ''}`.trim() || lead.email;
 
