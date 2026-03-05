@@ -352,7 +352,7 @@ export default function PublicHome() {
       </section>
 
       {/* ── CPO Badge ── */}
-      <div className="flex justify-center py-10 bg-white">
+      <div className="flex justify-center py-10" style={{ backgroundColor: '#f8fdfd' }}>
         <img
           src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/699a2b2056054b0207cea969/aed629531_CertifiedPoolSpaOperator.png"
           alt="Certified Pool & Spa Operator"
