@@ -172,8 +172,9 @@ export default function LeadsPipeline() {
   };
 
   const getLeadsByStage = (stage) => {
-    if (stage.key === 'inspection_confirmed') {
-      return leads.filter((lead) => lead.stage === 'inspection_confirmed' || lead.stage === 'quote_sent');
+    if (stage.key === 'pending_acceptance') {
+      // Capture all legacy DB values that belong to this bucket
+      return leads.filter((lead) => ['inspection_confirmed', 'quote_sent', 'pending_acceptance'].includes(lead.stage));
     }
     return leads.filter((lead) => lead.stage === stage.key);
   };
