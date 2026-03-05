@@ -10,6 +10,7 @@ export default function PaymentSuccess() {
   const navigate = useNavigate();
   const [processing, setProcessing] = useState(true);
   const [error, setError] = useState(null);
+  const [firstServiceDate, setFirstServiceDate] = useState(null);
 
   useEffect(() => {
     const handleSuccess = async () => {
