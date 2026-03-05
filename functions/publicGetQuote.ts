@@ -137,7 +137,7 @@ async function sendEmail(_base44, { to, subject, body }) {
     from: 'Breez Pool Care <noreply@breezpoolcare.com>',
     to,
     subject,
-    text: body,
+    html: body,
   });
 }
 
