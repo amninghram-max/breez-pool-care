@@ -9,7 +9,7 @@ import { Resend } from 'npm:resend@4.0.0';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { inspectionRecordId, leadId } = await req.json();
+    const { inspectionRecordId, leadId, priceSnapshot } = await req.json();
 
     if (!inspectionRecordId || !leadId) {
       return Response.json({ error: 'inspectionRecordId and leadId required' }, { status: 400 });
@@ -28,11 +28,12 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, alreadySent: true });
     }
 
-    const monthlyRate = record.lockedMonthlyRate || 0;
-    const frequency = record.lockedFrequency || 'weekly';
+    // Use priceSnapshot if provided (from submission), else use locked pricing from finalization
+    const monthlyRate = priceSnapshot?.monthly || record.lockedMonthlyRate || 0;
+    const frequency = priceSnapshot?.frequency || record.lockedFrequency || 'weekly';
     const visitsPerMonth = frequency === 'twice_weekly' ? 8 : 4;
     const perVisit = visitsPerMonth > 0 ? (monthlyRate / visitsPerMonth) : 0;
-    const greenFee = record.greenToCleanFee || 0;
+    const greenFee = priceSnapshot?.oneTimeFees || record.greenToCleanFee || 0;
     const firstName = lead.firstName || 'there';
     const email = lead.email;
 
