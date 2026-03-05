@@ -152,24 +152,27 @@ export default function PublicHome() {
         </div>
       </section>
 
-      {/* ── Trust Strip ── */}
-      <section className="py-8 px-4 border-b border-gray-100 bg-white">
-        <div className="max-w-5xl mx-auto space-y-6">
-          <div className="flex flex-wrap justify-center items-center gap-x-10 gap-y-4">
+      {/* ── Trust / Quick Benefits ── */}
+      <section className="py-12 px-4 border-b border-gray-100 bg-white">
+        <div className="max-w-4xl mx-auto">
+          <div className="grid sm:grid-cols-2 gap-6">
             {[
-            { icon: ShieldCheck, label: 'Licensed & Insured' },
-            { icon: FileText, label: 'Digital Service Logs' },
-            { icon: BarChart2, label: 'Transparent Pricing' },
-            { icon: Lock, label: 'Private & Secure' },
-            { icon: User, label: 'Owner Operated' }].
-            map(({ icon: Icon, label }) =>
-            <div key={label} className="flex items-center gap-2 text-gray-600">
-                <Icon className="w-5 h-5" style={{ color: TEAL }} />
-                <span className="text-sm font-medium">{label}</span>
+              { icon: ShieldCheck, title: 'No more dangerous chemicals.', desc: 'We bring what\'s needed and apply it safely.' },
+              { icon: Clock, title: 'Get your time back.', desc: 'Stop spending weekends brushing, vacuuming, and guessing.' },
+              { icon: Droplets, title: 'Swim with confidence.', desc: 'Your water is tested and balanced by a pro—consistently.' },
+              { icon: Wrench, title: 'Reduce costly surprises.', desc: 'Stable chemistry and routine checks help prevent damage and catch problems early.' },
+            ].map(({ icon: Icon, title, desc }) =>
+              <div key={title} className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: '#e8f8f9' }}>
+                  <Icon className="w-4 h-4" style={{ color: TEAL }} />
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-900">{title}</span>{' '}
+                  <span className="text-gray-500 text-sm">{desc}</span>
+                </div>
               </div>
             )}
           </div>
-
         </div>
       </section>
 
