@@ -256,21 +256,35 @@ export default function Agreements() {
         </CardContent>
       </Card>
 
-      {/* CTA Button */}
-      <Button
-        onClick={handleAgreeToAll}
-        disabled={loading}
-        className="w-full h-12 text-lg bg-teal-600 hover:bg-teal-700 text-white"
-      >
-        {loading ? (
-          <>
-            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-            Saving...
-          </>
-        ) : (
-          'Agree to All & Continue'
-        )}
-      </Button>
+      {/* CTA Buttons */}
+      <div className="space-y-3">
+        <Button
+          onClick={() => {
+            handleQuickAgree();
+            // Small delay to ensure state updates before calling handler
+            setTimeout(handleAgreeToAll, 0);
+          }}
+          disabled={loading}
+          className="w-full h-12 text-lg bg-teal-600 hover:bg-teal-700 text-white"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            'Agree & Continue'
+          )}
+        </Button>
+        <Button
+          onClick={handleAgreeToAll}
+          disabled={loading || !agreed.serviceAgreement || !agreed.privacyPolicy}
+          variant="outline"
+          className="w-full h-12 text-lg"
+        >
+          Continue with My Selections
+        </Button>
+      </div>
 
       <p className="text-xs text-gray-500 text-center mt-4">
         You can cancel your service anytime at the end of your billing cycle.
