@@ -555,7 +555,7 @@ function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit
                 <p className="text-xs text-gray-400 mt-1">📧 {lastEmailSent}</p>
               )}
             </div>
-            {!lead.isEligible && <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-1" />}
+
           </div>
         </div>
 
@@ -676,7 +676,7 @@ function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit
                   </Badge>
                 )}
                 <span className="text-xs text-gray-500">{timeStr}</span>
-                {!lead.isEligible && <AlertCircle className="w-3 h-3 text-red-600" />}
+
               </div>
             </div>
           </div>
@@ -861,18 +861,7 @@ function LeadDetailModal({ lead, onClose, onUpdate, onSendAcceptance, onRemoved 
             </div>
           </div>
 
-          {/* Eligibility Status */}
-          <div>
-            <h3 className="font-semibold mb-3">Eligibility Status</h3>
-            {lead.isEligible ? (
-              <Badge className="bg-green-100 text-green-800">✅ Eligible for Service</Badge>
-            ) : (
-              <div className="space-y-2">
-                <Badge className="bg-red-100 text-red-800">❌ Not Eligible</Badge>
-                <p className="text-sm text-gray-600">{lead.disqualificationReason}</p>
-              </div>
-            )}
-          </div>
+
 
           {/* Pool Details */}
           <div>
