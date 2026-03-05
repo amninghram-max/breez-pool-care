@@ -9,18 +9,12 @@ Deno.serve(async (req) => {
     let isEligible = true;
     let disqualificationReason = '';
 
-    if (leadData.poolType === 'above_ground') {
-      isEligible = false;
-      disqualificationReason = 'Above-ground pools are not currently serviced.';
-    } else if (leadData.poolSurface === 'fiberglass' || leadData.poolSurface === 'vinyl') {
+    if (leadData.poolSurface === 'fiberglass' || leadData.poolSurface === 'vinyl') {
       isEligible = false;
       disqualificationReason = `${leadData.poolSurface} pool surfaces are not currently serviced.`;
     } else if (leadData.filterType === 'de') {
       isEligible = false;
       disqualificationReason = 'DE filters are not currently serviced.';
-    } else if (leadData.sanitizerType === 'mineral') {
-      isEligible = false;
-      disqualificationReason = 'Mineral sanitizer systems (non-salt) are not currently serviced.';
     }
 
     // Create lead record — do NOT set stage to inspection_scheduled yet
