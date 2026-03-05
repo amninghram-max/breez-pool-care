@@ -11,9 +11,21 @@ const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
  * 
  * Idempotent: Only sends if quoteEmailSent !== true
  * Sets quoteEmailSent=true and quoteEmailSentAt after successful send
+ * Always displays weekly pricing in email — admins can escalate based on chemical trends.
  */
 
-import { getAppOrigin } from './_getAppOrigin.js';
+function getAppOrigin(req) {
+  const publicAppUrl = Deno.env.get("PUBLIC_APP_URL");
+  if (publicAppUrl) {
+    try {
+      const u = new URL(publicAppUrl);
+      return `${u.protocol}//${u.host}`;
+    } catch {}
+  }
+  const proto = req.headers.get("x-forwarded-proto") ?? "https";
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "localhost";
+  return `${proto}://${host}`;
+}
 
 function generateScheduleToken() {
   // Use cryptographically secure random bytes
