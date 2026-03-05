@@ -138,16 +138,12 @@ export default function PublicHome() {
           </div>
 
           <h1 className="text-5xl md:text-6xl font-bold text-gray-900 leading-tight mb-5">
-            Effortless Pool Care.<br />
-            <span style={{ color: TEAL }}>Total Transparency.</span>
+            Stop hauling chemicals.<br />
+            <span style={{ color: TEAL }}>Start enjoying your pool.</span>
           </h1>
 
           <p className="text-xl md:text-2xl text-gray-600 mb-4 max-w-2xl mx-auto leading-relaxed">
-            Everything your pool needs — accessible anytime.
-          </p>
-
-          <p className="text-base text-gray-500 mb-10 max-w-xl mx-auto">
-            Free instant quote. No payment info. No commitment.<br className="hidden sm:block" /> Just your first name and email.
+            Breez Pool Care delivers consistent residential pool cleaning, professional water testing, and chemical balancing—so your pool stays clear, comfortable, and swim-ready without the stress.
           </p>
 
           <CTAButtons navigate={navigate} />
