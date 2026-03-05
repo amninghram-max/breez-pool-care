@@ -47,7 +47,7 @@ export default function Activate() {
     const doLink = async () => {
       setStatus('linking');
       try {
-        const res = await base44.functions.invoke('linkUserToLead', { leadId });
+        const res = await base44.functions.invoke('linkUserToLead', { leadId, role: 'customer' });
 
         if (!res.data?.ok) {
           if (res.data?.error === 'role_not_allowed') {
@@ -59,8 +59,8 @@ export default function Activate() {
           return;
         }
 
-        // Redirect to PaymentSetup to complete activation
-        navigate(createPageUrl('PaymentSetup'), { replace: true });
+        // Redirect to Agreements page
+        navigate(createPageUrl('Agreements') + (leadId ? `?inspectionId=${leadId}` : ''), { replace: true });
       } catch (err) {
         console.error('Activate error:', err);
         setErrorMsg(err.message || 'Something went wrong. Please try again or contact support.');
@@ -113,16 +113,17 @@ export default function Activate() {
       await base44.auth.verifyOtp({ email, otpCode });
       // Log in after OTP verified
       await base44.auth.loginViaEmailPassword(email, password);
-      // Link to lead immediately
+      // Link to lead with customer role
       if (leadId) {
-        const res = await base44.functions.invoke('linkUserToLead', { leadId });
+        const res = await base44.functions.invoke('linkUserToLead', { leadId, role: 'customer' });
         if (!res.data?.ok) {
           setAuthError(res.data?.error === 'role_not_allowed' ? 'This account cannot be linked.' : 'Failed to link account.');
           setAuthLoading(false);
           return;
         }
       }
-      queryClient.invalidateQueries({ queryKey: ['activateUser'] });
+      // Navigate to Agreements page after successful link
+      navigate(createPageUrl('Agreements') + (leadId ? `?inspectionId=${leadId}` : ''), { replace: true });
     } catch (err) {
       setAuthError(err.message || 'Verification failed. Please check your code.');
     } finally {
