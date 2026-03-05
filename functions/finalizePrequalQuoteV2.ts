@@ -273,10 +273,10 @@ Deno.serve(async (req) => {
     // Run pricing engine
     let quoteResult = null;
     try {
-      const calcRes = await base44.asServiceRole.functions.invoke('calculateQuoteOnly', { prequalAnswers, settings });
+      const calcRes = await base44.asServiceRole.functions.invoke('calculateQuoteOnly', { questionnaireData: prequalAnswers });
       const calcData = calcRes?.data ?? calcRes;
-      if (calcData?.success) {
-        quoteResult = calcData;
+      if (calcData?.success && calcData?.quote) {
+        quoteResult = calcData.quote;
       }
     } catch (e) {
       console.warn('FPQ_V3_CALC_FAILED', { error: e.message });
