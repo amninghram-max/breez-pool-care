@@ -215,7 +215,7 @@ export default function Layout({ children, currentPageName }) {
   }
 
   // Public pages: PublicHome, PreQualification, QuoteView — allow unauthenticated access
-  const publicPages = ['PublicHome', 'PreQualification', 'QuoteView', 'ScheduleInspection'];
+  const publicPages = ['PublicHome', 'PreQualification', 'QuoteView', 'ScheduleInspection', 'RescheduleInspection'];
   const isPublicPage = publicPages.includes(currentPageName);
 
   // Minimal layout for Activate page - no header/sidebar chrome
