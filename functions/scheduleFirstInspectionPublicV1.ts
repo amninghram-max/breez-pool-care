@@ -3,21 +3,6 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 /**
  * scheduleFirstInspectionPublicV1
  * Public endpoint to schedule an inspection via token (no login required).
- */
-
-const BUILD = "SFI-V1-2026-03-04-F";
- */
-
-const BUILD = "SFI-V1-2026-03-04-F";
- */
-
-const BUILD = "SFI-V1-2026-03-04-F";
- */
-
-const BUILD = "SFI-V1-2026-03-04-F";
- */
-
-const BUILD = "SFI-V1-2026-03-04-F";
  * IDEMPOTENT: Checks for existing inspection scheduling and returns cached state.
  * Side effects (email, stage update) only occur on first scheduling.
  *
@@ -26,55 +11,6 @@ const BUILD = "SFI-V1-2026-03-04-F";
  */
 
 const BUILD = "SFI-V1-2026-03-04-F";
-
-// Inlined token resolution (mirrors resolveQuoteTokenPublicV1 logic — no function invoke)
-async function resolveTokenInline(entities, token) {
-  const cleanToken = token.trim();
-  let request = null;
-  try {
-    const rows = await entities.QuoteRequests.filter({ token: cleanToken }, null, 1);
-    if (rows && rows.length > 0) request = rows[0];
-  } catch (e) {
-    return { code: 'LEAD_LOOKUP_FAILED', error: 'Platform temporarily unavailable' };
-  }
-  if (!request) return { code: 'TOKEN_NOT_FOUND', error: 'Token not found or invalid' };
-
-  let leadId = request.leadId || null;
-  let email = request.email || null;
-  let firstName = request.firstName || null;
-  if (email === 'guest@breezpoolcare.com') email = null;
-
-  if (!leadId) {
-    try {
-      const quotes = await entities.Quote.filter({ quoteToken: cleanToken }, '-created_date', 1);
-      if (quotes && quotes.length > 0 && quotes[0].leadId) {
-        leadId = quotes[0].leadId;
-        if (!email) email = quotes[0].clientEmail || null;
-        if (!firstName) firstName = quotes[0].clientFirstName || null;
-        try {
-          const repairFields = { leadId };
-          if (!request.email || request.email === 'guest@breezpoolcare.com') repairFields.email = email;
-          if (!request.firstName) repairFields.firstName = firstName;
-          await entities.QuoteRequests.update(request.id, repairFields);
-        } catch (_) {}
-      }
-    } catch (_) {}
-  }
-
-  if (leadId) {
-    try {
-      const leadRows = await entities.Lead.filter({ id: leadId }, null, 1);
-      const lead = leadRows?.[0];
-      // Deleted or missing lead → INCOMPLETE_DATA (no email rebound)
-      if (!lead || lead.isDeleted === true) leadId = null;
-    } catch (e) {
-      return { code: 'QUERY_ERROR', error: 'Failed to resolve token' };
-    }
-  }
-
-  if (!leadId || !email) return { code: 'INCOMPLETE_DATA', error: 'Token does not have complete lead information' };
-  return { leadId, email, firstName };
-}
 
 const json200 = (data) => new Response(
   JSON.stringify(data),
