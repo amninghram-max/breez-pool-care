@@ -59,12 +59,8 @@ export default function Activate() {
           return;
         }
 
-        setStatus('success');
-
-        // Brief pause so user sees success, then navigate
-        setTimeout(() => {
-          navigate(createPageUrl('ClientHome'), { replace: true });
-        }, 1500);
+        // Redirect to PaymentSetup to complete activation
+        navigate(createPageUrl('PaymentSetup'), { replace: true });
       } catch (err) {
         console.error('Activate error:', err);
         setErrorMsg(err.message || 'Something went wrong. Please try again or contact support.');
