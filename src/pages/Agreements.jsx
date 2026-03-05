@@ -2,22 +2,38 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CheckCircle2, FileText, Shield, AlertTriangle, DollarSign } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Eye, Loader2, CheckCircle2 } from 'lucide-react';
+import AgreementModal from '@/components/agreements/AgreementModal';
+import {
+  AGREEMENT_ITEMS,
+  AGREEMENT_CONTENT,
+  AGREEMENT_VERSIONS,
+} from '@/components/agreements/agreementContent';
 
 export default function Agreements() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [accepted, setAccepted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [selectedAgreement, setSelectedAgreement] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [validationError, setValidationError] = useState(null);
 
-  // Support ?inspectionId=... param for post-inspection flow
+  // Agreement state
+  const [agreed, setAgreed] = useState({
+    serviceAgreement: false,
+    privacyPolicy: false,
+    photoConsent: false,
+  });
+
   const urlParams = new URLSearchParams(window.location.search);
   const inspectionId = urlParams.get('inspectionId');
 
+  // Fetch user and lead
   const { data: user } = useQuery({
     queryKey: ['user'],
     queryFn: () => base44.auth.me(),
@@ -32,167 +48,232 @@ export default function Agreements() {
     enabled: !!user,
   });
 
-  // Load inspection record if we have an inspectionId (post-inspection flow)
-  const { data: inspectionRecord } = useQuery({
-    queryKey: ['inspectionRecord', inspectionId],
-    queryFn: () => base44.entities.InspectionRecord.get(inspectionId),
-    enabled: !!inspectionId,
-  });
-
-  const acceptAgreementsMutation = useMutation({
-    mutationFn: async () => {
-      const timestamp = new Date().toISOString();
-      await base44.entities.Lead.update(lead.id, {
-        agreementsAcceptedAt: timestamp,
-        agreementsAccepted: true,
-        stage: 'quote_sent',
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['myLead'] });
-      navigate(createPageUrl('PaymentSetup') + (inspectionId ? `?inspectionId=${inspectionId}` : ''));
-    },
-  });
-
-  // Determine pricing source: locked inspection record or legacy quote
-  const lockedRate = inspectionRecord?.lockedMonthlyRate || null;
-  const lockedFrequency = inspectionRecord?.lockedFrequency || 'weekly';
-  const greenFee = inspectionRecord?.greenToCleanFee || 0;
-  const visitsPerMonth = lockedFrequency === 'twice_weekly' ? 8 : 4;
-  const perVisit = lockedRate ? (lockedRate / visitsPerMonth) : null;
-  const firstMonthTotal = lockedRate ? lockedRate + greenFee : null;
-  const isGreen = inspectionRecord?.confirmedPoolCondition === 'green';
-
-  const agreements = [
-    { title: 'Terms of Service', description: 'Our standard service terms and conditions', icon: FileText, required: true },
-    { title: 'Privacy Policy', description: 'How we handle your personal information', icon: Shield, required: true },
-    { title: 'Service Disclaimers', description: 'Chemical safety and pool maintenance disclaimers', icon: AlertTriangle, required: true },
-    { title: 'Liability & Damage Exclusions', description: 'Equipment damage, chemical damage, and liability limits', icon: AlertTriangle, required: true },
-    { title: 'Photo & Media Consent', description: 'Service documentation and marketing photos', icon: FileText, required: false },
-    { title: 'Billing Rules', description: 'Monthly prepay, AutoPay discount, grace periods, suspensions', icon: FileText, required: true },
-  ];
-
-  if (isGreen) {
-    agreements.push({
-      title: 'Green-to-Clean Recovery Agreement',
-      description: 'Multi-visit treatment plan and expectations for your pool recovery',
-      icon: AlertTriangle,
-      required: true,
-    });
+  // If already agreed with same versions, skip to payment setup
+  if (lead?.agreementsAccepted && lead?.agreementsAcceptedAt) {
+    const alreadyAgreed =
+      lead.agreementsAccepted === true;
+    if (alreadyAgreed) {
+      navigate(
+        createPageUrl('PaymentSetup') +
+          (inspectionId ? `?inspectionId=${inspectionId}` : ''),
+        { replace: true }
+      );
+      return null;
+    }
   }
 
   if (!user || !lead) {
-    return <div className="flex items-center justify-center min-h-screen"><p className="text-gray-500">Loading...</p></div>;
-  }
-
-  if (lead.agreementsAccepted) {
     return (
-      <div className="max-w-3xl mx-auto py-12">
-        <Alert>
-          <CheckCircle2 className="h-4 w-4" />
-          <AlertDescription>You've already accepted the agreements. Proceeding to payment setup...</AlertDescription>
-        </Alert>
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-gray-500">Loading...</p>
       </div>
     );
   }
 
+  const handleViewAgreement = (itemId) => {
+    const contentKey = itemId;
+    setSelectedAgreement(AGREEMENT_CONTENT[contentKey]);
+    setIsModalOpen(true);
+  };
+
+  const handleAgreeToAll = async () => {
+    // Validate required agreements
+    if (!agreed.serviceAgreement || !agreed.privacyPolicy) {
+      setValidationError('Please agree to the required agreements to continue.');
+      return;
+    }
+
+    setValidationError(null);
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Create/upsert AgreementAcceptance record
+      const ipAddress = await (async () => {
+        try {
+          const res = await fetch('https://api.ipify.org?format=json');
+          const data = await res.json();
+          return data.ip || null;
+        } catch {
+          return null;
+        }
+      })();
+
+      const userAgent = navigator.userAgent;
+
+      // Check if acceptance record already exists
+      const existing = await base44.entities.AgreementAcceptance.filter({
+        leadId: lead.id,
+        versionServiceAgreement: AGREEMENT_VERSIONS.serviceAgreement,
+        versionPrivacyPolicy: AGREEMENT_VERSIONS.privacyPolicy,
+        versionPhotoConsent: AGREEMENT_VERSIONS.photoConsent,
+      });
+
+      if (existing.length > 0) {
+        // Update existing record
+        await base44.entities.AgreementAcceptance.update(existing[0].id, {
+          agreedToServiceAgreement: agreed.serviceAgreement,
+          agreedToPrivacyPolicy: agreed.privacyPolicy,
+          photoConsent: agreed.photoConsent,
+          acceptedAt: new Date().toISOString(),
+          ipAddress,
+          userAgent,
+        });
+      } else {
+        // Create new record
+        await base44.entities.AgreementAcceptance.create({
+          leadId: lead.id,
+          email: lead.email,
+          serviceAddress: lead.serviceAddress,
+          agreedToServiceAgreement: agreed.serviceAgreement,
+          agreedToPrivacyPolicy: agreed.privacyPolicy,
+          photoConsent: agreed.photoConsent,
+          acceptedAt: new Date().toISOString(),
+          versionServiceAgreement: AGREEMENT_VERSIONS.serviceAgreement,
+          versionPrivacyPolicy: AGREEMENT_VERSIONS.privacyPolicy,
+          versionPhotoConsent: AGREEMENT_VERSIONS.photoConsent,
+          ipAddress,
+          userAgent,
+        });
+      }
+
+      // Update lead to mark agreements as accepted
+      await base44.entities.Lead.update(lead.id, {
+        agreementsAccepted: true,
+        agreementsAcceptedAt: new Date().toISOString(),
+      });
+
+      // Navigate to PaymentSetup
+      navigate(
+        createPageUrl('PaymentSetup') +
+          (inspectionId ? `?inspectionId=${inspectionId}` : '')
+      );
+    } catch (err) {
+      console.error('Agreement acceptance error:', err);
+      setError(err.message || 'Failed to save agreements. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4">
-      {/* Header */}
+    <div className="max-w-3xl mx-auto py-8 px-4">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-3">Welcome to Breez Pool Care</h1>
-        <p className="text-lg text-gray-600">Review and accept your service agreement to get started</p>
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-teal-100 rounded-full mb-4">
+          <CheckCircle2 className="w-8 h-8 text-teal-600" />
+        </div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Legal Agreements</h1>
+        <p className="text-lg text-gray-600">
+          Please review and agree to our terms before continuing
+        </p>
       </div>
 
-      {/* Pricing Summary (when coming from finalized inspection) */}
-      {lockedRate && (
-        <Card className="mb-8 border-2 border-teal-200 bg-teal-50/30">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-teal-800">
-              <DollarSign className="w-5 h-5" />
-              Your Locked Service Rate
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Monthly Service Rate</span>
-              <span className="font-bold text-lg text-gray-900">${lockedRate.toFixed(2)}/month</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Average per visit</span>
-              <span className="font-semibold text-gray-700">approximately ${perVisit.toFixed(2)}</span>
-            </div>
-            {greenFee > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Green-to-Clean Recovery (first month, one-time)</span>
-                <span className="font-semibold text-orange-700">${greenFee.toFixed(2)}</span>
+      {/* Agreement Items */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Required & Optional Agreements</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {AGREEMENT_ITEMS.map((item) => (
+            <div key={item.id} className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+              <Checkbox
+                id={item.id}
+                checked={agreed[item.id]}
+                onCheckedChange={(checked) =>
+                  setAgreed((prev) => ({ ...prev, [item.id]: checked }))
+                }
+                className="mt-1 cursor-pointer"
+              />
+              <div className="flex-1">
+                <label htmlFor={item.id} className="cursor-pointer block">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-gray-900">{item.title}</span>
+                    <span
+                      className={`text-xs font-medium px-2 py-1 rounded ${
+                        item.required
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {item.required ? 'Required' : 'Optional'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                </label>
               </div>
-            )}
-            <div className="flex justify-between text-sm font-bold border-t pt-3">
-              <span className="text-gray-700">First month total</span>
-              <span className="text-teal-700 text-lg">${firstMonthTotal.toFixed(2)}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleViewAgreement(item.id)}
+                className="mt-1 text-teal-600 hover:text-teal-700 hover:bg-teal-50"
+              >
+                <Eye className="w-4 h-4 mr-1" />
+                View
+              </Button>
             </div>
-            <p className="text-xs text-gray-400">
-              This rate was locked after your pool inspection. Monthly service recurs automatically until cancelled.
-            </p>
-          </CardContent>
-        </Card>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* Validation Error */}
+      {validationError && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{validationError}</AlertDescription>
+        </Alert>
       )}
 
-      {/* Agreements List */}
-      <div className="space-y-4 mb-8">
-        {agreements.map((agreement, index) => {
-          const Icon = agreement.icon;
-          return (
-            <Card key={index} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-start gap-4">
-                  <div className="p-2 bg-teal-50 rounded-lg">
-                    <Icon className="w-6 h-6 text-teal-600" />
-                  </div>
-                  <div className="flex-1">
-                    <CardTitle className="text-lg mb-1">
-                      {agreement.title}
-                      {agreement.required && <span className="text-red-500 ml-1">*</span>}
-                    </CardTitle>
-                    <p className="text-sm text-gray-600">{agreement.description}</p>
-                  </div>
-                </div>
-              </CardHeader>
-            </Card>
-          );
-        })}
-      </div>
+      {/* Server Error */}
+      {error && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
-      {/* Acceptance Checkbox */}
-      <Card className="border-2 border-teal-500 bg-teal-50/50 mb-6">
+      {/* Summary */}
+      <Card className="mb-6 bg-blue-50 border-blue-200">
         <CardContent className="pt-6">
-          <div className="flex items-start gap-3">
-            <Checkbox id="accept-all" checked={accepted} onCheckedChange={setAccepted} className="mt-1" />
-            <label htmlFor="accept-all" className="text-sm font-medium leading-relaxed cursor-pointer">
-              I have reviewed and accept all required agreements listed above.
-              {isGreen && ' I also accept the Green-to-Clean Recovery Agreement.'}
-              <br />
-              <span className="text-gray-600 font-normal">
-                By checking this box, you acknowledge that you have read and agree to be bound by these terms. Accepted on {new Date().toLocaleDateString()}.
-              </span>
-            </label>
+          <div className="flex gap-3">
+            <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-blue-900">
+              <p className="font-semibold mb-1">By continuing, you agree to:</p>
+              <ul className="list-disc list-inside space-y-1 text-xs">
+                <li>Our Customer Service Agreement with billing & suspension terms</li>
+                <li>Our Privacy Policy</li>
+                {agreed.photoConsent && <li>Photo & media consent for marketing</li>}
+              </ul>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      <div className="flex gap-4">
-        <Button
-          onClick={() => acceptAgreementsMutation.mutate()}
-          disabled={!accepted || acceptAgreementsMutation.isPending}
-          className="flex-1 h-12 text-lg bg-teal-600 hover:bg-teal-700"
-        >
-          {acceptAgreementsMutation.isPending ? 'Processing...' : (
-            <><CheckCircle2 className="w-5 h-5 mr-2" />Accept All and Continue to Payment</>
-          )}
-        </Button>
-      </div>
-      <p className="text-xs text-gray-500 text-center mt-6">Questions? Contact us at (321) 524-3838 before proceeding.</p>
+      {/* CTA Button */}
+      <Button
+        onClick={handleAgreeToAll}
+        disabled={loading}
+        className="w-full h-12 text-lg bg-teal-600 hover:bg-teal-700 text-white"
+      >
+        {loading ? (
+          <>
+            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+            Saving...
+          </>
+        ) : (
+          'Agree to All & Continue'
+        )}
+      </Button>
+
+      <p className="text-xs text-gray-500 text-center mt-4">
+        You can cancel your service anytime at the end of your billing cycle.
+      </p>
+
+      {/* Agreement Modal */}
+      <AgreementModal
+        agreement={selectedAgreement}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 }
