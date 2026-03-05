@@ -129,9 +129,52 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.Lead.update(leadId, leadUpdate);
     }
 
+    // Also mark any open inspection CalendarEvent for this lead as completed (in case calendarEventId wasn't passed)
+    if (!calendarEventId) {
+      const openEvents = await base44.asServiceRole.entities.CalendarEvent.filter(
+        { leadId, eventType: 'inspection', status: 'scheduled' }, '-created_date', 5
+      );
+      if (openEvents?.length > 0) {
+        for (const ev of openEvents) {
+          await base44.asServiceRole.entities.CalendarEvent.update(ev.id, {
+            status: 'completed',
+            completedAt: new Date().toISOString(),
+          });
+        }
+      }
+    }
+
+    // Build a quick price snapshot based on the confirmed inspection data + existing quote
+    let priceSnapshot = null;
+    try {
+      const quotes = await base44.asServiceRole.entities.Quote.filter({ clientEmail: lead?.email }, '-created_date', 1);
+      const latestQuote = quotes?.[0];
+      if (latestQuote) {
+        // Map confirmed chlorination back
+        const sanitizer = confirmedChlorinationMethod === 'saltwater' ? 'saltwater' : 'tablets';
+        const invokeResult = await base44.asServiceRole.functions.invoke('calculateQuoteOnly', {
+          poolSize: confirmedPoolSize || latestQuote.inputPoolSize,
+          poolType: confirmedPoolType || latestQuote.inputPoolType,
+          spaPresent: (confirmedSpaPresent === true || confirmedSpaPresent === 'true') ? 'true' : 'false',
+          enclosure: confirmedEnclosure || latestQuote.inputEnclosure,
+          treesOverhead: confirmedTreesOverhead || latestQuote.inputTreesOverhead,
+          filterType: confirmedFilterType || latestQuote.inputFilterType,
+          chlorinationMethod: sanitizer,
+          useFrequency: confirmedUsageFrequency || latestQuote.inputUseFrequency,
+          petsAccess: latestQuote.inputPetsAccess,
+          petSwimFrequency: latestQuote.inputPetSwimFrequency,
+          poolCondition: confirmedPoolCondition,
+          greenPoolSeverity: greenSeverity || latestQuote.inputGreenPoolSeverity,
+        });
+        priceSnapshot = invokeResult?.monthly ? invokeResult : null;
+      }
+    } catch (e) {
+      console.warn('[submitInspection] priceSnapshot failed (non-fatal):', e.message);
+    }
+
     console.log(`[submitInspection] Success: recordId=${record.id}, leadId=${leadId}, by=${user.email}`);
 
-    return Response.json({ success: true, inspectionRecordId: record.id });
+    return Response.json({ success: true, inspectionRecordId: record.id, priceSnapshot });
   } catch (error) {
     console.error('[submitInspection] error:', error.message, error?.data || '');
     return Response.json({ error: error.message }, { status: 500 });
