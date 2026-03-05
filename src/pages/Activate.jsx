@@ -198,7 +198,7 @@ export default function Activate() {
 
           {/* OTP Step */}
           {otpStep ? (
-            <form onSubmit={handleOtpVerify} className="space-y-4">
+            <form onSubmit={handleOtpVerifyAndLink} className="space-y-4">
               <p className="text-sm text-gray-600 text-center">
                 We sent a verification code to <strong>{email}</strong>. Enter it below.
               </p>
