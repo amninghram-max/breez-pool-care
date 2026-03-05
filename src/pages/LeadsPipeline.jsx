@@ -1057,7 +1057,7 @@ function LeadDetailModal({ lead, onClose, onUpdate, onSendAcceptance, onRemoved 
               </div>
 
               {/* Conversion Actions */}
-              {lead.stage === 'inspection_confirmed' && (
+              {(lead.stage === 'inspection_confirmed' || lead.stage === 'quote_sent' || lead.stage === 'pending_acceptance') && (
                 <Button 
                   onClick={() => onSendAcceptance(lead.id)}
                   className="w-full bg-teal-600 hover:bg-teal-700"
