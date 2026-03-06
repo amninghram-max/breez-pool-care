@@ -238,6 +238,114 @@ export default function ChemistryDashboard() {
   );
 }
 
+// ── Linking field justification ──────────────────────────────────────────────
+// DosePlan is linked to ServiceVisit via ServiceVisit.dosePlanId (a direct ID
+// reference stored on the visit record). ChemistryDashboard already queries
+// ServiceVisit by propertyId. We therefore drive the trend advisory directly
+// off the visit list that is already in scope — pulling dosePlanId from each
+// visit — rather than querying DosePlan by poolId or leadId (those fields exist
+// on DosePlan but the canonical join point in this page is visit.dosePlanId).
+// This avoids any cross-entity query that could mismatch on multi-pool leads.
+// ─────────────────────────────────────────────────────────────────────────────
+const TREND_WINDOW = 5; // look at most recent N visits
+
+function RetestTrendAdvisory({ visits }) {
+  const [expanded, setExpanded] = useState(false);
+
+  // Take the most recent TREND_WINDOW visits that have a linked dosePlanId
+  const windowVisits = visits
+    .filter(v => !!v.dosePlanId)
+    .slice(0, TREND_WINDOW);
+
+  // Fetch all dose plans for those visits in parallel
+  const dosePlanQueries = windowVisits.map(v =>
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useQuery({
+      queryKey: ['dosePlanTrend', v.dosePlanId],
+      queryFn: () => base44.entities.DosePlan.filter({ id: v.dosePlanId }).then(r => r[0] || null),
+      enabled: !!v.dosePlanId,
+    })
+  );
+
+  const allLoaded = dosePlanQueries.every(q => !q.isLoading);
+  const dosePlans = dosePlanQueries.map(q => q.data ?? null);
+
+  const retestRequiredCount = dosePlans.filter(dp => dp?.retestRequired === true).length;
+  const total = windowVisits.length;
+
+  // Not enough data to show anything meaningful
+  if (total < 2) return null;
+
+  const isElevated = retestRequiredCount >= 2;
+
+  // Build per-row breakdown for the audit expansion
+  const breakdown = windowVisits.map((v, i) => ({
+    visitDate: v.visitDate,
+    dosePlanId: v.dosePlanId,
+    retestRequired: dosePlans[i]?.retestRequired ?? null,
+    // RetestRecord linkage: ServiceVisit.retestRecordId if present
+    retestRecordId: v.retestRecordId ?? null,
+  }));
+
+  return (
+    <div className={`rounded-lg border px-4 py-3 text-sm ${
+      isElevated
+        ? 'bg-amber-50 border-amber-200'
+        : 'bg-gray-50 border-gray-200'
+    }`}>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <RefreshCw className={`w-4 h-4 flex-shrink-0 ${isElevated ? 'text-amber-600' : 'text-gray-400'}`} />
+          <span className={`font-medium ${isElevated ? 'text-amber-900' : 'text-gray-700'}`}>
+            {allLoaded
+              ? `Trend: ${retestRequiredCount} of last ${total} visits required retest`
+              : 'Loading trend data…'}
+          </span>
+        </div>
+        {allLoaded && (
+          <button
+            className="text-xs text-indigo-600 hover:text-indigo-800 font-medium whitespace-nowrap"
+            onClick={() => setExpanded(v => !v)}
+          >
+            {expanded ? 'Hide detail' : 'Show detail'}
+          </button>
+        )}
+      </div>
+
+      {expanded && allLoaded && (
+        <div className="mt-3 space-y-1.5 border-t border-amber-100 pt-3">
+          <p className="text-xs text-gray-500 font-medium mb-1 uppercase tracking-wide">Supporting visits (most recent first)</p>
+          {breakdown.map((row, i) => (
+            <div key={i} className="flex items-center gap-3 text-xs text-gray-700">
+              <span className="w-24 shrink-0 text-gray-500">
+                {format(new Date(row.visitDate), 'MMM d, yyyy')}
+              </span>
+              {row.retestRequired === null ? (
+                <span className="text-gray-400 italic">No dose plan</span>
+              ) : row.retestRequired ? (
+                <span className="flex items-center gap-1 text-amber-700">
+                  <AlertCircle className="w-3 h-3" /> Retest required
+                  {row.retestRecordId
+                    ? <span className="text-gray-400 ml-1">· retest recorded</span>
+                    : <span className="text-gray-400 ml-1">· no retest record</span>
+                  }
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 text-green-700">
+                  <CheckCircle2 className="w-3 h-3" /> No retest needed
+                </span>
+              )}
+            </div>
+          ))}
+          <p className="text-[10px] text-gray-400 mt-2 italic">
+            Advisory only · RetestRecord resolution status available in the visit audit chain below
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function VisitRow({ visit }) {
   const [auditOpen, setAuditOpen] = useState(false);
 
