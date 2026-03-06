@@ -125,7 +125,62 @@ export default function PoolVolumeEditor({ leadId, userRole }) {
   };
 
   if (isLoading) return null;
+
+  // No pool and not admin — nothing to show
   if (!pool && !isAdmin) return null;
+
+  // No pool exists — show Create Pool panel for admin/staff
+  if (!pool && isAdmin) {
+    return (
+      <div className="border rounded-lg p-3 bg-amber-50 border-amber-200 space-y-2">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs font-semibold text-amber-800 uppercase tracking-wide">
+            Pool Record
+          </Label>
+          <Badge variant="outline" className="text-xs text-amber-700 border-amber-300">
+            Not Created
+          </Badge>
+        </div>
+        <p className="text-xs text-amber-700">No Pool record exists for this customer.</p>
+        {!showCreatePool ? (
+          <Button size="sm" onClick={() => setShowCreatePool(true)} className="bg-teal-600 hover:bg-teal-700 h-7 text-xs">
+            <Plus className="w-3 h-3 mr-1" /> Create Pool Record
+          </Button>
+        ) : (
+          <div className="space-y-3 pt-2 border-t border-amber-200">
+            <div>
+              <label className="text-xs font-medium text-gray-700 block mb-1">Chlorination Method *</label>
+              <Select value={createForm.chlorinationMethod} onValueChange={(v) => setCreateForm(f => ({ ...f, chlorinationMethod: v }))}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CHLORINATION_OPTIONS.map(o => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-gray-400 mt-1">surfaceType defaults to CONCRETE_PLASTER</p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                className="h-7 text-xs bg-teal-600 hover:bg-teal-700"
+                onClick={() => createPoolMutation.mutate()}
+                disabled={createPoolMutation.isPending}
+              >
+                {createPoolMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Save className="w-3 h-3 mr-1" />}
+                Create
+              </Button>
+              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setShowCreatePool(false)} disabled={createPoolMutation.isPending}>
+                <X className="w-3 h-3 mr-1" /> Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   const currentVolume = pool?.volumeGallons;
   const isConfirmed = currentVolume != null && currentVolume > 0;
