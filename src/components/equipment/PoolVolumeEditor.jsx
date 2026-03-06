@@ -13,11 +13,29 @@ import { toast } from 'sonner';
  * Pool.volumeGallons is the authoritative value used by chemistry suggestion calculations.
  * Save path: direct base44.entities.Pool.update(pool.id, { volumeGallons })
  */
-// Rect uniform-depth: volumeGallons = L * W * D * 7.5
-function calcRect(l, w, d) {
+
+const SHAPES = [
+  { value: 'rect',      label: 'Rectangular' },
+  { value: 'oval',      label: 'Oval' },
+  { value: 'racetrack', label: 'Racetrack / Capsule' },
+];
+
+// All shapes: uniform depth only
+function calcVolume(shape, l, w, d) {
   const L = parseFloat(l), W = parseFloat(w), D = parseFloat(d);
-  if (!L || !W || !D || L <= 0 || W <= 0 || D <= 0) return null;
-  return Math.round(L * W * D * 7.5);
+  if (!L || !W || !D || L <= 0 || W <= 0 || D <= 0) return { gallons: null, error: null };
+  if (shape === 'racetrack' && L < W) {
+    return { gallons: null, error: 'Racetrack requires Length ≥ Width (length is the long axis).' };
+  }
+  let area;
+  if (shape === 'oval') {
+    area = (Math.PI * L * W) / 4;
+  } else if (shape === 'racetrack') {
+    area = ((L - W) * W) + Math.PI * Math.pow(W / 2, 2);
+  } else {
+    area = L * W;
+  }
+  return { gallons: Math.round(area * D * 7.5), error: null };
 }
 
 export default function PoolVolumeEditor({ leadId, userRole }) {
