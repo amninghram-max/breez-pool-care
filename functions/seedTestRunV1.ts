@@ -112,7 +112,8 @@ Deno.serve(async (req) => {
       leadId: normalLead.id,
       email: `test+${runId}@breezpoolcare.com`,
       firstName: 'Test',
-      status: 'SENT'
+      status: 'SENT',
+      prequalAnswers: JSON.stringify(PREQUAL_NORMAL)
     });
 
     // --- Scenario B: Repair fallback path ---
