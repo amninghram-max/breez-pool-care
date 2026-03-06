@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { MapPin, Clock, User, Lock, Navigation } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { MapPin, Clock, User, Lock, Navigation, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function EventDetailsModal({ event, onClose }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -20,6 +21,7 @@ export default function EventDetailsModal({ event, onClose }) {
     accessNotes: event.accessNotes || '',
     customerNotes: event.customerNotes || ''
   });
+  const [reopenSuccess, setReopenSuccess] = useState(false);
   const queryClient = useQueryClient();
 
   const updateEventMutation = useMutation({
@@ -32,6 +34,31 @@ export default function EventDetailsModal({ event, onClose }) {
       onClose();
     }
   });
+
+  const reopenMutation = useMutation({
+    mutationFn: async () => {
+      console.log('[EventDetailsModal] reopen-visit action triggered', { eventId: event.id });
+      const result = await base44.functions.invoke('reopenAccessIssueVisit', {
+        eventId: event.id
+      });
+      console.log('[EventDetailsModal] reopen-visit mutation success', { eventId: event.id, newStatus: result.data?.status });
+      return result.data;
+    },
+    onSuccess: (data) => {
+      console.log('[EventDetailsModal] reopen complete, showing success state', { newStatus: data?.status });
+      queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
+      setReopenSuccess(true);
+      setTimeout(() => onClose(), 2000);
+    },
+    onError: (error) => {
+      console.error('[EventDetailsModal] reopen-visit mutation failed', { error: error?.message });
+    },
+  });
+
+  const handleReopenVisit = () => {
+    console.log('[EventDetailsModal] reopen button clicked, initiating mutation');
+    reopenMutation.mutate();
+  };
 
   const handleSave = () => {
     updateEventMutation.mutate(formData);
@@ -192,6 +219,40 @@ export default function EventDetailsModal({ event, onClose }) {
             )}
           </div>
 
+          {/* Reopen Success State */}
+          {reopenSuccess && (
+            <Card className="border-green-200 bg-green-50">
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-green-900">Visit reopened</p>
+                    <p className="text-sm text-green-800 mt-1">
+                      Technician can now continue service.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Reopen Error State */}
+          {reopenMutation.isError && (
+            <Card className="border-red-200 bg-red-50">
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-red-900">Reopen failed</p>
+                    <p className="text-sm text-red-800 mt-1">
+                      {reopenMutation.error?.message || 'Unable to reopen visit'}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Actions */}
           {isEditing ? (
             <div className="flex gap-2 pt-4 border-t">
@@ -220,7 +281,16 @@ export default function EventDetailsModal({ event, onClose }) {
               </Button>
             </div>
           ) : (
-            <div className="flex gap-2 pt-4 border-t">
+            <div className="flex flex-col gap-2 pt-4 border-t">
+              {event.rescheduleReason === 'access_issue' && event.status === 'scheduled' && !reopenSuccess && (
+                <Button
+                  onClick={handleReopenVisit}
+                  disabled={reopenMutation.isPending}
+                  className="bg-teal-600 hover:bg-teal-700"
+                >
+                  {reopenMutation.isPending ? 'Reopening...' : 'Reopen Visit'}
+                </Button>
+              )}
               <Button variant="outline" onClick={onClose} className="flex-1">
                 Close
               </Button>
