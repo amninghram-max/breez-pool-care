@@ -87,6 +87,8 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
     enabled: !!visitData.poolId
   });
 
+  const [volumeWarning, setVolumeWarning] = useState(null); // null | 'estimated' | 'missing'
+
   const { data: dosePlan, isLoading } = useQuery({
     queryKey: ['dosePlan', visitData.testRecordId],
     queryFn: async () => {
@@ -94,10 +96,17 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
       if (existing[0]) return existing[0];
       const result = await base44.functions.invoke('calculateChemicalSuggestions', {
         poolId: visitData.poolId,
-        testRecordId: visitData.testRecordId,
         readings: visitData.readings
       });
-      return result.data?.dosePlan ?? null;
+      const data = result.data;
+      if (data?.volumeMissing) {
+        setVolumeWarning('missing');
+        return null;
+      }
+      if (data?.volumeConfirmed === false) {
+        setVolumeWarning('estimated');
+      }
+      return data?.dosePlan ?? null;
     },
     enabled: !!visitData.testRecordId && visitData.riskEvents?.length > 0
   });
