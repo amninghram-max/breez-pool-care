@@ -61,13 +61,16 @@ export default function PoolVolumeEditor({ leadId, userRole }) {
 
   const isAdmin = ['admin', 'staff'].includes(userRole);
 
-  const { data: pools = [], isLoading } = useQuery({
+  const { data: poolData = null, isLoading } = useQuery({
     queryKey: ['poolForVolume', leadId],
-    queryFn: () => base44.entities.Pool.filter({ leadId }),
+    queryFn: async () => {
+      const res = await base44.functions.invoke('getPoolForLeadV1', { leadId });
+      return res.data?.pool || null;
+    },
     enabled: !!leadId
   });
 
-  const pool = pools[0] || null;
+  const pool = poolData;
 
   console.log('POOL_VOLUME_EDITOR_DEBUG', { leadId, isLoading, pools, pool });
 
