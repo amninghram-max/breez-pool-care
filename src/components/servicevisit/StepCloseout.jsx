@@ -124,6 +124,14 @@ export default function StepCloseout({ visitData, user }) {
   const [internalNotes, setInternalNotes] = useState('');
   // "completed_now" | "follow_up_triggered" | null
   const [criticalPartialResolution, setCriticalPartialResolution] = useState(null);
+  
+  // Trichlor closeout accounting
+  const [trichlorTabletCount, setTrichlorTabletCount] = useState(
+    visitData.chemicalsAdded?.chlorineTablets || ''
+  );
+  const [trichlorPlacement, setTrichlorPlacement] = useState(
+    visitData.chemicalsAdded?.trichlorPlacement || ''
+  );
 
   const { readings = {}, riskEvents = [], dosePlan, retestResolved, retestReadings = {} } = visitData;
   const chemicalsAdded = dosePlan?.actions?.filter(a => a.applied !== false) || [];
