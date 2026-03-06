@@ -54,12 +54,62 @@ const UnitConversion = {
 
 const formatAmount = (val) => parseFloat(val).toFixed(3).replace(/\.?0+$/, '');
 
-// Pre-apply confirmation modal
+// Pre-apply confirmation modal with unit switching
 function PreApplyModal({ action, actionIndex, onConfirm, onCancel }) {
-  const [amount, setAmount] = useState(action.dosePrimary);
-  const isPartial = parseFloat(amount) < action.dosePrimary;
+  // Determine canonical unit from action
+  const canonicalUnit = action.primaryUnit; // stored canonical: 'gallons' or 'lbs'
+  const canonicalAmount = action.dosePrimary;
+  
+  // Choose default display unit intelligently
+  let defaultDisplayUnit = UnitConversion.getDefaultDisplayUnit(canonicalAmount, canonicalUnit);
+  
+  // Map canonical to display unit names
+  const displayUnitMap = {
+    'gallons': ['gal', 'cup', 'fl_oz'],
+    'lbs': ['lb', 'oz_wt']
+  };
+  const availableDisplayUnits = displayUnitMap[canonicalUnit] || [canonicalUnit];
+  
+  const [displayUnit, setDisplayUnit] = useState(defaultDisplayUnit);
+  const [appliedAmountDisplay, setAppliedAmountDisplay] = useState(
+    UnitConversion[UnitConversion.isLiquidUnit(canonicalUnit) ? 'convertVolume' : 'convertWeight'](
+      canonicalAmount,
+      canonicalUnit,
+      displayUnit
+    )
+  );
 
-  const formatDose = (val) => parseFloat(val).toFixed(3).replace(/\.?0+$/, '');
+  const isPartial = parseFloat(appliedAmountDisplay) < 
+    UnitConversion[UnitConversion.isLiquidUnit(canonicalUnit) ? 'convertVolume' : 'convertWeight'](
+      canonicalAmount, canonicalUnit, displayUnit
+    );
+
+  const handleConfirm = () => {
+    // Convert display input back to canonical for storage
+    const appliedAmountCanonical = UnitConversion[UnitConversion.isLiquidUnit(canonicalUnit) ? 'convertVolume' : 'convertWeight'](
+      parseFloat(appliedAmountDisplay) || canonicalAmount,
+      displayUnit,
+      canonicalUnit
+    );
+    
+    console.log('[PreApplyModal] unit conversion', {
+      displayUnit,
+      appliedDisplay: parseFloat(appliedAmountDisplay),
+      canonicalUnit,
+      appliedCanonical: appliedAmountCanonical
+    });
+    
+    onConfirm({ actionIndex, appliedAmount: appliedAmountCanonical });
+  };
+
+  // Display unit labels for UI
+  const unitLabels = {
+    'gal': 'gallons',
+    'cup': 'cups',
+    'fl_oz': 'fl oz',
+    'lb': 'lbs',
+    'oz_wt': 'oz'
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40">
@@ -76,7 +126,11 @@ function PreApplyModal({ action, actionIndex, onConfirm, onCancel }) {
             {CHEMICAL_LABELS[action.chemicalType] || action.chemicalType}
           </p>
           <p className="text-xs text-teal-700 mt-1">
-            Planned dose: {formatDose(action.dosePrimary)} {action.primaryUnit}
+            Planned dose: {formatAmount(
+              UnitConversion[UnitConversion.isLiquidUnit(canonicalUnit) ? 'convertVolume' : 'convertWeight'](
+                canonicalAmount, canonicalUnit, displayUnit
+              )
+            )} {unitLabels[displayUnit]}
           </p>
         </div>
 
@@ -87,13 +141,37 @@ function PreApplyModal({ action, actionIndex, onConfirm, onCancel }) {
               type="number"
               step="0.001"
               min={0}
-              value={amount}
-              onChange={e => setAmount(e.target.value)}
+              value={appliedAmountDisplay}
+              onChange={e => setAppliedAmountDisplay(e.target.value)}
               className="text-lg font-mono"
             />
-            <span className="text-sm text-gray-500 whitespace-nowrap">{action.primaryUnit}</span>
+            <select
+              value={displayUnit}
+              onChange={e => {
+                const newUnit = e.target.value;
+                // Convert current input to new unit
+                const currentCanonical = UnitConversion[UnitConversion.isLiquidUnit(canonicalUnit) ? 'convertVolume' : 'convertWeight'](
+                  parseFloat(appliedAmountDisplay) || 0,
+                  displayUnit,
+                  canonicalUnit
+                );
+                const newDisplay = UnitConversion[UnitConversion.isLiquidUnit(canonicalUnit) ? 'convertVolume' : 'convertWeight'](
+                  currentCanonical,
+                  canonicalUnit,
+                  newUnit
+                );
+                setDisplayUnit(newUnit);
+                setAppliedAmountDisplay(newDisplay);
+                console.log('[PreApplyModal] unit switched', { from: displayUnit, to: newUnit, newDisplay });
+              }}
+              className="text-sm px-2 py-1 border border-gray-300 rounded bg-white"
+            >
+              {availableDisplayUnits.map(u => (
+                <option key={u} value={u}>{unitLabels[u]}</option>
+              ))}
+            </select>
           </div>
-          {isPartial && parseFloat(amount) > 0 && (
+          {isPartial && parseFloat(appliedAmountDisplay) > 0 && (
             <p className="text-xs text-orange-600 mt-1 flex items-center gap-1">
               <AlertTriangle className="w-3 h-3" />
               Partial apply — reason may be required at closeout
@@ -107,7 +185,7 @@ function PreApplyModal({ action, actionIndex, onConfirm, onCancel }) {
 
         <Button
           className="w-full bg-teal-600 hover:bg-teal-700 h-12"
-          onClick={() => onConfirm({ actionIndex, appliedAmount: parseFloat(amount) || action.dosePrimary })}
+          onClick={handleConfirm}
         >
           Confirm & Apply
         </Button>
