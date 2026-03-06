@@ -281,23 +281,58 @@ Deno.serve(async (req) => {
 
     console.log('SFI_V3_ENTRY', { requestId, leadIdPrefix: leadId.slice(0, 8), tokenPrefix: token.slice(0, 8) });
 
-    // Idempotency check
+    // Idempotency check — return existing appointment without any side effects
     try {
       const existing = await entities.InspectionRecord.filter(
         { leadId, appointmentStatus: { $ne: 'cancelled' } }, '-created_date', 1
       );
       if (existing?.length > 0) {
         const insp = existing[0];
-        console.log('SFI_V3_ALREADY_SCHEDULED', { leadIdPrefix: leadId.slice(0, 8), inspectionId: insp.id });
-        const emailStatus = await sendConfirmationEmail({
-          email: finalEmail, firstName: finalFirstName,
-          inspectionDate: insp.scheduledDate, inspectionTime: insp.timeWindow,
-          token: token.trim(), leadId, entities
+        console.log('SFI_V3_ALREADY_SCHEDULED', { leadIdPrefix: leadId.slice(0, 8), inspectionId: insp.id, requestId });
+        return json200({
+          success: true,
+          alreadyScheduled: true,
+          scheduledDate: insp.scheduledDate,
+          timeWindow: insp.timeWindow,
+          email: finalEmail,
+          firstName: finalFirstName,
+          inspectionId: insp.id,
+          eventId: insp.calendarEventId || null,
+          emailStatus: 'skipped',
+          ...meta
         });
-        return json200({ success: true, alreadyScheduled: true, scheduledDate: insp.scheduledDate, timeWindow: insp.timeWindow, email: finalEmail, firstName: finalFirstName, inspectionId: insp.id, eventId: insp.calendarEventId, emailStatus, ...meta });
       }
     } catch (e) {
       console.warn('SFI_V3_IDEMPOTENCY_CHECK_FAILED', { requestId, error: e.message });
+      // Fall through to normal scheduling — idempotency best-effort only
+    }
+
+    // Secondary fallback: check Lead mirror fields if InspectionRecord query failed
+    try {
+      const leadRows = await entities.Lead.filter({ id: leadId }, null, 1);
+      const lead = leadRows?.[0];
+      if (lead?.inspectionScheduled && lead?.inspectionEventId) {
+        // Verify the event is still active (not cancelled)
+        const evRows = await entities.CalendarEvent.filter({ id: lead.inspectionEventId, status: { $ne: 'cancelled' } }, null, 1);
+        if (evRows?.length > 0) {
+          const ev = evRows[0];
+          console.log('SFI_V3_ALREADY_SCHEDULED_FALLBACK', { leadIdPrefix: leadId.slice(0, 8), eventId: ev.id, requestId });
+          return json200({
+            success: true,
+            alreadyScheduled: true,
+            scheduledDate: ev.scheduledDate,
+            timeWindow: ev.timeWindow,
+            email: finalEmail,
+            firstName: finalFirstName,
+            inspectionId: null,
+            eventId: ev.id,
+            emailStatus: 'skipped',
+            ...meta
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('SFI_V3_IDEMPOTENCY_FALLBACK_FAILED', { requestId, error: e.message });
     }
 
     // Load capacity settings
