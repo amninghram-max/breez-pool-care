@@ -1,5 +1,120 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { computeChemicalCostLines } from './_shared/chemicalCosting.js';
+
+// --- Inlined from functions/shared/chemicalCosting.js (local imports unsupported in Base44 Deno) ---
+const VOLUME_UNITS = new Set(['fl_oz', 'qt', 'gal']);
+const WEIGHT_UNITS = new Set(['oz_wt', 'lb']);
+
+function getUnitDomain(unit) {
+  if (!unit) return null;
+  if (VOLUME_UNITS.has(unit)) return 'volume';
+  if (WEIGHT_UNITS.has(unit)) return 'weight';
+  return null;
+}
+
+function convertUnits(amount, fromUnit, toUnit) {
+  if (!amount || amount === 0) return 0;
+  if (fromUnit === toUnit) return amount;
+  const fromDomain = getUnitDomain(fromUnit);
+  const toDomain = getUnitDomain(toUnit);
+  if (!fromDomain || !toDomain) {
+    throw new Error(`Unrecognized unit: fromUnit=${fromUnit}, toUnit=${toUnit}`);
+  }
+  if (fromDomain !== toDomain) {
+    throw new Error(`Cannot convert between domains: ${fromUnit} (${fromDomain}) → ${toUnit} (${toDomain}). Domain mismatch.`);
+  }
+  if (fromDomain === 'volume') {
+    const toFlOz = { 'fl_oz': amount, 'qt': amount * 32, 'gal': amount * 128 };
+    const result = toFlOz[fromUnit];
+    return result / { 'fl_oz': 1, 'qt': 32, 'gal': 128 }[toUnit];
+  }
+  if (fromDomain === 'weight') {
+    const toOzWt = { 'oz_wt': amount, 'lb': amount * 16 };
+    const result = toOzWt[fromUnit];
+    return result / { 'oz_wt': 1, 'lb': 16 }[toUnit];
+  }
+  throw new Error(`Conversion failed: ${amount} ${fromUnit} → ${toUnit}`);
+}
+
+function computeChemicalCostLines(chemicalsAdded, chemicalCatalogItemsByServiceVisitKey, chemicalCatalogItemsByName) {
+  const lines = [];
+  let totalCostCents = 0;
+  const knownBuckets = ['liquidChlorine', 'acid', 'bakingSoda', 'stabilizer', 'salt', 'chlorineTablets'];
+
+  for (const key of knownBuckets) {
+    const amount = chemicalsAdded[key];
+    if (!amount || parseFloat(amount) === 0) continue;
+    const amountNum = parseFloat(amount);
+    const catalogItem = chemicalCatalogItemsByServiceVisitKey.get(key);
+    if (!catalogItem) {
+      lines.push({ serviceVisitKey: key, catalogItemId: null, catalogName: null, inputAmount: amountNum, inputUnit: null, normalizedAmount: null, costCanonicalUnit: null, unitCostCents: null, lineCostCents: 0, status: 'skipped', reason: 'no_catalog_item' });
+      continue;
+    }
+    let impliedUnit;
+    if (key === 'liquidChlorine' || key === 'acid') { impliedUnit = 'gal'; }
+    else if (['bakingSoda', 'stabilizer', 'salt'].includes(key)) { impliedUnit = 'lb'; }
+    else if (key === 'chlorineTablets') {
+      lines.push({ serviceVisitKey: key, catalogItemId: catalogItem.id, catalogName: catalogItem.name, inputAmount: amountNum, inputUnit: 'unknown', normalizedAmount: null, costCanonicalUnit: catalogItem.costCanonicalUnit, unitCostCents: catalogItem.costPerCanonicalUnitCents, lineCostCents: 0, status: 'skipped', reason: 'ambiguous_unit' });
+      continue;
+    }
+    if (!catalogItem.costCanonicalUnit || catalogItem.costPerCanonicalUnitCents === null || catalogItem.costPerCanonicalUnitCents === undefined) {
+      lines.push({ serviceVisitKey: key, catalogItemId: catalogItem.id, catalogName: catalogItem.name, inputAmount: amountNum, inputUnit: impliedUnit, normalizedAmount: null, costCanonicalUnit: catalogItem.costCanonicalUnit, unitCostCents: catalogItem.costPerCanonicalUnitCents, lineCostCents: 0, status: 'skipped', reason: 'missing_cost_data' });
+      continue;
+    }
+    const impliedDomain = getUnitDomain(impliedUnit);
+    const costDomain = getUnitDomain(catalogItem.costCanonicalUnit);
+    if (impliedDomain !== costDomain) {
+      lines.push({ serviceVisitKey: key, catalogItemId: catalogItem.id, catalogName: catalogItem.name, inputAmount: amountNum, inputUnit: impliedUnit, normalizedAmount: null, costCanonicalUnit: catalogItem.costCanonicalUnit, unitCostCents: catalogItem.costPerCanonicalUnitCents, lineCostCents: 0, status: 'skipped', reason: 'domain_mismatch' });
+      continue;
+    }
+    let normalizedAmount;
+    try { normalizedAmount = convertUnits(amountNum, impliedUnit, catalogItem.costCanonicalUnit); }
+    catch (err) {
+      lines.push({ serviceVisitKey: key, catalogItemId: catalogItem.id, catalogName: catalogItem.name, inputAmount: amountNum, inputUnit: impliedUnit, normalizedAmount: null, costCanonicalUnit: catalogItem.costCanonicalUnit, unitCostCents: catalogItem.costPerCanonicalUnitCents, lineCostCents: 0, status: 'skipped', reason: 'domain_mismatch' });
+      continue;
+    }
+    const lineCostCents = Math.round(normalizedAmount * catalogItem.costPerCanonicalUnitCents);
+    totalCostCents += lineCostCents;
+    lines.push({ serviceVisitKey: key, catalogItemId: catalogItem.id, catalogName: catalogItem.name, inputAmount: amountNum, inputUnit: impliedUnit, normalizedAmount, costCanonicalUnit: catalogItem.costCanonicalUnit, unitCostCents: catalogItem.costPerCanonicalUnitCents, lineCostCents, status: 'costable' });
+  }
+
+  if (chemicalsAdded.other && Array.isArray(chemicalsAdded.other)) {
+    for (const otherEntry of chemicalsAdded.other) {
+      const { name, amount, unit } = otherEntry;
+      if (!name || !amount || parseFloat(amount) === 0) continue;
+      const amountNum = parseFloat(amount);
+      let normalizedUnit = unit;
+      if (unit === 'oz') { normalizedUnit = 'fl_oz'; }
+      const normalizedName = name.trim().toLowerCase();
+      const catalogItem = chemicalCatalogItemsByName.get(normalizedName);
+      if (!catalogItem) {
+        lines.push({ serviceVisitKey: 'other', catalogItemId: null, catalogName: name, inputAmount: amountNum, inputUnit: unit, normalizedAmount: null, costCanonicalUnit: null, unitCostCents: null, lineCostCents: 0, status: 'skipped', reason: 'no_catalog_item' });
+        continue;
+      }
+      if (!catalogItem.costCanonicalUnit || catalogItem.costPerCanonicalUnitCents === null || catalogItem.costPerCanonicalUnitCents === undefined) {
+        lines.push({ serviceVisitKey: 'other', catalogItemId: catalogItem.id, catalogName: catalogItem.name, inputAmount: amountNum, inputUnit: normalizedUnit, normalizedAmount: null, costCanonicalUnit: catalogItem.costCanonicalUnit, unitCostCents: catalogItem.costPerCanonicalUnitCents, lineCostCents: 0, status: 'skipped', reason: 'missing_cost_data' });
+        continue;
+      }
+      const inputDomain = getUnitDomain(normalizedUnit);
+      const costDomain = getUnitDomain(catalogItem.costCanonicalUnit);
+      if (inputDomain !== costDomain) {
+        lines.push({ serviceVisitKey: 'other', catalogItemId: catalogItem.id, catalogName: catalogItem.name, inputAmount: amountNum, inputUnit: normalizedUnit, normalizedAmount: null, costCanonicalUnit: catalogItem.costCanonicalUnit, unitCostCents: catalogItem.costPerCanonicalUnitCents, lineCostCents: 0, status: 'skipped', reason: 'domain_mismatch' });
+        continue;
+      }
+      let normalizedAmount;
+      try { normalizedAmount = convertUnits(amountNum, normalizedUnit, catalogItem.costCanonicalUnit); }
+      catch (err) {
+        lines.push({ serviceVisitKey: 'other', catalogItemId: catalogItem.id, catalogName: catalogItem.name, inputAmount: amountNum, inputUnit: normalizedUnit, normalizedAmount: null, costCanonicalUnit: catalogItem.costCanonicalUnit, unitCostCents: catalogItem.costPerCanonicalUnitCents, lineCostCents: 0, status: 'skipped', reason: 'domain_mismatch' });
+        continue;
+      }
+      const lineCostCents = Math.round(normalizedAmount * catalogItem.costPerCanonicalUnitCents);
+      totalCostCents += lineCostCents;
+      lines.push({ serviceVisitKey: 'other', catalogItemId: catalogItem.id, catalogName: catalogItem.name, inputAmount: amountNum, inputUnit: normalizedUnit, normalizedAmount, costCanonicalUnit: catalogItem.costCanonicalUnit, unitCostCents: catalogItem.costPerCanonicalUnitCents, lineCostCents, status: 'costable' });
+    }
+  }
+
+  return { totalCostCents, lines };
+}
+// --- End inlined helpers ---
 
 Deno.serve(async (req) => {
   try {
