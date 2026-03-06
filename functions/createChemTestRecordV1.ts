@@ -12,7 +12,15 @@ Deno.serve(async (req) => {
 
     // Require provider role
     if (!['admin', 'staff', 'technician'].includes(user.role)) {
-      return Response.json({ ok: false, error: 'Role not allowed' }, { status: 403 });
+      return Response.json({
+        ok: false,
+        error: 'Role not allowed',
+        debug: {
+          userEmail: user?.email || null,
+          userRole: user?.role || null,
+          allowedRoles: ['admin', 'staff', 'technician']
+        }
+      }, { status: 403 });
     }
 
     // Parse payload
