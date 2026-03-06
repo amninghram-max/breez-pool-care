@@ -97,7 +97,10 @@ export default function StepChecklist({ visitData, advance }) {
       <Button
         className="w-full bg-teal-600 hover:bg-teal-700 h-14 text-base"
         disabled={!canAdvance}
-        onClick={() => advance({ servicesPerformed: Array.from(checked) })}
+        onClick={() => {
+          console.log('[StepChecklist] advance clicked with servicesPerformed:', Array.from(checked));
+          advance({ servicesPerformed: Array.from(checked) });
+        }}
       >
         <ChevronRight className="w-5 h-5 mr-2" />
         Tasks Done → Filter PSI
