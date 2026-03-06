@@ -22,9 +22,26 @@ Deno.serve(async (req) => {
 
     // Read pool using service role (bypasses customer-level RLS)
     const pools = await base44.asServiceRole.entities.Pool.filter({ leadId });
-    const pool = pools.length > 0 ? pools[0] : null;
+    let pool = pools.length > 0 ? pools[0] : null;
+    let fallbackMatched = false;
 
-    return Response.json({ ok: true, pool });
+    // Fallback: if filter returned no results, fetch all Pools and find locally
+    if (!pool) {
+      const allPools = await base44.asServiceRole.entities.Pool.list();
+      const foundPool = allPools.find(p => String(p.leadId) === String(leadId));
+      if (foundPool) {
+        pool = foundPool;
+        fallbackMatched = true;
+      }
+    }
+
+    return Response.json({
+      ok: true,
+      requestedLeadId: leadId,
+      filterCount: pools.length,
+      fallbackMatched,
+      pool
+    });
   } catch (error) {
     console.error('getPoolForLeadV1 error:', error);
     return Response.json({ ok: false, error: error.message }, { status: 500 });
