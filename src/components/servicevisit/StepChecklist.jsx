@@ -17,8 +17,15 @@ const CHECKLIST_ITEMS = [
 // Tasks that are always expected — at least these should be checked before proceeding
 const EXPECTED_TASKS = ['skim', 'brush', 'empty_baskets', 'filter_check'];
 
-export default function StepChecklist({ advance }) {
-  const [checked, setChecked] = useState(new Set());
+export default function StepChecklist({ visitData, advance }) {
+  const [checked, setChecked] = useState(() => {
+    // Rehydrate from persisted visitData if available
+    if (visitData?.servicesPerformed && visitData.servicesPerformed.length > 0) {
+      console.log('[StepChecklist] hydrating from visitData.servicesPerformed:', visitData.servicesPerformed);
+      return new Set(visitData.servicesPerformed);
+    }
+    return new Set();
+  });
 
   const toggle = (key) => {
     setChecked(prev => {
