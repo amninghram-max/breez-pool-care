@@ -236,6 +236,14 @@ export default function StepArrive({ visitData, user, advance }) {
             <CheckCircle className="w-4 h-4 text-teal-600 flex-shrink-0" />
             Arrival logged — ready to begin service
           </div>
+
+          {retryingMutation === 'start_visit' && (
+            <div className="flex items-center gap-2 text-sm text-orange-700 font-medium bg-orange-50 rounded-lg px-3 py-2.5 border border-orange-200">
+              <AlertCircle className="w-4 h-4 text-orange-600 flex-shrink-0 animate-pulse" />
+              Connecting to service tools… retrying
+            </div>
+          )}
+
           <Button
             className="w-full bg-teal-600 hover:bg-teal-700 h-14 text-base font-bold"
             disabled={startVisitMutation.isPending}
