@@ -35,6 +35,7 @@ export const PAGE_ACCESS = {
   TechnicianHome: [ROLES.TECHNICIAN, ROLES.STAFF, ROLES.ADMIN],
   TechnicianRoute: [ROLES.TECHNICIAN, ROLES.STAFF, ROLES.ADMIN],
   ServiceVisitEntry: [ROLES.TECHNICIAN, ROLES.STAFF, ROLES.ADMIN],
+  ServiceVisitFlow: [ROLES.TECHNICIAN, ROLES.STAFF, ROLES.ADMIN],
   
   // Staff/Dispatcher pages
   StaffHome: [ROLES.STAFF, ROLES.ADMIN],
