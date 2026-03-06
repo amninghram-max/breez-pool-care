@@ -56,9 +56,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    const tokenA = `test-token-${runId}-A`;
-    const tokenB = `test-token-${runId}-B`;
-
     // --- Scenario A: Normal token path ---
     const normalLead = await entities.Lead.create({
       isTest: true,
