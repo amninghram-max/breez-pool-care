@@ -154,10 +154,18 @@ export default function PoolVolumeEditor({ leadId, userRole }) {
             </button>
           ) : (
             <div className="space-y-2 bg-white border border-teal-200 rounded-lg p-3">
-              <p className="text-xs font-medium text-gray-600">
-                Rectangular pool · uniform depth only
-              </p>
-              <div className="grid grid-cols-3 gap-2">
+               <div className="flex items-center gap-2">
+                 <label className="text-xs text-gray-500 shrink-0">Shape:</label>
+                 <select
+                   value={shape}
+                   onChange={e => { setShape(e.target.value); setDims({ length: '', width: '', depth: '' }); }}
+                   className="text-xs border border-gray-200 rounded px-1.5 py-0.5 bg-white text-gray-800"
+                 >
+                   {SHAPES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                 </select>
+                 <span className="text-[10px] text-gray-400">· uniform depth only</span>
+               </div>
+               <div className="grid grid-cols-3 gap-2">
                 {[
                   { key: 'length', label: 'Length (ft)' },
                   { key: 'width', label: 'Width (ft)' },
