@@ -28,6 +28,8 @@ const FIELD_UNITS = {
   calciumHardness: 'ppm', cyanuricAcid: 'ppm', waterTemp: '°F'
 };
 
+const formatDose = (val) => parseFloat(val).toFixed(4).replace(/\.?0+$/, '');
+
 function getSanitationStatus(readings) {
   const fc = readings.freeChlorine;
   if (fc == null) return { label: 'Monitoring', color: 'text-yellow-600' };
