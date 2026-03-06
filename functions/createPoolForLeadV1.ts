@@ -12,7 +12,7 @@
  * Output: { success: boolean, poolId?: string, error?: string, code?: string, build: string }
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 const BUILD = 'createPoolForLeadV1.2025-03-06.1';
 
