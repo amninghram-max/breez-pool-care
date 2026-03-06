@@ -163,8 +163,8 @@ Deno.serve(async (req) => {
       testRunId: runId,
       created: true,
       scenarios: {
-        normal: { leadId: normalLead.id, token: tokenA, email: `test+${runId}@breezpoolcare.com` },
-        repair: { leadId: repairLead.id, token: tokenB, email: `repair+${runId}@breezpoolcare.com` }
+        normal: { leadId: normalLead.id, token: tokenA, email: `test+${runId}@breezpoolcare.com`, prequalAnswers: PREQUAL_NORMAL },
+        repair: { leadId: repairLead.id, token: tokenB, email: `repair+${runId}@breezpoolcare.com`, prequalAnswers: PREQUAL_REPAIR }
       },
       ...meta
     });
