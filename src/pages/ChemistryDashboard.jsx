@@ -553,6 +553,16 @@ function RetestTrendAdvisory({ visits }) {
   );
 }
 
+const SERVICE_PERFORMED_LABELS = {
+  vacuum: 'Vacuumed',
+  brush: 'Brushed',
+  skim: 'Skimmed',
+  filter_check: 'Filter Check',
+  backwash: 'Backwashed',
+  empty_baskets: 'Baskets Emptied',
+  test_equipment: 'Equip. Tested',
+};
+
 function VisitRow({ visit }) {
   const [auditOpen, setAuditOpen] = useState(false);
 
