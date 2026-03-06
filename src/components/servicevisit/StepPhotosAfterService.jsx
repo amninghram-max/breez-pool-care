@@ -67,7 +67,14 @@ function PhotoGrid({ photos, onRemove }) {
 }
 
 export default function StepPhotosAfterService({ visitData, advance, goTo }) {
-  const [photosAfter, setPhotosAfter] = useState(visitData.photosAfter || []);
+  // Initialize from visitData.photosAfter if present (hydrate prior photos taken earlier in flow)
+  const [photosAfter, setPhotosAfter] = useState(() => {
+    const prior = visitData.photosAfter || [];
+    if (prior.length > 0) {
+      console.log('[StepPhotosAfterService] hydrating prior photos:', prior.length);
+    }
+    return prior;
+  });
   const [uploading, setUploading] = useState(false);
   const [showSkipRetestModal, setShowSkipRetestModal] = useState(false);
 
