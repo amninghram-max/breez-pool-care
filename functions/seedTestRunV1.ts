@@ -56,6 +56,8 @@ Deno.serve(async (req) => {
 
     const runId = testRunId.trim();
     const entities = base44.asServiceRole.entities;
+    // Note: asServiceRole is used throughout so that entity-level RLS (e.g. Pool.create restricted
+    // to admin|staff) does not block the seed function regardless of the caller's session context.
 
     // --- Idempotency check: token strings are deterministic and unique per runId ---
     const tokenA = `test-token-${runId}-A`;
