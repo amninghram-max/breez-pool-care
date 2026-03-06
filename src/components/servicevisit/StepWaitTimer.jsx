@@ -82,6 +82,7 @@ export default function StepWaitTimer({ visitData, advance, goTo }) {
   const [startTime] = useState(() => loadTimer(eventId, waitMinutes));
   const [elapsed, setElapsed] = useState(Math.floor((Date.now() - startTime) / 1000));
   const [checked, setChecked] = useState(() => loadChecklist(eventId));
+  const [showSkipRetestModal, setShowSkipRetestModal] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
