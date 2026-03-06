@@ -2,14 +2,21 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
   try {
+    console.log('[updateEventStatus] START');
     const base44 = createClientFromRequest(req);
+    console.log('[updateEventStatus] CLIENT_READY');
+    
+    console.log('[updateEventStatus] AUTH_START');
     const user = await base44.auth.me();
+    console.log('[updateEventStatus] AUTH_DONE');
 
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    console.log('[updateEventStatus] JSON_START');
     const { eventId, status, couldNotAccessReason, sendNotification } = await req.json();
+    console.log('[updateEventStatus] JSON_DONE', { eventId, status });
 
     // Get event
     const event = await base44.entities.CalendarEvent.get(eventId);
