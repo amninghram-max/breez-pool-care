@@ -92,7 +92,7 @@ Deno.serve(async (req) => {
     await entities.QuoteRequests.create({
       isTest: true,
       testRunId: runId,
-      token: `test-token-${runId}-B`,
+      token: tokenB,
       email: 'guest@breezpoolcare.com',
       status: 'SENT'
       // leadId intentionally omitted
