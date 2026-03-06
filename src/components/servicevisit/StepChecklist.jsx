@@ -35,6 +35,23 @@ export default function StepChecklist({ visitData, advance }) {
     });
   };
 
+  // Sync checklist state to visitData whenever it changes, so it persists during intermediate navigation
+  useEffect(() => {
+    console.log('[StepChecklist] syncing state to visitData:', Array.from(checked));
+    // visitData is managed by ServiceVisitFlow; we trigger a sync by calling advance with an intermediate update
+    // This ensures the flow state is updated without forcing navigation
+    if (visitData && Array.isArray(visitData.servicesPerformed)) {
+      // Check if anything has changed to avoid unnecessary updates
+      const previous = new Set(visitData.servicesPerformed);
+      const hasDiff = checked.size !== previous.size || 
+                      [...checked].some(item => !previous.has(item));
+      if (hasDiff) {
+        // Call advance with servicesPerformed to sync, but do NOT navigate yet
+        advance({ servicesPerformed: Array.from(checked) }, { noNavigate: true });
+      }
+    }
+  }, [checked, visitData, advance]);
+
   const missingExpected = EXPECTED_TASKS.filter(k => !checked.has(k));
   const canAdvance = missingExpected.length === 0;
 
