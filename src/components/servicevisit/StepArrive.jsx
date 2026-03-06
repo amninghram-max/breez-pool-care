@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { MapPin, Key, AlertTriangle, Navigation, CheckCircle, PlayCircle, AlertCircle } from 'lucide-react';
+import { MapPin, Key, AlertTriangle, Navigation, CheckCircle, PlayCircle, AlertCircle, AlertOctagon } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import LockBanner from './LockBanner';
 import LastVisitSnapshot from './LastVisitSnapshot';
 import RecurringMessagesBanner from './RecurringMessagesBanner';
+import AccessIssueModal from './AccessIssueModal';
 
 // Helper: retry with exponential backoff for transient failures only
 const invokeWithRetry = async (functionName, payload, maxRetries = 2) => {
@@ -44,6 +45,7 @@ export default function StepArrive({ visitData, user, advance }) {
   const [confirmed, setConfirmed] = useState(false);
   const [arrived, setArrived] = useState(false);
   const [retryingMutation, setRetryingMutation] = useState(null);
+  const [accessIssueOpen, setAccessIssueOpen] = useState(false);
 
   // Lock derivation: prefer loaded dosePlan actions, fall back to visitData.dosePlan, then flag
   const { data: liveDosePlan } = useQuery({
@@ -120,6 +122,16 @@ export default function StepArrive({ visitData, user, advance }) {
   const handleNavigate = () => {
     const addr = event?.serviceAddress || lead?.serviceAddress;
     if (addr) window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`, '_blank');
+  };
+
+  const handleAccessIssueOpen = () => {
+    console.log('[StepArrive] opening access issue modal', { eventId: visitData.eventId });
+    setAccessIssueOpen(true);
+  };
+
+  const handleAccessIssueClose = () => {
+    console.log('[StepArrive] closing access issue modal');
+    setAccessIssueOpen(false);
   };
 
   const address = event?.serviceAddress || lead?.serviceAddress || 'Address not set';
@@ -227,6 +239,15 @@ export default function StepArrive({ visitData, user, advance }) {
             <CheckCircle className="w-5 h-5 mr-2" />
             {markArrivedMutation.isPending ? 'Logging arrival...' : 'I\'m Here'}
           </Button>
+
+          <Button
+            variant="outline"
+            className="w-full h-12 border-red-200 hover:bg-red-50 text-red-700"
+            onClick={handleAccessIssueOpen}
+          >
+            <AlertOctagon className="w-4 h-4 mr-2" />
+            Could Not Access Pool
+          </Button>
         </>
       )}
 
@@ -254,6 +275,15 @@ export default function StepArrive({ visitData, user, advance }) {
           </Button>
         </div>
       )}
+
+      {/* Access issue modal */}
+      <AccessIssueModal
+        isOpen={accessIssueOpen}
+        onClose={handleAccessIssueClose}
+        eventId={visitData.eventId}
+        lead={lead}
+        user={user}
+      />
     </div>
   );
 }
