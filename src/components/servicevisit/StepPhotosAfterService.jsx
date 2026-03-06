@@ -90,13 +90,17 @@ export default function StepPhotosAfterService({ visitData, advance, goTo }) {
 
   const handleContinue = () => {
     console.log('[StepPhotosAfterService] continue clicked', { retestRequired: visitData.retestRequired });
+    // Always persist photosAfter first
+    const nextData = { photosAfter };
+    
     // If retest is required, route to wait instead of closeout
     if (visitData.retestRequired) {
-      console.log('[StepPhotosAfterService] retest required, redirecting to wait/retest path');
+      console.log('[StepPhotosAfterService] persisting photosAfter before retest path', { photosAfter: photosAfter.length });
+      advance(nextData);
       goTo('wait');
     } else {
       // Safe to close when no retest required
-      advance({ photosAfter });
+      advance(nextData);
     }
   };
 
