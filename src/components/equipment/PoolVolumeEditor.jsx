@@ -43,6 +43,7 @@ export default function PoolVolumeEditor({ leadId, userRole }) {
   const [editing, setEditing] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [calcMode, setCalcMode] = useState(false);
+  const [shape, setShape] = useState('rect');
   const [dims, setDims] = useState({ length: '', width: '', depth: '' });
 
   const isAdmin = ['admin', 'staff'].includes(userRole);
