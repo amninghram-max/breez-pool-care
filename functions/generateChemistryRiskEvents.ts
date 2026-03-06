@@ -86,10 +86,27 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'testRecordId is required' }, { status: 400 });
     }
 
-    // Load test record
-    const test = await base44.asServiceRole.entities.ChemTestRecord.get(testRecordId);
+    // Load test record with retry for immediate consistency delay
+    let test = null;
+    const maxAttempts = 3;
+    const delays = [250, 500, 750]; // ms between attempts
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        test = await base44.asServiceRole.entities.ChemTestRecord.get(testRecordId);
+        if (test) break; // Success
+      } catch (e) {
+        // Swallow and retry
+      }
+
+      // If this isn't the last attempt and we don't have the record, delay before retrying
+      if (!test && attempt < maxAttempts - 1) {
+        await new Promise(resolve => setTimeout(resolve, delays[attempt]));
+      }
+    }
+
     if (!test) {
-      return Response.json({ error: `ChemTestRecord not found for id: ${testRecordId}` }, { status: 404 });
+      return Response.json({ error: `ChemTestRecord not found after retries for id: ${testRecordId}` }, { status: 404 });
     }
 
     // Load pool to check chlorinationMethod for salt event gating
