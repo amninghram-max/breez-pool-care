@@ -62,7 +62,7 @@ export default function StepAnalyze({ visitData, advance, goTo }) {
   const events = visitData.riskEvents || [];
   const readings = visitData.readings || {};
   const totalScore = events.reduce((s, e) => s + (SEVERITY_MAP[e.eventType] ?? 0), 0);
-  const hasIssues = events.length > 0;
+  const hasIssues = events.length > 0 || (visitData.outOfRange?.length ?? 0) > 0;
   const criticalEvents = events.filter(e => (SEVERITY_MAP[e.eventType] ?? 0) >= 5);
   const dosePlan = visitData.dosePlan;
 

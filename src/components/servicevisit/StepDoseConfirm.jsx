@@ -92,13 +92,32 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
   const { data: dosePlan, isLoading } = useQuery({
     queryKey: ['dosePlan', visitData.testRecordId],
     queryFn: async () => {
+      console.log('[StepDoseConfirm] query start', {
+        testRecordId: visitData.testRecordId,
+        poolId: visitData.poolId,
+        hasReadings: !!visitData.readings
+      });
+
       const existing = await base44.entities.DosePlan.filter({ testRecordId: visitData.testRecordId });
-      if (existing[0]) return existing[0];
+      if (existing[0]) {
+        console.log('[StepDoseConfirm] existing dosePlan found', existing[0].id);
+        return existing[0];
+      }
+
       const result = await base44.functions.invoke('calculateChemicalSuggestions', {
         poolId: visitData.poolId,
         readings: visitData.readings
       });
+
       const data = result.data;
+      console.log('[StepDoseConfirm] calculateChemicalSuggestions response', {
+        success: data?.success,
+        adjustmentsCount: data?.adjustments?.length,
+        volumeMissing: data?.volumeMissing,
+        volumeConfirmed: data?.volumeConfirmed,
+        error: data?.error
+      });
+
       if (data?.volumeMissing) {
         setVolumeWarning('missing');
         return null;
@@ -106,10 +125,59 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
       if (data?.volumeConfirmed === false) {
         setVolumeWarning('estimated');
       }
-      return data?.dosePlan ?? null;
+
+      // Handle function failure (e.g., chemistry targets not configured)
+      if (!data?.success) {
+        console.warn('[StepDoseConfirm] suggestion calculation failed', data?.error);
+        return { error: data?.error, actions: [] };
+      }
+
+      // Normalize adjustments array into dosePlan-style actions
+      const actions = (data?.adjustments || []).map((adj, idx) => ({
+        order: idx + 1,
+        chemicalType: normalizeChemicalType(adj.chemical),
+        dosePrimary: parseFloat(adj.amount),
+        primaryUnit: normalizeUnit(adj.unit),
+        instructions: adj.reason,
+        applied: false
+      }));
+
+      console.log('[StepDoseConfirm] normalized actions', {
+        count: actions.length,
+        actions: actions.map(a => ({ chemical: a.chemicalType, dose: `${a.dosePrimary} ${a.primaryUnit}` }))
+      });
+
+      return { actions, success: true };
     },
-    enabled: !!visitData.testRecordId && visitData.riskEvents?.length > 0
+    enabled: !!visitData.testRecordId && !!visitData.readings
   });
+
+  // Helper: map adjustment chemical names to DosePlan chemicalType enums
+  const normalizeChemicalType = (chemName) => {
+    const map = {
+      'Liquid Chlorine': 'LIQUID_CHLORINE',
+      'Muriatic Acid': 'MURIATIC_ACID',
+      'Baking Soda': 'ALKALINITY_UP',
+      'Alkalinity Up': 'ALKALINITY_UP',
+      'Calcium Increaser': 'CALCIUM_INCREASER',
+      'Stabilizer': 'STABILIZER_CYA',
+      'CYA': 'STABILIZER_CYA',
+      'Pool Salt': 'SALT'
+    };
+    return map[chemName] || 'LIQUID_CHLORINE';
+  };
+
+  // Helper: normalize unit strings
+  const normalizeUnit = (unit) => {
+    const map = {
+      'gallons': 'gallons',
+      'gal': 'gallons',
+      'oz': 'oz',
+      'lbs': 'lbs',
+      'tabs': 'tabs'
+    };
+    return map[unit] || unit;
+  };
 
   const confirmMutation = useMutation({
     mutationFn: async () => {
