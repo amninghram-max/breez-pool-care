@@ -71,11 +71,12 @@ export default function PoolVolumeEditor({ leadId, userRole }) {
     onError: (err) => toast.error(err.message || 'Save failed')
   });
 
-  const computedGallons = calcRect(dims.length, dims.width, dims.depth);
+  const { gallons: computedGallons, error: calcError } = calcVolume(shape, dims.length, dims.width, dims.depth);
 
   const handleEdit = () => {
     setInputValue(pool?.volumeGallons ? String(pool.volumeGallons) : '');
     setCalcMode(false);
+    setShape('rect');
     setDims({ length: '', width: '', depth: '' });
     setEditing(true);
   };
