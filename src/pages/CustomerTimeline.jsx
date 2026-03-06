@@ -79,7 +79,7 @@ function ActiveCustomersDirectory() {
   return (
     <div className="max-w-6xl mx-auto space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Active Customers Directory</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Customer Profile Lookup</h1>
         <p className="text-sm text-gray-600 mt-1">
           {activeCustomers.length} active customer{activeCustomers.length !== 1 ? 's' : ''} in service
         </p>
