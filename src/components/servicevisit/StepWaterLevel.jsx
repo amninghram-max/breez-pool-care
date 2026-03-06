@@ -20,7 +20,7 @@ const SHUTOFF_PLANS = [
   { value: 'tech_returns', label: 'Tech returns to shut off', description: 'Technician will return to shut off (rare — requires confirmation)' },
 ];
 
-export default function StepWaterLevel({ visitData, advance }) {
+export default function StepWaterLevel({ visitData, user, advance }) {
   const [level, setLevel] = useState('');
   const [shutoffPlan, setShutoffPlan] = useState('');
   const [shutoffTime, setShutoffTime] = useState('');
@@ -29,14 +29,68 @@ export default function StepWaterLevel({ visitData, advance }) {
   const waterAdded = level === 'low';
   const canAdvance = level && (!waterAdded || (shutoffPlan && (shutoffPlan !== 'customer_will_shutoff' || shutoffTime)));
 
-  const handleContinue = () => {
-    advance({
+  // Determine safetyFlag based on level
+  function getSafetyFlag(lvl) {
+    if (lvl === 'low') return 'below_skimmer_risk';
+    if (lvl === 'high') return 'above_weir_risk';
+    return undefined;
+  }
+
+  // Map shutoff plan values to WaterLevelLog enum values
+  const SHUTOFF_MAP = {
+    customer_will_shutoff: 'customer_shutoff',
+    auto_shutoff: 'auto_shutoff',
+    tech_returns: 'tech_returns',
+  };
+
+  const logMutation = useMutation({
+    mutationFn: async (payload) => {
+      return base44.entities.WaterLevelLog.create(payload);
+    }
+  });
+
+  const handleContinue = async () => {
+    const waterLevelData = {
       waterLevel: level,
       waterAdded,
       shutoffPlan: waterAdded ? shutoffPlan : undefined,
       shutoffTime: waterAdded && shutoffPlan === 'customer_will_shutoff' ? shutoffTime : undefined,
       waterLevelNotes: notes || undefined,
-    });
+    };
+
+    // Persist to WaterLevelLog if we have the required linking fields.
+    // poolId and leadId come from visitData (set via URL params in ServiceVisitFlow).
+    // technicianId is the authenticated user's id.
+    // Creation happens here (step-level, same pattern as ChemTestRecord / RetestRecord)
+    // rather than at closeout so the record exists even if the visit is interrupted.
+    // Dedup limitation: if the tech navigates back to this step and re-submits,
+    // a second WaterLevelLog record will be created for the same visit.
+    // Full deduplication (e.g. by eventId) is out of scope for this slice.
+    if (visitData.poolId && visitData.leadId) {
+      const safetyFlag = getSafetyFlag(level);
+      const logPayload = {
+        poolId: visitData.poolId,
+        leadId: visitData.leadId,
+        visitDate: new Date().toISOString(),
+        technicianId: user?.id || '',
+        technicianName: user?.full_name || '',
+        waterLevel: level,
+        waterAdded,
+        ...(waterAdded && shutoffPlan ? { shutoffPlan: SHUTOFF_MAP[shutoffPlan] || shutoffPlan } : {}),
+        ...(waterAdded && shutoffPlan === 'customer_will_shutoff' && shutoffTime ? { shutoffTime } : {}),
+        ...(safetyFlag ? { safetyFlag } : {}),
+        ...(notes ? { notes } : {}),
+      };
+      try {
+        const log = await logMutation.mutateAsync(logPayload);
+        waterLevelData.waterLevelLogId = log.id;
+      } catch (err) {
+        // Non-fatal: log creation failure does not block the visit flow
+        console.error('[StepWaterLevel] WaterLevelLog create failed:', err?.message);
+      }
+    }
+
+    advance(waterLevelData);
   };
 
   return (
