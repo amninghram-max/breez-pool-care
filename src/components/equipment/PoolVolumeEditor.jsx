@@ -69,6 +69,8 @@ export default function PoolVolumeEditor({ leadId, userRole }) {
 
   const pool = pools[0] || null;
 
+  console.log('POOL_VOLUME_EDITOR_DEBUG', { leadId, isLoading, pools, pool });
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       const gallons = parseFloat(inputValue);
