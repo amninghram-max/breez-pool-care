@@ -621,9 +621,11 @@ function LeadRow({ lead, stage, groupedSection, onAdvance, onStageChange, onEdit
         {/* Actions Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button size="icon" variant="outline" className="h-8 w-8 flex-shrink-0">
-              <MoreVertical className="w-4 h-4" />
-            </Button>
+            <div>
+              <button className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground flex-shrink-0">
+                <MoreVertical className="w-4 h-4" />
+              </button>
+            </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem asChild>
