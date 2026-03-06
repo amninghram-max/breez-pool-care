@@ -51,7 +51,18 @@ export default function StepArrive({ visitData, user, advance }) {
         });
       }
     },
-    onSuccess: () => advance({ arrivedAt: new Date().toISOString() })
+    onSuccess: () => setArrived(true)
+  });
+
+  const startVisitMutation = useMutation({
+    mutationFn: async () => {
+      if (visitData.eventId) {
+        await base44.functions.invoke('updateEventStatus', {
+          eventId: visitData.eventId, status: 'in_progress', sendNotification: false
+        });
+      }
+    },
+    onSuccess: () => advance({ arrivedAt: new Date().toISOString(), visitStartedAt: new Date().toISOString() })
   });
 
   const handleNavigate = () => {
