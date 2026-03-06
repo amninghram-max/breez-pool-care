@@ -109,10 +109,12 @@ function PreApplyModal({ action, actionIndex, onConfirm, onCancel }) {
   const [appliedAmountDisplay, setAppliedAmountDisplay] = useState(formattedInitialAmount);
 
   const isPartial = (() => {
-    if (canonicalUnit === 'tabs') return parseFloat(appliedAmountDisplay) < canonicalAmount;
+    const tolerance = 0.0005; // ~half of 3-decimal display precision
+    if (canonicalUnit === 'tabs') return parseFloat(appliedAmountDisplay) < canonicalAmount - tolerance;
     const converter = UnitConversion.isLiquidUnit(canonicalUnit) ? 'convertVolume' : 'convertWeight';
     const fullAmount = UnitConversion[converter](canonicalAmount, canonicalUnit, displayUnit);
-    return parseFloat(appliedAmountDisplay) < (fullAmount !== undefined ? fullAmount : canonicalAmount);
+    const comparisonAmount = fullAmount !== undefined ? fullAmount : canonicalAmount;
+    return parseFloat(appliedAmountDisplay) < (comparisonAmount - tolerance);
   })();
 
   const handleConfirm = () => {
