@@ -239,17 +239,17 @@ export default function StepCloseout({ visitData, user }) {
           {chemicalsAdded.length > 0 ? (
             <div className="space-y-2">
               {chemicalsAdded.map((action, i) => {
-                const isPartial = action.appliedAmount != null && action.appliedAmount < action.dosePrimary;
-                return (
-                  <div key={i} className="flex items-center justify-between py-1 border-b border-gray-100 last:border-0">
-                    <span className="text-sm text-gray-700">{CHEMICAL_LABELS[action.chemicalType] || action.chemicalType}</span>
-                    <span className={`text-sm font-mono font-bold ${isPartial ? 'text-orange-600' : 'text-teal-700'}`}>
-                      {action.appliedAmount ?? action.dosePrimary} {action.primaryUnit}
-                      {isPartial && ' ⚠'}
-                    </span>
-                  </div>
-                );
-              })}
+                    const isPartial = action.appliedAmount != null && action.appliedAmount < action.dosePrimary;
+                    return (
+                      <div key={i} className="flex items-center justify-between py-1 border-b border-gray-100 last:border-0">
+                        <span className="text-sm text-gray-700">{CHEMICAL_LABELS[action.chemicalType] || action.chemicalType}</span>
+                        <span className={`text-sm font-mono font-bold ${isPartial ? 'text-orange-600' : 'text-teal-700'}`}>
+                          {formatDose(action.appliedAmount ?? action.dosePrimary)} {action.primaryUnit}
+                          {isPartial && ' ⚠'}
+                        </span>
+                      </div>
+                    );
+                  })}
             </div>
           ) : (
             <p className="text-sm text-gray-500">No chemicals added — pool was in balance</p>
