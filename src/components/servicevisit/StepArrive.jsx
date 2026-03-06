@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { MapPin, Key, AlertTriangle, Navigation, CheckCircle } from 'lucide-react';
+import { MapPin, Key, AlertTriangle, Navigation, CheckCircle, PlayCircle } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import LockBanner from './LockBanner';
 import LastVisitSnapshot from './LastVisitSnapshot';
