@@ -33,27 +33,24 @@ Deno.serve(async (req) => {
     const runId = testRunId.trim();
     const entities = base44.asServiceRole.entities;
 
-    // --- Idempotency check: look for existing leads for this testRunId ---
-    const existingLeads = await entities.Lead.filter({ isTest: true, testRunId: runId }, null, 10);
-    if (existingLeads && existingLeads.length >= 2) {
-      const normalLead = existingLeads.find(l => l.email === `test+${runId}@breezpoolcare.com`);
-      const repairLead = existingLeads.find(l => l.email === `repair+${runId}@breezpoolcare.com`);
+    // --- Idempotency check: token strings are deterministic and unique per runId ---
+    const tokenA = `test-token-${runId}-A`;
+    const tokenB = `test-token-${runId}-B`;
+    const existingA = await entities.QuoteRequests.filter({ token: tokenA }, null, 1);
+    const existingB = await entities.QuoteRequests.filter({ token: tokenB }, null, 1);
+
+    if (existingA && existingA.length > 0 && existingB && existingB.length > 0) {
+      const normalLeadId = existingA[0].leadId || null;
+      const repairLeads = await entities.Lead.filter({ email: `repair+${runId}@breezpoolcare.com` }, null, 1);
+      const repairLeadId = repairLeads?.[0]?.id || null;
       console.log('SEED_V1_ALREADY_SEEDED', { requestId, runId });
       return json200({
         success: true,
         testRunId: runId,
         created: false,
         scenarios: {
-          normal: {
-            leadId: normalLead?.id || null,
-            token: `test-token-${runId}-A`,
-            email: `test+${runId}@breezpoolcare.com`
-          },
-          repair: {
-            leadId: repairLead?.id || null,
-            token: `test-token-${runId}-B`,
-            email: `repair+${runId}@breezpoolcare.com`
-          }
+          normal: { leadId: normalLeadId, token: tokenA, email: `test+${runId}@breezpoolcare.com` },
+          repair: { leadId: repairLeadId, token: tokenB, email: `repair+${runId}@breezpoolcare.com` }
         },
         ...meta
       });
