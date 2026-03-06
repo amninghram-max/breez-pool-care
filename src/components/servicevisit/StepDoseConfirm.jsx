@@ -238,6 +238,17 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
         <p className="text-gray-500 text-sm mt-1">Apply each chemical in order — steps must be completed sequentially</p>
       </div>
 
+      {volumeWarning === 'estimated' && (
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardContent className="pt-3 pb-3">
+            <div className="flex items-start gap-2 text-sm text-yellow-800">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <p><strong>Estimated volume</strong> — Pool volume has not been confirmed. Doses are approximate and based on pool size category.</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {dosePlan.blockedReasons?.length > 0 && (
         <Card className="border-red-200 bg-red-50">
           <CardContent className="pt-4 space-y-1">
