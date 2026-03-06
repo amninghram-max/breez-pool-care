@@ -11,7 +11,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Plus, ChevronLeft, AlertCircle } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
-import PoolVolumeEditor from '@/components/equipment/PoolVolumeEditor';
 
 const EQUIPMENT_TYPES = [
   { value: 'pump', label: 'Pump' },
@@ -242,9 +241,6 @@ export default function EquipmentProfileAdmin() {
           </CardContent>
         </Card>
       )}
-
-      {/* Pool Volume */}
-      <PoolVolumeEditor leadId={leadId} userRole={user?.role} />
 
       {/* Equipment List */}
       {equipment.length === 0 ? (
