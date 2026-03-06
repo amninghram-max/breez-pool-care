@@ -41,7 +41,7 @@ const invokeWithRetry = async (functionName, payload, maxRetries = 2) => {
   throw lastError;
 };
 
-export default function StepArrive({ visitData, user, advance }) {
+export default function StepArrive({ visitData, user, advance, goTo }) {
   const [confirmed, setConfirmed] = useState(false);
   const [arrived, setArrived] = useState(false);
   const [retryingMutation, setRetryingMutation] = useState(null);
