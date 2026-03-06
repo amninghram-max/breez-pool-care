@@ -86,12 +86,13 @@ export default function PoolVolumeEditor({ leadId, userRole }) {
 
   const createPoolMutation = useMutation({
     mutationFn: async () => {
-      await base44.entities.Pool.create({
+      const res = await base44.functions.invoke('createPoolForLeadV1', {
         leadId,
-        surfaceType: 'CONCRETE_PLASTER',
         chlorinationMethod: createForm.chlorinationMethod,
-        poolType: 'not_sure',
       });
+      if (!res.data?.success) {
+        throw new Error(res.data?.error || 'Failed to create Pool');
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['poolForVolume', leadId] });
