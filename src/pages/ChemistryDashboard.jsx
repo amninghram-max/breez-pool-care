@@ -3,8 +3,9 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, Area, ComposedChart } from 'recharts';
-import { Calendar, Download, TrendingUp, AlertCircle } from 'lucide-react';
+import { Calendar, Download, TrendingUp, AlertCircle, ChevronDown, ChevronRight, FlaskConical, CheckCircle2, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function ChemistryDashboard() {
