@@ -281,35 +281,125 @@ Deno.serve(async (req) => {
 
     console.log('SFI_V3_ENTRY', { requestId, leadIdPrefix: leadId.slice(0, 8), tokenPrefix: token.slice(0, 8) });
 
-    // Idempotency check — only short-circuit on exact duplicate (same lead + same date + same time window)
-    try {
-      const existing = await entities.InspectionRecord.filter(
-        { leadId, appointmentStatus: { $ne: 'cancelled' } }, '-created_date', 1
-      );
-      if (existing?.length > 0) {
-        const insp = existing[0];
-        const isSameAppointment = insp.scheduledDate === requestedDate && insp.timeWindow === timeWindow;
+    // Idempotency check — AUTHORITATIVE. On any lookup failure, fail safe (no duplicates).
+    {
+      let idempotencyError = null;
+      let activeInspection = null;
+      let lookupSource = null;
+
+      // Source 1: InspectionRecord (preferred — authoritative)
+      try {
+        const existing = await entities.InspectionRecord.filter(
+          { leadId, appointmentStatus: { $ne: 'cancelled' } }, '-created_date', 1
+        );
+        lookupSource = 'InspectionRecord';
+        activeInspection = existing?.[0] || null;
+        console.log('SFI_V3_IDEMPOTENCY_LOOKUP', {
+          requestId, source: lookupSource,
+          found: existing?.length ?? 0,
+          storedDate: activeInspection?.scheduledDate ?? null,
+          storedTimeWindow: activeInspection?.timeWindow ?? null,
+          incomingDate: requestedDate,
+          incomingTimeWindow: timeWindow
+        });
+      } catch (e) {
+        idempotencyError = e;
+        console.warn('SFI_V3_IDEMPOTENCY_INSPECTION_FAILED', { requestId, error: e.message });
+      }
+
+      // Source 2: active CalendarEvent fallback
+      if (!activeInspection && !idempotencyError) {
+        try {
+          const evRows = await entities.CalendarEvent.filter(
+            { leadId, eventType: 'inspection', status: { $ne: 'cancelled' } }, '-created_date', 1
+          );
+          lookupSource = 'CalendarEvent';
+          const ev = evRows?.[0] || null;
+          if (ev) {
+            activeInspection = { scheduledDate: ev.scheduledDate, timeWindow: ev.timeWindow, calendarEventId: ev.id, id: null };
+          }
+          console.log('SFI_V3_IDEMPOTENCY_LOOKUP', {
+            requestId, source: lookupSource,
+            found: evRows?.length ?? 0,
+            storedDate: ev?.scheduledDate ?? null,
+            storedTimeWindow: ev?.timeWindow ?? null,
+            incomingDate: requestedDate,
+            incomingTimeWindow: timeWindow
+          });
+        } catch (e) {
+          idempotencyError = e;
+          console.warn('SFI_V3_IDEMPOTENCY_EVENT_FAILED', { requestId, error: e.message });
+        }
+      }
+
+      // Source 3: Lead mirror fields fallback
+      if (!activeInspection && !idempotencyError) {
+        try {
+          const leadRows = await entities.Lead.filter({ id: leadId }, null, 1);
+          const lead = leadRows?.[0];
+          lookupSource = 'LeadMirror';
+          if (lead?.inspectionScheduled && lead?.requestedInspectionDate && lead?.requestedInspectionTime) {
+            const mirrorTimeWindow = timeWindowMap[lead.requestedInspectionTime] || null;
+            activeInspection = {
+              scheduledDate: lead.requestedInspectionDate,
+              timeWindow: mirrorTimeWindow,
+              calendarEventId: lead.inspectionEventId || null,
+              id: null
+            };
+          }
+          console.log('SFI_V3_IDEMPOTENCY_LOOKUP', {
+            requestId, source: lookupSource,
+            found: activeInspection ? 1 : 0,
+            storedDate: activeInspection?.scheduledDate ?? null,
+            storedTimeWindow: activeInspection?.timeWindow ?? null,
+            incomingDate: requestedDate,
+            incomingTimeWindow: timeWindow
+          });
+        } catch (e) {
+          idempotencyError = e;
+          console.warn('SFI_V3_IDEMPOTENCY_LEAD_FAILED', { requestId, error: e.message });
+        }
+      }
+
+      // If all lookups failed — fail safe, do not create duplicates
+      if (idempotencyError) {
+        console.error('SFI_V3_IDEMPOTENCY_ALL_SOURCES_FAILED', { requestId, error: idempotencyError.message });
+        return json200({
+          success: false,
+          code: 'IDEMPOTENCY_CHECK_FAILED',
+          error: 'Unable to verify existing appointment. Please try again or contact support.',
+          ...meta
+        });
+      }
+
+      if (activeInspection) {
+        const isSameAppointment = activeInspection.scheduledDate === requestedDate && activeInspection.timeWindow === timeWindow;
+        console.log('SFI_V3_IDEMPOTENCY_RESULT', {
+          requestId, source: lookupSource, isSameAppointment,
+          storedDate: activeInspection.scheduledDate, storedTimeWindow: activeInspection.timeWindow,
+          incomingDate: requestedDate, incomingTimeWindow: timeWindow
+        });
         if (isSameAppointment) {
-          console.log('SFI_V3_DUPLICATE_SUBMIT_SKIPPED', { leadIdPrefix: leadId.slice(0, 8), inspectionId: insp.id, requestId });
           return json200({
             success: true,
             alreadyScheduled: true,
-            scheduledDate: insp.scheduledDate,
-            timeWindow: insp.timeWindow,
+            scheduledDate: activeInspection.scheduledDate,
+            timeWindow: activeInspection.timeWindow,
             email: finalEmail,
             firstName: finalFirstName,
-            inspectionId: insp.id,
-            eventId: insp.calendarEventId || null,
+            inspectionId: activeInspection.id || null,
+            eventId: activeInspection.calendarEventId || null,
             emailStatus: 'skipped',
             ...meta
           });
         }
         // Different date/time — fall through to replacement scheduling
-        console.log('SFI_V3_RESCHEDULE_DETECTED', { leadIdPrefix: leadId.slice(0, 8), existing: `${insp.scheduledDate}/${insp.timeWindow}`, incoming: `${requestedDate}/${timeWindow}`, requestId });
+        console.log('SFI_V3_RESCHEDULE_DETECTED', {
+          requestId, leadIdPrefix: leadId.slice(0, 8), source: lookupSource,
+          existing: `${activeInspection.scheduledDate}/${activeInspection.timeWindow}`,
+          incoming: `${requestedDate}/${timeWindow}`
+        });
       }
-    } catch (e) {
-      console.warn('SFI_V3_IDEMPOTENCY_CHECK_FAILED', { requestId, error: e.message });
-      // Fall through to normal scheduling — idempotency is best-effort only
     }
 
     // Load capacity settings
