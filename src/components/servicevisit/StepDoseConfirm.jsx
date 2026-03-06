@@ -271,18 +271,35 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
             </CardContent>
           </Card>
         )}
-        <Card className="border-gray-200">
-          <CardContent className="pt-5 text-center space-y-2">
-            <FlaskConical className="w-10 h-10 text-gray-300 mx-auto" />
-            <p className="font-medium text-gray-700">No chemical treatment required</p>
-            <p className="text-sm text-gray-500">Pool is within acceptable ranges</p>
-          </CardContent>
-        </Card>
-        <Button className="w-full bg-teal-600 hover:bg-teal-700 h-14 text-base"
-          onClick={() => advance({ dosePlan: null, retestRequired: false })}>
-          <ChevronRight className="w-5 h-5 mr-2" />
-          Skip to Closeout
-        </Button>
+        {dosePlan?.error && (
+          <Card className="border-red-300 bg-red-50">
+            <CardContent className="pt-4">
+              <div className="flex items-start gap-2 text-sm text-red-800">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold">Treatment suggestions unavailable</p>
+                  <p className="mt-0.5 text-red-700">{dosePlan.error}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        {!dosePlan?.error && !volumeWarning && (
+          <Card className="border-gray-200">
+            <CardContent className="pt-5 text-center space-y-2">
+              <FlaskConical className="w-10 h-10 text-gray-300 mx-auto" />
+              <p className="font-medium text-gray-700">No chemical treatment required</p>
+              <p className="text-sm text-gray-500">Pool is within acceptable ranges</p>
+            </CardContent>
+          </Card>
+        )}
+        {!dosePlan?.error && !volumeWarning && (
+          <Button className="w-full bg-teal-600 hover:bg-teal-700 h-14 text-base"
+            onClick={() => advance({ dosePlan: null, retestRequired: false })}>
+            <ChevronRight className="w-5 h-5 mr-2" />
+            Skip to Closeout
+          </Button>
+        )}
       </div>
     );
   }
