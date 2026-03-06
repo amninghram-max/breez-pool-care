@@ -481,7 +481,7 @@ This protocol prevents:
 
 **Last updated:** 2026-03-06
 **Enforced by:** architecture review required for any deviation.
-`;
+
 
 ### Entity Permission Reality (Repo-Proven)
 - In this app, Base44 `user_condition.role` RLS has been unreliable for several backend helper flows using `asServiceRole`.
@@ -501,7 +501,7 @@ This protocol prevents:
 - CustomerTimeline is the provider/admin customer hub and should be treated as Customer Profile Lookup.
 - Pool record management belongs in CustomerTimeline.
 - EquipmentProfileAdmin is equipment-only.
-
+`;
 export default function ArchitectureContextPage() {
   return null;
-}
+}`;
