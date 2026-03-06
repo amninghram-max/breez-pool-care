@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, Area, ComposedChart } from 'recharts';
-import { Calendar, Download, TrendingUp, AlertCircle, ChevronDown, ChevronRight, FlaskConical, CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
+import { Calendar, Download, TrendingUp, AlertCircle, ChevronDown, ChevronRight, FlaskConical, CheckCircle2, XCircle, RefreshCw, Droplets } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function ChemistryDashboard() {
