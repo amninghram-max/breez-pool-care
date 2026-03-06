@@ -85,7 +85,13 @@ export default function PoolVolumeEditor({ leadId, userRole }) {
       const gallons = parseFloat(inputValue);
       if (!gallons || gallons <= 0) throw new Error('Enter a valid positive number');
       if (!pool) throw new Error('No Pool record found for this customer');
-      await base44.entities.Pool.update(pool.id, { volumeGallons: gallons });
+      const res = await base44.functions.invoke('updatePoolVolumeV1', {
+        poolId: pool.id,
+        volumeGallons: gallons
+      });
+      if (!res.data?.ok) {
+        throw new Error(res.data?.error || 'Failed to update pool volume');
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['poolForVolume', leadId] });
