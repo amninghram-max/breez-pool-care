@@ -76,28 +76,34 @@ const formatAmount = (val) => parseFloat(val).toFixed(3).replace(/\.?0+$/, '');
 
 // Pre-apply confirmation modal with unit switching
 function PreApplyModal({ action, actionIndex, onConfirm, onCancel }) {
-  // Determine canonical unit from action
-  const canonicalUnit = action.primaryUnit; // stored canonical: 'gallons' or 'lbs'
+  // Determine canonical unit from action and normalize it
+  const canonicalUnitRaw = action.primaryUnit; // stored canonical: 'gallons', 'lbs', 'oz', 'tabs', etc.
+  const canonicalUnit = normalizeCanonicalUnit(canonicalUnitRaw);
   const canonicalAmount = action.dosePrimary;
   
   // Choose default display unit intelligently
   let defaultDisplayUnit = UnitConversion.getDefaultDisplayUnit(canonicalAmount, canonicalUnit);
   
-  // Map canonical to display unit names
+  // Map normalized canonical to display unit names
   const displayUnitMap = {
-    'gallons': ['gal', 'cup', 'fl_oz'],
-    'lbs': ['lb', 'oz_wt']
+    'gal': ['gal', 'cup', 'fl_oz'],
+    'lb': ['lb', 'oz_wt'],
+    'oz_wt': ['oz_wt', 'lb'],
+    'tabs': ['tabs']
   };
   const availableDisplayUnits = displayUnitMap[canonicalUnit] || [canonicalUnit];
   
   const [displayUnit, setDisplayUnit] = useState(defaultDisplayUnit);
-  const [appliedAmountDisplay, setAppliedAmountDisplay] = useState(
-    UnitConversion[UnitConversion.isLiquidUnit(canonicalUnit) ? 'convertVolume' : 'convertWeight'](
-      canonicalAmount,
-      canonicalUnit,
-      displayUnit
-    )
-  );
+  
+  // Safely convert or fallback to canonical amount
+  const safeConvertedAmount = (() => {
+    if (canonicalUnit === 'tabs') return canonicalAmount;  // tabs bypass conversion
+    const converter = UnitConversion.isLiquidUnit(canonicalUnit) ? 'convertVolume' : 'convertWeight';
+    const converted = UnitConversion[converter](canonicalAmount, canonicalUnit, displayUnit);
+    return converted !== undefined ? converted : canonicalAmount;
+  })();
+  
+  const [appliedAmountDisplay, setAppliedAmountDisplay] = useState(safeConvertedAmount);
 
   const isPartial = parseFloat(appliedAmountDisplay) < 
     UnitConversion[UnitConversion.isLiquidUnit(canonicalUnit) ? 'convertVolume' : 'convertWeight'](
