@@ -75,6 +75,7 @@ Deno.serve(async (req) => {
       }
     }
 
+    console.log('[updateEventStatus] RETURN_SUCCESS');
     return Response.json({
       success: true,
       status: updates.status
