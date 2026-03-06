@@ -226,40 +226,149 @@ export default function ChemistryDashboard() {
         <CardContent>
           <div className="space-y-3">
             {filteredVisits.map(visit => (
-              <div key={visit.id} className="border rounded-lg p-4 hover:bg-gray-50">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-gray-600" />
-                    <span className="font-medium">
-                      {format(new Date(visit.visitDate), 'MMM dd, yyyy')}
-                    </span>
-                  </div>
-                  <span className="text-sm text-gray-600">{visit.technicianName}</span>
-                </div>
-                <div className="grid grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-600">FC</p>
-                    <p className="font-medium">{visit.freeChlorine} ppm</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">pH</p>
-                    <p className="font-medium">{visit.pH}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">TA</p>
-                    <p className="font-medium">{visit.totalAlkalinity} ppm</p>
-                  </div>
-                </div>
-                {visit.notes && (
-                  <p className="text-sm text-gray-600 mt-3 p-3 bg-gray-50 rounded">
-                    {visit.notes}
-                  </p>
-                )}
-              </div>
+              <VisitRow key={visit.id} visit={visit} />
             ))}
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function VisitRow({ visit }) {
+  const [auditOpen, setAuditOpen] = useState(false);
+
+  // Fetch linked records only when audit panel is opened
+  const { data: testRecord } = useQuery({
+    queryKey: ['chemTestRecord', visit.testRecordId],
+    queryFn: () => base44.entities.ChemTestRecord.filter({ id: visit.testRecordId }).then(r => r[0] || null),
+    enabled: auditOpen && !!visit.testRecordId,
+  });
+
+  const { data: dosePlan } = useQuery({
+    queryKey: ['dosePlan', visit.dosePlanId],
+    queryFn: () => base44.entities.DosePlan.filter({ id: visit.dosePlanId }).then(r => r[0] || null),
+    enabled: auditOpen && !!visit.dosePlanId,
+  });
+
+  const { data: retestRecord } = useQuery({
+    queryKey: ['retestRecord', visit.retestRecordId],
+    queryFn: () => base44.entities.RetestRecord.filter({ id: visit.retestRecordId }).then(r => r[0] || null),
+    enabled: auditOpen && !!visit.retestRecordId,
+  });
+
+  const hasAuditChain = !!(visit.testRecordId || visit.dosePlanId || visit.retestRecordId);
+
+  return (
+    <div className="border rounded-lg hover:bg-gray-50">
+      {/* Visit summary row */}
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-gray-600" />
+            <span className="font-medium">
+              {format(new Date(visit.visitDate), 'MMM dd, yyyy')}
+            </span>
+          </div>
+          <span className="text-sm text-gray-600">{visit.technicianName}</span>
+        </div>
+        <div className="grid grid-cols-3 gap-4 text-sm">
+          <div>
+            <p className="text-gray-600">FC</p>
+            <p className="font-medium">{visit.freeChlorine} ppm</p>
+          </div>
+          <div>
+            <p className="text-gray-600">pH</p>
+            <p className="font-medium">{visit.pH}</p>
+          </div>
+          <div>
+            <p className="text-gray-600">TA</p>
+            <p className="font-medium">{visit.totalAlkalinity} ppm</p>
+          </div>
+        </div>
+        {visit.notes && (
+          <p className="text-sm text-gray-600 mt-3 p-3 bg-gray-50 rounded">
+            {visit.notes}
+          </p>
+        )}
+
+        {/* Audit chain toggle — admin/provider only, only shown if IDs exist */}
+        {hasAuditChain && (
+          <button
+            className="mt-3 flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+            onClick={() => setAuditOpen(v => !v)}
+          >
+            <FlaskConical className="w-3.5 h-3.5" />
+            Chemistry Audit
+            {auditOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+          </button>
+        )}
+      </div>
+
+      {/* Audit chain panel */}
+      {auditOpen && hasAuditChain && (
+        <div className="border-t bg-indigo-50/40 px-4 py-3 space-y-2 rounded-b-lg">
+          <p className="text-xs font-semibold text-indigo-700 uppercase tracking-wide mb-2">Chemistry Audit Chain</p>
+
+          {/* ChemTestRecord */}
+          <div className="flex items-start gap-2 text-xs">
+            <span className="w-20 text-gray-500 shrink-0 pt-0.5">Test Record</span>
+            {!visit.testRecordId ? (
+              <span className="text-gray-400 italic">Not linked</span>
+            ) : testRecord ? (
+              <span className="text-gray-800">
+                {format(new Date(testRecord.testDate), 'MMM d, h:mm a')} —{' '}
+                FC {testRecord.freeChlorine} ppm · pH {testRecord.pH} · TA {testRecord.totalAlkalinity} ppm
+              </span>
+            ) : (
+              <span className="text-gray-400 italic">Loading…</span>
+            )}
+          </div>
+
+          {/* DosePlan */}
+          <div className="flex items-start gap-2 text-xs">
+            <span className="w-20 text-gray-500 shrink-0 pt-0.5">Dose Plan</span>
+            {!visit.dosePlanId ? (
+              <span className="text-gray-400 italic">Not linked</span>
+            ) : dosePlan ? (
+              <span className="flex items-center gap-2 text-gray-800 flex-wrap">
+                {dosePlan.actions?.length ?? 0} action{dosePlan.actions?.length !== 1 ? 's' : ''}
+                {' · '}
+                {dosePlan.readiness && (
+                  <Badge variant="outline" className="text-[10px] h-4 px-1.5">{dosePlan.readiness}</Badge>
+                )}
+                {dosePlan.retestRequired ? (
+                  <span className="flex items-center gap-0.5 text-amber-700"><AlertCircle className="w-3 h-3" /> Retest required</span>
+                ) : (
+                  <span className="flex items-center gap-0.5 text-green-700"><CheckCircle2 className="w-3 h-3" /> No retest</span>
+                )}
+              </span>
+            ) : (
+              <span className="text-gray-400 italic">Loading…</span>
+            )}
+          </div>
+
+          {/* RetestRecord */}
+          <div className="flex items-start gap-2 text-xs">
+            <span className="w-20 text-gray-500 shrink-0 pt-0.5">Retest</span>
+            {!visit.retestRecordId ? (
+              <span className="text-gray-400 italic">None recorded</span>
+            ) : retestRecord ? (
+              <span className="flex items-center gap-2 text-gray-800">
+                {format(new Date(retestRecord.retestDate), 'MMM d, h:mm a')}
+                {' · '}
+                {retestRecord.resolved ? (
+                  <span className="flex items-center gap-0.5 text-green-700"><CheckCircle2 className="w-3 h-3" /> Resolved</span>
+                ) : (
+                  <span className="flex items-center gap-0.5 text-red-600"><XCircle className="w-3 h-3" /> Not resolved</span>
+                )}
+              </span>
+            ) : (
+              <span className="text-gray-400 italic">Loading…</span>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
