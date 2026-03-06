@@ -67,14 +67,28 @@ Deno.serve(async (req) => {
       const normalLeadId = existingA[0].leadId || null;
       const repairLeads = await entities.Lead.filter({ email: `repair+${runId}@breezpoolcare.com` }, null, 1);
       const repairLeadId = repairLeads?.[0]?.id || null;
+
+      // Repair-in-place: patch prequalAnswers if missing on existing records
+      const repairPatches = [];
+      if (!existingA[0].prequalAnswers) {
+        repairPatches.push(entities.QuoteRequests.update(existingA[0].id, { prequalAnswers: JSON.stringify(PREQUAL_NORMAL) }));
+      }
+      if (!existingB[0].prequalAnswers) {
+        repairPatches.push(entities.QuoteRequests.update(existingB[0].id, { prequalAnswers: JSON.stringify(PREQUAL_REPAIR) }));
+      }
+      if (repairPatches.length > 0) {
+        await Promise.all(repairPatches);
+        console.log('SEED_V1_REPAIRED_PREQUAL', { requestId, runId, count: repairPatches.length });
+      }
+
       console.log('SEED_V1_ALREADY_SEEDED', { requestId, runId });
       return json200({
         success: true,
         testRunId: runId,
         created: false,
         scenarios: {
-          normal: { leadId: normalLeadId, token: tokenA, email: `test+${runId}@breezpoolcare.com` },
-          repair: { leadId: repairLeadId, token: tokenB, email: `repair+${runId}@breezpoolcare.com` }
+          normal: { leadId: normalLeadId, token: tokenA, email: `test+${runId}@breezpoolcare.com`, prequalAnswers: PREQUAL_NORMAL },
+          repair: { leadId: repairLeadId, token: tokenB, email: `repair+${runId}@breezpoolcare.com`, prequalAnswers: PREQUAL_REPAIR }
         },
         ...meta
       });
