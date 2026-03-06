@@ -62,7 +62,12 @@ export default function StepArrive({ visitData, user, advance }) {
         });
       }
     },
-    onSuccess: () => advance({ arrivedAt: new Date().toISOString(), visitStartedAt: new Date().toISOString() })
+    onSuccess: () => advance({
+      arrivedAt: new Date().toISOString(),
+      visitStartedAt: new Date().toISOString(),
+      // Propagate Lead.id so downstream steps (StepCloseout) can use it as ServiceVisit.propertyId
+      leadId: lead?.id || null,
+    })
   });
 
   const handleNavigate = () => {
