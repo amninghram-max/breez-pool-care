@@ -9,7 +9,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
  * Output: { success, testRunId, created, scenarios, build, runtimeVersion, requestId }
  */
 
-const BUILD = "SEED-V1-2026-03-06-B";
+const BUILD = "SEED-V1-2026-03-06-C";
 
 // Canonical prequalAnswers for each scenario — used by finalizePrequalQuoteV2
 const PREQUAL_NORMAL = {
