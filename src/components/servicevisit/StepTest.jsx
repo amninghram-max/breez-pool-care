@@ -104,7 +104,8 @@ export default function StepTest({ visitData, user, advance }) {
       const testRecord = createRes.data.testRecord;
 
       const riskResult = await base44.functions.invoke('generateChemistryRiskEvents', {
-        testRecordId: testRecord.id
+        testRecordId: testRecord.id,
+        testRecord
       });
 
       return { testRecord, riskResult: riskResult.data };
