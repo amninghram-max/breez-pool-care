@@ -115,6 +115,7 @@ export default function ServiceVisitFlow() {
         {step === 'dose'        && <StepDoseConfirm  {...stepProps} />}
         {step === 'wait'        && <StepWaitTimer    {...stepProps} />}
         {step === 'retest'      && <StepRetest       {...stepProps} />}
+        {step === 'photos'      && <StepPhotos       {...stepProps} />}
         {step === 'close'       && <StepCloseout     {...stepProps} />}
       </div>
     </div>
