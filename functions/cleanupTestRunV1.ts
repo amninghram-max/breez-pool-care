@@ -9,7 +9,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
  * Output: { success, testRunId, deleted, build, runtimeVersion, requestId }
  */
 
-const BUILD = "CLEANUP-V1-2026-03-06-A";
+const BUILD = "CLEANUP-V1-2026-03-06-B";
 
 const json200 = (data) => new Response(
   JSON.stringify(data),
