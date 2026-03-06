@@ -10,9 +10,10 @@ import StepRetest from '../components/servicevisit/StepRetest';
 import StepCloseout from '../components/servicevisit/StepCloseout';
 import StepFilterPsi from '../components/servicevisit/StepFilterPsi';
 import StepWaterLevel from '../components/servicevisit/StepWaterLevel';
+import StepChecklist from '../components/servicevisit/StepChecklist';
 
-// Steps: arrive → filter_psi → water_level → test → analyze → dose → wait → retest → close
-const STEPS = ['arrive', 'filter_psi', 'water_level', 'test', 'analyze', 'dose', 'wait', 'retest', 'close'];
+// Steps: arrive → checklist → filter_psi → water_level → test → analyze → dose → wait → retest → close
+const STEPS = ['arrive', 'checklist', 'filter_psi', 'water_level', 'test', 'analyze', 'dose', 'wait', 'retest', 'close'];
 
 export default function ServiceVisitFlow() {
   const urlParams = new URLSearchParams(window.location.search);
