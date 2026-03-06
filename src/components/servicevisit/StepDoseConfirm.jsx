@@ -443,6 +443,18 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
 
   const actions = dosePlan.actions || [];
   const allApplied = actions.length > 0 && appliedActions.length >= actions.length;
+  
+  // Helper to convert action display amount for closeout summary
+  const getDisplayedAppliedAmount = (action, appliedEntry) => {
+    const isLiquid = UnitConversion.isLiquidUnit(action.primaryUnit);
+    const converter = isLiquid ? UnitConversion.convertVolume : UnitConversion.convertWeight;
+    const defaultDisplay = UnitConversion.getDefaultDisplayUnit(action.dosePrimary, action.primaryUnit);
+    return converter(
+      appliedEntry.appliedAmount,
+      action.primaryUnit,
+      defaultDisplay
+    );
+  };
 
   return (
     <div className="space-y-4">
