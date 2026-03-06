@@ -121,6 +121,13 @@ export default function StepWaitTimer({ visitData, advance, goTo }) {
     goTo('checklist');
   };
 
+  const handleSkipRetestConfirmed = () => {
+    console.log('[StepWaitTimer] skip retest override applied, clearing retestRequired');
+    // Explicitly clear retestRequired and advance to closeout path
+    advance({ retestRequired: false });
+    goTo('closeout');
+  };
+
   return (
     <div className="space-y-4">
       <div>
