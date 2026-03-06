@@ -217,7 +217,10 @@ export default function StepAnalyze({ visitData, advance, goTo }) {
         hasIssues ? (
           <Button
             className="w-full bg-teal-600 hover:bg-teal-700 h-14 text-base"
-            onClick={() => advance()}
+            onClick={() => {
+              console.log('[StepAnalyze] user chose dose-plan path, advancing to dose step');
+              advance({ retestRequired: true });
+            }}
           >
             <Droplet className="w-5 h-5 mr-2" />
             View Dose Plan
