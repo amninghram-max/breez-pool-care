@@ -116,14 +116,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Perform update (use authenticated admin context for Lead write)
+    // Perform update (use service role for Lead write after admin/staff auth check)
     try {
-      console.log('LEAD_UPDATE_CONTEXT_AUTH_USER', { path: 'base44.entities.Lead.update', operator: user.email, leadId: leadId.slice(0, 8) });
+      console.log('LEAD_UPDATE_CONTEXT_SERVICE_ROLE', { path: 'base44.asServiceRole.entities.Lead.update', operator: user.email, leadId: leadId.slice(0, 8) });
       const updateData = { stage: newStage };
       if (newStage === 'converted') {
         updateData.accountStatus = 'active';
       }
-      await base44.entities.Lead.update(leadId, updateData);
+      await base44.asServiceRole.entities.Lead.update(leadId, updateData);
       console.info('[updateLeadStageV1] Stage updated', { 
         leadId, 
         oldStage, 
