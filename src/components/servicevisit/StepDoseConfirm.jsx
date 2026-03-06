@@ -148,16 +148,19 @@ function PreApplyModal({ action, actionIndex, onConfirm, onCancel }) {
         </div>
 
         <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
-          <p className="text-sm text-teal-900 font-semibold">
-            {CHEMICAL_LABELS[action.chemicalType] || action.chemicalType}
-          </p>
-          <p className="text-xs text-teal-700 mt-1">
-            Planned dose: {formatAmount(
-              UnitConversion[UnitConversion.isLiquidUnit(canonicalUnit) ? 'convertVolume' : 'convertWeight'](
-                canonicalAmount, canonicalUnit, displayUnit
-              )
-            )} {unitLabels[displayUnit]}
-          </p>
+         <p className="text-sm text-teal-900 font-semibold">
+           {CHEMICAL_LABELS[action.chemicalType] || action.chemicalType}
+         </p>
+         <p className="text-xs text-teal-700 mt-1">
+           Planned dose: {formatAmount(
+             (() => {
+               if (canonicalUnit === 'tabs') return canonicalAmount;
+               const converter = UnitConversion.isLiquidUnit(canonicalUnit) ? 'convertVolume' : 'convertWeight';
+               const converted = UnitConversion[converter](canonicalAmount, canonicalUnit, displayUnit);
+               return converted !== undefined ? converted : canonicalAmount;
+             })()
+           )} {unitLabels[displayUnit] || displayUnit}
+         </p>
         </div>
 
         <div>
