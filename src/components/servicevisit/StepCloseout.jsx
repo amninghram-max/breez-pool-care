@@ -28,7 +28,7 @@ const FIELD_UNITS = {
   calciumHardness: 'ppm', cyanuricAcid: 'ppm', waterTemp: '°F'
 };
 
-const formatDose = (val) => parseFloat(val).toFixed(4).replace(/\.?0+$/, '');
+const formatDose = (val) => parseFloat(val).toFixed(3).replace(/\.?0+$/, '');
 
 function getSanitationStatus(readings) {
   const fc = readings.freeChlorine;
@@ -271,7 +271,7 @@ export default function StepCloseout({ visitData, user }) {
                 return (
                   <div key={key} className="p-2 rounded border border-green-100 bg-green-50">
                     <p className="text-xs text-gray-500">{FIELD_LABELS[key]}</p>
-                    <p className="font-mono font-bold text-sm">{val}{FIELD_UNITS[key] ? ` ${FIELD_UNITS[key]}` : ''}</p>
+                    <p className="font-mono font-bold text-sm">{formatDose(val)}{FIELD_UNITS[key] ? ` ${FIELD_UNITS[key]}` : ''}</p>
                   </div>
                 );
               })}

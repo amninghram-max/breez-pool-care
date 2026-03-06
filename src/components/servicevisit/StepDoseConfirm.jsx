@@ -22,7 +22,7 @@ function PreApplyModal({ action, actionIndex, onConfirm, onCancel }) {
   const [amount, setAmount] = useState(action.dosePrimary);
   const isPartial = parseFloat(amount) < action.dosePrimary;
 
-  const formatDose = (val) => parseFloat(val).toFixed(4).replace(/\.?0+$/, '');
+  const formatDose = (val) => parseFloat(val).toFixed(3).replace(/\.?0+$/, '');
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40">
@@ -48,7 +48,7 @@ function PreApplyModal({ action, actionIndex, onConfirm, onCancel }) {
           <div className="flex items-center gap-2 mt-1">
             <Input
               type="number"
-              step="0.1"
+              step="0.001"
               min={0}
               value={amount}
               onChange={e => setAmount(e.target.value)}
@@ -407,7 +407,7 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
                     {isLocked && <Lock className="w-3.5 h-3.5 text-gray-400" />}
                   </div>
                   <p className="text-2xl font-bold font-mono text-teal-700 mt-1">
-                    {(isApplied ? appliedEntry.appliedAmount : action.dosePrimary).toFixed(4).replace(/\.?0+$/, '')} {action.primaryUnit}
+                    {(isApplied ? appliedEntry.appliedAmount : action.dosePrimary).toFixed(3).replace(/\.?0+$/, '')} {action.primaryUnit}
                     {action.safetyCapEnforced && <span className="text-sm text-orange-600 font-normal ml-2">(capped)</span>}
                   </p>
                   {isPartial && (
