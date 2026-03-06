@@ -112,11 +112,18 @@ function PreApplyModal({ action, actionIndex, onConfirm, onCancel }) {
 
   const handleConfirm = () => {
     // Convert display input back to canonical for storage
-    const appliedAmountCanonical = UnitConversion[UnitConversion.isLiquidUnit(canonicalUnit) ? 'convertVolume' : 'convertWeight'](
-      parseFloat(appliedAmountDisplay) || canonicalAmount,
-      displayUnit,
-      canonicalUnit
-    );
+    let appliedAmountCanonical;
+    if (canonicalUnit === 'tabs') {
+      appliedAmountCanonical = parseFloat(appliedAmountDisplay) || canonicalAmount;
+    } else {
+      const converter = UnitConversion.isLiquidUnit(canonicalUnit) ? 'convertVolume' : 'convertWeight';
+      const converted = UnitConversion[converter](
+        parseFloat(appliedAmountDisplay) || canonicalAmount,
+        displayUnit,
+        canonicalUnit
+      );
+      appliedAmountCanonical = converted !== undefined ? converted : (parseFloat(appliedAmountDisplay) || canonicalAmount);
+    }
     
     console.log('[PreApplyModal] unit conversion', {
       displayUnit,
