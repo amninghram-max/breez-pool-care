@@ -620,6 +620,34 @@ function VisitRow({ visit }) {
           </p>
         )}
 
+        {/* ── Operational Summary ── provider/admin only ─────────────────── */}
+        {((visit.servicesPerformed?.length > 0) || (visit.photosBefore?.length > 0) || (visit.photosAfter?.length > 0)) && (
+          <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap items-center gap-2">
+            {/* Services performed pills */}
+            {visit.servicesPerformed?.map(s => (
+              <span key={s} className="text-[11px] bg-teal-50 text-teal-700 border border-teal-100 px-2 py-0.5 rounded-full">
+                {SERVICE_PERFORMED_LABELS[s] || s}
+              </span>
+            ))}
+            {/* Photo presence */}
+            {((visit.photosBefore?.length > 0) || (visit.photosAfter?.length > 0)) && (
+              <span className="flex items-center gap-1 text-[11px] text-gray-500 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-full">
+                <Camera className="w-3 h-3" />
+                {(visit.photosBefore?.length || 0) + (visit.photosAfter?.length || 0)} photo{((visit.photosBefore?.length || 0) + (visit.photosAfter?.length || 0)) !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* ── Water-level linkage note ─────────────────────────────────────
+            WaterLevelLog has no serviceVisitId field; it links via leadId +
+            visitDate only. Per-visit date matching is not reliably exact
+            (visit timestamps vs log timestamps may differ by minutes).
+            Water-level detail is surfaced at the property level above via
+            WaterLevelTrendAdvisory and WaterLevelHistory, which are the
+            correct surfaces for this data in the current schema.
+        ────────────────────────────────────────────────────────────────── */}
+
         {/* Audit chain toggle — admin/provider only, only shown if IDs exist */}
         {hasAuditChain && (
           <button
