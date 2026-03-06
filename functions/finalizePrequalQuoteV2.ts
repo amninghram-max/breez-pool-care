@@ -292,7 +292,7 @@ Deno.serve(async (req) => {
       monthlyPrice: isNotSure
         ? `$${quoteResult.minMonthly}–$${quoteResult.maxMonthly}`
         : `$${quoteResult.finalMonthlyPrice}`,
-      visitFrequency: quoteResult.frequency === 'weekly' ? 'Weekly' : 'Twice Weekly',
+      visitFrequency: quoteResult.frequencySelectedOrRequired === 'weekly' ? 'Weekly' : 'Twice Weekly',
       oneTimeFees: isNotSure
         ? (quoteResult.minOneTimeFees > 0 ? `$${quoteResult.minOneTimeFees}–$${quoteResult.maxOneTimeFees}` : null)
         : (quoteResult.oneTimeFees > 0 ? `$${quoteResult.oneTimeFees}` : null),
