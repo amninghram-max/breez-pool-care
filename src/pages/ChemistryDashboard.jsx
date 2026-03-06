@@ -244,6 +244,85 @@ export default function ChemistryDashboard() {
   );
 }
 
+const WATER_ADDED_TREND_WINDOW = 5;
+
+function WaterLevelTrendAdvisory({ poolId }) {
+  const [expanded, setExpanded] = useState(false);
+
+  // Same join as WaterLevelHistory: leadId = ChemistryDashboard.propertyId (Lead.id)
+  const { data: logs = [], isLoading } = useQuery({
+    queryKey: ['waterLevelTrend', poolId],
+    queryFn: () => base44.entities.WaterLevelLog.filter({ leadId: poolId }, '-visitDate', WATER_ADDED_TREND_WINDOW),
+    enabled: !!poolId,
+  });
+
+  if (isLoading || logs.length < 2) return null;
+
+  const window = logs.slice(0, WATER_ADDED_TREND_WINDOW);
+  const total = window.length;
+  const addedCount = window.filter(l => l.waterAdded === true).length;
+  const isElevated = addedCount >= 2;
+
+  return (
+    <div className={`rounded-lg border px-4 py-3 text-sm ${
+      isElevated ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200'
+    }`}>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Droplets className={`w-4 h-4 flex-shrink-0 ${isElevated ? 'text-amber-600' : 'text-gray-400'}`} />
+          <span className={`font-medium ${isElevated ? 'text-amber-900' : 'text-gray-700'}`}>
+            Trend: Water added on {addedCount} of last {total} visit{total !== 1 ? 's' : ''}
+          </span>
+        </div>
+        <button
+          className="text-xs text-indigo-600 hover:text-indigo-800 font-medium whitespace-nowrap"
+          onClick={() => setExpanded(v => !v)}
+        >
+          {expanded ? 'Hide detail' : 'Show detail'}
+        </button>
+      </div>
+
+      {expanded && (
+        <div className="mt-3 space-y-1.5 border-t border-amber-100 pt-3">
+          <p className="text-xs text-gray-500 font-medium mb-1 uppercase tracking-wide">Supporting visits (most recent first)</p>
+          {window.map((log, i) => (
+            <div key={log.id ?? i} className="flex items-center gap-3 text-xs text-gray-700">
+              <span className="w-24 shrink-0 text-gray-500">
+                {format(new Date(log.visitDate), 'MMM d, yyyy')}
+              </span>
+              {log.waterAdded ? (
+                <span className="flex items-center gap-1.5 text-amber-700">
+                  <AlertCircle className="w-3 h-3" /> Water added
+                  {log.waterLevel && (
+                    <Badge className={`text-[10px] h-4 px-1.5 ${WATER_LEVEL_COLORS[log.waterLevel] || 'bg-gray-100 text-gray-700'}`}>
+                      {WATER_LEVEL_LABELS[log.waterLevel] || log.waterLevel}
+                    </Badge>
+                  )}
+                  {log.shutoffPlan && (
+                    <span className="text-gray-400">· {SHUTOFF_LABELS[log.shutoffPlan] || log.shutoffPlan}</span>
+                  )}
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 text-gray-500">
+                  <CheckCircle2 className="w-3 h-3 text-green-500" /> No water added
+                  {log.waterLevel && (
+                    <Badge className={`text-[10px] h-4 px-1.5 ${WATER_LEVEL_COLORS[log.waterLevel] || 'bg-gray-100 text-gray-700'}`}>
+                      {WATER_LEVEL_LABELS[log.waterLevel] || log.waterLevel}
+                    </Badge>
+                  )}
+                </span>
+              )}
+            </div>
+          ))}
+          <p className="text-[10px] text-gray-400 mt-2 italic">
+            Advisory only · Linked via WaterLevelLog.leadId · provider-only
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── WaterLevelLog linking note ───────────────────────────────────────────────
 // ChemistryDashboard's "propertyId" state is populated from `base44.entities.Property.list()`
 // and is used to filter ServiceVisit by propertyId.
