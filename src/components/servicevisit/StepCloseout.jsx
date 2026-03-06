@@ -326,7 +326,7 @@ export default function StepCloseout({ visitData, user }) {
                 <ul className="mt-1 space-y-0.5">
                   {criticalPartials.map((a, i) => (
                     <li key={i} className="text-xs text-red-700">
-                      {CHEMICAL_LABELS[a.chemicalType] || a.chemicalType}: {a.appliedAmount} of {a.dosePrimary} {a.primaryUnit} applied
+                      {CHEMICAL_LABELS[a.chemicalType] || a.chemicalType}: {formatDose(a.appliedAmount)} of {formatDose(a.dosePrimary)} {a.primaryUnit} applied
                     </li>
                   ))}
                 </ul>
