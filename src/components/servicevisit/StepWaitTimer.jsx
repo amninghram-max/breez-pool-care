@@ -36,7 +36,7 @@ function saveChecklist(eventId, checked) {
   localStorage.setItem(`breez_checklist_${eventId}`, JSON.stringify(checked));
 }
 
-export default function StepWaitTimer({ visitData, advance }) {
+export default function StepWaitTimer({ visitData, advance, goTo }) {
   const waitMinutes = visitData.retestWaitMinutes || 30;
   const eventId = visitData.eventId || 'unknown';
 
@@ -72,6 +72,13 @@ export default function StepWaitTimer({ visitData, advance }) {
     // Clean up timer from localStorage on successful advance
     localStorage.removeItem(getTimerKey(eventId));
     advance();
+  };
+
+  const handleContinueServiceTasks = () => {
+    console.log('[StepWaitTimer] CONTINUE_SERVICE_TASKS', { eventId, remaining, navigatingToChecklist: true });
+    // Navigate to checklist while timer remains active/running in background
+    // Timer state is preserved in localStorage; will resume if user returns
+    goTo('checklist');
   };
 
   return (
@@ -120,6 +127,16 @@ export default function StepWaitTimer({ visitData, advance }) {
         <ChevronRight className="w-5 h-5 mr-2" />
         {canAdvance ? 'Retest Now →' : `Retest available in ${fmt(remaining)}`}
       </Button>
+
+      {!canAdvance && (
+        <Button
+          variant="outline"
+          className="w-full h-12 text-sm"
+          onClick={handleContinueServiceTasks}
+        >
+          Continue Service Tasks
+        </Button>
+      )}
     </div>
   );
 }

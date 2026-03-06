@@ -73,6 +73,7 @@ export default function ServiceVisitFlow() {
   };
 
   const goTo = (target) => {
+    console.log('[ServiceVisitFlow] goTo', { from: step, to: target });
     setStep(target);
     if (FLOW_KEY) {
       localStorage.setItem(FLOW_KEY, JSON.stringify({ step: target, visitData }));

@@ -405,7 +405,7 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
                     {isLocked && <Lock className="w-3.5 h-3.5 text-gray-400" />}
                   </div>
                   <p className="text-2xl font-bold font-mono text-teal-700 mt-1">
-                    {isApplied ? appliedEntry.appliedAmount : action.dosePrimary} {action.primaryUnit}
+                    {(isApplied ? appliedEntry.appliedAmount : action.dosePrimary).toFixed(4).replace(/\.?0+$/, '')} {action.primaryUnit}
                     {action.safetyCapEnforced && <span className="text-sm text-orange-600 font-normal ml-2">(capped)</span>}
                   </p>
                   {isPartial && (
