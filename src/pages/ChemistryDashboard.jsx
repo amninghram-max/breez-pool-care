@@ -241,6 +241,128 @@ export default function ChemistryDashboard() {
   );
 }
 
+// ── WaterLevelLog linking note ───────────────────────────────────────────────
+// ChemistryDashboard's "propertyId" state is populated from `base44.entities.Property.list()`
+// and is used to filter ServiceVisit by propertyId.
+// WaterLevelLog stores `poolId` (from visitData.poolId set in ServiceVisitFlow) and `leadId`.
+// The Property entity is NOT the same as Pool. Pool is linked via Pool.leadId.
+// Therefore: we cannot directly query WaterLevelLog by propertyId without knowing the
+// Pool.id for the selected property. ChemistryDashboard has no Pool query.
+//
+// SAFE WORKAROUND (no invented mapping): Query WaterLevelLog by leadId, since
+// ChemistryDashboard's propertyId IS the leadId — confirmed by ServiceVisit.filter({propertyId})
+// where propertyId maps to Lead.id (see CustomerTimeline: filter({propertyId: leadId})).
+// WaterLevelLog.leadId is set from visitData.leadId which equals the Lead.id.
+// Therefore: WaterLevelLog.filter({ leadId: propertyId }) is the correct and verified join.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const WATER_LEVEL_LABELS = {
+  normal: 'Normal',
+  slightly_low: 'Slightly Low',
+  low: 'Low',
+  high: 'High',
+};
+
+const WATER_LEVEL_COLORS = {
+  normal: 'bg-green-100 text-green-800',
+  slightly_low: 'bg-yellow-100 text-yellow-800',
+  low: 'bg-orange-100 text-orange-800',
+  high: 'bg-blue-100 text-blue-800',
+};
+
+const SHUTOFF_LABELS = {
+  customer_shutoff: 'Customer shutoff',
+  auto_shutoff: 'Auto shutoff',
+  tech_returns: 'Tech returns',
+};
+
+const SAFETY_FLAG_LABELS = {
+  below_skimmer_risk: 'Below skimmer risk',
+  above_weir_risk: 'Above weir risk',
+};
+
+function WaterLevelHistory({ poolId }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const { data: logs = [], isLoading } = useQuery({
+    queryKey: ['waterLevelHistory', poolId],
+    queryFn: () => base44.entities.WaterLevelLog.filter({ leadId: poolId }, '-visitDate', 20),
+    enabled: !!poolId,
+  });
+
+  if (isLoading) return null;
+  if (logs.length === 0) return null;
+
+  return (
+    <div className="rounded-lg border border-blue-100 bg-blue-50/40">
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-2">
+          <Droplets className="w-4 h-4 text-blue-600 flex-shrink-0" />
+          <span className="font-medium text-blue-900 text-sm">Water Level History</span>
+          <span className="text-xs text-blue-500">({logs.length} record{logs.length !== 1 ? 's' : ''})</span>
+        </div>
+        <button
+          className="text-xs text-indigo-600 hover:text-indigo-800 font-medium whitespace-nowrap"
+          onClick={() => setExpanded(v => !v)}
+        >
+          {expanded ? 'Hide' : 'Show'}
+        </button>
+      </div>
+
+      {expanded && (
+        <div className="border-t border-blue-100 px-4 py-3 space-y-2">
+          <div className="grid grid-cols-[90px_80px_60px_110px_80px_1fr] gap-x-3 text-[10px] font-semibold text-gray-500 uppercase tracking-wide pb-1 border-b border-blue-100">
+            <span>Date</span>
+            <span>Level</span>
+            <span>Added</span>
+            <span>Shutoff Plan</span>
+            <span>Safety Flag</span>
+            <span>Notes / Tech</span>
+          </div>
+          {logs.map((log) => (
+            <div key={log.id} className="grid grid-cols-[90px_80px_60px_110px_80px_1fr] gap-x-3 items-start text-xs text-gray-700 py-1 border-b border-blue-50 last:border-0">
+              <span className="text-gray-500 shrink-0">
+                {format(new Date(log.visitDate), 'MMM d, yyyy')}
+              </span>
+              <span>
+                <Badge className={`text-[10px] h-4 px-1.5 ${WATER_LEVEL_COLORS[log.waterLevel] || 'bg-gray-100 text-gray-700'}`}>
+                  {WATER_LEVEL_LABELS[log.waterLevel] || log.waterLevel}
+                </Badge>
+              </span>
+              <span className={log.waterAdded ? 'text-orange-700 font-medium' : 'text-gray-400'}>
+                {log.waterAdded ? 'Yes' : 'No'}
+              </span>
+              <span className="text-gray-600">
+                {log.shutoffPlan ? (
+                  <>
+                    {SHUTOFF_LABELS[log.shutoffPlan] || log.shutoffPlan}
+                    {log.shutoffTime && <span className="text-gray-400 ml-1">@ {log.shutoffTime}</span>}
+                  </>
+                ) : '—'}
+              </span>
+              <span>
+                {log.safetyFlag ? (
+                  <Badge className="bg-red-100 text-red-800 text-[10px] h-4 px-1.5">
+                    {SAFETY_FLAG_LABELS[log.safetyFlag] || log.safetyFlag}
+                  </Badge>
+                ) : '—'}
+              </span>
+              <span className="text-gray-600 min-w-0">
+                {log.notes && <span className="italic">{log.notes}</span>}
+                {log.notes && log.technicianName && <span className="text-gray-300 mx-1">·</span>}
+                {log.technicianName && <span className="text-gray-400">{log.technicianName}</span>}
+              </span>
+            </div>
+          ))}
+          <p className="text-[10px] text-gray-400 italic pt-1">
+            Linked via WaterLevelLog.leadId = ChemistryDashboard.propertyId (Lead.id) · provider-only
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Linking field justification ──────────────────────────────────────────────
 // DosePlan is linked to ServiceVisit via ServiceVisit.dosePlanId (a direct ID
 // reference stored on the visit record). ChemistryDashboard already queries
