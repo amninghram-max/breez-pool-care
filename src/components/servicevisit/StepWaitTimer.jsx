@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Clock, ChevronRight, CheckCircle } from 'lucide-react';
+import { Clock, ChevronRight, CheckCircle, AlertTriangle, X } from 'lucide-react';
 
 const CHECKLIST_ITEMS = [
   { id: 'brush',   label: 'Brush walls & floor' },
