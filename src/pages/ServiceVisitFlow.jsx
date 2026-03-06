@@ -72,7 +72,7 @@ export default function ServiceVisitFlow() {
   const stepLabels = {
     arrive: 'Arrive', checklist: 'Tasks', filter_psi: 'Filter', water_level: 'Water',
     test: 'Test', analyze: 'Analyze',
-    dose: 'Dose', wait: 'Wait', retest: 'Retest', close: 'Close'
+    dose: 'Dose', wait: 'Wait', retest: 'Retest', photos: 'Photos', close: 'Close'
   };
 
   const currentIdx = STEPS.indexOf(step);
