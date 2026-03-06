@@ -156,7 +156,79 @@ Deno.serve(async (req) => {
       pricingEngineVersion: 'v2_tokens_risk_frequency'
     });
 
-    console.log('SEED_V1_CREATED', { requestId, runId, normalLeadId: normalLead.id, repairLeadId: repairLead.id });
+    // --- Scenario C: service_visit_ready ---
+    // A converted customer with a Pool (no volumeGallons) and a scheduled service CalendarEvent.
+    // This fixture is the entry point for full technician-flow testing.
+    const visitLeadEmail = `visit+${runId}@breezpoolcare.com`;
+    const visitLeadAddress = '100 Test Pool Lane, Tampa, FL 33601';
+
+    const visitLead = await entities.Lead.create({
+      isTest: true,
+      testRunId: runId,
+      firstName: 'VisitReady',
+      lastName: 'TestC',
+      email: visitLeadEmail,
+      mobilePhone: '5550001234',
+      streetAddress: '100 Test Pool Lane',
+      city: 'Tampa',
+      state: 'FL',
+      zipCode: '33601',
+      serviceAddress: visitLeadAddress,
+      stage: 'converted',
+      accountStatus: 'active',
+      poolType: 'in_ground',
+      filterType: 'sand',
+      sanitizerType: 'saltwater',
+      screenedArea: 'fully_screened',
+      inspectionScheduled: true,
+      quoteGenerated: true,
+      notes: '[TEST FIXTURE C] service_visit_ready — safe to delete'
+    });
+
+    // Pool with no volumeGallons (tests estimate-path in chemistry engine)
+    const visitPool = await entities.Pool.create({
+      isTest: true,
+      testRunId: runId,
+      leadId: visitLead.id,
+      surfaceType: 'CONCRETE_PLASTER',
+      poolSize: '10_15k',
+      poolType: 'in_ground',
+      enclosure: 'fully_screened',
+      filterType: 'sand',
+      chlorinationMethod: 'saltwater',
+      chlorinatorType: 'inline_plumbed',
+      status: 'active'
+      // volumeGallons intentionally omitted — tests null-volume estimate path
+    });
+
+    // CalendarEvent: scheduled service visit for today so it appears on the technician's route
+    const todayDate = new Date().toISOString().split('T')[0];
+    const visitEvent = await entities.CalendarEvent.create({
+      isTest: true,
+      testRunId: runId,
+      leadId: visitLead.id,
+      eventType: 'service',
+      scheduledDate: todayDate,
+      timeWindow: '9:00 AM - 11:00 AM',
+      startTime: '09:00',
+      serviceAddress: visitLeadAddress,
+      assignedTechnician: 'Test Tech',
+      status: 'scheduled',
+      routePosition: 99,
+      estimatedDuration: 35,
+      isRecurring: false,
+      accessNotes: '[TEST] No real access needed — fixture only',
+      customerNotes: '[TEST FIXTURE C] service_visit_ready scenario'
+    });
+
+    console.log('SEED_V1_CREATED', {
+      requestId, runId,
+      normalLeadId: normalLead.id,
+      repairLeadId: repairLead.id,
+      visitLeadId: visitLead.id,
+      visitPoolId: visitPool.id,
+      visitEventId: visitEvent.id
+    });
 
     return json200({
       success: true,
@@ -164,7 +236,17 @@ Deno.serve(async (req) => {
       created: true,
       scenarios: {
         normal: { leadId: normalLead.id, token: tokenA, email: `test+${runId}@breezpoolcare.com`, prequalAnswers: PREQUAL_NORMAL },
-        repair: { leadId: repairLead.id, token: tokenB, email: `repair+${runId}@breezpoolcare.com`, prequalAnswers: PREQUAL_REPAIR }
+        repair: { leadId: repairLead.id, token: tokenB, email: `repair+${runId}@breezpoolcare.com`, prequalAnswers: PREQUAL_REPAIR },
+        visit_ready: {
+          label: 'Scenario C — service_visit_ready',
+          leadId: visitLead.id,
+          poolId: visitPool.id,
+          eventId: visitEvent.id,
+          email: visitLeadEmail,
+          scheduledDate: todayDate,
+          launchUrl: `/ServiceVisitFlow?eventId=${visitEvent.id}&poolId=${visitPool.id}`,
+          notes: 'Pool has no volumeGallons — exercises estimate path. Appears on TechnicianRoute for today under assignedTechnician=Test Tech.'
+        }
       },
       ...meta
     });
