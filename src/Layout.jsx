@@ -206,6 +206,12 @@ export default function Layout({ children, currentPageName }) {
   }
 
   // Redirect unauthenticated users away from protected pages
+  console.info('[LAYOUT_AUTH_GUARD_DEBUG]', {
+    userIsLoading,
+    user,
+    currentPageName,
+    isPublicPage: allowedPublicPages.includes(currentPageName),
+  });
   if (!userIsLoading && !user && !allowedPublicPages.includes(currentPageName)) {
     // Only navigate if not already at Home (prevent loop)
     if (currentPageName !== 'Home') {
