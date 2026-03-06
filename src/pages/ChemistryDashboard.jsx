@@ -729,6 +729,37 @@ function VisitRow({ visit }) {
               <span className="text-gray-400 italic">Loading…</span>
             )}
           </div>
+
+          {/* WaterLevelLog — only shown when waterLevelLogId is explicitly linked */}
+          {visit.waterLevelLogId && (
+            <div className="flex items-start gap-2 text-xs">
+              <span className="w-20 text-gray-500 shrink-0 pt-0.5">Water Level</span>
+              {!waterLevelLog ? (
+                <span className="text-gray-400 italic">Loading…</span>
+              ) : (
+                <span className="flex items-center gap-2 flex-wrap text-gray-800">
+                  {waterLevelLog.waterLevel && (
+                    <Badge className={`text-[10px] h-4 px-1.5 ${WATER_LEVEL_COLORS[waterLevelLog.waterLevel] || 'bg-gray-100 text-gray-700'}`}>
+                      {WATER_LEVEL_LABELS[waterLevelLog.waterLevel] || waterLevelLog.waterLevel}
+                    </Badge>
+                  )}
+                  {waterLevelLog.waterAdded ? (
+                    <span className="text-orange-700 font-medium">Water added</span>
+                  ) : (
+                    <span className="text-gray-500">No water added</span>
+                  )}
+                  {waterLevelLog.shutoffPlan && (
+                    <span className="text-gray-400">· {SHUTOFF_LABELS[waterLevelLog.shutoffPlan] || waterLevelLog.shutoffPlan}</span>
+                  )}
+                  {waterLevelLog.safetyFlag && (
+                    <Badge className="bg-red-100 text-red-800 text-[10px] h-4 px-1.5">
+                      {SAFETY_FLAG_LABELS[waterLevelLog.safetyFlag] || waterLevelLog.safetyFlag}
+                    </Badge>
+                  )}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
