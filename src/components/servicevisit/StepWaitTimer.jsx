@@ -10,6 +10,45 @@ const CHECKLIST_ITEMS = [
   { id: 'pump',    label: 'Check filter pressure gauge' },
 ];
 
+function SkipRetestConfirmModal({ onConfirm, onCancel }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40">
+      <div className="bg-white rounded-2xl w-full max-w-sm shadow-xl p-6 space-y-4">
+        <div className="flex items-start justify-between">
+          <h3 className="font-bold text-gray-900 text-lg">Skip Retest?</h3>
+          <button onClick={onCancel} className="text-gray-400 hover:text-gray-600">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-orange-900">Skip post-treatment retest?</p>
+            <p className="text-xs text-orange-700 mt-1">The pool was treated. A retest is recommended to verify treatment success. You can proceed to closeout, but a follow-up revisit may be flagged.</p>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Button
+            className="w-full bg-teal-600 hover:bg-teal-700 h-11"
+            onClick={() => { console.log('[StepWaitTimer] skip retest confirmed'); onConfirm(); }}
+          >
+            Yes, Skip Retest & Close
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full border-orange-400 text-orange-700 hover:bg-orange-50 h-11"
+            onClick={onCancel}
+          >
+            Cancel, Return to Wait
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function getTimerKey(eventId) {
   return `breez_timer_${eventId}`;
 }
