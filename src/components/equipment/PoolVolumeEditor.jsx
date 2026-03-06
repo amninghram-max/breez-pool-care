@@ -94,8 +94,9 @@ export default function PoolVolumeEditor({ leadId, userRole }) {
         throw new Error(res.data?.error || 'Failed to create Pool');
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['poolForVolume', leadId] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['poolForVolume', leadId] });
+      await queryClient.refetchQueries({ queryKey: ['poolForVolume', leadId] });
       toast.success('Pool record created');
       setShowCreatePool(false);
       setCreateForm({ chlorinationMethod: 'not_sure' });
