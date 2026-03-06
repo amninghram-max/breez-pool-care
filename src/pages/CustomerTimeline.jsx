@@ -348,7 +348,7 @@ export default function CustomerTimeline() {
           <Link to={createPageUrl('EquipmentProfileAdmin') + `?leadId=${leadId}`}>
             <Button size="sm" variant="outline">
               <Wrench className="w-3 h-3 mr-1" />
-              Equipment
+              Manage Equipment
             </Button>
           </Link>
           <Link to={createPageUrl('AdminMessaging') + `?leadId=${leadId}`}>
