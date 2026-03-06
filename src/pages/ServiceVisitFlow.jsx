@@ -14,8 +14,8 @@ import StepRetest from '../components/servicevisit/StepRetest';
 import StepPhotosAfterService from '../components/servicevisit/StepPhotosAfterService';
 import StepCloseout from '../components/servicevisit/StepCloseout';
 
-// Steps: arrive → photos_before → checklist → filter_psi → water_level → test → analyze → dose → wait → retest → photos_after → close
-const STEPS = ['arrive', 'photos_before', 'checklist', 'filter_psi', 'water_level', 'test', 'analyze', 'dose', 'wait', 'retest', 'photos_after', 'close'];
+// Steps: arrive → photos_before → test → analyze → dose → wait → retest → checklist → filter_psi → water_level → photos_after → close
+const STEPS = ['arrive', 'photos_before', 'test', 'analyze', 'dose', 'wait', 'retest', 'checklist', 'filter_psi', 'water_level', 'photos_after', 'close'];
 
 export default function ServiceVisitFlow() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -55,7 +55,7 @@ export default function ServiceVisitFlow() {
         // Determine next step: skip wait/retest if retestRequired === false
         let nextStepIdx = Math.min(STEPS.indexOf(step) + 1, STEPS.length - 1);
         if ((step === 'analyze' || step === 'dose') && next.retestRequired === false) {
-          nextStepIdx = STEPS.indexOf('photos');
+          nextStepIdx = STEPS.indexOf('checklist');
         }
         const nextStep = STEPS[nextStepIdx];
         localStorage.setItem(FLOW_KEY, JSON.stringify({ step: nextStep, visitData: next }));
@@ -66,7 +66,7 @@ export default function ServiceVisitFlow() {
     // Apply step transition (check new or existing retestRequired)
     let nextStepIdx = Math.min(STEPS.indexOf(step) + 1, STEPS.length - 1);
     if ((step === 'analyze' || step === 'dose') && (data.retestRequired === false || visitData.retestRequired === false)) {
-      nextStepIdx = STEPS.indexOf('photos');
+      nextStepIdx = STEPS.indexOf('checklist');
     }
     if (nextStepIdx < STEPS.length) setStep(STEPS[nextStepIdx]);
   };
@@ -81,9 +81,9 @@ export default function ServiceVisitFlow() {
   const stepProps = { visitData, user, settings, advance, goTo };
 
   const stepLabels = {
-    arrive: 'Arrive', checklist: 'Tasks', filter_psi: 'Filter', water_level: 'Water',
-    test: 'Test', analyze: 'Analyze',
-    dose: 'Dose', wait: 'Wait', retest: 'Retest', photos: 'Photos', close: 'Close'
+    arrive: 'Arrive', photos_before: 'Before', test: 'Test', analyze: 'Analyze',
+    dose: 'Dose', wait: 'Wait', retest: 'Retest', checklist: 'Tasks', filter_psi: 'Filter', water_level: 'Water',
+    photos_after: 'After', close: 'Close'
   };
 
   const currentIdx = STEPS.indexOf(step);
