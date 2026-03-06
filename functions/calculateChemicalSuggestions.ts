@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
     if (targets.freeChlorine && readings.freeChlorine != null && readings.freeChlorine < targets.freeChlorine.min) {
       const deficit = targets.freeChlorine.min - readings.freeChlorine;
       const ozNeeded = deficit * gallonsK * formulas.chlorinePerPpm;
-      const gallonsNeeded = (ozNeeded / 128).toFixed(2);
+      const gallonsNeeded = ozNeeded / 128;
       adjustments.push({
         chemical: 'Liquid Chlorine',
         reason: `FC below target (${readings.freeChlorine} < ${targets.freeChlorine.min})`,
@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
     if (targets.pH && readings.pH != null && readings.pH > targets.pH.max) {
       const excess = readings.pH - targets.pH.max;
       const ozNeeded = (excess / 0.2) * gallonsK * formulas.acidPerPH;
-      const gallonsNeeded = (ozNeeded / 128).toFixed(2);
+      const gallonsNeeded = ozNeeded / 128;
       adjustments.push({
         chemical: 'Muriatic Acid',
         reason: `pH above target (${readings.pH} > ${targets.pH.max})`,
@@ -132,7 +132,7 @@ Deno.serve(async (req) => {
     if (targets.totalAlkalinity && readings.totalAlkalinity != null && readings.totalAlkalinity < targets.totalAlkalinity.min) {
       const deficit = targets.totalAlkalinity.min - readings.totalAlkalinity;
       const ozNeeded = (deficit / 10) * gallonsK * formulas.bakingSodaPerTA;
-      const lbsNeeded = (ozNeeded / 16).toFixed(2);
+      const lbsNeeded = ozNeeded / 16;
       adjustments.push({
         chemical: 'Baking Soda',
         reason: `TA below target (${readings.totalAlkalinity} < ${targets.totalAlkalinity.min})`,
