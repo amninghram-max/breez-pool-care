@@ -26,8 +26,16 @@ Deno.serve(async (req) => {
     let fallbackMatched = false;
 
     // Fallback: if filter returned no results, fetch a wider batch and find locally
+    let fallbackListCount = 0;
+    let fallbackFirstIds = [];
+    let fallbackFirstLeadIds = [];
+
     if (!pool) {
       const allPools = await base44.asServiceRole.entities.Pool.list('-created_date', 500);
+      fallbackListCount = allPools.length;
+      fallbackFirstIds = allPools.slice(0, 10).map(p => p.id);
+      fallbackFirstLeadIds = allPools.slice(0, 10).map(p => p.leadId);
+
       const foundPool = allPools.find(p => String(p.leadId) === String(leadId));
       if (foundPool) {
         pool = foundPool;
@@ -40,6 +48,9 @@ Deno.serve(async (req) => {
       requestedLeadId: leadId,
       filterCount: pools.length,
       fallbackMatched,
+      fallbackListCount,
+      fallbackFirstIds,
+      fallbackFirstLeadIds,
       pool
     });
   } catch (error) {
