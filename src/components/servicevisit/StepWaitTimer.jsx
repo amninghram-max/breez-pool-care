@@ -130,6 +130,13 @@ export default function StepWaitTimer({ visitData, advance, goTo }) {
 
   return (
     <div className="space-y-4">
+      {showSkipRetestModal && (
+        <SkipRetestConfirmModal
+          onConfirm={() => { setShowSkipRetestModal(false); handleSkipRetestConfirmed(); }}
+          onCancel={() => setShowSkipRetestModal(false)}
+        />
+      )}
+
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Wait / Circulate</h2>
         <p className="text-gray-500 text-sm mt-1">Allow chemicals to distribute before retesting</p>
