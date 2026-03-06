@@ -61,11 +61,17 @@ export default function PoolVolumeEditor({ leadId, userRole }) {
 
   const isAdmin = ['admin', 'staff'].includes(userRole);
 
-  const { data: poolData = null, isLoading } = useQuery({
+  const { data: poolData = null, isLoading, isError, error } = useQuery({
     queryKey: ['poolForVolume', leadId],
     queryFn: async () => {
       const res = await base44.functions.invoke('getPoolForLeadV1', { leadId });
-      return res.data?.pool || null;
+      if (!res?.data) {
+        throw new Error('No response from getPoolForLeadV1');
+      }
+      if (res.data.ok === false) {
+        throw new Error(res.data.error || 'Failed to load pool');
+      }
+      return res.data.pool || null;
     },
     enabled: !!leadId
   });
