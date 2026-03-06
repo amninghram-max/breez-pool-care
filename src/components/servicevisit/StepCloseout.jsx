@@ -116,6 +116,11 @@ export default function StepCloseout({ visitData, user }) {
           // Closeout context
           notes: internalNotes.trim() || visitData.notes || undefined,
           criticalPartialResolution: criticalPartialResolution || undefined,
+          // Required ServiceVisit fields: propertyId uses poolId (canonical pool identifier for this flow),
+          // visitDate is the actual closeout/save time, technicianName from authenticated user
+          propertyId: visitData.propertyId || visitData.poolId,
+          visitDate: new Date().toISOString(),
+          technicianName: user?.full_name || user?.email || '',
         }
       });
 
