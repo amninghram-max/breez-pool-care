@@ -25,11 +25,6 @@ const EQUIPMENT_TYPES = [
 export default function EquipmentProfileAdmin() {
   const navigate = useNavigate();
 
-  // Redirect to Equipment Directory
-  useEffect(() => {
-    navigate(createPageUrl('EquipmentProfiles'));
-  }, [navigate]);
-
   const params = new URLSearchParams(window.location.search);
   const leadId = params.get('leadId');
 
