@@ -302,6 +302,14 @@ Deno.serve(async (req) => {
       skippedReasons
     };
 
+    // Log trichlor accounting if present
+    if (visitData.chemicalsAdded?.chlorineTablets || visitData.chemicalsAdded?.trichlorPlacement) {
+      console.log('[processServiceVisit] TRICHLOR_CLOSEOUT_ACCOUNTING', {
+        tabletCount: visitData.chemicalsAdded?.chlorineTablets,
+        placement: visitData.chemicalsAdded?.trichlorPlacement
+      });
+    }
+
     // Create service visit record with costing data
     console.log('[processServiceVisit] CREATE_SERVICEVISIT_START');
     const visit = await base44.asServiceRole.entities.ServiceVisit.create({
