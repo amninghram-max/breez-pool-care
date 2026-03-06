@@ -221,6 +221,9 @@ export default function ChemistryDashboard() {
       {/* Retest Trend Advisory */}
       <RetestTrendAdvisory visits={visits} />
 
+      {/* Water Level Trend Advisory */}
+      <WaterLevelTrendAdvisory poolId={propertyId} />
+
       {/* Water Level History */}
       <WaterLevelHistory poolId={propertyId} />
 
