@@ -278,6 +278,7 @@ export default function Calendar() {
         <DayView 
           date={currentDate} 
           technicianFilter={selectedTechnician}
+          userRole={user?.role}
         />
       )}
       {viewMode === 'week' && (
