@@ -25,13 +25,20 @@ Deno.serve(async (req) => {
       recipient = lead.email;
     }
 
+    // Build message if not provided (reschedule case)
+    let finalMessage = message;
+    if (notificationType === 'reschedule' && !message && metadata?.newDate) {
+      finalMessage = `Breez: We were unable to access your pool today. Your service has been rescheduled to ${metadata.newDate}. Thank you!`;
+    }
+
     // Send notification
     if (channel === 'email' || channel === 'sms') {
       try {
         await base44.asServiceRole.integrations.Core.SendEmail({
           to: recipient,
-          subject: notificationType === 'storm_advisory' ? 'Breez Service Update' : 'Breez Schedule Update',
-          body: message
+          subject: notificationType === 'reschedule' ? 'Breez Service Rescheduled' 
+                  : (notificationType === 'storm_advisory' ? 'Breez Service Update' : 'Breez Schedule Update'),
+          body: finalMessage
         });
       } catch (sendError) {
         console.error('Failed to send notification:', sendError);
