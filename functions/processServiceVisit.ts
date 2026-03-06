@@ -272,6 +272,7 @@ Deno.serve(async (req) => {
       testRecordId: visitData.testRecordId || undefined,
       dosePlanId: visitData.dosePlan?.id || visitData.dosePlanId || undefined,
       retestRecordId: visitData.retestRecordId || undefined,
+      waterLevelLogId: visitData.waterLevelLogId || undefined,
       outOfRange,
       freeChlorine: parseFloat(visitData.freeChlorine),
       pH: parseFloat(visitData.pH),
