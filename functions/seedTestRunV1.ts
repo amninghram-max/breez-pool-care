@@ -133,7 +133,8 @@ Deno.serve(async (req) => {
       testRunId: runId,
       token: tokenB,
       email: 'guest@breezpoolcare.com',
-      status: 'SENT'
+      status: 'SENT',
+      prequalAnswers: JSON.stringify(PREQUAL_REPAIR)
       // leadId intentionally omitted
       // firstName intentionally omitted
     });
