@@ -326,6 +326,64 @@ export default function StepCloseout({ visitData, user }) {
         </CardContent>
       </Card>
 
+      {/* Trichlor tablets — manual closeout accounting */}
+      <Card>
+        <CardContent className="pt-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <FlaskConical className="w-4 h-4 text-teal-600" />
+            <p className="text-sm font-bold text-gray-700 uppercase tracking-wide">Trichlor Tablets</p>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="trichlor-count" className="text-sm text-gray-700 block mb-2">
+                Tablet Count
+              </Label>
+              <Input
+                id="trichlor-count"
+                type="number"
+                placeholder="e.g., 3"
+                min="0"
+                step="1"
+                value={trichlorTabletCount}
+                onChange={e => {
+                  setTrichlorTabletCount(e.target.value);
+                  console.log('[StepCloseout] TRICHLOR_COUNT_CHANGE', { count: e.target.value });
+                }}
+                className="text-sm"
+              />
+            </div>
+            <div>
+              <Label htmlFor="trichlor-placement" className="text-sm text-gray-700 block mb-2">
+                Placement Location
+              </Label>
+              <select
+                id="trichlor-placement"
+                value={trichlorPlacement}
+                onChange={e => {
+                  setTrichlorPlacement(e.target.value);
+                  console.log('[StepCloseout] TRICHLOR_PLACEMENT_CHANGE', { placement: e.target.value });
+                }}
+                className="w-full text-sm px-3 py-2 border border-gray-300 rounded-md bg-white hover:border-gray-400 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              >
+                <option value="">— Select placement —</option>
+                <option value="skimmer">Skimmer</option>
+                <option value="floater">Floater</option>
+                <option value="inline_feeder">Inline Feeder</option>
+              </select>
+            </div>
+            {trichlorTabletCount && trichlorPlacement && (
+              <div className="p-2 rounded bg-teal-50 border border-teal-200">
+                <p className="text-xs text-teal-700">
+                  ✓ {trichlorTabletCount} tablet{trichlorTabletCount !== '1' ? 's' : ''} placed in {
+                    { skimmer: 'skimmer', floater: 'floater', inline_feeder: 'inline feeder' }[trichlorPlacement]
+                  }
+                </p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Retest results */}
       {Object.keys(retestReadings).length > 0 && (
         <Card>
