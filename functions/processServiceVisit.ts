@@ -127,6 +127,28 @@ Deno.serve(async (req) => {
 
     const { visitData } = await req.json();
 
+    // --- Duplicate-submit guard ---
+    // testRecordId is created exactly once in StepTest and is required to advance
+    // to StepCloseout, making it the strongest single-field visit identity anchor.
+    // A matching record means this closeout was already processed; return success.
+    if (visitData.testRecordId) {
+      const existing = await base44.asServiceRole.entities.ServiceVisit.filter(
+        { testRecordId: visitData.testRecordId },
+        '-created_date',
+        1
+      );
+      if (existing.length > 0) {
+        console.info(
+          `[processServiceVisit] Duplicate detected for testRecordId=${visitData.testRecordId} — returning existing visitId=${existing[0].id}`
+        );
+        return Response.json({
+          success: true,
+          visitId: existing[0].id,
+          alreadyRecorded: true,
+        });
+      }
+    }
+
     // Get chemistry targets
     const targetsResult = await base44.asServiceRole.entities.ChemistryTargets.filter({
       settingKey: 'default'
