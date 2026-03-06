@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
 /**
  * generateChemistryRiskEvents
@@ -105,8 +105,18 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Fallback: if get() failed after retries, try filter lookup
     if (!test) {
-      return Response.json({ error: `ChemTestRecord not found after retries for id: ${testRecordId}` }, { status: 404 });
+      try {
+        const filterResults = await base44.asServiceRole.entities.ChemTestRecord.filter({ id: testRecordId });
+        test = filterResults[0] || null;
+      } catch (e) {
+        // Filter also failed, will return error below
+      }
+    }
+
+    if (!test) {
+      return Response.json({ error: `ChemTestRecord not found after retries and fallback filter for id: ${testRecordId}` }, { status: 404 });
     }
 
     // Load pool to check chlorinationMethod for salt event gating
