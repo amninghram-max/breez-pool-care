@@ -91,12 +91,13 @@ export default function LeadsPipeline() {
   });
 
   const updateLeadStageMutation = useMutation({
-    mutationFn: ({ leadId, stage, notes, lostReason }) => 
+    mutationFn: ({ leadId, newStage, notes, lostReason, allowRegression }) => 
       base44.functions.invoke('updateLeadStageV1', {
         leadId,
-        newStage: stage,
+        newStage,
         notes,
-        lostReason
+        lostReason,
+        allowRegression
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
@@ -154,7 +155,7 @@ export default function LeadsPipeline() {
     
     updateLeadStageMutation.mutate({ 
       leadId, 
-      stage: newStage,
+      newStage,
       allowRegression: isBackwardMove 
     }, {
       onSuccess: () => {
@@ -451,7 +452,7 @@ export default function LeadsPipeline() {
        <LeadDetailModal 
          lead={selectedLead} 
          onClose={() => setSelectedLead(null)}
-         onUpdate={(data) => updateLeadStageMutation.mutate(data)}
+         onUpdate={(data) => updateLeadStageMutation.mutate({ ...data, newStage: data.stage || data.newStage })}
          onSendAcceptance={(leadId) => sendAcceptanceMutation.mutate(leadId)}
          onRemoved={() => setSelectedLead(null)}
        />
@@ -1086,10 +1087,10 @@ function LeadDetailModal({ lead, onClose, onUpdate, onSendAcceptance, onRemoved 
                     <Button 
                       onClick={() => {
                         onUpdate({ 
-                          leadId: lead.id, 
-                          stage: 'lost', 
-                          lostReason 
-                        });
+                           leadId: lead.id, 
+                           newStage: 'lost', 
+                           lostReason 
+                         });
                         setShowLostForm(false);
                         onClose();
                       }}
