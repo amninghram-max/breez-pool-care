@@ -119,7 +119,11 @@ Deno.serve(async (req) => {
     // Perform update (use authenticated admin context for Lead write)
     try {
       console.log('LEAD_UPDATE_CONTEXT_AUTH_USER', { path: 'base44.entities.Lead.update', operator: user.email, leadId: leadId.slice(0, 8) });
-      await base44.entities.Lead.update(leadId, { stage: newStage });
+      const updateData = { stage: newStage };
+      if (newStage === 'converted') {
+        updateData.accountStatus = 'active';
+      }
+      await base44.entities.Lead.update(leadId, updateData);
       console.info('[updateLeadStageV1] Stage updated', { 
         leadId, 
         oldStage, 
