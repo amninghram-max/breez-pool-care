@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
         poolType: 'not_sure',
       };
 
-      const createdPool = await base44.entities.Pool.create(poolData);
+      const createdPool = await base44.asServiceRole.entities.Pool.create(poolData);
       
       console.info('[createPoolForLeadV1] Pool created', { 
         poolId: createdPool.id, 
