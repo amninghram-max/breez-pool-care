@@ -17,33 +17,53 @@ const CHEMICAL_LABELS = {
   SALT: 'Pool Salt'
 };
 
+// Normalization: convert canonical schema units to internal conversion format
+const normalizeCanonicalUnit = (unit) => {
+  const map = {
+    'gallons': 'gal',
+    'gal': 'gal',
+    'lbs': 'lb',
+    'lb': 'lb',
+    'oz': 'oz_wt',  // weight ounces
+    'oz_wt': 'oz_wt',
+    'tabs': 'tabs'  // non-convertible, pass-through
+  };
+  return map[unit] || unit;
+};
+
 // Conversion helpers for technician-friendly unit display
 const UnitConversion = {
-  // Volume conversions: canonical stored as gallons
+  // Volume conversions: canonical stored as gallons (normalized to 'gal')
   convertVolume: (amount, fromUnit, toUnit) => {
     if (fromUnit === toUnit) return amount;
     const toGal = { 'gal': amount, 'cup': amount / 8, 'fl_oz': amount / 128 };
     const gals = toGal[fromUnit];
+    if (gals === undefined) return undefined;  // guard: unknown unit
     return { 'gal': gals, 'cup': gals * 8, 'fl_oz': gals * 128 }[toUnit];
   },
   
-  // Weight conversions: canonical stored as lbs
+  // Weight conversions: canonical stored as lbs (normalized to 'lb')
   convertWeight: (amount, fromUnit, toUnit) => {
     if (fromUnit === toUnit) return amount;
     const toLbs = { 'lb': amount, 'oz_wt': amount / 16 };
     const lbs = toLbs[fromUnit];
+    if (lbs === undefined) return undefined;  // guard: unknown unit
     return { 'lb': lbs, 'oz_wt': lbs * 16 }[toUnit];
   },
   
   // Choose sensible default display unit
   getDefaultDisplayUnit: (canonicalAmount, canonicalUnit) => {
-    if (canonicalUnit === 'gallons') {
+    // canonicalUnit should already be normalized
+    if (canonicalUnit === 'gal') {
       return canonicalAmount < 0.5 ? 'cup' : 'gal';
     }
-    if (canonicalUnit === 'lbs') {
+    if (canonicalUnit === 'lb') {
       return canonicalAmount < 1 ? 'oz_wt' : 'lb';
     }
-    return canonicalUnit;
+    if (canonicalUnit === 'tabs') {
+      return 'tabs';  // non-convertible
+    }
+    return canonicalUnit;  // fallback to canonical
   },
   
   // Determine if unit is liquid or dry
