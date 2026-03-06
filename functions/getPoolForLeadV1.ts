@@ -25,9 +25,9 @@ Deno.serve(async (req) => {
     let pool = pools.length > 0 ? pools[0] : null;
     let fallbackMatched = false;
 
-    // Fallback: if filter returned no results, fetch all Pools and find locally
+    // Fallback: if filter returned no results, fetch a wider batch and find locally
     if (!pool) {
-      const allPools = await base44.asServiceRole.entities.Pool.list();
+      const allPools = await base44.asServiceRole.entities.Pool.list('-created_date', 500);
       const foundPool = allPools.find(p => String(p.leadId) === String(leadId));
       if (foundPool) {
         pool = foundPool;
