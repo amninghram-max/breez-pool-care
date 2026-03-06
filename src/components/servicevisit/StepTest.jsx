@@ -88,7 +88,7 @@ export default function StepTest({ visitData, user, advance }) {
 
   const createTestMutation = useMutation({
     mutationFn: async () => {
-      const testRecord = await base44.entities.ChemTestRecord.create({
+      const createRes = await base44.functions.invoke('createChemTestRecordV1', {
         poolId: visitData.poolId,
         leadId: pool?.leadId,
         testDate: new Date().toISOString(),
@@ -96,6 +96,12 @@ export default function StepTest({ visitData, user, advance }) {
         ...readings,
         notes: notes || undefined
       });
+
+      if (!createRes.data?.ok) {
+        throw new Error(createRes.data?.error || 'Failed to save readings');
+      }
+
+      const testRecord = createRes.data.testRecord;
 
       const riskResult = await base44.functions.invoke('generateChemistryRiskEvents', {
         testRecordId: testRecord.id
