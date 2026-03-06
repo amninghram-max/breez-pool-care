@@ -84,6 +84,23 @@ export default function PoolVolumeEditor({ leadId, userRole }) {
     onError: (err) => toast.error(err.message || 'Save failed')
   });
 
+  const createPoolMutation = useMutation({
+    mutationFn: async () => {
+      await base44.entities.Pool.create({
+        leadId,
+        surfaceType: 'CONCRETE_PLASTER',
+        chlorinationMethod: createForm.chlorinationMethod,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['poolForVolume', leadId] });
+      toast.success('Pool record created');
+      setShowCreatePool(false);
+      setCreateForm({ chlorinationMethod: 'not_sure' });
+    },
+    onError: (err) => toast.error(err.message || 'Failed to create pool'),
+  });
+
   const { gallons: computedGallons, error: calcError } = calcVolume(shape, dims.length, dims.width, dims.depth);
 
   const handleEdit = () => {
