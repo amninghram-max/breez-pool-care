@@ -265,7 +265,7 @@ export default function StepCloseout({ visitData, user }) {
         </CardContent>
       </Card>
 
-      {/* What we added — shows appliedAmount if partial */}
+      {/* What we added — shows appliedAmount if partial, with technician-friendly units */}
       <Card>
         <CardContent className="pt-5 space-y-3">
           <div className="flex items-center gap-2">
@@ -276,12 +276,22 @@ export default function StepCloseout({ visitData, user }) {
             <div className="space-y-2">
               {chemicalsAdded.map((action, i) => {
                     const isPartial = action.appliedAmount != null && action.appliedAmount < action.dosePrimary;
+                    const canonicalUnit = action.primaryUnit;
+                    const appliedCanonical = action.appliedAmount ?? action.dosePrimary;
+                    
+                    // Convert to display unit
+                    const defaultDisplay = UnitConversion.getDefaultDisplayUnit(appliedCanonical, canonicalUnit);
+                    const isLiquid = UnitConversion.isLiquidUnit(canonicalUnit);
+                    const converter = isLiquid ? UnitConversion.convertVolume : UnitConversion.convertWeight;
+                    const appliedDisplay = converter(appliedCanonical, canonicalUnit, defaultDisplay);
+                    const plannedDisplay = converter(action.dosePrimary, canonicalUnit, defaultDisplay);
+                    
                     return (
                       <div key={i} className="flex items-center justify-between py-1 border-b border-gray-100 last:border-0">
                         <span className="text-sm text-gray-700">{CHEMICAL_LABELS[action.chemicalType] || action.chemicalType}</span>
                         <span className={`text-sm font-mono font-bold ${isPartial ? 'text-orange-600' : 'text-teal-700'}`}>
-                          {formatDose(action.appliedAmount ?? action.dosePrimary)} {action.primaryUnit}
-                          {isPartial && ' ⚠'}
+                          {formatDose(appliedDisplay)} {unitLabels[defaultDisplay]}
+                          {isPartial && ` ⚠ (${formatDose(plannedDisplay)} planned)`}
                         </span>
                       </div>
                     );
