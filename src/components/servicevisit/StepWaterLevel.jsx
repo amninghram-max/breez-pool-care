@@ -45,7 +45,11 @@ export default function StepWaterLevel({ visitData, user, advance }) {
 
   const logMutation = useMutation({
     mutationFn: async (payload) => {
-      return base44.entities.WaterLevelLog.create(payload);
+      console.log('[StepWaterLevel] invoking createWaterLevelLog with payload:', payload);
+      const response = await base44.functions.invoke('createWaterLevelLog', payload);
+      console.log('[StepWaterLevel] createWaterLevelLog response:', response);
+      console.log('[StepWaterLevel] response.data:', response.data);
+      return response.data;
     }
   });
 
@@ -82,8 +86,9 @@ export default function StepWaterLevel({ visitData, user, advance }) {
         ...(notes ? { notes } : {}),
       };
       try {
-        const log = await logMutation.mutateAsync(logPayload);
-        waterLevelData.waterLevelLogId = log.id;
+        const result = await logMutation.mutateAsync(logPayload);
+        waterLevelData.waterLevelLogId = result.log?.id;
+        console.log('[StepWaterLevel] WaterLevelLog created successfully:', result.log?.id);
       } catch (err) {
         // Non-fatal: log creation failure does not block the visit flow
         console.error('[StepWaterLevel] WaterLevelLog create failed:', err?.message);
