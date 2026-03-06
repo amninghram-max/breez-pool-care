@@ -151,6 +151,19 @@ export default function StepCloseout({ visitData, user }) {
 
   const closeMutation = useMutation({
     mutationFn: async () => {
+      // Build chemicalsAdded with trichlor accounting
+      const chemicalsAdded = { ...(visitData.chemicalsAdded || {}) };
+      if (trichlorTabletCount) {
+        chemicalsAdded.chlorineTablets = parseFloat(trichlorTabletCount);
+        console.log('[StepCloseout] TRICHLOR_TABLET_ENTRY', {
+          tabletCount: trichlorTabletCount,
+          placement: trichlorPlacement
+        });
+      }
+      if (trichlorPlacement) {
+        chemicalsAdded.trichlorPlacement = trichlorPlacement;
+      }
+
       // 1. Create the canonical ServiceVisit record via processServiceVisit
       await base44.functions.invoke('processServiceVisit', {
         visitData: {
@@ -162,6 +175,8 @@ export default function StepCloseout({ visitData, user }) {
           // Closeout context
           notes: internalNotes.trim() || visitData.notes || undefined,
           criticalPartialResolution: criticalPartialResolution || undefined,
+          // Trichlor accounting
+          chemicalsAdded,
           // Required ServiceVisit fields: propertyId is Lead.id — consistent with CustomerTimeline
           // and ChemistryDashboard which both query ServiceVisit.filter({ propertyId: leadId }).
           propertyId: visitData.leadId,
