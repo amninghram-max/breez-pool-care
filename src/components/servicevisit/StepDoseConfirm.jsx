@@ -189,7 +189,7 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
           : { ...a, applied: false };
       });
 
-      const appliedDosePlan = await base44.entities.DosePlan.create({
+      const payload = {
         poolId: visitData.poolId,
         leadId: pool?.leadId,
         testRecordId: visitData.testRecordId,
@@ -206,8 +206,28 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
         appliedAt: new Date().toISOString(),
         appliedBy: user.id,
         verificationStatus: 'pending'
+      };
+
+      console.log('[StepDoseConfirm] CREATE_DOSE_PLAN_PAYLOAD', {
+        poolId: payload.poolId,
+        leadId: payload.leadId,
+        testRecordId: payload.testRecordId,
+        actionsCount: payload.actions.length
       });
-      return appliedDosePlan;
+
+      const response = await base44.functions.invoke('createDosePlanV1', payload);
+
+      console.log('[StepDoseConfirm] CREATE_DOSE_PLAN_RESPONSE', {
+        ok: response.data.ok,
+        dosePlanId: response.data.dosePlan?.id,
+        error: response.data.error
+      });
+
+      if (!response.data.ok) {
+        throw new Error(response.data.error || 'Failed to create dose plan');
+      }
+
+      return response.data.dosePlan;
     },
     onSuccess: (plan) => {
       advance({
