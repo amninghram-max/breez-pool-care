@@ -87,10 +87,9 @@ Deno.serve(async (req) => {
     }
 
     // Load test record
-    const testRecords = await base44.asServiceRole.entities.ChemTestRecord.filter({ id: testRecordId });
-    const test = testRecords[0];
+    const test = await base44.asServiceRole.entities.ChemTestRecord.get(testRecordId);
     if (!test) {
-      return Response.json({ error: 'ChemTestRecord not found' }, { status: 404 });
+      return Response.json({ error: `ChemTestRecord not found for id: ${testRecordId}` }, { status: 404 });
     }
 
     // Load pool to check chlorinationMethod for salt event gating
