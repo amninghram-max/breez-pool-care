@@ -79,9 +79,16 @@ export default function StepArrive({ visitData, user, advance }) {
   const markArrivedMutation = useMutation({
     mutationFn: async () => {
       if (visitData.eventId) {
-        await base44.functions.invoke('updateEventStatus', {
-          eventId: visitData.eventId, status: 'arrived', sendNotification: false
-        });
+        setRetryingMutation('mark_arrived');
+        try {
+          console.log('[StepArrive] markArrivedMutation: starting updateEventStatus for status=arrived');
+          await invokeWithRetry('updateEventStatus', {
+            eventId: visitData.eventId, status: 'arrived', sendNotification: false
+          });
+          console.log('[StepArrive] markArrivedMutation: success');
+        } finally {
+          setRetryingMutation(null);
+        }
       }
     },
     onSuccess: () => setArrived(true)
@@ -90,9 +97,16 @@ export default function StepArrive({ visitData, user, advance }) {
   const startVisitMutation = useMutation({
     mutationFn: async () => {
       if (visitData.eventId) {
-        await base44.functions.invoke('updateEventStatus', {
-          eventId: visitData.eventId, status: 'in_progress', sendNotification: false
-        });
+        setRetryingMutation('start_visit');
+        try {
+          console.log('[StepArrive] startVisitMutation: starting updateEventStatus for status=in_progress');
+          await invokeWithRetry('updateEventStatus', {
+            eventId: visitData.eventId, status: 'in_progress', sendNotification: false
+          });
+          console.log('[StepArrive] startVisitMutation: success');
+        } finally {
+          setRetryingMutation(null);
+        }
       }
     },
     onSuccess: () => advance({
