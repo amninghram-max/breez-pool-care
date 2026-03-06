@@ -380,6 +380,16 @@ Deno.serve(async (req) => {
           incomingDate: requestedDate, incomingTimeWindow: timeWindow
         });
         if (isSameAppointment) {
+          // If we matched via a non-InspectionRecord source, attempt to resolve the real inspectionId
+          let resolvedInspectionId = activeInspection.id || null;
+          if (!resolvedInspectionId) {
+            try {
+              const inspRows = await entities.InspectionRecord.filter(
+                { leadId, appointmentStatus: { $ne: 'cancelled' } }, '-created_date', 1
+              );
+              resolvedInspectionId = inspRows?.[0]?.id || null;
+            } catch (e) { /* non-fatal — id stays null */ }
+          }
           return json200({
             success: true,
             alreadyScheduled: true,
@@ -387,7 +397,7 @@ Deno.serve(async (req) => {
             timeWindow: activeInspection.timeWindow,
             email: finalEmail,
             firstName: finalFirstName,
-            inspectionId: activeInspection.id || null,
+            inspectionId: resolvedInspectionId,
             eventId: activeInspection.calendarEventId || null,
             emailStatus: 'skipped',
             ...meta
