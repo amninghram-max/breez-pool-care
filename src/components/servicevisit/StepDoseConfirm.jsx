@@ -179,18 +179,24 @@ function PreApplyModal({ action, actionIndex, onConfirm, onCancel }) {
               onChange={e => {
                 const newUnit = e.target.value;
                 // Convert current input to new unit
-                const currentCanonical = UnitConversion[UnitConversion.isLiquidUnit(canonicalUnit) ? 'convertVolume' : 'convertWeight'](
+                if (canonicalUnit === 'tabs') {
+                  setDisplayUnit(newUnit);
+                  setAppliedAmountDisplay(appliedAmountDisplay);
+                  return;
+                }
+                const converter = UnitConversion.isLiquidUnit(canonicalUnit) ? 'convertVolume' : 'convertWeight';
+                const currentCanonical = UnitConversion[converter](
                   parseFloat(appliedAmountDisplay) || 0,
                   displayUnit,
                   canonicalUnit
                 );
-                const newDisplay = UnitConversion[UnitConversion.isLiquidUnit(canonicalUnit) ? 'convertVolume' : 'convertWeight'](
+                const newDisplay = UnitConversion[converter](
                   currentCanonical,
                   canonicalUnit,
                   newUnit
                 );
                 setDisplayUnit(newUnit);
-                setAppliedAmountDisplay(newDisplay);
+                setAppliedAmountDisplay(newDisplay !== undefined ? newDisplay : parseFloat(appliedAmountDisplay) || 0);
                 console.log('[PreApplyModal] unit switched', { from: displayUnit, to: newUnit, newDisplay });
               }}
               className="text-sm px-2 py-1 border border-gray-300 rounded bg-white"
