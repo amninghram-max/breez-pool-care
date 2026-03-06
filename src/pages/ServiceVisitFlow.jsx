@@ -106,6 +106,7 @@ export default function ServiceVisitFlow() {
 
       <div className="p-4">
         {step === 'arrive'      && <StepArrive      {...stepProps} />}
+        {step === 'checklist'   && <StepChecklist   {...stepProps} />}
         {step === 'filter_psi'  && <StepFilterPsi   {...stepProps} />}
         {step === 'water_level' && <StepWaterLevel   {...stepProps} />}
         {step === 'test'        && <StepTest         {...stepProps} />}
