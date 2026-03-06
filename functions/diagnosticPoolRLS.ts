@@ -98,6 +98,27 @@ Deno.serve(async (req) => {
       };
     }
 
+    // Test 3b: Pool filter by leadId using service role
+    try {
+      const poolsByLead = await base44.asServiceRole.entities.Pool.filter({ leadId });
+      results.poolFilterByLead = {
+        success: true,
+        count: poolsByLead?.length || 0,
+        records: (poolsByLead || []).map(p => ({
+          id: p.id,
+          leadId: p.leadId,
+          chlorinationMethod: p.chlorinationMethod,
+          surfaceType: p.surfaceType,
+          poolType: p.poolType
+        }))
+      };
+    } catch (e) {
+      results.poolFilterByLead = {
+        success: false,
+        error: e.message
+      };
+    }
+
     // Test 4: Pool create using service role
     if (leadId) {
       try {
