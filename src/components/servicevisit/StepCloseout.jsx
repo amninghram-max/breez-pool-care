@@ -16,6 +16,42 @@ const CHEMICAL_LABELS = {
   STABILIZER_CYA: 'Stabilizer / CYA', SALT: 'Pool Salt'
 };
 
+// Unit conversion for technician-friendly display (matches StepDoseConfirm)
+const UnitConversion = {
+  convertVolume: (amount, fromUnit, toUnit) => {
+    if (fromUnit === toUnit) return amount;
+    const toGal = { 'gal': amount, 'cup': amount / 8, 'fl_oz': amount / 128 };
+    const gals = toGal[fromUnit];
+    return { 'gal': gals, 'cup': gals * 8, 'fl_oz': gals * 128 }[toUnit];
+  },
+  convertWeight: (amount, fromUnit, toUnit) => {
+    if (fromUnit === toUnit) return amount;
+    const toLbs = { 'lb': amount, 'oz_wt': amount / 16 };
+    const lbs = toLbs[fromUnit];
+    return { 'lb': lbs, 'oz_wt': lbs * 16 }[toUnit];
+  },
+  getDefaultDisplayUnit: (canonicalAmount, canonicalUnit) => {
+    if (canonicalUnit === 'gallons') {
+      return canonicalAmount < 0.5 ? 'cup' : 'gal';
+    }
+    if (canonicalUnit === 'lbs') {
+      return canonicalAmount < 1 ? 'oz_wt' : 'lb';
+    }
+    return canonicalUnit;
+  },
+  isLiquidUnit: (unit) => ['gal', 'cup', 'fl_oz', 'gallons'].includes(unit),
+};
+
+const unitLabels = {
+  'gal': 'gallons',
+  'cup': 'cups',
+  'fl_oz': 'fl oz',
+  'lb': 'lbs',
+  'oz_wt': 'oz',
+  'gallons': 'gallons',
+  'lbs': 'lbs'
+};
+
 const DISPLAY_FIELDS = ['freeChlorine', 'pH', 'totalAlkalinity', 'calciumHardness', 'cyanuricAcid', 'waterTemp'];
 
 const FIELD_LABELS = {
