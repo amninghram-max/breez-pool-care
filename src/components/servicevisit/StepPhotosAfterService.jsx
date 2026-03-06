@@ -96,17 +96,18 @@ export default function StepPhotosAfterService({ visitData, advance, goTo }) {
   const canAdvance = photosAfter.length > 0 && !uploading;
 
   const handleContinue = () => {
-    console.log('[StepPhotosAfterService] continue clicked', { retestRequired: visitData.retestRequired });
-    // Always persist photosAfter first
+    console.log('[StepPhotosAfterService] continue clicked', { retestRequired: visitData.retestRequired, photosCount: photosAfter.length });
+    // Always persist photosAfter
     const nextData = { photosAfter };
     
-    // If retest is required, route to wait instead of closeout
+    // If retest is required, route to wait (retest will circle back to photos_after later)
     if (visitData.retestRequired) {
-      console.log('[StepPhotosAfterService] persisting photosAfter before retest path', { photosAfter: photosAfter.length });
+      console.log('[StepPhotosAfterService] persisting photosAfter, routing to wait for retest');
       advance(nextData);
       goTo('wait');
     } else {
-      // Safe to close when no retest required
+      // No retest required: persist photos and advance to closeout (final step)
+      console.log('[StepPhotosAfterService] persisting photosAfter, routing to closeout (final step)');
       advance(nextData);
     }
   };
