@@ -26,6 +26,7 @@ Deno.serve(async (req) => {
     }
 
     // Update event
+    console.log('[updateEventStatus] EVENT_UPDATE_START', { eventId, status });
     const updates = { status };
 
     if (status === 'completed') {
@@ -38,6 +39,7 @@ Deno.serve(async (req) => {
     }
 
     await base44.entities.CalendarEvent.update(eventId, updates);
+    console.log('[updateEventStatus] EVENT_UPDATE_DONE', { eventId });
 
     // Send notification if requested
     if (sendNotification && (status === 'completed' || status === 'en_route')) {
