@@ -343,6 +343,7 @@ export default function AdminSettingsSetup() {
                   try { tokens = JSON.parse(latestSettings.additiveTokens || '{}'); } catch {}
                   try { re = JSON.parse(latestSettings.riskEngine || '{}'); } catch {}
                   try { freq = JSON.parse(latestSettings.frequencyLogic || '{}'); } catch {}
+                  let chem = {}; try { chem = JSON.parse(latestSettings.chemistryTargets || '{}'); } catch {}
                   return [
                     { label: 'Tier A Base', value: tiers.tier_a_10_15k ? `$${tiers.tier_a_10_15k}` : '—' },
                     { label: 'Tier D Base', value: tiers.tier_d_30k_plus ? `$${tiers.tier_d_30k_plus}` : '—' },
@@ -351,6 +352,7 @@ export default function AdminSettingsSetup() {
                     { label: 'Risk Brackets', value: re.escalation_brackets?.length ?? '—' },
                     { label: 'Max Risk Addon', value: re.escalation_brackets ? `$${Math.max(...re.escalation_brackets.map(b => b.addon_amount))}` : '—' },
                     { label: '2× Multiplier', value: freq.twice_weekly_multiplier ? `${freq.twice_weekly_multiplier}×` : '—' },
+                    { label: 'Chemistry Targets', value: chem.freeChlorine ? `✓ Configured (FC: ${chem.freeChlorine.min}-${chem.freeChlorine.max})` : '—' },
                     { label: 'AutoPay Discount', value: latestSettings.autopayDiscount ? `$${latestSettings.autopayDiscount}` : '—' },
                   ].map(({ label, value }) => (
                     <div key={label} className="bg-gray-50 rounded p-3">
