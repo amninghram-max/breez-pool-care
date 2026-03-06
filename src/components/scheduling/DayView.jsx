@@ -101,6 +101,28 @@ export default function DayView({ date, technicianFilter, userRole }) {
 
   return (
     <>
+      {/* Admin: Add single service event */}
+      {userRole === 'admin' && (
+        <div className="flex justify-end mb-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowCreateModal(true)}
+            className="border-teal-300 text-teal-700 hover:bg-teal-50"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Add Service Event
+          </Button>
+        </div>
+      )}
+
+      {showCreateModal && (
+        <CreateServiceEventModal
+          date={date}
+          onClose={() => setShowCreateModal(false)}
+        />
+      )}
+
       {/* Show cancelled toggle */}
       <div className="flex items-center justify-end mb-4">
         <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900">
