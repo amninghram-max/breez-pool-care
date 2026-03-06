@@ -134,6 +134,12 @@ export default function StepArrive({ visitData, user, advance }) {
     setAccessIssueOpen(false);
   };
 
+  const handleAccessIssueConfirmed = (data) => {
+    console.log('[StepArrive] access issue confirmed, moving to access_wait', data);
+    advance(data);
+    setAccessIssueOpen(false);
+  };
+
   const address = event?.serviceAddress || lead?.serviceAddress || 'Address not set';
   const hasAccess = event?.accessNotes || lead?.gateCode;
   const hasPets = lead?.hasPets || lead?.petsEnterPoolArea;
@@ -283,6 +289,7 @@ export default function StepArrive({ visitData, user, advance }) {
         eventId={visitData.eventId}
         lead={lead}
         user={user}
+        onAccessIssueConfirmed={handleAccessIssueConfirmed}
       />
     </div>
   );

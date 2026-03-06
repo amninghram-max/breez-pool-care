@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import StepArrive from '../components/servicevisit/StepArrive';
+import StepAccessWait from '../components/servicevisit/StepAccessWait';
 import StepPhotosBeforeService from '../components/servicevisit/StepPhotosBeforeService';
 import StepChecklist from '../components/servicevisit/StepChecklist';
 import StepFilterPsi from '../components/servicevisit/StepFilterPsi';
@@ -14,8 +15,8 @@ import StepRetest from '../components/servicevisit/StepRetest';
 import StepPhotosAfterService from '../components/servicevisit/StepPhotosAfterService';
 import StepCloseout from '../components/servicevisit/StepCloseout';
 
-// Steps: arrive → photos_before → test → analyze → dose → wait → retest → checklist → filter_psi → water_level → photos_after → close
-const STEPS = ['arrive', 'photos_before', 'test', 'analyze', 'dose', 'wait', 'retest', 'checklist', 'filter_psi', 'water_level', 'photos_after', 'close'];
+// Steps: arrive → access_wait (if needed) → photos_before → test → analyze → dose → wait → retest → checklist → filter_psi → water_level → photos_after → close
+const STEPS = ['arrive', 'access_wait', 'photos_before', 'test', 'analyze', 'dose', 'wait', 'retest', 'checklist', 'filter_psi', 'water_level', 'photos_after', 'close'];
 
 export default function ServiceVisitFlow() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -83,7 +84,7 @@ export default function ServiceVisitFlow() {
   const stepProps = { visitData, user, settings, advance, goTo };
 
   const stepLabels = {
-    arrive: 'Arrive', photos_before: 'Before', test: 'Test', analyze: 'Analyze',
+    arrive: 'Arrive', access_wait: 'Wait', photos_before: 'Before', test: 'Test', analyze: 'Analyze',
     dose: 'Dose', wait: 'Wait', retest: 'Retest', checklist: 'Tasks', filter_psi: 'Filter', water_level: 'Water',
     photos_after: 'After', close: 'Close'
   };
@@ -119,19 +120,20 @@ export default function ServiceVisitFlow() {
       </div>
 
       <div className="p-4">
-        {step === 'arrive'         && <StepArrive              {...stepProps} />}
-        {step === 'photos_before'  && <StepPhotosBeforeService {...stepProps} />}
-        {step === 'checklist'      && <StepChecklist          {...stepProps} />}
-        {step === 'filter_psi'     && <StepFilterPsi          {...stepProps} />}
-        {step === 'water_level'    && <StepWaterLevel         {...stepProps} />}
-        {step === 'test'           && <StepTest               {...stepProps} />}
-        {step === 'analyze'        && <StepAnalyze            {...stepProps} />}
-        {step === 'dose'           && <StepDoseConfirm        {...stepProps} />}
-        {step === 'wait'           && <StepWaitTimer          {...stepProps} />}
-        {step === 'retest'         && <StepRetest             {...stepProps} />}
-        {step === 'photos_after'   && <StepPhotosAfterService {...stepProps} />}
-        {step === 'close'          && <StepCloseout           {...stepProps} />}
-      </div>
+         {step === 'arrive'         && <StepArrive              {...stepProps} />}
+         {step === 'access_wait'    && <StepAccessWait         {...stepProps} />}
+         {step === 'photos_before'  && <StepPhotosBeforeService {...stepProps} />}
+         {step === 'checklist'      && <StepChecklist          {...stepProps} />}
+         {step === 'filter_psi'     && <StepFilterPsi          {...stepProps} />}
+         {step === 'water_level'    && <StepWaterLevel         {...stepProps} />}
+         {step === 'test'           && <StepTest               {...stepProps} />}
+         {step === 'analyze'        && <StepAnalyze            {...stepProps} />}
+         {step === 'dose'           && <StepDoseConfirm        {...stepProps} />}
+         {step === 'wait'           && <StepWaitTimer          {...stepProps} />}
+         {step === 'retest'         && <StepRetest             {...stepProps} />}
+         {step === 'photos_after'   && <StepPhotosAfterService {...stepProps} />}
+         {step === 'close'          && <StepCloseout           {...stepProps} />}
+       </div>
     </div>
   );
 }

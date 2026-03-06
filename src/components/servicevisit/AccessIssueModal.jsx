@@ -20,7 +20,7 @@ const REASON_OPTIONS = [
   { key: 'other', label: 'Other access issue' },
 ];
 
-export default function AccessIssueModal({ isOpen, onClose, eventId, lead, user }) {
+export default function AccessIssueModal({ isOpen, onClose, eventId, lead, user, onAccessIssueConfirmed }) {
   const [selectedReason, setSelectedReason] = useState(null);
   const [calledCustomer, setCalledCustomer] = useState(false);
   const [textedCustomer, setTextedCustomer] = useState(false);
@@ -45,8 +45,8 @@ export default function AccessIssueModal({ isOpen, onClose, eventId, lead, user 
       });
     },
     onSuccess: () => {
-      console.log('[AccessIssueModal] confirm success', { eventId, reason: selectedReason });
-      onClose();
+      console.log('[AccessIssueModal] confirm success, routing to access_wait', { eventId, reason: selectedReason, reasonLabel });
+      onAccessIssueConfirmed({ accessIssueReason: reasonLabel });
     },
     onError: (error) => {
       console.error('[AccessIssueModal] confirm failed', { error: error?.message });
