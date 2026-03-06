@@ -22,6 +22,8 @@ function PreApplyModal({ action, actionIndex, onConfirm, onCancel }) {
   const [amount, setAmount] = useState(action.dosePrimary);
   const isPartial = parseFloat(amount) < action.dosePrimary;
 
+  const formatDose = (val) => parseFloat(val).toFixed(4).replace(/\.?0+$/, '');
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40">
       <div className="bg-white rounded-2xl w-full max-w-sm shadow-xl p-6 space-y-4">
@@ -37,7 +39,7 @@ function PreApplyModal({ action, actionIndex, onConfirm, onCancel }) {
             {CHEMICAL_LABELS[action.chemicalType] || action.chemicalType}
           </p>
           <p className="text-xs text-teal-700 mt-1">
-            Planned dose: {action.dosePrimary} {action.primaryUnit}
+            Planned dose: {formatDose(action.dosePrimary)} {action.primaryUnit}
           </p>
         </div>
 
