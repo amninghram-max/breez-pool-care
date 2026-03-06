@@ -21,7 +21,7 @@ const DEFAULT_TARGETS = {
   combinedChlorine: { min: 0, max: 0.5 }
 };
 
-export default function StepRetest({ visitData, user, advance }) {
+export default function StepRetest({ visitData, user, advance, goTo }) {
   const [readings, setReadings] = useState({});
 
   const { data: pool } = useQuery({
@@ -59,7 +59,9 @@ export default function StepRetest({ visitData, user, advance }) {
       return record;
     },
     onSuccess: (record) => {
+      console.log('[StepRetest] saved retest, routing to photos_after', { retestRecordId: record.id, resolved: allResolved });
       advance({ retestRecordId: record.id, retestResolved: allResolved, retestReadings: readings });
+      goTo('photos_after');
     }
   });
 
@@ -131,7 +133,7 @@ export default function StepRetest({ visitData, user, advance }) {
         onClick={() => submitMutation.mutate()}
       >
         <ChevronRight className="w-5 h-5 mr-2" />
-        {submitMutation.isPending ? 'Saving retest…' : 'Save Retest → Close'}
+        {submitMutation.isPending ? 'Saving retest…' : 'Save Retest → After Photos'}
       </Button>
 
       {!canAdvance && (
