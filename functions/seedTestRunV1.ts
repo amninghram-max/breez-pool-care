@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
     await entities.QuoteRequests.create({
       isTest: true,
       testRunId: runId,
-      token: `test-token-${runId}-A`,
+      token: tokenA,
       leadId: normalLead.id,
       email: `test+${runId}@breezpoolcare.com`,
       firstName: 'Test',
