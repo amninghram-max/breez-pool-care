@@ -402,6 +402,11 @@ export default function CustomerTimeline() {
         </CardContent>
       </Card>
 
+      {/* Pool Record */}
+      {user && ['admin', 'staff'].includes(user.role) && (
+        <PoolVolumeEditor leadId={leadId} userRole={user.role} />
+      )}
+
       {/* Recent Visits Section */}
       <Card className="bg-blue-50 border-blue-200">
         <CardHeader>
