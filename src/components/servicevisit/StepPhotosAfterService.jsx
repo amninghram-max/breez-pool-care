@@ -107,10 +107,26 @@ export default function StepPhotosAfterService({ visitData, advance, goTo }) {
 
   return (
     <div className="space-y-5">
+      {showSkipRetestModal && (
+        <SkipRetestModal
+          onConfirm={() => { setShowSkipRetestModal(false); handleSkipRetest(); }}
+          onCancel={() => setShowSkipRetestModal(false)}
+        />
+      )}
+
       <div>
         <h2 className="text-2xl font-bold text-gray-900">After Photos</h2>
         <p className="text-gray-500 text-sm mt-1">Capture the pool condition after service</p>
       </div>
+
+      {visitData.retestRequired && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="pt-3 pb-3 flex items-start gap-3">
+            <AlertTriangle className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-blue-800"><strong>Retest required:</strong> After photos, the app will return to the wait/retest step to verify treatment success.</p>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardContent className="pt-5 space-y-3">
@@ -149,18 +165,30 @@ export default function StepPhotosAfterService({ visitData, advance, goTo }) {
 
       {!canAdvance && (
         <p className="text-xs text-center text-orange-500">
-          Add at least one after-service photo before closing
+          Add at least one after-service photo before continuing
         </p>
       )}
 
       <Button
         className="w-full bg-teal-600 hover:bg-teal-700 h-14 text-base"
         disabled={!canAdvance}
-        onClick={() => advance({ photosAfter })}
+        onClick={handleContinue}
       >
         <ChevronRight className="w-5 h-5 mr-2" />
-        Photos Done → Close Visit
+        {visitData.retestRequired ? 'Photos Done → Retest' : 'Photos Done → Close Visit'}
       </Button>
+
+      {visitData.retestRequired && (
+        <Button
+          variant="outline"
+          className="w-full border-orange-400 text-orange-700 hover:bg-orange-50 h-12 text-sm"
+          disabled={!canAdvance}
+          onClick={() => { console.log('[StepPhotosAfterService] skip retest clicked'); setShowSkipRetestModal(true); }}
+        >
+          <AlertTriangle className="w-4 h-4 mr-2" />
+          Skip Retest (Manual Override)
+        </Button>
+      )}
     </div>
   );
 }
