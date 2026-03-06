@@ -39,6 +39,14 @@ function calcVolume(shape, l, w, d) {
   return { gallons: Math.round(area * D * 7.5), error: null };
 }
 
+const CHLORINATION_OPTIONS = [
+  { value: 'saltwater', label: 'Saltwater' },
+  { value: 'tablets', label: 'Tablets' },
+  { value: 'liquid_chlorine', label: 'Liquid Chlorine' },
+  { value: 'mineral', label: 'Mineral' },
+  { value: 'not_sure', label: 'Not Sure' },
+];
+
 export default function PoolVolumeEditor({ leadId, userRole }) {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
@@ -46,6 +54,10 @@ export default function PoolVolumeEditor({ leadId, userRole }) {
   const [calcMode, setCalcMode] = useState(false);
   const [shape, setShape] = useState('rect');
   const [dims, setDims] = useState({ length: '', width: '', depth: '' });
+
+  // Create Pool form state
+  const [showCreatePool, setShowCreatePool] = useState(false);
+  const [createForm, setCreateForm] = useState({ chlorinationMethod: 'not_sure' });
 
   const isAdmin = ['admin', 'staff'].includes(userRole);
 
