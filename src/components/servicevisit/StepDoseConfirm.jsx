@@ -103,7 +103,10 @@ function PreApplyModal({ action, actionIndex, onConfirm, onCancel }) {
     return converted !== undefined ? converted : canonicalAmount;
   })();
   
-  const [appliedAmountDisplay, setAppliedAmountDisplay] = useState(safeConvertedAmount);
+  // Format to max 3 decimals, trim trailing zeros
+  const formattedInitialAmount = parseFloat(safeConvertedAmount).toFixed(3).replace(/\.?0+$/, '');
+  
+  const [appliedAmountDisplay, setAppliedAmountDisplay] = useState(formattedInitialAmount);
 
   const isPartial = (() => {
     if (canonicalUnit === 'tabs') return parseFloat(appliedAmountDisplay) < canonicalAmount;
