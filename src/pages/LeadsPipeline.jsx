@@ -146,6 +146,7 @@ export default function LeadsPipeline() {
   }
 
   const handleStageChange = (leadId, newStage, oldStage) => {
+    console.log('[handleStageChange] firing', { leadId: leadId?.slice(0, 8), oldStage, newStage });
     // Detect backward move (manual override) and allow regression
     const oldIdx = STAGES.findIndex(s => s.key === oldStage);
     const newIdx = STAGES.findIndex(s => s.key === newStage);
