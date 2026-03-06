@@ -6,7 +6,7 @@
  */
 
 // Unit domain detection
-const VOLUME_UNITS = new Set(['fl_oz', 'qt', 'gal']);
+const VOLUME_UNITS = new Set(['fl_oz', 'cup', 'qt', 'gal']);
 const WEIGHT_UNITS = new Set(['oz_wt', 'lb']);
 
 export function getUnitDomain(unit) {
@@ -42,11 +42,12 @@ export function convertUnits(amount, fromUnit, toUnit) {
   if (fromDomain === 'volume') {
     const toFlOz = {
       'fl_oz': amount,
+      'cup': amount * 8,
       'qt': amount * 32,
       'gal': amount * 128
     };
     const result = toFlOz[fromUnit];
-    return result / { 'fl_oz': 1, 'qt': 32, 'gal': 128 }[toUnit];
+    return result / { 'fl_oz': 1, 'cup': 8, 'qt': 32, 'gal': 128 }[toUnit];
   }
 
   // Weight conversions (all normalized to oz_wt first)
