@@ -41,7 +41,8 @@ export default function RouteStopCard({ event, idx, visitState, user, getTimer, 
   const typeLabel = EVENT_TYPE_LABELS[event.eventType] || event.eventType || 'Service';
   const typeColor = EVENT_TYPE_COLORS[event.eventType] || 'bg-gray-100 text-gray-800';
 
-  const startVisitUrl = `${createPageUrl(event.eventType === 'inspection' ? 'InspectionSubmit' : 'ServiceVisitFlow')}?eventId=${event.id}&poolId=${event.poolId || ''}`;
+  const pageName = event.eventType === 'inspection' ? 'InspectionSubmit' : 'ServiceVisitFlow';
+  const startVisitUrl = `https://breezpoolcare.com/${pageName}?eventId=${event.id}&poolId=${event.poolId || ''}`;
 
   return (
     <Card className={`border-2 transition-colors ${
