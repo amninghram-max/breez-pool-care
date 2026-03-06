@@ -50,6 +50,9 @@ Deno.serve(async (req) => {
     // Deletion order: children before parents to respect referential integrity
     const deleted = {};
 
+    // Scenario C children first
+    deleted.Pool             = await deleteTagged(entities, 'Pool',             trimmedRunId);
+    // Existing entities
     deleted.NotificationLog  = await deleteTagged(entities, 'NotificationLog',  trimmedRunId);
     deleted.CalendarEvent    = await deleteTagged(entities, 'CalendarEvent',    trimmedRunId);
     deleted.InspectionRecord = await deleteTagged(entities, 'InspectionRecord', trimmedRunId);
