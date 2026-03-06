@@ -13,10 +13,19 @@ import { toast } from 'sonner';
  * Pool.volumeGallons is the authoritative value used by chemistry suggestion calculations.
  * Save path: direct base44.entities.Pool.update(pool.id, { volumeGallons })
  */
+// Rect uniform-depth: volumeGallons = L * W * D * 7.5
+function calcRect(l, w, d) {
+  const L = parseFloat(l), W = parseFloat(w), D = parseFloat(d);
+  if (!L || !W || !D || L <= 0 || W <= 0 || D <= 0) return null;
+  return Math.round(L * W * D * 7.5);
+}
+
 export default function PoolVolumeEditor({ leadId, userRole }) {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [inputValue, setInputValue] = useState('');
+  const [calcMode, setCalcMode] = useState(false);
+  const [dims, setDims] = useState({ length: '', width: '', depth: '' });
 
   const isAdmin = ['admin', 'staff'].includes(userRole);
 
