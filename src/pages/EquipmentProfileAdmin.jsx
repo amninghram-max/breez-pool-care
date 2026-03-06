@@ -247,6 +247,9 @@ export default function EquipmentProfileAdmin() {
         </Card>
       )}
 
+      {/* Pool Volume */}
+      <PoolVolumeEditor leadId={leadId} userRole={user?.role} />
+
       {/* Equipment List */}
       {equipment.length === 0 ? (
         <Card className="bg-gray-50 border-gray-200">
