@@ -122,28 +122,92 @@ export default function PoolVolumeEditor({ leadId, userRole }) {
         </div>
       ) : (
         <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Input
-              type="number"
-              min="1000"
-              step="100"
-              value={inputValue}
-              onChange={e => setInputValue(e.target.value)}
-              placeholder="e.g. 15000"
-              className="h-8 text-sm w-36 font-mono"
-              autoFocus
-            />
-            <span className="text-xs text-gray-500">gallons</span>
-          </div>
-          <p className="text-xs text-gray-500">
-            This value is the authoritative source for chemistry dose suggestions.
-          </p>
+          {/* Calculator toggle */}
+          {!calcMode ? (
+            <button
+              onClick={() => setCalcMode(true)}
+              className="flex items-center gap-1 text-xs text-teal-600 hover:text-teal-800 transition-colors"
+            >
+              <Calculator className="w-3 h-3" />
+              Calculate from dimensions (rectangular, uniform depth)
+            </button>
+          ) : (
+            <div className="space-y-2 bg-white border border-teal-200 rounded-lg p-3">
+              <p className="text-xs font-medium text-gray-600">
+                Rectangular pool · uniform depth only
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { key: 'length', label: 'Length (ft)' },
+                  { key: 'width', label: 'Width (ft)' },
+                  { key: 'depth', label: 'Depth (ft)' },
+                ].map(({ key, label }) => (
+                  <div key={key}>
+                    <p className="text-xs text-gray-400 mb-0.5">{label}</p>
+                    <Input
+                      type="number"
+                      min="1"
+                      step="0.5"
+                      value={dims[key]}
+                      onChange={e => setDims(d => ({ ...d, [key]: e.target.value }))}
+                      className="h-7 text-xs font-mono"
+                      placeholder="0"
+                    />
+                  </div>
+                ))}
+              </div>
+              {computedGallons != null && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-600">Result:</span>
+                  <span className="font-mono font-semibold text-teal-700 text-sm">
+                    {computedGallons.toLocaleString()} gal
+                  </span>
+                  <Button
+                    size="sm"
+                    className="h-6 text-xs bg-teal-600 hover:bg-teal-700 ml-1"
+                    onClick={handleUseComputed}
+                  >
+                    Use this value
+                  </Button>
+                </div>
+              )}
+              <button
+                onClick={() => setCalcMode(false)}
+                className="text-xs text-gray-400 hover:text-gray-600"
+              >
+                ← Back to manual entry
+              </button>
+            </div>
+          )}
+
+          {/* Manual entry row */}
+          {!calcMode && (
+            <>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min="1000"
+                  step="100"
+                  value={inputValue}
+                  onChange={e => setInputValue(e.target.value)}
+                  placeholder="e.g. 15000"
+                  className="h-8 text-sm w-36 font-mono"
+                  autoFocus
+                />
+                <span className="text-xs text-gray-500">gallons</span>
+              </div>
+              <p className="text-xs text-gray-500">
+                Authoritative source for chemistry dose suggestions.
+              </p>
+            </>
+          )}
+
           <div className="flex gap-2">
             <Button
               size="sm"
               className="h-7 text-xs bg-teal-600 hover:bg-teal-700"
               onClick={() => saveMutation.mutate()}
-              disabled={saveMutation.isPending || !inputValue}
+              disabled={saveMutation.isPending || !inputValue || calcMode}
             >
               {saveMutation.isPending
                 ? <Loader2 className="w-3 h-3 animate-spin mr-1" />
