@@ -37,7 +37,7 @@ export default function LinkUserToLeadPanel({ lead }) {
         userId: matchedUser.id,
         leadId: lead.id,
       });
-      if (res.data?.success) {
+      if (res.data?.ok) {
         setLinkedResult(res.data);
         toast.success('User linked successfully');
       } else {
