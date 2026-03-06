@@ -90,6 +90,7 @@ export default function PoolVolumeEditor({ leadId, userRole }) {
         leadId,
         surfaceType: 'CONCRETE_PLASTER',
         chlorinationMethod: createForm.chlorinationMethod,
+        poolType: 'not_sure',
       });
     },
     onSuccess: () => {
