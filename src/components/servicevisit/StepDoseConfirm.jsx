@@ -184,6 +184,14 @@ function PreApplyModal({ action, actionIndex, onConfirm, onCancel }) {
               min={0}
               value={appliedAmountDisplay}
               onChange={e => setAppliedAmountDisplay(e.target.value)}
+              onBlur={e => {
+                // Format to max 3 decimals on blur
+                const val = e.target.value.trim();
+                if (val) {
+                  const formatted = parseFloat(val).toFixed(3).replace(/\.?0+$/, '');
+                  setAppliedAmountDisplay(formatted);
+                }
+              }}
               className="text-lg font-mono"
             />
             <select
