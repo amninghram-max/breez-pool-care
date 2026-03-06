@@ -8,9 +8,10 @@ import { Clock, MapPin, User, Navigation, Lock, Edit, Plus } from 'lucide-react'
 import EventDetailsModal from './EventDetailsModal';
 import CreateServiceEventModal from './CreateServiceEventModal';
 
-export default function DayView({ date, technicianFilter }) {
+export default function DayView({ date, technicianFilter, userRole }) {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showCancelled, setShowCancelled] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const queryClient = useQueryClient();
   const dateStr = date.toISOString().split('T')[0];
 
