@@ -83,6 +83,7 @@ export default function PoolVolumeEditor({ leadId, userRole }) {
   const handleCancel = () => {
     setEditing(false);
     setCalcMode(false);
+    setShape('rect');
     setDims({ length: '', width: '', depth: '' });
     setInputValue('');
   };
