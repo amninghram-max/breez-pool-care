@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ChevronRight, Droplet, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
+import { useMutation } from '@tanstack/react-query';
 
 const WATER_LEVELS = [
   { value: 'normal', label: 'Normal', description: 'Water level looks good', color: 'border-green-200 bg-green-50', textColor: 'text-green-800' },
