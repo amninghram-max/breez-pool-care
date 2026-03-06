@@ -10,6 +10,7 @@ import RecurringMessagesBanner from './RecurringMessagesBanner';
 
 export default function StepArrive({ visitData, user, advance }) {
   const [confirmed, setConfirmed] = useState(false);
+  const [arrived, setArrived] = useState(false);
 
   // Lock derivation: prefer loaded dosePlan actions, fall back to visitData.dosePlan, then flag
   const { data: liveDosePlan } = useQuery({
