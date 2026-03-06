@@ -122,10 +122,10 @@ export default function StepWaitTimer({ visitData, advance, goTo }) {
   };
 
   const handleSkipRetestConfirmed = () => {
-    console.log('[StepWaitTimer] skip retest override applied, clearing retestRequired');
-    // Explicitly clear retestRequired and advance to closeout path
+    console.log('[StepWaitTimer] skip retest override confirmed, clearing retestRequired, routing to photos_after');
+    // Explicitly clear retestRequired and route to photos_after (always the last step before closeout)
     advance({ retestRequired: false });
-    goTo('closeout');
+    goTo('photos_after');
   };
 
   return (
