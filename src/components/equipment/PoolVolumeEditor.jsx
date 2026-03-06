@@ -72,7 +72,7 @@ export default function PoolVolumeEditor({ leadId, userRole }) {
 
   const pool = poolData;
 
-  console.log('POOL_VOLUME_EDITOR_DEBUG', { leadId, isLoading, pools, pool });
+  console.log('POOL_VOLUME_EDITOR_DEBUG', { leadId, isLoading, pool });
 
   const saveMutation = useMutation({
     mutationFn: async () => {
