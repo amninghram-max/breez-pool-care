@@ -111,12 +111,15 @@ export default function StepArrive({ visitData, user, advance, goTo }) {
         }
       }
     },
-    onSuccess: () => advance({
-      arrivedAt: new Date().toISOString(),
-      visitStartedAt: new Date().toISOString(),
-      // Propagate Lead.id so downstream steps (StepCloseout) can use it as ServiceVisit.propertyId
-      leadId: lead?.id || null,
-    })
+    onSuccess: () => {
+      console.log('[StepArrive] normal start-visit success, advancing to normal flow (photos_before)');
+      advance({
+        arrivedAt: new Date().toISOString(),
+        visitStartedAt: new Date().toISOString(),
+        // Propagate Lead.id so downstream steps (StepCloseout) can use it as ServiceVisit.propertyId
+        leadId: lead?.id || null,
+      });
+    }
   });
 
   const handleNavigate = () => {
