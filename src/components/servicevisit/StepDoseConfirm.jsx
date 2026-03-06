@@ -17,6 +17,43 @@ const CHEMICAL_LABELS = {
   SALT: 'Pool Salt'
 };
 
+// Conversion helpers for technician-friendly unit display
+const UnitConversion = {
+  // Volume conversions: canonical stored as gallons
+  convertVolume: (amount, fromUnit, toUnit) => {
+    if (fromUnit === toUnit) return amount;
+    const toGal = { 'gal': amount, 'cup': amount / 8, 'fl_oz': amount / 128 };
+    const gals = toGal[fromUnit];
+    return { 'gal': gals, 'cup': gals * 8, 'fl_oz': gals * 128 }[toUnit];
+  },
+  
+  // Weight conversions: canonical stored as lbs
+  convertWeight: (amount, fromUnit, toUnit) => {
+    if (fromUnit === toUnit) return amount;
+    const toLbs = { 'lb': amount, 'oz_wt': amount / 16 };
+    const lbs = toLbs[fromUnit];
+    return { 'lb': lbs, 'oz_wt': lbs * 16 }[toUnit];
+  },
+  
+  // Choose sensible default display unit
+  getDefaultDisplayUnit: (canonicalAmount, canonicalUnit) => {
+    if (canonicalUnit === 'gallons') {
+      return canonicalAmount < 0.5 ? 'cup' : 'gal';
+    }
+    if (canonicalUnit === 'lbs') {
+      return canonicalAmount < 1 ? 'oz_wt' : 'lb';
+    }
+    return canonicalUnit;
+  },
+  
+  // Determine if unit is liquid or dry
+  isTechnicianDisplayUnit: (unit) => ['gal', 'cup', 'fl_oz', 'lb', 'oz_wt'].includes(unit),
+  
+  isLiquidUnit: (unit) => ['gal', 'cup', 'fl_oz'].includes(unit),
+};
+
+const formatAmount = (val) => parseFloat(val).toFixed(3).replace(/\.?0+$/, '');
+
 // Pre-apply confirmation modal
 function PreApplyModal({ action, actionIndex, onConfirm, onCancel }) {
   const [amount, setAmount] = useState(action.dosePrimary);
