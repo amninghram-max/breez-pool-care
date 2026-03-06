@@ -63,9 +63,10 @@ export default function ServiceVisitFlow() {
       return next;
     });
     
-    // Apply step transition (check new or existing retestRequired)
+    // Apply step transition (check new data only—do not use old visitData default as fallback)
     let nextStepIdx = Math.min(STEPS.indexOf(step) + 1, STEPS.length - 1);
-    if ((step === 'analyze' || step === 'dose') && (data.retestRequired === false || visitData.retestRequired === false)) {
+    if ((step === 'analyze' || step === 'dose') && data.retestRequired === false) {
+      console.log('[ServiceVisitFlow] skipping dose/wait/retest to checklist (retestRequired explicitly false)');
       nextStepIdx = STEPS.indexOf('checklist');
     }
     if (nextStepIdx < STEPS.length) setStep(STEPS[nextStepIdx]);
