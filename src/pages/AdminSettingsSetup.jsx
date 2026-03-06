@@ -129,6 +129,7 @@ function ConfigSummaryRow({ record, index }) {
             ['riskEngine', 'Risk Engine'],
             ['frequencyLogic', 'Frequency Logic'],
             ['initialFees', 'Initial Fees'],
+            ['chemistryTargets', 'Chemistry Targets'],
           ].map(([field, label]) => {
             let parsed;
             try { parsed = JSON.parse(record[field] || '{}'); } catch { parsed = {}; }

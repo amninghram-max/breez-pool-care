@@ -75,6 +75,16 @@ const SEED_CONFIG = {
     twice_weekly_multiplier: 1.8,
     auto_require_threshold: 9
   }),
+  chemistryTargets: JSON.stringify({
+    freeChlorine: { min: 1, max: 3, unit: 'ppm' },
+    pH: { min: 7.2, max: 7.8, unit: 'pH' },
+    totalAlkalinity: { min: 80, max: 120, unit: 'ppm' },
+    estimationFormulas: {
+      chlorinePerPpm: 0.013,
+      acidPerPH: 0.02,
+      bakingSodaPerTA: 1.5
+    }
+  }),
   autopayDiscount: 10
 };
 
