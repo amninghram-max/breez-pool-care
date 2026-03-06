@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { computeChemicalCostLines } from './shared/chemicalCosting.js';
+import { computeChemicalCostLines } from './_shared/chemicalCosting.js';
 
 Deno.serve(async (req) => {
   try {
