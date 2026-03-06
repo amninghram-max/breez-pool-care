@@ -99,7 +99,12 @@ export default function LeadsPipeline() {
         lostReason,
         allowRegression
       }),
-    onSuccess: () => {
+    onSuccess: (res) => {
+      // Check backend success flag, not just HTTP status
+      if (res.data?.success === false) {
+        toast.error(res.data?.error || 'Failed to update lead');
+        return;
+      }
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       toast.success('Lead updated');
     },
