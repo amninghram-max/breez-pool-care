@@ -52,14 +52,25 @@ export default function PoolVolumeEditor({ leadId, userRole }) {
     onError: (err) => toast.error(err.message || 'Save failed')
   });
 
+  const computedGallons = calcRect(dims.length, dims.width, dims.depth);
+
   const handleEdit = () => {
     setInputValue(pool?.volumeGallons ? String(pool.volumeGallons) : '');
+    setCalcMode(false);
+    setDims({ length: '', width: '', depth: '' });
     setEditing(true);
   };
 
   const handleCancel = () => {
     setEditing(false);
+    setCalcMode(false);
+    setDims({ length: '', width: '', depth: '' });
     setInputValue('');
+  };
+
+  const handleUseComputed = () => {
+    if (computedGallons) setInputValue(String(computedGallons));
+    setCalcMode(false);
   };
 
   if (isLoading) return null;
