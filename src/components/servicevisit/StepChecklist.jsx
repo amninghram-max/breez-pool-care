@@ -35,22 +35,23 @@ export default function StepChecklist({ visitData, advance }) {
     });
   };
 
-  // Sync checklist state to visitData whenever it changes, so it persists during intermediate navigation
+  // Sync checklist state to visitData via localStorage whenever it changes
+  // This ensures selections persist during intermediate navigation (e.g., timer/goTo callbacks)
   useEffect(() => {
-    console.log('[StepChecklist] syncing state to visitData:', Array.from(checked));
-    // visitData is managed by ServiceVisitFlow; we trigger a sync by calling advance with an intermediate update
-    // This ensures the flow state is updated without forcing navigation
-    if (visitData && Array.isArray(visitData.servicesPerformed)) {
-      // Check if anything has changed to avoid unnecessary updates
-      const previous = new Set(visitData.servicesPerformed);
-      const hasDiff = checked.size !== previous.size || 
-                      [...checked].some(item => !previous.has(item));
-      if (hasDiff) {
-        // Call advance with servicesPerformed to sync, but do NOT navigate yet
-        advance({ servicesPerformed: Array.from(checked) }, { noNavigate: true });
+    const servicesArray = Array.from(checked);
+    console.log('[StepChecklist] syncing state to localStorage:', servicesArray);
+    // Manually update the flow state in localStorage to persist current checklist selections
+    // without triggering navigation (advance() always navigates to next step)
+    if (visitData?.eventId) {
+      const FLOW_KEY = `breez_flow_${visitData.eventId}`;
+      const stored = localStorage.getItem(FLOW_KEY);
+      if (stored) {
+        const flowState = JSON.parse(stored);
+        flowState.visitData.servicesPerformed = servicesArray;
+        localStorage.setItem(FLOW_KEY, JSON.stringify(flowState));
       }
     }
-  }, [checked, visitData, advance]);
+  }, [checked, visitData]);
 
   const missingExpected = EXPECTED_TASKS.filter(k => !checked.has(k));
   const canAdvance = missingExpected.length === 0;
