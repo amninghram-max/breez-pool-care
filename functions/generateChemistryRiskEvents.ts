@@ -74,28 +74,38 @@ const DEFAULT_THRESHOLDS = {
 
 Deno.serve(async (req) => {
   try {
+    console.log('[generateChemistryRiskEvents] START');
     const base44 = createClientFromRequest(req);
+    console.log('[generateChemistryRiskEvents] CLIENT_READY');
+
     const user = await base44.auth.me();
 
     if (!user || !['admin', 'staff', 'technician'].includes(user.role)) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    console.log('[generateChemistryRiskEvents] JSON_START');
     const { testRecordId, testRecord: providedTestRecord } = await req.json();
+    console.log('[generateChemistryRiskEvents] JSON_DONE', { testRecordId, hasProvidedRecord: !!providedTestRecord });
     if (!testRecordId) {
       return Response.json({ error: 'testRecordId is required' }, { status: 400 });
     }
 
     // Use provided test record if valid, otherwise load from database
+    console.log('[generateChemistryRiskEvents] TEST_RECORD_RESOLUTION_START');
     let test = null;
     if (providedTestRecord && providedTestRecord.id === testRecordId) {
       test = providedTestRecord;
+      console.log('[generateChemistryRiskEvents] TEST_RECORD_USING_PROVIDED');
     } else {
       // Fallback: load from database (used for retests or idempotent re-invocations)
+      console.log('[generateChemistryRiskEvents] TEST_RECORD_FALLBACK_LOAD_START');
       try {
         const filterResults = await base44.asServiceRole.entities.ChemTestRecord.filter({ id: testRecordId });
         test = filterResults[0] || null;
+        console.log('[generateChemistryRiskEvents] TEST_RECORD_FALLBACK_LOAD_DONE', { found: !!test });
       } catch (e) {
+        console.log('[generateChemistryRiskEvents] TEST_RECORD_FALLBACK_LOAD_ERROR', { error: e.message });
         // Swallow and continue to error
       }
     }
@@ -103,15 +113,19 @@ Deno.serve(async (req) => {
     if (!test) {
       return Response.json({ error: `ChemTestRecord not found for id: ${testRecordId}` }, { status: 404 });
     }
+    console.log('[generateChemistryRiskEvents] TEST_RECORD_READY', { poolId: test.poolId, leadId: test.leadId });
 
     // Load pool to check chlorinationMethod for salt event gating
+    console.log('[generateChemistryRiskEvents] LOAD_POOL_START');
     const pools = await base44.asServiceRole.entities.Pool.filter({ id: test.poolId });
     const pool = pools[0];
     if (!pool) {
       return Response.json({ error: 'Pool not found for this test record' }, { status: 404 });
     }
+    console.log('[generateChemistryRiskEvents] LOAD_POOL_DONE', { chlorinationMethod: pool.chlorinationMethod });
 
     // Load AdminSettings (latest append-only record)
+    console.log('[generateChemistryRiskEvents] TARGETS_START');
     const settingsRows = await base44.asServiceRole.entities.AdminSettings.list('-created_date', 1);
     const settings = settingsRows[0];
 
@@ -129,10 +143,12 @@ Deno.serve(async (req) => {
         console.warn('Failed to parse AdminSettings.chemistryTargets, using defaults:', e.message);
       }
     }
+    console.log('[generateChemistryRiskEvents] TARGETS_DONE', { usingDefaults: !settings.chemistryTargets });
 
     const expiryDays = thresholds.event_expiry_days || 30;
     const now = new Date(test.testDate);
     const expiresAt = new Date(now.getTime() + expiryDays * 24 * 60 * 60 * 1000).toISOString();
+    console.log('[generateChemistryRiskEvents] ANALYZE_START', { fc: test.freeChlorine, pH: test.pH, ta: test.totalAlkalinity });
 
     const eventsToCreate = [];
     const outOfRange = [];
@@ -247,10 +263,13 @@ Deno.serve(async (req) => {
         outOfRange.push('salt');
       }
     }
+    console.log('[generateChemistryRiskEvents] ANALYZE_DONE', { eventsToCreateCount: eventsToCreate.length, outOfRangeCount: outOfRange.length });
 
     // Idempotency guard: load existing events for this testRecordId.
     // If any already exist, function was already run — return derived state without creating duplicates.
+    console.log('[generateChemistryRiskEvents] DEDUPE_START');
     const existingEvents = await base44.asServiceRole.entities.ChemistryRiskEvent.filter({ testRecordId: test.id });
+    console.log('[generateChemistryRiskEvents] DEDUPE_DONE', { existingCount: existingEvents.length });
     if (existingEvents.length > 0) {
       console.log(`generateChemistryRiskEvents: idempotency guard — ${existingEvents.length} events already exist for testRecord=${testRecordId}, skipping creation`);
       const derivedOutOfRange = deriveOutOfRange(existingEvents);
@@ -272,16 +291,19 @@ Deno.serve(async (req) => {
     }
 
     // Create all events (first-time only — ChemTestRecord is never written to after creation)
+    console.log('[generateChemistryRiskEvents] CREATE_EVENTS_START', { count: eventsToCreate.length });
     const createdEvents = [];
     for (const evt of eventsToCreate) {
       const created = await base44.asServiceRole.entities.ChemistryRiskEvent.create(evt);
       createdEvents.push(created);
     }
+    console.log('[generateChemistryRiskEvents] CREATE_EVENTS_DONE', { createdCount: createdEvents.length });
 
     // outOfRange is derived from ChemistryRiskEvent records — never persisted on ChemTestRecord
     const uniqueOutOfRange = [...new Set(outOfRange)];
 
     console.log(`generateChemistryRiskEvents: ${createdEvents.length} events created for testRecord=${testRecordId}`);
+    console.log('[generateChemistryRiskEvents] RETURN_SUCCESS');
 
     return Response.json({
       testRecordId,
