@@ -145,7 +145,7 @@ export default function StepArrive({ visitData, user, advance }) {
       {/* Recurring messages for this customer */}
       {lead?.id && <RecurringMessagesBanner leadId={lead.id} user={user} />}
 
-      {!locked && (
+      {!locked && !arrived && (
         <>
           <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border">
             <input
@@ -166,9 +166,26 @@ export default function StepArrive({ visitData, user, advance }) {
             onClick={() => markArrivedMutation.mutate()}
           >
             <CheckCircle className="w-5 h-5 mr-2" />
-            {markArrivedMutation.isPending ? 'Logging arrival...' : 'Confirm Arrival → Test'}
+            {markArrivedMutation.isPending ? 'Logging arrival...' : 'I\'m Here'}
           </Button>
         </>
+      )}
+
+      {!locked && arrived && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-sm text-teal-700 font-medium bg-teal-50 rounded-lg px-3 py-2.5 border border-teal-200">
+            <CheckCircle className="w-4 h-4 text-teal-600 flex-shrink-0" />
+            Arrival logged — ready to begin service
+          </div>
+          <Button
+            className="w-full bg-teal-600 hover:bg-teal-700 h-14 text-base font-bold"
+            disabled={startVisitMutation.isPending}
+            onClick={() => startVisitMutation.mutate()}
+          >
+            <PlayCircle className="w-5 h-5 mr-2" />
+            {startVisitMutation.isPending ? 'Starting visit...' : 'Start Service Visit'}
+          </Button>
+        </div>
       )}
     </div>
   );
