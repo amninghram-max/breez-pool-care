@@ -194,7 +194,7 @@ export default function StepWaterLevel({ visitData, user, advance }) {
         onClick={handleContinue}
       >
         <ChevronRight className="w-5 h-5 mr-2" />
-        Continue
+        {logMutation.isPending ? 'Saving…' : 'Continue'}
       </Button>
 
       {!canAdvance && waterAdded && (
