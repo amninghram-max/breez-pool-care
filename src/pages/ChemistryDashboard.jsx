@@ -218,6 +218,9 @@ export default function ChemistryDashboard() {
         />
       )}
 
+      {/* Retest Trend Advisory */}
+      <RetestTrendAdvisory visits={visits} />
+
       {/* Visit History */}
       <Card>
         <CardHeader>
