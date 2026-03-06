@@ -26,6 +26,15 @@ export default function Home() {
     if (userLoading || !user) return;
     const homePage = getHomePageForRole(user.role || 'customer');
     const targetPath = createPageUrl(homePage);
+    console.info('[HOME_REDIRECT_DEBUG]', {
+      userLoading,
+      user,
+      email: user?.email,
+      role: user?.role,
+      homePage,
+      targetPath,
+      currentPathname: location.pathname,
+    });
     // Prevent redirect loop: only navigate if not already at target
     if (location.pathname !== targetPath) {
       navigate(targetPath, { replace: true });
