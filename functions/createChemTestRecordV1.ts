@@ -2,8 +2,12 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
 Deno.serve(async (req) => {
   try {
+    console.log('[createChemTestRecordV1] START');
     const base44 = createClientFromRequest(req);
+    console.log('[createChemTestRecordV1] CLIENT_READY');
+    console.log('[createChemTestRecordV1] AUTH_START');
     const user = await base44.auth.me();
+    console.log('[createChemTestRecordV1] AUTH_DONE', { userEmail: user?.email, userRole: user?.role });
 
     // Require authenticated user
     if (!user) {
@@ -24,7 +28,9 @@ Deno.serve(async (req) => {
     }
 
     // Parse payload
+    console.log('[createChemTestRecordV1] JSON_START');
     const { poolId, leadId, testDate, technicianId, notes, ...readings } = await req.json();
+    console.log('[createChemTestRecordV1] JSON_DONE', { poolId, leadId, testDate, technicianId });
 
     // Validate required fields
     if (!poolId || !leadId || !testDate || !technicianId) {
@@ -41,7 +47,10 @@ Deno.serve(async (req) => {
       );
     }
 
+    console.log('[createChemTestRecordV1] VALIDATION_DONE');
+
     // Create using service role
+    console.log('[createChemTestRecordV1] CREATE_START');
     const testRecord = await base44.asServiceRole.entities.ChemTestRecord.create({
       poolId,
       leadId,
@@ -58,6 +67,8 @@ Deno.serve(async (req) => {
       ...(notes && { notes })
     });
 
+    console.log('[createChemTestRecordV1] CREATE_DONE', { testRecordId: testRecord.id });
+    console.log('[createChemTestRecordV1] RETURN_SUCCESS');
     return Response.json({ ok: true, testRecord });
   } catch (error) {
     console.error('[createChemTestRecordV1]', error);
