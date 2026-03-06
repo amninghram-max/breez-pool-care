@@ -2,15 +2,48 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { MapPin, Key, AlertTriangle, Navigation, CheckCircle, PlayCircle } from 'lucide-react';
+import { MapPin, Key, AlertTriangle, Navigation, CheckCircle, PlayCircle, AlertCircle } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import LockBanner from './LockBanner';
 import LastVisitSnapshot from './LastVisitSnapshot';
 import RecurringMessagesBanner from './RecurringMessagesBanner';
 
+// Helper: retry with exponential backoff for transient failures only
+const invokeWithRetry = async (functionName, payload, maxRetries = 2) => {
+  let lastError;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      if (attempt > 0) {
+        console.log(`[StepArrive] Retry attempt ${attempt} for ${functionName}`);
+      }
+      const response = await base44.functions.invoke(functionName, payload);
+      if (attempt > 0) {
+        console.log(`[StepArrive] ${functionName} succeeded after ${attempt} retry(ies)`);
+      }
+      return response;
+    } catch (error) {
+      lastError = error;
+      const status = error?.response?.status;
+      const isTransient = status === 502 || status === 503 || status === 504 || error?.message?.includes('timeout') || error?.message?.includes('TIME_LIMIT');
+      
+      if (!isTransient || attempt === maxRetries) {
+        console.error(`[StepArrive] ${functionName} failed (transient=${isTransient}):`, error?.message);
+        throw error;
+      }
+      
+      // Exponential backoff: 300ms, 600ms
+      const delayMs = 300 * Math.pow(2, attempt);
+      console.log(`[StepArrive] ${functionName} transient failure, retrying in ${delayMs}ms`);
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+  throw lastError;
+};
+
 export default function StepArrive({ visitData, user, advance }) {
   const [confirmed, setConfirmed] = useState(false);
   const [arrived, setArrived] = useState(false);
+  const [retryingMutation, setRetryingMutation] = useState(null);
 
   // Lock derivation: prefer loaded dosePlan actions, fall back to visitData.dosePlan, then flag
   const { data: liveDosePlan } = useQuery({
