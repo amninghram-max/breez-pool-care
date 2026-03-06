@@ -69,7 +69,7 @@ export default function ServiceVisitFlow() {
   const stepProps = { visitData, user, settings, advance, goTo };
 
   const stepLabels = {
-    arrive: 'Arrive', filter_psi: 'Filter', water_level: 'Water',
+    arrive: 'Arrive', checklist: 'Tasks', filter_psi: 'Filter', water_level: 'Water',
     test: 'Test', analyze: 'Analyze',
     dose: 'Dose', wait: 'Wait', retest: 'Retest', close: 'Close'
   };
