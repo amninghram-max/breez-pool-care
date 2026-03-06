@@ -11,9 +11,10 @@ import StepCloseout from '../components/servicevisit/StepCloseout';
 import StepFilterPsi from '../components/servicevisit/StepFilterPsi';
 import StepWaterLevel from '../components/servicevisit/StepWaterLevel';
 import StepChecklist from '../components/servicevisit/StepChecklist';
+import StepPhotos from '../components/servicevisit/StepPhotos';
 
-// Steps: arrive → checklist → filter_psi → water_level → test → analyze → dose → wait → retest → close
-const STEPS = ['arrive', 'checklist', 'filter_psi', 'water_level', 'test', 'analyze', 'dose', 'wait', 'retest', 'close'];
+// Steps: arrive → checklist → filter_psi → water_level → test → analyze → dose → wait → retest → photos → close
+const STEPS = ['arrive', 'checklist', 'filter_psi', 'water_level', 'test', 'analyze', 'dose', 'wait', 'retest', 'photos', 'close'];
 
 export default function ServiceVisitFlow() {
   const urlParams = new URLSearchParams(window.location.search);
