@@ -66,9 +66,10 @@ function PhotoGrid({ photos, onRemove }) {
   );
 }
 
-export default function StepPhotosAfterService({ visitData, advance }) {
+export default function StepPhotosAfterService({ visitData, advance, goTo }) {
   const [photosAfter, setPhotosAfter] = useState(visitData.photosAfter || []);
   const [uploading, setUploading] = useState(false);
+  const [showSkipRetestModal, setShowSkipRetestModal] = useState(false);
 
   const upload = async (file) => {
     if (!file) return;
@@ -86,6 +87,23 @@ export default function StepPhotosAfterService({ visitData, advance }) {
   const removeAfter = (i) => setPhotosAfter(prev => prev.filter((_, idx) => idx !== i));
 
   const canAdvance = photosAfter.length > 0 && !uploading;
+
+  const handleContinue = () => {
+    console.log('[StepPhotosAfterService] continue clicked', { retestRequired: visitData.retestRequired });
+    // If retest is required, route to wait instead of closeout
+    if (visitData.retestRequired) {
+      console.log('[StepPhotosAfterService] retest required, redirecting to wait/retest path');
+      goTo('wait');
+    } else {
+      // Safe to close when no retest required
+      advance({ photosAfter });
+    }
+  };
+
+  const handleSkipRetest = () => {
+    console.log('[StepPhotosAfterService] skip retest override applied, clearing retestRequired');
+    advance({ photosAfter, retestRequired: false });
+  };
 
   return (
     <div className="space-y-5">
