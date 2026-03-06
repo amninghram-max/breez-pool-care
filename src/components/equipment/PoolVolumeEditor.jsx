@@ -192,7 +192,7 @@ export default function PoolVolumeEditor({ leadId, userRole }) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-            Pool Volume (Gallons)
+            Pool Record
           </Label>
           {isConfirmed ? (
             <Badge className="bg-teal-100 text-teal-800 text-xs flex items-center gap-1">
