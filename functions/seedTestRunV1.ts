@@ -81,6 +81,19 @@ Deno.serve(async (req) => {
         console.log('SEED_V1_REPAIRED_PREQUAL', { requestId, runId, count: repairPatches.length });
       }
 
+      // Scenario C idempotency: find by email (deterministic per runId)
+      const visitLeads = await entities.Lead.filter({ email: `visit+${runId}@breezpoolcare.com` }, null, 1);
+      const visitLeadId = visitLeads?.[0]?.id || null;
+      let visitPoolId = null;
+      let visitEventId = null;
+      const todayDate = new Date().toISOString().split('T')[0];
+      if (visitLeadId) {
+        const pools = await entities.Pool.filter({ isTest: true, testRunId: runId, leadId: visitLeadId }, null, 1);
+        visitPoolId = pools?.[0]?.id || null;
+        const events = await entities.CalendarEvent.filter({ isTest: true, testRunId: runId, leadId: visitLeadId }, null, 1);
+        visitEventId = events?.[0]?.id || null;
+      }
+
       console.log('SEED_V1_ALREADY_SEEDED', { requestId, runId });
       return json200({
         success: true,
@@ -88,7 +101,17 @@ Deno.serve(async (req) => {
         created: false,
         scenarios: {
           normal: { leadId: normalLeadId, token: tokenA, email: `test+${runId}@breezpoolcare.com`, prequalAnswers: PREQUAL_NORMAL },
-          repair: { leadId: repairLeadId, token: tokenB, email: `repair+${runId}@breezpoolcare.com`, prequalAnswers: PREQUAL_REPAIR }
+          repair: { leadId: repairLeadId, token: tokenB, email: `repair+${runId}@breezpoolcare.com`, prequalAnswers: PREQUAL_REPAIR },
+          visit_ready: {
+            label: 'Scenario C — service_visit_ready',
+            leadId: visitLeadId,
+            poolId: visitPoolId,
+            eventId: visitEventId,
+            email: `visit+${runId}@breezpoolcare.com`,
+            scheduledDate: todayDate,
+            launchUrl: visitEventId && visitPoolId ? `/ServiceVisitFlow?eventId=${visitEventId}&poolId=${visitPoolId}` : null,
+            notes: 'Pool has no volumeGallons — exercises estimate path.'
+          }
         },
         ...meta
       });
