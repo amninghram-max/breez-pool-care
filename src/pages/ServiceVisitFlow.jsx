@@ -2,19 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import StepArrive from '../components/servicevisit/StepArrive';
+import StepPhotosBeforeService from '../components/servicevisit/StepPhotosBeforeService';
+import StepChecklist from '../components/servicevisit/StepChecklist';
+import StepFilterPsi from '../components/servicevisit/StepFilterPsi';
+import StepWaterLevel from '../components/servicevisit/StepWaterLevel';
 import StepTest from '../components/servicevisit/StepTest';
 import StepAnalyze from '../components/servicevisit/StepAnalyze';
 import StepDoseConfirm from '../components/servicevisit/StepDoseConfirm';
 import StepWaitTimer from '../components/servicevisit/StepWaitTimer';
 import StepRetest from '../components/servicevisit/StepRetest';
+import StepPhotosAfterService from '../components/servicevisit/StepPhotosAfterService';
 import StepCloseout from '../components/servicevisit/StepCloseout';
-import StepFilterPsi from '../components/servicevisit/StepFilterPsi';
-import StepWaterLevel from '../components/servicevisit/StepWaterLevel';
-import StepChecklist from '../components/servicevisit/StepChecklist';
-import StepPhotos from '../components/servicevisit/StepPhotos';
 
-// Steps: arrive → checklist → filter_psi → water_level → test → analyze → dose → wait → retest → photos → close
-const STEPS = ['arrive', 'checklist', 'filter_psi', 'water_level', 'test', 'analyze', 'dose', 'wait', 'retest', 'photos', 'close'];
+// Steps: arrive → photos_before → checklist → filter_psi → water_level → test → analyze → dose → wait → retest → photos_after → close
+const STEPS = ['arrive', 'photos_before', 'checklist', 'filter_psi', 'water_level', 'test', 'analyze', 'dose', 'wait', 'retest', 'photos_after', 'close'];
 
 export default function ServiceVisitFlow() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -116,17 +117,18 @@ export default function ServiceVisitFlow() {
       </div>
 
       <div className="p-4">
-        {step === 'arrive'      && <StepArrive      {...stepProps} />}
-        {step === 'checklist'   && <StepChecklist   {...stepProps} />}
-        {step === 'filter_psi'  && <StepFilterPsi   {...stepProps} />}
-        {step === 'water_level' && <StepWaterLevel   {...stepProps} />}
-        {step === 'test'        && <StepTest         {...stepProps} />}
-        {step === 'analyze'     && <StepAnalyze      {...stepProps} />}
-        {step === 'dose'        && <StepDoseConfirm  {...stepProps} />}
-        {step === 'wait'        && <StepWaitTimer    {...stepProps} />}
-        {step === 'retest'      && <StepRetest       {...stepProps} />}
-        {step === 'photos'      && <StepPhotos       {...stepProps} />}
-        {step === 'close'       && <StepCloseout     {...stepProps} />}
+        {step === 'arrive'         && <StepArrive              {...stepProps} />}
+        {step === 'photos_before'  && <StepPhotosBeforeService {...stepProps} />}
+        {step === 'checklist'      && <StepChecklist          {...stepProps} />}
+        {step === 'filter_psi'     && <StepFilterPsi          {...stepProps} />}
+        {step === 'water_level'    && <StepWaterLevel         {...stepProps} />}
+        {step === 'test'           && <StepTest               {...stepProps} />}
+        {step === 'analyze'        && <StepAnalyze            {...stepProps} />}
+        {step === 'dose'           && <StepDoseConfirm        {...stepProps} />}
+        {step === 'wait'           && <StepWaitTimer          {...stepProps} />}
+        {step === 'retest'         && <StepRetest             {...stepProps} />}
+        {step === 'photos_after'   && <StepPhotosAfterService {...stepProps} />}
+        {step === 'close'          && <StepCloseout           {...stepProps} />}
       </div>
     </div>
   );
