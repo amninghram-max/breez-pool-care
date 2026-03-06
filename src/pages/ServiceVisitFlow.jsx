@@ -51,13 +51,23 @@ export default function ServiceVisitFlow() {
     setVisitData(prev => {
       const next = { ...prev, ...data };
       if (FLOW_KEY) {
-        const nextStep = STEPS[Math.min(STEPS.indexOf(step) + 1, STEPS.length - 1)];
+        // Determine next step: skip wait/retest if retestRequired === false
+        let nextStepIdx = Math.min(STEPS.indexOf(step) + 1, STEPS.length - 1);
+        if ((step === 'analyze' || step === 'dose') && next.retestRequired === false) {
+          nextStepIdx = STEPS.indexOf('photos');
+        }
+        const nextStep = STEPS[nextStepIdx];
         localStorage.setItem(FLOW_KEY, JSON.stringify({ step: nextStep, visitData: next }));
       }
       return next;
     });
-    const idx = STEPS.indexOf(step);
-    if (idx < STEPS.length - 1) setStep(STEPS[idx + 1]);
+    
+    // Apply step transition (check new or existing retestRequired)
+    let nextStepIdx = Math.min(STEPS.indexOf(step) + 1, STEPS.length - 1);
+    if ((step === 'analyze' || step === 'dose') && (data.retestRequired === false || visitData.retestRequired === false)) {
+      nextStepIdx = STEPS.indexOf('photos');
+    }
+    if (nextStepIdx < STEPS.length) setStep(STEPS[nextStepIdx]);
   };
 
   const goTo = (target) => {

@@ -112,28 +112,6 @@ export default function StepWaitTimer({ visitData, advance }) {
         </CardContent>
       </Card>
 
-      {/* Quick checklist */}
-      <Card>
-        <CardContent className="pt-4 pb-4">
-          <p className="text-sm font-semibold text-gray-700 mb-3">While you wait:</p>
-          <div className="space-y-3">
-            {CHECKLIST_ITEMS.map(item => (
-              <label key={item.id} className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={!!checked[item.id]}
-                  onChange={() => toggleItem(item.id)}
-                  className="w-5 h-5 rounded accent-teal-600"
-                />
-                <span className={`text-sm ${checked[item.id] ? 'line-through text-gray-400' : 'text-gray-700'}`}>
-                  {item.label}
-                </span>
-              </label>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
       <Button
         className={`w-full h-14 text-base ${canAdvance ? 'bg-green-600 hover:bg-green-700' : 'bg-teal-600 hover:bg-teal-700'}`}
         disabled={!canAdvance}
