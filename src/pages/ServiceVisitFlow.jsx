@@ -76,6 +76,15 @@ export default function ServiceVisitFlow() {
 
   const goTo = (target) => {
     console.log('[ServiceVisitFlow] goTo', { from: step, to: target });
+    // Guard: if routing to access_wait without access-issue context, redirect to photos_before
+    if (target === 'access_wait' && !visitData.accessIssueReason) {
+      console.warn('[ServiceVisitFlow] access_wait reached without accessIssueReason, redirecting to photos_before');
+      setStep('photos_before');
+      if (FLOW_KEY) {
+        localStorage.setItem(FLOW_KEY, JSON.stringify({ step: 'photos_before', visitData }));
+      }
+      return;
+    }
     setStep(target);
     if (FLOW_KEY) {
       localStorage.setItem(FLOW_KEY, JSON.stringify({ step: target, visitData }));
