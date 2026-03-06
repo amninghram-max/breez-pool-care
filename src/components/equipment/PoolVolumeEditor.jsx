@@ -140,6 +140,25 @@ export default function PoolVolumeEditor({ leadId, userRole }) {
 
   if (isLoading) return null;
 
+  // Error loading pool — show diagnostic for admin/staff
+  if (isError && isAdmin) {
+    return (
+      <div className="border rounded-lg p-3 bg-red-50 border-red-200 space-y-2">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs font-semibold text-red-800 uppercase tracking-wide">
+            Pool Record
+          </Label>
+          <Badge variant="outline" className="text-xs text-red-700 border-red-300">
+            Error
+          </Badge>
+        </div>
+        <p className="text-xs text-red-700">
+          Failed to load pool: {error?.message || 'Unknown error'}
+        </p>
+      </div>
+    );
+  }
+
   // No pool and not admin — nothing to show
   if (!pool && !isAdmin) return null;
 
