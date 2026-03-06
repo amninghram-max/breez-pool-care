@@ -25,8 +25,12 @@ export default function StepAccessWait({ visitData, advance, goTo }) {
   const waitMinutes = 10;
   const eventId = visitData.eventId || 'unknown';
 
+  // Guard: if access_wait reached without accessIssueReason, this is likely a bug or stale localStorage
   const [startTime] = useState(() => {
-    console.log('[StepAccessWait] initializing timer', { eventId, waitMinutes });
+    console.log('[StepAccessWait] initializing timer', { eventId, waitMinutes, hasAccessIssueReason: !!visitData.accessIssueReason });
+    if (!visitData.accessIssueReason) {
+      console.warn('[StepAccessWait] WARNING: access_wait entered without accessIssueReason, should have been redirected by goTo guard');
+    }
     return loadTimer(eventId, waitMinutes);
   });
   const [elapsed, setElapsed] = useState(Math.floor((Date.now() - startTime) / 1000));
