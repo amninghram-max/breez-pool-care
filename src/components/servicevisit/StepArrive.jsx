@@ -135,8 +135,13 @@ export default function StepArrive({ visitData, user, advance, goTo }) {
   };
 
   const handleAccessIssueConfirmed = (data) => {
-    console.log('[StepArrive] access issue confirmed, moving to access_wait', data);
-    advance(data);
+    console.log('[StepArrive] access issue confirmed, explicitly routing to access_wait', data);
+    // Persist access-issue data and explicitly navigate to access_wait (not via normal advance)
+    const accessData = { ...data, accessIssueReason: data.accessIssueReason };
+    // First update visitData with access-issue context
+    visitData.accessIssueReason = accessData.accessIssueReason;
+    // Then goTo access_wait (explicit branch, not sequential)
+    goTo('access_wait');
     setAccessIssueOpen(false);
   };
 
