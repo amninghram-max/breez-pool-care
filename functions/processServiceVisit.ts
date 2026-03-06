@@ -118,20 +118,27 @@ function computeChemicalCostLines(chemicalsAdded, chemicalCatalogItemsByServiceV
 
 Deno.serve(async (req) => {
   try {
+    console.log('[processServiceVisit] START');
     const base44 = createClientFromRequest(req);
+    console.log('[processServiceVisit] CLIENT_READY');
+    console.log('[processServiceVisit] AUTH_START');
     const user = await base44.auth.me();
+    console.log('[processServiceVisit] AUTH_DONE', { userEmail: user?.email });
 
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    console.log('[processServiceVisit] JSON_START');
     const { visitData } = await req.json();
+    console.log('[processServiceVisit] JSON_DONE', { testRecordId: visitData?.testRecordId });
 
     // --- Duplicate-submit guard ---
     // testRecordId is created exactly once in StepTest and is required to advance
     // to StepCloseout, making it the strongest single-field visit identity anchor.
     // A matching record means this closeout was already processed; return success.
     if (visitData.testRecordId) {
+      console.log('[processServiceVisit] DUPLICATE_CHECK_START');
       const existing = await base44.asServiceRole.entities.ServiceVisit.filter(
         { testRecordId: visitData.testRecordId },
         '-created_date',
@@ -147,15 +154,19 @@ Deno.serve(async (req) => {
           alreadyRecorded: true,
         });
       }
+      console.log('[processServiceVisit] DUPLICATE_CHECK_DONE');
     }
 
     // Get chemistry targets
+    console.log('[processServiceVisit] CHEMISTRY_TARGETS_START');
     const targetsResult = await base44.asServiceRole.entities.ChemistryTargets.filter({
       settingKey: 'default'
     });
     const targets = targetsResult[0] || {};
+    console.log('[processServiceVisit] CHEMISTRY_TARGETS_DONE');
 
     // Determine which readings are out of range
+    console.log('[processServiceVisit] OUT_OF_RANGE_START');
     const outOfRange = [];
 
     if (targets.freeChlorine) {
@@ -178,8 +189,10 @@ Deno.serve(async (req) => {
         outOfRange.push('totalAlkalinity');
       }
     }
+    console.log('[processServiceVisit] OUT_OF_RANGE_DONE', { outOfRange });
 
     // Compute chemical costs (non-fatal errors; visits save even if costing partially fails)
+    console.log('[processServiceVisit] CHEMICAL_COSTING_START');
     let chemicalCostCents = 0;
     let chemicalCostLines = [];
     const chemicalCostVersion = 'v1_canonical';
@@ -217,6 +230,7 @@ Deno.serve(async (req) => {
         }
 
         // Fetch only needed serviceVisitKey items
+        console.log('[processServiceVisit] FETCH_CATALOG_ITEMS_START', { neededKeys: Array.from(neededServiceVisitKeys), otherNamesCount: otherNames.size });
         const allChemicals = [];
         for (const key of neededServiceVisitKeys) {
           const results = await base44.asServiceRole.entities.ChemicalCatalogItem.filter(
@@ -240,6 +254,7 @@ Deno.serve(async (req) => {
         }
 
         // Build lookup maps (name map uses lowercased key)
+        console.log('[processServiceVisit] FETCH_CATALOG_ITEMS_DONE', { itemsCount: allChemicals.length });
         const byServiceVisitKey = new Map(
           allChemicals.map(c => [c.serviceVisitKey, c])
         );
@@ -248,6 +263,7 @@ Deno.serve(async (req) => {
         );
 
         // Compute cost lines
+        console.log('[processServiceVisit] COMPUTE_COST_LINES_START');
         const { totalCostCents, lines } = computeChemicalCostLines(
           visitData.chemicalsAdded,
           byServiceVisitKey,
@@ -256,6 +272,7 @@ Deno.serve(async (req) => {
 
         chemicalCostCents = totalCostCents;
         chemicalCostLines = lines;
+        console.log('[processServiceVisit] COMPUTE_COST_LINES_DONE', { totalCostCents, lineCount: lines.length });
 
         if (lines.length > 0) {
           console.info(
@@ -269,6 +286,7 @@ Deno.serve(async (req) => {
         chemicalCostLines = [];
       }
     }
+    console.log('[processServiceVisit] CHEMICAL_COSTING_DONE', { totalCost: chemicalCostCents });
 
     // Compute costing summary for response
     const skippedLines = chemicalCostLines.filter(l => l.status === 'skipped');
@@ -285,6 +303,7 @@ Deno.serve(async (req) => {
     };
 
     // Create service visit record with costing data
+    console.log('[processServiceVisit] CREATE_SERVICEVISIT_START');
     const visit = await base44.asServiceRole.entities.ServiceVisit.create({
       ...visitData,
       // Explicit audit chain links (all optional, non-breaking for older records)
@@ -308,6 +327,8 @@ Deno.serve(async (req) => {
       chemicalCostVersion,
       chemicalCostLines: JSON.stringify(chemicalCostLines)
     });
+    console.log('[processServiceVisit] CREATE_SERVICEVISIT_DONE', { visitId: visit.id });
+    console.log('[processServiceVisit] RETURN_SUCCESS');
 
     return Response.json({
       success: true,
