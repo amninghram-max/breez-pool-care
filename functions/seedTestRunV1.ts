@@ -9,7 +9,31 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
  * Output: { success, testRunId, created, scenarios, build, runtimeVersion, requestId }
  */
 
-const BUILD = "SEED-V1-2026-03-06-A";
+const BUILD = "SEED-V1-2026-03-06-B";
+
+// Canonical prequalAnswers for each scenario — used by finalizePrequalQuoteV2
+const PREQUAL_NORMAL = {
+  poolSize: '10_15k',
+  poolType: 'in_ground',
+  enclosure: 'fully_screened',
+  filterType: 'sand',
+  chlorinationMethod: 'saltwater',
+  useFrequency: 'weekends',
+  poolCondition: 'clear'
+};
+
+const PREQUAL_REPAIR = {
+  poolSize: '15_20k',
+  poolType: 'in_ground',
+  enclosure: 'unscreened',
+  filterType: 'cartridge',
+  chlorinationMethod: 'tablets',
+  useFrequency: 'daily',
+  poolCondition: 'slightly_cloudy',
+  treesOverhead: 'yes',
+  petsAccess: true,
+  petSwimFrequency: 'frequently'
+};
 
 const json200 = (data) => new Response(
   JSON.stringify(data),
