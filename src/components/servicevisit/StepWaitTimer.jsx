@@ -183,13 +183,26 @@ export default function StepWaitTimer({ visitData, advance, goTo }) {
       </Button>
 
       {!canAdvance && (
-        <Button
-          variant="outline"
-          className="w-full h-12 text-sm"
-          onClick={handleContinueServiceTasks}
-        >
-          Continue Service Tasks
-        </Button>
+        <>
+          <Button
+            variant="outline"
+            className="w-full h-12 text-sm"
+            onClick={handleContinueServiceTasks}
+          >
+            Continue Service Tasks
+          </Button>
+
+          {visitData.retestRequired && (
+            <Button
+              variant="outline"
+              className="w-full border-orange-400 text-orange-700 hover:bg-orange-50 h-12 text-sm"
+              onClick={() => { console.log('[StepWaitTimer] skip retest clicked'); setShowSkipRetestModal(true); }}
+            >
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              Skip Retest (Manual Override)
+            </Button>
+          )}
+        </>
       )}
     </div>
   );
