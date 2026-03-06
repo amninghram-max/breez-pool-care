@@ -15,6 +15,7 @@ import QuickActionsBar from '../components/customer/QuickActionsBar';
 import SendAlertModal from '../components/customer/SendAlertModal';
 import AlertsActionBar from '../components/customer/AlertsActionBar';
 import ChemistryCard from '../components/customer/ChemistryCard';
+import PoolVolumeEditor from '../components/equipment/PoolVolumeEditor';
 
 function ActiveCustomersDirectory() {
   const [searchQuery, setSearchQuery] = useState('');
