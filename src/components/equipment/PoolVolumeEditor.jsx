@@ -185,7 +185,10 @@ export default function PoolVolumeEditor({ leadId, userRole }) {
                   </div>
                 ))}
               </div>
-              {computedGallons != null && (
+              {calcError && (
+                <p className="text-xs text-red-600">{calcError}</p>
+              )}
+              {computedGallons != null && !calcError && (
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-600">Result:</span>
                   <span className="font-mono font-semibold text-teal-700 text-sm">
