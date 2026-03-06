@@ -483,6 +483,25 @@ This protocol prevents:
 **Enforced by:** architecture review required for any deviation.
 `;
 
+### Entity Permission Reality (Repo-Proven)
+- In this app, Base44 `user_condition.role` RLS has been unreliable for several backend helper flows using `asServiceRole`.
+- Proven entities affected: Pool, ChemTestRecord, ServiceVisit, ChemistryRiskEvent (and WaterLevelLog likely pending verification).
+- Do NOT assume `asServiceRole` will satisfy entity `user_condition.role` create/read/update checks.
+- When repo facts show a backend helper already correctly uses `base44.asServiceRole.entities.<Entity>.*(...)` but still gets permission denied, prefer targeted entity-operation RLS relaxation (`create: true`, `read: true`, or `update: true` only as needed) rather than rewriting working helper logic.
+- Prefer guarded backend helper functions over direct frontend entity writes for provider/admin workflows.
+
+### Service Visit Workflow Intent
+- Chemistry testing should occur early in the workflow.
+- Before photos should occur before chemistry testing.
+- After photos should remain near the end.
+- Wait / Circulate and Retest should only appear when actually needed.
+- Repeated checklist tasks must not reappear in wait-state UI.
+
+### Customer Hub Intent
+- CustomerTimeline is the provider/admin customer hub and should be treated as Customer Profile Lookup.
+- Pool record management belongs in CustomerTimeline.
+- EquipmentProfileAdmin is equipment-only.
+
 export default function ArchitectureContextPage() {
   return null;
 }
