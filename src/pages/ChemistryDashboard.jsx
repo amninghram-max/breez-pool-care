@@ -585,7 +585,13 @@ function VisitRow({ visit }) {
     enabled: auditOpen && !!visit.retestRecordId,
   });
 
-  const hasAuditChain = !!(visit.testRecordId || visit.dosePlanId || visit.retestRecordId);
+  const { data: waterLevelLog } = useQuery({
+    queryKey: ['waterLevelLog', visit.waterLevelLogId],
+    queryFn: () => base44.entities.WaterLevelLog.filter({ id: visit.waterLevelLogId }).then(r => r[0] || null),
+    enabled: auditOpen && !!visit.waterLevelLogId,
+  });
+
+  const hasAuditChain = !!(visit.testRecordId || visit.dosePlanId || visit.retestRecordId || visit.waterLevelLogId);
 
   return (
     <div className="border rounded-lg hover:bg-gray-50">
