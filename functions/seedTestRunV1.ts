@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
     await entities.Quote.create({
       isTest: true,
       testRunId: runId,
-      quoteToken: `test-token-${runId}-B`,
+      quoteToken: tokenB,
       leadId: repairLead.id,
       clientEmail: `repair+${runId}@breezpoolcare.com`,
       clientFirstName: 'Repair',
