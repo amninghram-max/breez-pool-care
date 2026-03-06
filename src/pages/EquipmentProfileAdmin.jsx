@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Plus, ChevronLeft, AlertCircle } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
+import PoolVolumeEditor from '@/components/equipment/PoolVolumeEditor';
 
 const EQUIPMENT_TYPES = [
   { value: 'pump', label: 'Pump' },
