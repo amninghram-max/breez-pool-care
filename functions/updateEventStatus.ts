@@ -19,6 +19,7 @@ Deno.serve(async (req) => {
     console.log('[updateEventStatus] JSON_DONE', { eventId, status });
 
     // Get event
+    console.log('[updateEventStatus] VALIDATION_DONE');
     const event = await base44.entities.CalendarEvent.get(eventId);
     if (!event) {
       return Response.json({ error: 'Event not found' }, { status: 404 });
