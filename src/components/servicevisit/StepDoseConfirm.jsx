@@ -190,6 +190,19 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Dose Plan</h2>
         </div>
+        {volumeWarning === 'missing' && (
+          <Card className="border-red-300 bg-red-50">
+            <CardContent className="pt-4">
+              <div className="flex items-start gap-2 text-sm text-red-800">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold">Pool volume not set</p>
+                  <p className="mt-0.5 text-red-700">Chemical suggestions cannot be calculated. An admin must set the confirmed pool volume before dose plans can be generated.</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
         <Card className="border-gray-200">
           <CardContent className="pt-5 text-center space-y-2">
             <FlaskConical className="w-10 h-10 text-gray-300 mx-auto" />
