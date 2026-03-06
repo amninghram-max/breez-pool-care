@@ -12,13 +12,18 @@ Deno.serve(async (req) => {
       return Response.json({ ok: false, error: 'unauthenticated' }, { status: 401 });
     }
 
-    const { leadId } = await req.json();
-
-    if (!leadId) {
-      return Response.json({ ok: false, error: 'invalid_or_expired' }, { status: 400 });
+    // Require admin role for this admin-side linking operation
+    if (user.role !== 'admin') {
+      return Response.json({ ok: false, error: 'admin_required' }, { status: 403 });
     }
 
-    // Validate Lead existence server-side via service role (no RLS exposure)
+    const { userId, leadId } = await req.json();
+
+    if (!userId || !leadId) {
+      return Response.json({ ok: false, error: 'invalid_request' }, { status: 400 });
+    }
+
+    // Validate Lead exists server-side via service role (no RLS exposure)
     let lead = null;
     try {
       lead = await base44.asServiceRole.entities.Lead.get(leadId);
@@ -30,15 +35,10 @@ Deno.serve(async (req) => {
       return Response.json({ ok: false, error: 'invalid_or_expired' });
     }
 
-    // Block privileged roles — defense-in-depth, never link or change role
-    if (PROTECTED_ROLES.includes(user.role)) {
-      return Response.json({ ok: false, error: 'role_not_allowed' }, { status: 403 });
-    }
+    // Update target user's linkedLeadId — only admin can invoke this
+    await base44.asServiceRole.entities.User.update(userId, { linkedLeadId: leadId });
 
-    // Only update linkedLeadId — never touch role (platform restriction)
-    await base44.asServiceRole.entities.User.update(user.id, { linkedLeadId: leadId });
-
-    return Response.json({ ok: true });
+    return Response.json({ ok: true, userId, leadId });
   } catch (error) {
     console.error('linkUserToLead error:', error);
     return Response.json({ ok: false, error: error.message }, { status: 500 });
