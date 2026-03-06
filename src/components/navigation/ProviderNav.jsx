@@ -132,7 +132,7 @@ export default function ProviderNav({ userRole }) {
     { key: 'customers', items: [
       { name: 'Leads Pipeline',        path: 'LeadsPipeline',        icon: Users },
       { name: 'Customer Profile Lookup', path: 'CustomerTimeline',     icon: Activity },
-      { name: 'Customer Equipment',    path: 'EquipmentProfiles',    icon: Wrench },
+      { name: 'Equipment Directory',    path: 'EquipmentProfiles',    icon: Wrench },
     ]},
     { key: 'chemistry', items: [
       { name: 'Chemistry Review',      path: 'AdminReviewDashboard', icon: Droplet },
