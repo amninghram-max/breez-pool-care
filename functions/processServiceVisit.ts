@@ -150,9 +150,12 @@ Deno.serve(async (req) => {
     // Create service visit record with costing data
     const visit = await base44.asServiceRole.entities.ServiceVisit.create({
       ...visitData,
-      // Explicit audit chain links — all optional; undefined values are omitted by the SDK
+      // Explicit audit chain links (all optional, non-breaking for older records)
+      // testRecordId: set by StepTest via advance({ testRecordId: testRecord.id })
+      // dosePlanId: set by StepDoseConfirm via advance({ dosePlan: plan }) — extracted below
+      // retestRecordId: set by StepRetest via advance({ retestRecordId: record.id })
       testRecordId: visitData.testRecordId || undefined,
-      dosePlanId: visitData.dosePlanId || undefined,
+      dosePlanId: visitData.dosePlan?.id || visitData.dosePlanId || undefined,
       retestRecordId: visitData.retestRecordId || undefined,
       outOfRange,
       freeChlorine: parseFloat(visitData.freeChlorine),
