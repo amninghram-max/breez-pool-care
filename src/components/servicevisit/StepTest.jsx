@@ -103,11 +103,37 @@ export default function StepTest({ visitData, user, advance }) {
 
       const testRecord = createRes.data.testRecord;
 
-      const riskResult = await base44.functions.invoke('generateChemistryRiskEvents', {
-        testRecordId: testRecord.id,
-        testRecord
-      });
+      // Retry helper: transient 502/503/504 or timeout failures only
+      const invokeWithRetry = async (fn, maxRetries = 2) => {
+        let lastError;
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+          try {
+            console.log(`[StepTest] generateChemistryRiskEvents attempt ${attempt + 1}/${maxRetries + 1}`);
+            return await fn();
+          } catch (error) {
+            lastError = error;
+            const status = error.response?.status;
+            const isTransient = status === 502 || status === 503 || status === 504 || error.message?.includes('TIME_LIMIT');
+            if (!isTransient || attempt === maxRetries) {
+              console.error('[StepTest] generateChemistryRiskEvents final failure', { attempt: attempt + 1, status, message: error.message });
+              throw error;
+            }
+            const delay = 300 * Math.pow(2, attempt);
+            console.log(`[StepTest] generateChemistryRiskEvents retry in ${delay}ms (attempt ${attempt + 1})`);
+            await new Promise(r => setTimeout(r, delay));
+          }
+        }
+        throw lastError;
+      };
 
+      const riskResult = await invokeWithRetry(() =>
+        base44.functions.invoke('generateChemistryRiskEvents', {
+          testRecordId: testRecord.id,
+          testRecord
+        })
+      );
+
+      console.log('[StepTest] generateChemistryRiskEvents success', { eventsCreated: riskResult.data?.eventsCreated });
       return { testRecord, riskResult: riskResult.data };
     },
     onSuccess: ({ testRecord, riskResult }) => {
