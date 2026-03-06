@@ -31,6 +31,7 @@ Deno.serve(async (req) => {
 
     // Validate admin/staff access
     const user = await base44.auth.me();
+    console.log('[createPoolForLeadV1] Auth check', { email: user?.email, role: user?.role, passes: user && ['admin', 'staff'].includes(user.role) });
     if (!user || !['admin', 'staff'].includes(user.role)) {
       console.warn('[createPoolForLeadV1] Unauthorized attempt', { email: user?.email, role: user?.role });
       return json200({
