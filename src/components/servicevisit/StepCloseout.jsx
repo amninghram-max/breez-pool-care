@@ -105,12 +105,28 @@ export default function StepCloseout({ visitData, user }) {
 
   const closeMutation = useMutation({
     mutationFn: async () => {
+      // 1. Create the canonical ServiceVisit record via processServiceVisit
+      await base44.functions.invoke('processServiceVisit', {
+        visitData: {
+          ...visitData,
+          // Flatten readings into top-level fields as processServiceVisit expects
+          ...(visitData.readings || {}),
+          // Audit chain links already in visitData; make dosePlanId explicit
+          dosePlanId: visitData.dosePlan?.id || visitData.dosePlanId || undefined,
+          // Closeout context
+          notes: internalNotes.trim() || visitData.notes || undefined,
+          criticalPartialResolution: criticalPartialResolution || undefined,
+        }
+      });
+
+      // 2. Mark the calendar event as completed
       if (visitData.eventId) {
         await base44.functions.invoke('updateEventStatus', {
           eventId: visitData.eventId, status: 'completed', sendNotification: true
         });
       }
-      // Persist internal notes on dosePlan if one exists
+
+      // 3. Persist internal notes on dosePlan if one exists
       if (visitData.dosePlan?.id && internalNotes.trim()) {
         await base44.entities.DosePlan.update(visitData.dosePlan.id, {
           closeoutNotes: internalNotes.trim()
