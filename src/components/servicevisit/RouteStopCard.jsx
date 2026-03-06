@@ -89,14 +89,14 @@ export default function RouteStopCard({ event, idx, visitState, user, getTimer, 
 
         {/* CTA */}
         {!isCompleted && (
-          <Link to={startVisitUrl}>
+          <a href={startVisitUrl}>
             <Button className={`w-full h-10 ${
               isWaiting || isInProgress ? 'bg-teal-600 hover:bg-teal-700' : 'bg-teal-600 hover:bg-teal-700'
             }`}>
               <ChevronRight className="w-4 h-4 mr-1" />
               {isWaiting || isInProgress ? 'Resume Visit' : 'Start Visit'}
             </Button>
-          </Link>
+          </a>
         )}
 
         {/* Navigate + Details */}
