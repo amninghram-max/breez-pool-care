@@ -197,7 +197,11 @@ Deno.serve(async (req) => {
     let chemicalCostLines = [];
     const chemicalCostVersion = 'v1_canonical';
 
-    if (visitData.chemicalsAdded && Object.keys(visitData.chemicalsAdded).length > 0) {
+    const safeChemicalsAdded = (visitData.chemicalsAdded && typeof visitData.chemicalsAdded === 'object')
+      ? visitData.chemicalsAdded
+      : {};
+    if (Object.keys(safeChemicalsAdded).length > 0) {
+      console.log('[processServiceVisit] CHEMICALS_ADDED_RECEIVED', { keys: Object.keys(safeChemicalsAdded) });
       try {
         // Scoped fetch: collect only needed serviceVisitKeys and "other" names
         const knownBuckets = [
