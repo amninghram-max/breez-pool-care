@@ -562,7 +562,19 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
         const appliedEntry = appliedActions.find(ap => ap.index === i);
         const isApplied = !!appliedEntry;
         const isLocked = i > 0 && !appliedActions.find(ap => ap.index === i - 1);
-        const isPartial = isApplied && appliedEntry.appliedAmount < action.dosePrimary;
+
+        // Compute display-unit partial check — suppress warning if applied ≈ planned at technician-facing precision
+        const _pCanonUnit = normalizeCanonicalUnit(action.primaryUnit);
+        const _pDisplayUnit = UnitConversion.getDefaultDisplayUnit(action.dosePrimary, _pCanonUnit, action.chemicalType);
+        const _pIsLiquid = UnitConversion.isLiquidUnit(_pCanonUnit);
+        const _pConverter = _pIsLiquid ? UnitConversion.convertVolume : UnitConversion.convertWeight;
+        const _pAppliedDisplay = isApplied
+          ? (_pCanonUnit === 'tabs' ? appliedEntry.appliedAmount : (_pConverter(appliedEntry.appliedAmount, _pCanonUnit, _pDisplayUnit) ?? appliedEntry.appliedAmount))
+          : 0;
+        const _pPlannedDisplay = _pCanonUnit === 'tabs' ? action.dosePrimary : (_pConverter(action.dosePrimary, _pCanonUnit, _pDisplayUnit) ?? action.dosePrimary);
+        // Display tolerance: half a unit of the 3rd decimal place (0.0005)
+        const isPartial = isApplied && (_pPlannedDisplay - _pAppliedDisplay) > 0.0005;
+
         // Critical: use action.critical flag or reasonCode if present
         const isCritical = action.critical === true ||
           ['breakpoint_chlorination', 'shock', 'elevated_sanitation'].includes(action.reasonCode);
