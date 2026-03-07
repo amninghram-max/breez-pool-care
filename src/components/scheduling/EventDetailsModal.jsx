@@ -24,7 +24,38 @@ export default function EventDetailsModal({ event, onClose }) {
     scheduledDate: event.scheduledDate || ''
   });
   const [reopenSuccess, setReopenSuccess] = useState(false);
+  const [showReschedulePanel, setShowReschedulePanel] = useState(false);
+  const [rescheduleForm, setRescheduleForm] = useState({ scheduledDate: '', startTime: '09:00', reason: '' });
+  const [rescheduleSuccess, setRescheduleSuccess] = useState(false);
   const queryClient = useQueryClient();
+
+  const timeWindowMap = {
+    '09:00': '8:00 AM – 11:00 AM',
+    '12:00': '11:00 AM – 2:00 PM',
+    '14:00': '2:00 PM – 5:00 PM',
+  };
+
+  const rescheduleMutation = useMutation({
+    mutationFn: async () => {
+      const timeWindow = timeWindowMap[rescheduleForm.startTime] || '8:00 AM – 11:00 AM';
+      const response = await base44.functions.invoke('adminRescheduleInspection', {
+        eventId: event.id,
+        scheduledDate: rescheduleForm.scheduledDate,
+        startTime: rescheduleForm.startTime,
+        timeWindow,
+        ...(rescheduleForm.reason.trim() ? { reason: rescheduleForm.reason.trim() } : {}),
+      });
+      if (!response.data?.success) {
+        throw new Error(response.data?.error || 'Failed to reschedule inspection');
+      }
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
+      setRescheduleSuccess(true);
+      setTimeout(() => onClose(), 2000);
+    },
+  });
 
   const { data: schedulingSettings } = useQuery({
     queryKey: ['schedulingSettings'],
