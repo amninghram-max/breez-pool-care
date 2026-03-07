@@ -182,17 +182,14 @@ export default function StepCloseout({ visitData, user }) {
         mapped: dosePlanChemicals
       });
 
-      // 2. Merge with manual trichlor closeout accounting (preserved as-is)
+      // 2. Merge with trichlor data recorded in StepTrichlor
       const chemicalsAdded = { ...dosePlanChemicals };
-      if (trichlorTabletCount) {
-        chemicalsAdded.chlorineTablets = parseFloat(trichlorTabletCount);
-        console.log('[StepCloseout] TRICHLOR_TABLET_ENTRY', {
-          tabletCount: trichlorTabletCount,
-          placement: trichlorPlacement
-        });
+      const trichlor = visitData.chemicalsAdded || {};
+      if (trichlor.chlorineTablets != null) {
+        chemicalsAdded.chlorineTablets = trichlor.chlorineTablets;
       }
-      if (trichlorPlacement) {
-        chemicalsAdded.trichlorPlacement = trichlorPlacement;
+      if (trichlor.trichlorPlacement) {
+        chemicalsAdded.trichlorPlacement = trichlor.trichlorPlacement;
       }
 
       console.log('[StepCloseout] CHEMICALS_ADDED_FINAL', { chemicalsAdded });
