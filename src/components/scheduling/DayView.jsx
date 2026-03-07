@@ -4,10 +4,36 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, MapPin, User, Navigation, Lock, Edit, Plus, GripVertical } from 'lucide-react';
+import { Clock, MapPin, User, Navigation, Lock, Edit, Plus, GripVertical, CalendarDays } from 'lucide-react';
 import EventDetailsModal from './EventDetailsModal';
 import CreateServiceEventModal from './CreateServiceEventModal';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+
+// Droppable ID prefixes
+const TECH_PREFIX = 'tech::';
+const DATE_PREFIX = 'date::';
+
+const makeTechDropId = (technician) => `${TECH_PREFIX}${technician}`;
+const makeDateDropId = (dateStr) => `${DATE_PREFIX}${dateStr}`;
+
+// Generate ±3 weekdays (Mon-Sat) around a given dateStr for cross-day targets
+function getNearbyDates(dateStr) {
+  const base = new Date(dateStr + 'T00:00:00');
+  const results = [];
+  let offset = -3;
+  while (results.length < 7 && offset <= 7) {
+    const d = new Date(base);
+    d.setDate(base.getDate() + offset);
+    const dow = d.getDay();
+    if (dow !== 0) { // exclude Sundays
+      const s = d.toISOString().split('T')[0];
+      if (s !== dateStr) results.push(s);
+      if (results.length === 6) break;
+    }
+    offset++;
+  }
+  return results;
+}
 
 const isDraggable = (event) =>
   event.eventType === 'service' &&
