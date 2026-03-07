@@ -269,7 +269,7 @@ Deno.serve(async (req) => {
         // Compute cost lines
         console.log('[processServiceVisit] COMPUTE_COST_LINES_START');
         const { totalCostCents, lines } = computeChemicalCostLines(
-          visitData.chemicalsAdded,
+          safeChemicalsAdded,
           byServiceVisitKey,
           byName
         );
