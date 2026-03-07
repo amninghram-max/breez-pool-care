@@ -162,6 +162,18 @@ export default function EventDetailsModal({ event, onClose }) {
             </div>
           </div>
 
+          {/* Scheduled Date — service events only */}
+          {isEditing && event.eventType !== 'inspection' && (
+            <div>
+              <Label>Scheduled Date</Label>
+              <Input
+                type="date"
+                value={formData.scheduledDate}
+                onChange={(e) => setFormData({...formData, scheduledDate: e.target.value})}
+              />
+            </div>
+          )}
+
           {/* Time Window */}
           <div>
             <Label>Time Window</Label>
