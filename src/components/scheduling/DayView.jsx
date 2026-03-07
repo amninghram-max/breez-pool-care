@@ -46,6 +46,9 @@ export default function DayView({ date, technicianFilter, userRole }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [dragError, setDragError] = useState(null);
   const [showDateTargets, setShowDateTargets] = useState(false);
+  const [selectedEventIds, setSelectedEventIds] = useState(new Set());
+  const [bulkAssignTech, setBulkAssignTech] = useState('');
+  const [bulkError, setBulkError] = useState(null);
   const queryClient = useQueryClient();
   const dateStr = date.toISOString().split('T')[0];
   const nearbyDates = React.useMemo(() => getNearbyDates(dateStr), [dateStr]);
