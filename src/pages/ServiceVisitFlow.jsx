@@ -15,7 +15,8 @@ import StepPhotosAfterService from '../components/servicevisit/StepPhotosAfterSe
 import StepTrichlor from '../components/servicevisit/StepTrichlor';
 import StepCloseout from '../components/servicevisit/StepCloseout';
 
-// Steps: arrive → photos_before → test → analyze → dose → wait → retest → checklist → filter_psi → water_level → photos_after → close
+// Steps: arrive → photos_before → test → analyze → dose → trichlor → wait → retest → checklist → water_level → photos_after → close
+// filter_psi removed: PSI capture merged into checklist step
 // access_wait is conditional (only via explicit goTo), not part of normal sequence
 // filter_psi removed — PSI capture merged into checklist step
 const STEPS = ['arrive', 'photos_before', 'test', 'analyze', 'dose', 'trichlor', 'wait', 'retest', 'checklist', 'water_level', 'photos_after', 'close'];
