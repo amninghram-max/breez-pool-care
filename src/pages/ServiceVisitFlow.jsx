@@ -5,7 +5,6 @@ import StepArrive from '../components/servicevisit/StepArrive';
 import StepAccessWait from '../components/servicevisit/StepAccessWait';
 import StepPhotosBeforeService from '../components/servicevisit/StepPhotosBeforeService';
 import StepChecklist from '../components/servicevisit/StepChecklist';
-import StepFilterPsi from '../components/servicevisit/StepFilterPsi';
 import StepWaterLevel from '../components/servicevisit/StepWaterLevel';
 import StepTest from '../components/servicevisit/StepTest';
 import StepAnalyze from '../components/servicevisit/StepAnalyze';
