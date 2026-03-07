@@ -96,7 +96,7 @@ export default function ServiceVisitFlow() {
 
   const stepLabels = {
     arrive: 'Arrive', access_wait: 'Wait', photos_before: 'Before', test: 'Test', analyze: 'Analyze',
-    dose: 'Dose', wait: 'Wait', retest: 'Retest', checklist: 'Tasks', filter_psi: 'Filter', water_level: 'Water',
+    dose: 'Dose', trichlor: 'Tablets', wait: 'Wait', retest: 'Retest', checklist: 'Tasks', filter_psi: 'Filter', water_level: 'Water',
     photos_after: 'After', close: 'Close'
   };
 
