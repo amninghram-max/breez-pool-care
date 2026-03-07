@@ -498,14 +498,11 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
   
   // Helper to convert action display amount for closeout summary
   const getDisplayedAppliedAmount = (action, appliedEntry) => {
-    const isLiquid = UnitConversion.isLiquidUnit(action.primaryUnit);
+    const canonicalUnit = normalizeCanonicalUnit(action.primaryUnit);
+    const defaultDisplay = UnitConversion.getDefaultDisplayUnit(action.dosePrimary, canonicalUnit, action.chemicalType);
+    const isLiquid = UnitConversion.isLiquidUnit(canonicalUnit);
     const converter = isLiquid ? UnitConversion.convertVolume : UnitConversion.convertWeight;
-    const defaultDisplay = UnitConversion.getDefaultDisplayUnit(action.dosePrimary, action.primaryUnit);
-    return converter(
-      appliedEntry.appliedAmount,
-      action.primaryUnit,
-      defaultDisplay
-    );
+    return converter(appliedEntry.appliedAmount, canonicalUnit, defaultDisplay);
   };
 
   return (
