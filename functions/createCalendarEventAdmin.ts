@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
       scheduledDate,
       serviceAddress,
       status: 'scheduled',
-      assignedTechnician: assignedTechnician || 'Matt',
+      assignedTechnician: effectiveTechnician,
       estimatedDuration: estimatedDuration || 30,
     };
 
