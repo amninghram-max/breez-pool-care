@@ -151,15 +151,33 @@ export default function TechnicianRoute() {
           )}
         </div>
 
-        {/* Next stop preview */}
+        {/* Next stop preview + Start Route button */}
         {(() => {
           const next = events.find(e => getVisitState(e) !== 'completed');
-          if (!next) return null;
+          if (!next) {
+            return (
+              <div className="mt-4 flex items-center gap-2 bg-white/20 rounded-lg px-3 py-2">
+                <CheckCircle className="w-4 h-4 text-teal-200" />
+                <p className="font-semibold text-sm">Route Complete</p>
+              </div>
+            );
+          }
+          const pageName = next.eventType === 'inspection' ? 'InspectionSubmit' : 'ServiceVisitFlow';
+          const startUrl = `https://breezpoolcare.com/${pageName}?eventId=${next.id}&poolId=${next.poolId || ''}`;
+          const stopLabel = next.routePosition ? `Stop #${next.routePosition}` : `Stop ${events.indexOf(next) + 1}`;
           return (
-            <div className="mt-4 bg-white/20 rounded-lg px-3 py-2">
-              <p className="text-xs text-teal-100">Next Stop</p>
-              <p className="font-semibold">{next.customerName || next.serviceAddress?.split(',')[0]}</p>
-              <p className="text-xs text-teal-100 truncate">{next.serviceAddress}</p>
+            <div className="mt-4 space-y-2">
+              <div className="bg-white/20 rounded-lg px-3 py-2">
+                <p className="text-xs text-teal-100">Next Stop</p>
+                <p className="font-semibold">{next.customerName || next.serviceAddress?.split(',')[0]}</p>
+                <p className="text-xs text-teal-100 truncate">{next.serviceAddress}</p>
+              </div>
+              <a href={startUrl} className="block">
+                <Button className="w-full bg-white text-teal-700 hover:bg-teal-50 font-bold h-11">
+                  <Play className="w-4 h-4 mr-2" />
+                  Start Route · {stopLabel}
+                </Button>
+              </a>
             </div>
           );
         })()}
