@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Cloud, Navigation, AlertTriangle, List, Search } from 'lucide-react';
 import DayView from '@/components/scheduling/DayView';
 import WeekView from '@/components/scheduling/WeekView';
+import MonthView from '@/components/scheduling/MonthView';
 import StormModeTools from '@/components/scheduling/StormModeTools';
 import CalendarListView from '@/components/scheduling/CalendarListView';
 

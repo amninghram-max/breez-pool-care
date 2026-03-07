@@ -51,21 +51,32 @@ export default function TechnicianRoute() {
   const queryClient = useQueryClient();
   const today = new Date().toISOString().split('T')[0];
 
+  // Parse query params
+  const urlParams = new URLSearchParams(window.location.search);
+  const dateParam = urlParams.get('date');
+  const technicianParam = urlParams.get('technician');
+  const effectiveDate = dateParam || today;
+
   const { data: user } = useQuery({
     queryKey: ['user'],
     queryFn: () => base44.auth.me()
   });
 
+  // Admin can view any technician via param; all others see only their own route
+  const effectiveTechnician = (user?.role === 'admin' && technicianParam)
+    ? technicianParam
+    : user?.full_name;
+
   const { data: events = [], isLoading } = useQuery({
-    queryKey: ['myRoute', today],
+    queryKey: ['myRoute', effectiveDate, effectiveTechnician],
     queryFn: async () => {
       const result = await base44.entities.CalendarEvent.filter({
-        scheduledDate: today,
-        assignedTechnician: user.full_name
+        scheduledDate: effectiveDate,
+        assignedTechnician: effectiveTechnician
       });
       return result.sort((a, b) => (a.routePosition || 0) - (b.routePosition || 0));
     },
-    enabled: !!user
+    enabled: !!user && !!effectiveTechnician
   });
 
   useEffect(() => {
