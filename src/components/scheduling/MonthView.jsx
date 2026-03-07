@@ -1,10 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { createPageUrl } from '@/utils';
+import { User, MapPin, Clock, AlertTriangle, X } from 'lucide-react';
 
 const EVENT_TYPE_STYLES = {
   inspection:     { badge: 'bg-green-100 text-green-800',  cell: 'border-l-2 border-green-400' },
