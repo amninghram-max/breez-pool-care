@@ -76,6 +76,8 @@ export default function Calendar() {
     const newDate = new Date(currentDate);
     if (viewMode === 'day') {
       newDate.setDate(newDate.getDate() - 1);
+    } else if (viewMode === 'month') {
+      newDate.setDate(newDate.getDate() - 28);
     } else {
       newDate.setDate(newDate.getDate() - 7);
     }
@@ -86,6 +88,8 @@ export default function Calendar() {
     const newDate = new Date(currentDate);
     if (viewMode === 'day') {
       newDate.setDate(newDate.getDate() + 1);
+    } else if (viewMode === 'month') {
+      newDate.setDate(newDate.getDate() + 28);
     } else {
       newDate.setDate(newDate.getDate() + 7);
     }
