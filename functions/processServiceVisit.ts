@@ -307,10 +307,10 @@ Deno.serve(async (req) => {
     };
 
     // Log trichlor accounting if present
-    if (visitData.chemicalsAdded?.chlorineTablets || visitData.chemicalsAdded?.trichlorPlacement) {
+    if (safeChemicalsAdded.chlorineTablets || safeChemicalsAdded.trichlorPlacement) {
       console.log('[processServiceVisit] TRICHLOR_CLOSEOUT_ACCOUNTING', {
-        tabletCount: visitData.chemicalsAdded?.chlorineTablets,
-        placement: visitData.chemicalsAdded?.trichlorPlacement
+        tabletCount: safeChemicalsAdded.chlorineTablets,
+        placement: safeChemicalsAdded.trichlorPlacement
       });
     }
 
