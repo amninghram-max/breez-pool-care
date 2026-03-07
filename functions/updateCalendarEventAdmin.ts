@@ -63,6 +63,39 @@ Deno.serve(async (req) => {
       }, { status: 422 });
     }
 
+    // --- UPDATE CONFLICT CHECK: block same-date same-technician double-booking for service events ---
+    if (event.eventType !== 'inspection') {
+      const effectiveScheduledDate = (scheduledDate !== undefined) ? scheduledDate : event.scheduledDate;
+      const effectiveAssignedTechnician = (assignedTechnician !== undefined) ? assignedTechnician : event.assignedTechnician;
+
+      const dateChanging = scheduledDate !== undefined && scheduledDate !== event.scheduledDate;
+      const techChanging = assignedTechnician !== undefined && assignedTechnician !== event.assignedTechnician;
+
+      if (dateChanging || techChanging) {
+        const conflicting = await base44.asServiceRole.entities.CalendarEvent.filter({
+          scheduledDate: effectiveScheduledDate,
+          assignedTechnician: effectiveAssignedTechnician,
+          status: 'scheduled',
+          eventType: 'service',
+        });
+
+        const hasConflict = conflicting && conflicting.some(e => e.id !== eventId);
+
+        if (hasConflict) {
+          console.warn('[updateCalendarEventAdmin] TECHNICIAN_CONFLICT', {
+            eventId,
+            effectiveScheduledDate,
+            effectiveAssignedTechnician,
+          });
+          return Response.json({
+            success: false,
+            error: 'Technician already has a scheduled service event on this date. Please select a different date or technician.',
+            code: 'TECHNICIAN_CONFLICT',
+          }, { status: 409 });
+        }
+      }
+    }
+
     // Build explicit allowed-field updates only — no arbitrary passthrough
     const updates = {};
     if (timeWindow !== undefined)         updates.timeWindow = timeWindow;
