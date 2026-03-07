@@ -25,6 +25,16 @@ export default function EventDetailsModal({ event, onClose }) {
   const [reopenSuccess, setReopenSuccess] = useState(false);
   const queryClient = useQueryClient();
 
+  const { data: schedulingSettings } = useQuery({
+    queryKey: ['schedulingSettings'],
+    queryFn: async () => {
+      const result = await base44.entities.SchedulingSettings.filter({ settingKey: 'default' });
+      return result[0] || {};
+    }
+  });
+  const technicians = schedulingSettings?.technicians || [{ name: 'Matt', active: true }];
+  const activeTechnicians = technicians.filter(t => t.active);
+
   const updateEventMutation = useMutation({
     mutationFn: async (updates) => {
       const response = await base44.functions.invoke('updateCalendarEventAdmin', {
