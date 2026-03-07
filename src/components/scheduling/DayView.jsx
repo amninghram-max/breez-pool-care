@@ -111,6 +111,24 @@ export default function DayView({ date, technicianFilter, userRole }) {
     }
   });
 
+  const bulkAssignMutation = useMutation({
+    mutationFn: ({ date, eventIds, assignedTechnician }) =>
+      base44.functions.invoke('bulkUpdateServiceEvents', {
+        date,
+        eventIds,
+        assignedTechnician,
+      }),
+    onSuccess: () => {
+      setBulkError(null);
+      setSelectedEventIds(new Set());
+      setBulkAssignTech('');
+      queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
+    },
+    onError: (err) => {
+      setBulkError(err?.response?.data?.error || err?.message || 'Bulk assignment failed');
+    }
+  });
+
   const handleDragEnd = (result) => {
     const { draggableId, source, destination } = result;
     setShowDateTargets(false);
