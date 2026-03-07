@@ -163,7 +163,10 @@ export default function TechnicianRoute() {
             );
           }
           const pageName = next.eventType === 'inspection' ? 'InspectionSubmit' : 'ServiceVisitFlow';
-          const startUrl = `https://breezpoolcare.com/${pageName}?eventId=${next.id}&poolId=${next.poolId || ''}`;
+          const routeContext = next.eventType !== 'inspection'
+            ? `&returnTo=TechnicianRoute&date=${effectiveDate}&technician=${encodeURIComponent(effectiveTechnician || '')}`
+            : '';
+          const startUrl = `https://breezpoolcare.com/${pageName}?eventId=${next.id}&poolId=${next.poolId || ''}${routeContext}`;
           const stopLabel = next.routePosition ? `Stop #${next.routePosition}` : `Stop ${events.indexOf(next) + 1}`;
           return (
             <div className="mt-4 space-y-2">
@@ -213,6 +216,8 @@ export default function TechnicianRoute() {
             visitState={getVisitState(event)}
             user={user}
             getTimer={getWaitTimer}
+            effectiveDate={effectiveDate}
+            effectiveTechnician={effectiveTechnician}
             onNavigate={(ev) => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(ev.serviceAddress)}`, '_blank')}
             onUpdateStatus={(eventId, status) => updateStatusMutation.mutate({ eventId, status })}
           />

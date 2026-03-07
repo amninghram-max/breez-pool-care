@@ -31,7 +31,7 @@ function WaitCountdown({ eventId, getTimer }) {
   return <span className="text-xs font-semibold text-yellow-700">Waiting: {m}:{String(s).padStart(2, '0')} remaining</span>;
 }
 
-export default function RouteStopCard({ event, idx, visitState, user, getTimer, onNavigate, onUpdateStatus }) {
+export default function RouteStopCard({ event, idx, visitState, user, getTimer, effectiveDate, effectiveTechnician, onNavigate, onUpdateStatus }) {
   const [showDetails, setShowDetails] = useState(false);
 
   const isCompleted = visitState === 'completed';
@@ -42,7 +42,10 @@ export default function RouteStopCard({ event, idx, visitState, user, getTimer, 
   const typeColor = EVENT_TYPE_COLORS[event.eventType] || 'bg-gray-100 text-gray-800';
 
   const pageName = event.eventType === 'inspection' ? 'InspectionSubmit' : 'ServiceVisitFlow';
-  const startVisitUrl = `https://breezpoolcare.com/${pageName}?eventId=${event.id}&poolId=${event.poolId || ''}`;
+  const routeContext = (event.eventType !== 'inspection' && effectiveDate && effectiveTechnician)
+    ? `&returnTo=TechnicianRoute&date=${effectiveDate}&technician=${encodeURIComponent(effectiveTechnician)}`
+    : '';
+  const startVisitUrl = `https://breezpoolcare.com/${pageName}?eventId=${event.id}&poolId=${event.poolId || ''}${routeContext}`;
 
   return (
     <Card className={`border-2 transition-colors ${
