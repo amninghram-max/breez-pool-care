@@ -235,6 +235,13 @@ function PreApplyModal({ action, actionIndex, onConfirm, onCancel }) {
           )}
         </div>
 
+        <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-400 rounded-lg">
+          <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+          <p className="text-sm font-semibold text-red-700">
+            Warning: Once you confirm this chemical application, the applied dosage is locked in and cannot be changed.
+          </p>
+        </div>
+
         <p className="text-xs text-gray-500">
           This will lock the Arrive, Test, and Analyze steps for audit accuracy.
         </p>
