@@ -27,10 +27,20 @@ export default function EventDetailsModal({ event, onClose }) {
 
   const updateEventMutation = useMutation({
     mutationFn: async (updates) => {
-      await base44.entities.CalendarEvent.update(event.id, updates);
+      const response = await base44.functions.invoke('updateCalendarEventAdmin', {
+        eventId: event.id,
+        ...updates,
+      });
+      if (!response.data?.success) {
+        throw new Error(response.data?.error || 'Failed to update event');
+      }
+      return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
+      if (data?.warning) {
+        toast.warning(data.warning);
+      }
       setIsEditing(false);
       onClose();
     }
