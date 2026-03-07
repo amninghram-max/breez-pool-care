@@ -76,8 +76,8 @@ function PreApplyModal({ action, actionIndex, onConfirm, onCancel }) {
   const canonicalUnit = normalizeCanonicalUnit(canonicalUnitRaw);
   const canonicalAmount = action.dosePrimary;
   
-  // Choose default display unit intelligently
-  let defaultDisplayUnit = UnitConversion.getDefaultDisplayUnit(canonicalAmount, canonicalUnit);
+  // Choose default display unit by chemical type (smallest practical unit)
+  let defaultDisplayUnit = UnitConversion.getDefaultDisplayUnit(canonicalAmount, canonicalUnit, action.chemicalType);
   
   // Map normalized canonical to display unit names
   const displayUnitMap = {
