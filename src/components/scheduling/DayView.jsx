@@ -75,31 +75,50 @@ export default function DayView({ date, technicianFilter, userRole }) {
     }
   });
 
-  const reassignMutation = useMutation({
-    mutationFn: ({ eventId, assignedTechnician }) =>
-      base44.functions.invoke('updateCalendarEventAdmin', { eventId, assignedTechnician }),
+  const moveMutation = useMutation({
+    mutationFn: ({ eventId, assignedTechnician, scheduledDate }) =>
+      base44.functions.invoke('updateCalendarEventAdmin', {
+        eventId,
+        ...(assignedTechnician !== undefined ? { assignedTechnician } : {}),
+        ...(scheduledDate !== undefined ? { scheduledDate } : {}),
+      }),
     onSuccess: () => {
       setDragError(null);
+      setShowDateTargets(false);
       queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
     },
     onError: (err) => {
-      setDragError(err?.response?.data?.error || err?.message || 'Reassignment failed');
+      setDragError(err?.response?.data?.error || err?.message || 'Move failed');
     }
   });
 
   const handleDragEnd = (result) => {
     const { draggableId, source, destination } = result;
+    setShowDateTargets(false);
     if (!destination) return;
     if (destination.droppableId === source.droppableId) return;
 
-    // Find the event being dragged
     const event = events.find(e => e.id === draggableId);
     if (!event || !isDraggable(event)) return;
 
-    reassignMutation.mutate({
-      eventId: draggableId,
-      assignedTechnician: destination.droppableId
-    });
+    const destId = destination.droppableId;
+
+    if (destId.startsWith(DATE_PREFIX)) {
+      // Cross-day move
+      const destDate = destId.slice(DATE_PREFIX.length);
+      if (destDate === event.scheduledDate) return; // no-op
+      moveMutation.mutate({ eventId: draggableId, scheduledDate: destDate });
+    } else if (destId.startsWith(TECH_PREFIX)) {
+      // Same-day cross-technician reassignment (v1 behavior)
+      const destTech = destId.slice(TECH_PREFIX.length);
+      if (destTech === event.assignedTechnician) return; // no-op
+      moveMutation.mutate({ eventId: draggableId, assignedTechnician: destTech });
+    }
+  };
+
+  const handleDragStart = () => {
+    setShowDateTargets(true);
+    setDragError(null);
   };
 
   // Build lead map — must be called unconditionally before any early returns
