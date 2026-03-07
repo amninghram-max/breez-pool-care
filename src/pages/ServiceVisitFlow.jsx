@@ -135,7 +135,6 @@ export default function ServiceVisitFlow() {
          {step === 'access_wait'    && <StepAccessWait         {...stepProps} />}
          {step === 'photos_before'  && <StepPhotosBeforeService {...stepProps} />}
          {step === 'checklist'      && <StepChecklist          {...stepProps} />}
-         {step === 'filter_psi'     && <StepFilterPsi          {...stepProps} />}
          {step === 'water_level'    && <StepWaterLevel         {...stepProps} />}
          {step === 'test'           && <StepTest               {...stepProps} />}
          {step === 'analyze'        && <StepAnalyze            {...stepProps} />}
