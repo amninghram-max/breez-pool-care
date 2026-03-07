@@ -103,10 +103,12 @@ Deno.serve(async (req) => {
     }
 
     // Free Chlorine adjustment (low)
+    // chlorinePerPpm is in fl oz per 1000 gal per 1 ppm; divide by 128 to get canonical gallons.
     if (targets.freeChlorine && readings.freeChlorine != null && readings.freeChlorine < targets.freeChlorine.min) {
       const deficit = targets.freeChlorine.min - readings.freeChlorine;
-      const ozNeeded = deficit * gallonsK * formulas.chlorinePerPpm;
-      const gallonsNeeded = ozNeeded / 128;
+      const flOzNeeded = deficit * gallonsK * formulas.chlorinePerPpm;
+      const gallonsNeeded = flOzNeeded / 128;
+      console.log('CALC_CHEM_CHLORINE', { deficit, gallonsK, chlorinePerPpm: formulas.chlorinePerPpm, flOzNeeded, gallonsNeeded });
       adjustments.push({
         chemical: 'Liquid Chlorine',
         reason: `FC below target (${readings.freeChlorine} < ${targets.freeChlorine.min})`,
@@ -116,10 +118,12 @@ Deno.serve(async (req) => {
     }
 
     // pH adjustment (high)
+    // acidPerPH is in fl oz per 1000 gal per 0.2 pH decrease; divide by 128 to get canonical gallons.
     if (targets.pH && readings.pH != null && readings.pH > targets.pH.max) {
       const excess = readings.pH - targets.pH.max;
-      const ozNeeded = (excess / 0.2) * gallonsK * formulas.acidPerPH;
-      const gallonsNeeded = ozNeeded / 128;
+      const flOzNeeded = (excess / 0.2) * gallonsK * formulas.acidPerPH;
+      const gallonsNeeded = flOzNeeded / 128;
+      console.log('CALC_CHEM_ACID', { excess, gallonsK, acidPerPH: formulas.acidPerPH, flOzNeeded, gallonsNeeded });
       adjustments.push({
         chemical: 'Muriatic Acid',
         reason: `pH above target (${readings.pH} > ${targets.pH.max})`,

@@ -36,10 +36,10 @@ const UnitConversion = {
   // Volume conversions: canonical stored as gallons (normalized to 'gal')
   convertVolume: (amount, fromUnit, toUnit) => {
     if (fromUnit === toUnit) return amount;
-    const toGal = { 'gal': amount, 'cup': amount / 8, 'fl_oz': amount / 128 };
+    const toGal = { 'gal': amount, 'qt': amount / 4, 'cup': amount / 8, 'fl_oz': amount / 128 };
     const gals = toGal[fromUnit];
     if (gals === undefined) return undefined;  // guard: unknown unit
-    return { 'gal': gals, 'cup': gals * 8, 'fl_oz': gals * 128 }[toUnit];
+    return { 'gal': gals, 'qt': gals * 4, 'cup': gals * 8, 'fl_oz': gals * 128 }[toUnit];
   },
   
   // Weight conversions: canonical stored as lbs (normalized to 'lb')
@@ -51,13 +51,16 @@ const UnitConversion = {
     return { 'lb': lbs, 'oz_wt': lbs * 16 }[toUnit];
   },
   
-  // Choose default display unit by chemical type (always smallest practical unit)
-  getDefaultDisplayUnit: (_canonicalAmount, canonicalUnit, chemicalType) => {
+  // Choose default display unit based on amount — ladder: fl oz < qts < gallons
+  getDefaultDisplayUnit: (canonicalAmount, canonicalUnit, chemicalType) => {
     if (canonicalUnit === 'tabs') return 'tabs';
-    // Liquid chemicals → fl oz
-    if (canonicalUnit === 'gal') return 'fl_oz';
-    // Dry chemicals → oz_wt
-    if (canonicalUnit === 'lb') return 'oz_wt';
+    if (canonicalUnit === 'gal') {
+      if (canonicalAmount < 0.25) return 'fl_oz';   // < 1 qt → show fl oz
+      if (canonicalAmount < 2)    return 'qt';       // 1 qt – 2 gal → show qts
+      return 'gal';                                  // >= 2 gal → show gallons
+    }
+    // Dry chemicals → oz_wt for small amounts, lbs for larger
+    if (canonicalUnit === 'lb') return canonicalAmount < 1 ? 'oz_wt' : 'lb';
     return canonicalUnit;  // fallback
   },
   
@@ -81,7 +84,7 @@ function PreApplyModal({ action, actionIndex, onConfirm, onCancel }) {
   
   // Map normalized canonical to display unit names
   const displayUnitMap = {
-    'gal': ['gal', 'cup', 'fl_oz'],
+    'gal': ['gal', 'qt', 'cup', 'fl_oz'],
     'lb': ['lb', 'oz_wt'],
     'oz_wt': ['oz_wt', 'lb'],
     'tabs': ['tabs']
@@ -140,6 +143,7 @@ function PreApplyModal({ action, actionIndex, onConfirm, onCancel }) {
   // Display unit labels for UI
   const unitLabels = {
     'gal': 'gallons',
+    'qt': 'qts',
     'cup': 'cups',
     'fl_oz': 'fl oz',
     'lb': 'lbs',
@@ -601,7 +605,7 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
                     const isLiquid = UnitConversion.isLiquidUnit(canonUnit);
                     const converter = isLiquid ? UnitConversion.convertVolume : UnitConversion.convertWeight;
                     const displayAmt = (canonUnit === 'tabs') ? canonAmt : (converter(canonAmt, canonUnit, displayUnit) ?? canonAmt);
-                    const unitLabels = { 'gal': 'gal', 'fl_oz': 'fl oz', 'cup': 'cup', 'lb': 'lbs', 'oz_wt': 'oz', 'tabs': 'tabs' };
+                    const unitLabels = { 'gal': 'gal', 'qt': 'qt', 'fl_oz': 'fl oz', 'cup': 'cup', 'lb': 'lbs', 'oz_wt': 'oz', 'tabs': 'tabs' };
                     return (
                       <p className="text-2xl font-bold font-mono text-teal-700 mt-1">
                         {formatAmount(displayAmt)} {unitLabels[displayUnit] || displayUnit}
@@ -610,7 +614,7 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
                     );
                   })()}
                   {isPartial && (() => {
-                    const pUnitLabels = { 'gal': 'gal', 'fl_oz': 'fl oz', 'cup': 'cup', 'lb': 'lbs', 'oz_wt': 'oz', 'tabs': 'tabs' };
+                    const pUnitLabels = { 'gal': 'gal', 'qt': 'qt', 'fl_oz': 'fl oz', 'cup': 'cup', 'lb': 'lbs', 'oz_wt': 'oz', 'tabs': 'tabs' };
                     return (
                       <p className="text-xs text-orange-700 mt-0.5 flex items-center gap-1">
                         <AlertTriangle className="w-3 h-3" />

@@ -80,9 +80,13 @@ const SEED_CONFIG = {
     pH: { min: 7.2, max: 7.8, unit: 'pH' },
     totalAlkalinity: { min: 80, max: 120, unit: 'ppm' },
     estimationFormulas: {
-      chlorinePerPpm: 0.013,
-      acidPerPH: 0.02,
-      bakingSodaPerTA: 1.5
+      // Liquid constants are in FLUID OUNCES (fl oz) per 1000 gallons per unit of change.
+      // The calculator divides by 128 (fl oz per gallon) to convert to canonical gallons.
+      chlorinePerPpm: 1.3,   // 1.3 fl oz per 1000 gal per 1 ppm FC increase (10% sodium hypochlorite)
+      acidPerPH: 1.2,        // 1.2 fl oz per 1000 gal per 0.2 pH decrease (31.45% muriatic acid)
+      // Dry constant is in WEIGHT OUNCES (oz_wt) per 1000 gallons per 10 ppm change.
+      // The calculator divides by 16 to convert to canonical lbs.
+      bakingSodaPerTA: 1.5   // 1.5 oz_wt per 1000 gal per 10 ppm TA increase
     }
   }),
   autopayDiscount: 10

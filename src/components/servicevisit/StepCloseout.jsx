@@ -21,9 +21,9 @@ const CHEMICAL_LABELS = {
 const UnitConversion = {
   convertVolume: (amount, fromUnit, toUnit) => {
     if (fromUnit === toUnit) return amount;
-    const toGal = { 'gal': amount, 'cup': amount / 8, 'fl_oz': amount / 128 };
+    const toGal = { 'gal': amount, 'qt': amount / 4, 'cup': amount / 8, 'fl_oz': amount / 128 };
     const gals = toGal[fromUnit];
-    return { 'gal': gals, 'cup': gals * 8, 'fl_oz': gals * 128 }[toUnit];
+    return { 'gal': gals, 'qt': gals * 4, 'cup': gals * 8, 'fl_oz': gals * 128 }[toUnit];
   },
   convertWeight: (amount, fromUnit, toUnit) => {
     if (fromUnit === toUnit) return amount;
@@ -32,8 +32,11 @@ const UnitConversion = {
     return { 'lb': lbs, 'oz_wt': lbs * 16 }[toUnit];
   },
   getDefaultDisplayUnit: (canonicalAmount, canonicalUnit) => {
-    if (canonicalUnit === 'gallons') {
-      return canonicalAmount < 0.5 ? 'cup' : 'gal';
+    // Liquid ladder: fl oz < qts < gallons
+    if (canonicalUnit === 'gallons' || canonicalUnit === 'gal') {
+      if (canonicalAmount < 0.25) return 'fl_oz';
+      if (canonicalAmount < 2)    return 'qt';
+      return 'gal';
     }
     if (canonicalUnit === 'lbs') {
       return canonicalAmount < 1 ? 'oz_wt' : 'lb';
@@ -45,6 +48,7 @@ const UnitConversion = {
 
 const unitLabels = {
   'gal': 'gallons',
+  'qt': 'qts',
   'cup': 'cups',
   'fl_oz': 'fl oz',
   'lb': 'lbs',
