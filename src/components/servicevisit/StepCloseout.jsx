@@ -241,6 +241,22 @@ export default function StepCloseout({ visitData, user }) {
   });
 
   if (done) {
+    const closeoutParams = new URLSearchParams(window.location.search);
+    const returnTo = closeoutParams.get('returnTo');
+    const returnDate = closeoutParams.get('date');
+    const returnTechnician = closeoutParams.get('technician');
+
+    let backDestination = createPageUrl('TechnicianHome');
+    let backLabel = 'Back to Route';
+    if (returnTo === 'TechnicianRoute') {
+      const qs = new URLSearchParams();
+      if (returnDate) qs.set('date', returnDate);
+      if (returnTechnician) qs.set('technician', returnTechnician);
+      const qsStr = qs.toString();
+      backDestination = createPageUrl('TechnicianRoute') + (qsStr ? `?${qsStr}` : '');
+      backLabel = 'Back to Route';
+    }
+
     return (
       <div className="space-y-6 text-center pt-8">
         <CheckCircle className="w-20 h-20 text-green-500 mx-auto" />
@@ -248,9 +264,9 @@ export default function StepCloseout({ visitData, user }) {
           <h2 className="text-2xl font-bold text-gray-900">Visit Complete</h2>
           <p className="text-gray-500 mt-2">Service record saved successfully</p>
         </div>
-        <Link to={createPageUrl('TechnicianHome')}>
+        <Link to={backDestination}>
           <Button className="w-full bg-teal-600 hover:bg-teal-700 h-12">
-            Back to Route
+            {backLabel}
           </Button>
         </Link>
       </div>
