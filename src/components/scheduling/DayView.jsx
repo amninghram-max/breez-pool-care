@@ -223,7 +223,36 @@ export default function DayView({ date, technicianFilter, userRole }) {
         </div>
       )}
 
-      <DragDropContext onDragEnd={handleDragEnd}>
+      <DragDropContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
+        {/* Cross-day drop targets — shown only while dragging an eligible event */}
+        {showDateTargets && (
+          <div className="mb-4 p-3 border border-dashed border-teal-300 rounded-lg bg-teal-50">
+            <div className="flex items-center gap-2 mb-2 text-xs text-teal-700 font-medium">
+              <CalendarDays className="w-4 h-4" />
+              Move to another day
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {nearbyDates.map(d => (
+                <Droppable key={d} droppableId={makeDateDropId(d)}>
+                  {(prov, snap) => (
+                    <div
+                      ref={prov.innerRef}
+                      {...prov.droppableProps}
+                      className={`px-3 py-2 rounded-md border text-xs font-medium min-w-[90px] text-center transition-colors
+                        ${snap.isDraggingOver
+                          ? 'bg-teal-600 text-white border-teal-600'
+                          : 'bg-white text-teal-700 border-teal-300 hover:bg-teal-100'}`}
+                    >
+                      {new Date(d + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      {prov.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="space-y-6">
           {Object.keys(eventsByTechnician).length === 0 ? (
             <Card>
