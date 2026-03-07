@@ -47,6 +47,33 @@ export default function DayView({ date, technicianFilter, userRole }) {
     }
   });
 
+  const reassignMutation = useMutation({
+    mutationFn: ({ eventId, assignedTechnician }) =>
+      base44.functions.invoke('updateCalendarEventAdmin', { eventId, assignedTechnician }),
+    onSuccess: () => {
+      setDragError(null);
+      queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
+    },
+    onError: (err) => {
+      setDragError(err?.response?.data?.error || err?.message || 'Reassignment failed');
+    }
+  });
+
+  const handleDragEnd = (result) => {
+    const { draggableId, source, destination } = result;
+    if (!destination) return;
+    if (destination.droppableId === source.droppableId) return;
+
+    // Find the event being dragged
+    const event = events.find(e => e.id === draggableId);
+    if (!event || !isDraggable(event)) return;
+
+    reassignMutation.mutate({
+      eventId: draggableId,
+      assignedTechnician: destination.droppableId
+    });
+  };
+
   // Build lead map — must be called unconditionally before any early returns
   const leadMap = React.useMemo(() => {
     const m = {};
