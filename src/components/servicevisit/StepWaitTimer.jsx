@@ -122,10 +122,11 @@ export default function StepWaitTimer({ visitData, advance, goTo }) {
   };
 
   const handleSkipRetestConfirmed = () => {
-    console.log('[StepWaitTimer] skip retest override confirmed, clearing retestRequired, routing to photos_after');
-    // Explicitly clear retestRequired and route to photos_after (always the last step before closeout)
+    console.log('[StepWaitTimer] skip retest confirmed — retestRequired cleared');
+    console.log('[StepWaitTimer] skip retest routing → checklist (service tasks continue normally)');
+    // Clear retestRequired so the retest step is hidden, then continue normal service workflow
     advance({ retestRequired: false });
-    goTo('photos_after');
+    goTo('checklist');
   };
 
   return (
