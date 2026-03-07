@@ -20,7 +20,8 @@ export default function EventDetailsModal({ event, onClose }) {
     assignedTechnician: event.assignedTechnician || '',
     isFixed: event.isFixed || false,
     accessNotes: event.accessNotes || '',
-    customerNotes: event.customerNotes || ''
+    customerNotes: event.customerNotes || '',
+    scheduledDate: event.scheduledDate || ''
   });
   const [reopenSuccess, setReopenSuccess] = useState(false);
   const queryClient = useQueryClient();
