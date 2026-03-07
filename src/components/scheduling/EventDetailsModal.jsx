@@ -198,6 +198,11 @@ export default function EventDetailsModal({ event, onClose }) {
                   <option key={tech.name} value={tech.name}>{tech.name}</option>
                 ))}
               </select>
+              {isEditing && formData.assignedTechnician !== event.assignedTechnician && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Changing from &quot;{event.assignedTechnician || 'Unassigned'}&quot; to &quot;{formData.assignedTechnician || 'Unassigned'}&quot;
+                </p>
+              )}
             ) : (
               <div className="flex items-center gap-2 mt-1">
                 <User className="w-4 h-4 text-gray-400" />
