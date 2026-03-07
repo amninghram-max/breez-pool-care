@@ -53,14 +53,46 @@ Deno.serve(async (req) => {
 
     console.log('[updateCalendarEventAdmin] EVENT_FETCHED', { eventId, eventType: event.eventType, status: event.status });
 
+    // --- DATE MOVE GUARD: block inspection scheduledDate changes through this helper ---
+    if (scheduledDate !== undefined && event.eventType === 'inspection') {
+      console.warn('[updateCalendarEventAdmin] INSPECTION_DATE_MOVE_BLOCKED', { eventId, scheduledDate });
+      return Response.json({
+        success: false,
+        error: 'Inspection date moves are not supported through this helper. Use approveRescheduleV2 or requestReschedulePublicV2 instead.',
+        code: 'INSPECTION_DATE_MOVE_NOT_SUPPORTED'
+      }, { status: 422 });
+    }
+
     // Build explicit allowed-field updates only — no arbitrary passthrough
     const updates = {};
-    if (timeWindow !== undefined)        updates.timeWindow = timeWindow;
-    if (estimatedDuration !== undefined) updates.estimatedDuration = estimatedDuration;
+    if (timeWindow !== undefined)         updates.timeWindow = timeWindow;
+    if (estimatedDuration !== undefined)  updates.estimatedDuration = estimatedDuration;
     if (assignedTechnician !== undefined) updates.assignedTechnician = assignedTechnician;
-    if (isFixed !== undefined)           updates.isFixed = isFixed;
-    if (accessNotes !== undefined)       updates.accessNotes = accessNotes;
-    if (customerNotes !== undefined)     updates.customerNotes = customerNotes;
+    if (isFixed !== undefined)            updates.isFixed = isFixed;
+    if (accessNotes !== undefined)        updates.accessNotes = accessNotes;
+    if (customerNotes !== undefined)      updates.customerNotes = customerNotes;
+
+    // Service-event date move — only apply when date is actually changing
+    if (scheduledDate !== undefined) {
+      const dateActuallyChanging = scheduledDate !== event.scheduledDate;
+      if (dateActuallyChanging) {
+        updates.scheduledDate = scheduledDate;
+        updates.originalScheduledDate = event.scheduledDate;
+        updates.rescheduleReason = 'admin_reschedule';
+        updates.status = 'scheduled';
+        if (event.stormImpacted) {
+          updates.stormImpacted = false;
+        }
+        console.log('[updateCalendarEventAdmin] SERVICE_DATE_MOVE', {
+          eventId,
+          from: event.scheduledDate,
+          to: scheduledDate,
+          wasStormImpacted: !!event.stormImpacted
+        });
+      } else {
+        console.log('[updateCalendarEventAdmin] DATE_NO_OP', { eventId, scheduledDate });
+      }
+    }
 
     if (Object.keys(updates).length === 0) {
       return Response.json({ success: false, error: 'No updatable fields provided' }, { status: 400 });
@@ -75,7 +107,7 @@ Deno.serve(async (req) => {
     // Re-fetch updated event for response
     const updatedEvent = await base44.asServiceRole.entities.CalendarEvent.get(eventId);
 
-    // Warn (non-blocking) if this was an inspection event — current repo has no hard block
+    // Retain non-blocking inspection warning for non-date inspection edits
     const warning = event.eventType === 'inspection'
       ? 'Edited event is of type inspection. Verify intended changes.'
       : undefined;
