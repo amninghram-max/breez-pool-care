@@ -121,13 +121,24 @@ Deno.serve(async (req) => {
       }, { status: 409 });
     }
 
-    // --- All-or-nothing update: assign technician to all selected events ---
+    // --- Write phase: assign technician to all selected events ---
+    // Validation is complete; now attempt all writes.
+    // If any write fails, the entire operation fails (fail-fast pattern).
     console.log('[bulkUpdateServiceEvents] UPDATING', { date, assignedTechnician, count: eventIds.length });
 
-    for (const eventId of eventIds) {
-      await base44.asServiceRole.entities.CalendarEvent.update(eventId, {
-        assignedTechnician,
-      });
+    try {
+      for (const eventId of eventIds) {
+        await base44.asServiceRole.entities.CalendarEvent.update(eventId, {
+          assignedTechnician,
+        });
+      }
+    } catch (writeError) {
+      console.error('[bulkUpdateServiceEvents] WRITE_FAILED', { error: writeError?.message });
+      return Response.json({
+        success: false,
+        error: writeError?.message || 'Failed to update events during bulk assignment',
+        code: 'BULK_UPDATE_FAILED',
+      }, { status: 500 });
     }
 
     console.log('[bulkUpdateServiceEvents] DONE', { updatedCount: eventIds.length });
