@@ -157,6 +157,20 @@ export default function DayView({ date, technicianFilter, userRole }) {
     return m;
   }, [leads]);
 
+  // Build eventsByTechnician unconditionally so handleDragEnd can reference it
+  const eventsByTechnician = React.useMemo(() => {
+    const map = {};
+    events.forEach(event => {
+      if (event.status === 'cancelled' && !showCancelled) return;
+      const lead = leadMap[event.leadId];
+      if (lead?.isDeleted) return;
+      const tech = event.assignedTechnician || 'Unassigned';
+      if (!map[tech]) map[tech] = [];
+      map[tech].push(event);
+    });
+    return map;
+  }, [events, leadMap, showCancelled]);
+
   if (isLoading) {
     return (
       <Card>
