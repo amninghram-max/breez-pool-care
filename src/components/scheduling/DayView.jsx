@@ -181,22 +181,7 @@ export default function DayView({ date, technicianFilter, userRole }) {
     );
   }
 
-  // Group events by technician, filtering cancelled + deleted leads
-  const eventsByTechnician = {};
-  events.forEach(event => {
-    // Skip cancelled events unless toggled
-    if (event.status === 'cancelled' && !showCancelled) return;
-    
-    // Skip events for deleted leads
-    const lead = leadMap[event.leadId];
-    if (lead?.isDeleted) return;
-    
-    const tech = event.assignedTechnician || 'Unassigned';
-    if (!eventsByTechnician[tech]) {
-      eventsByTechnician[tech] = [];
-    }
-    eventsByTechnician[tech].push(event);
-  });
+  // eventsByTechnician is computed via useMemo above (hoisted for handleDragEnd access)
 
   const getStatusBadge = (status) => {
     const configs = {
