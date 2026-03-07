@@ -175,6 +175,13 @@ export default function EventDetailsModal({ event, onClose }) {
             </div>
           )}
 
+          {/* Service date change preview */}
+          {isEditing && event.eventType !== 'inspection' && dateChanged && (
+            <p className="text-xs text-teal-700 mt-1">
+              Changing from &quot;{event.scheduledDate}&quot; to &quot;{formData.scheduledDate}&quot;
+            </p>
+          )}
+
           {/* Time Window */}
           <div>
             <Label>Time Window</Label>
