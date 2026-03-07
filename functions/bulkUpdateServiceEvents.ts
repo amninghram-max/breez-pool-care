@@ -4,10 +4,14 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
  * bulkUpdateServiceEvents
  *
  * Bulk technician reassignment for eligible service events on a single day.
- * All-or-nothing validation and conflict checking.
+ * Validates all events before any writes. If any write fails, entire operation fails.
+ * NOTE: True atomicity (all-or-nothing) is not guaranteed at the database level in this runtime.
+ * Writes are sequential; if a write fails mid-loop, earlier writes have already committed.
+ * For maximum safety, this helper validates all conditions before starting writes
+ * and fails the entire operation on first write error.
  *
  * Input: { date, eventIds[], assignedTechnician }
- * Output: { success, updatedCount, build }
+ * Output: { success, updatedCount, build } or { success: false, error, code: 'BULK_UPDATE_FAILED' }
  *
  * Eligible events: eventType === 'service' && isFixed !== true && status === 'scheduled'
  */
