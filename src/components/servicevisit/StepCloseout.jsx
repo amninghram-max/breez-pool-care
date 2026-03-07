@@ -150,10 +150,39 @@ export default function StepCloseout({ visitData, user }) {
     (!needsNotes || internalNotes.trim().length > 0) &&
     (!hasCriticalPartials || criticalPartialResolution !== null);
 
+  // Map DosePlan chemicalType → ServiceVisit.chemicalsAdded key
+  // Canonical units: LIQUID_CHLORINE/MURIATIC_ACID stored as gallons, dry as lbs, tabs as tabs
+  const DOSE_PLAN_TO_SERVICE_VISIT_KEY = {
+    LIQUID_CHLORINE: 'liquidChlorine',  // gallons canonical
+    MURIATIC_ACID: 'acid',              // gallons canonical
+    ALKALINITY_UP: 'bakingSoda',        // lbs canonical
+    CALCIUM_INCREASER: 'calciumIncreaser', // lbs canonical
+    STABILIZER_CYA: 'stabilizer',       // lbs canonical
+    SALT: 'salt',                       // lbs canonical
+  };
+
   const closeMutation = useMutation({
     mutationFn: async () => {
-      // Build chemicalsAdded with trichlor accounting
-      const chemicalsAdded = { ...(visitData.chemicalsAdded || {}) };
+      // 1. Map applied DosePlan actions → canonical ServiceVisit.chemicalsAdded object shape
+      //    appliedAmount is stored in canonical units by StepDoseConfirm (gallons for liquids, lbs for dry)
+      const dosePlanChemicals = {};
+      const appliedActions = visitData.dosePlan?.actions?.filter(a => a.applied === true) || [];
+      for (const action of appliedActions) {
+        const serviceVisitKey = DOSE_PLAN_TO_SERVICE_VISIT_KEY[action.chemicalType];
+        if (!serviceVisitKey) continue; // unknown type — skip rather than corrupt
+        const amount = action.appliedAmount ?? action.dosePrimary;
+        if (amount != null && amount > 0) {
+          // Sum if same key appears more than once (defensive)
+          dosePlanChemicals[serviceVisitKey] = (dosePlanChemicals[serviceVisitKey] || 0) + amount;
+        }
+      }
+      console.log('[StepCloseout] DOSE_PLAN_CHEMICALS_MAPPED', {
+        appliedActionCount: appliedActions.length,
+        mapped: dosePlanChemicals
+      });
+
+      // 2. Merge with manual trichlor closeout accounting (preserved as-is)
+      const chemicalsAdded = { ...dosePlanChemicals };
       if (trichlorTabletCount) {
         chemicalsAdded.chlorineTablets = parseFloat(trichlorTabletCount);
         console.log('[StepCloseout] TRICHLOR_TABLET_ENTRY', {
@@ -165,7 +194,9 @@ export default function StepCloseout({ visitData, user }) {
         chemicalsAdded.trichlorPlacement = trichlorPlacement;
       }
 
-      // 1. Create the canonical ServiceVisit record via processServiceVisit
+      console.log('[StepCloseout] CHEMICALS_ADDED_FINAL', { chemicalsAdded });
+
+      // 3. Create the canonical ServiceVisit record via processServiceVisit
       await base44.functions.invoke('processServiceVisit', {
         visitData: {
           ...visitData,
