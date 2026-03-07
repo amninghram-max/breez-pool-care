@@ -246,6 +246,7 @@ export default function MonthView({ startDate, technicianFilter }) {
                   <a
                     href={createPageUrl(`TechnicianRoute?date=${dayStr}&technician=${encodeURIComponent(technicianFilter)}`)}
                     className="mt-1 block"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <Button
                       size="sm"
