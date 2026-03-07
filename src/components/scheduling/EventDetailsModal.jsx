@@ -72,6 +72,17 @@ export default function EventDetailsModal({ event, onClose }) {
   };
 
   const handleSave = () => {
+    const isInspectionReassignment =
+      event.eventType === 'inspection' &&
+      formData.assignedTechnician !== event.assignedTechnician;
+
+    if (isInspectionReassignment) {
+      const confirmed = window.confirm(
+        `This is an inspection event.\n\nYou are changing the assigned technician from "${event.assignedTechnician || 'Unassigned'}" to "${formData.assignedTechnician}".\n\nAre you sure you want to proceed?`
+      );
+      if (!confirmed) return;
+    }
+
     updateEventMutation.mutate(formData);
   };
 
