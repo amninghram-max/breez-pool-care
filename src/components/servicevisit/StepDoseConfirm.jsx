@@ -582,10 +582,21 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
                     {isCritical && <Badge className="bg-orange-100 text-orange-800 text-xs">Critical</Badge>}
                     {isLocked && <Lock className="w-3.5 h-3.5 text-gray-400" />}
                   </div>
-                  <p className="text-2xl font-bold font-mono text-teal-700 mt-1">
-                    {(isApplied ? appliedEntry.appliedAmount : action.dosePrimary).toFixed(3).replace(/\.?0+$/, '')} {action.primaryUnit}
-                    {action.safetyCapEnforced && <span className="text-sm text-orange-600 font-normal ml-2">(capped)</span>}
-                  </p>
+                  {(() => {
+                    const canonAmt = isApplied ? appliedEntry.appliedAmount : action.dosePrimary;
+                    const canonUnit = normalizeCanonicalUnit(action.primaryUnit);
+                    const displayUnit = UnitConversion.getDefaultDisplayUnit(canonAmt, canonUnit, action.chemicalType);
+                    const isLiquid = UnitConversion.isLiquidUnit(canonUnit);
+                    const converter = isLiquid ? UnitConversion.convertVolume : UnitConversion.convertWeight;
+                    const displayAmt = (canonUnit === 'tabs') ? canonAmt : (converter(canonAmt, canonUnit, displayUnit) ?? canonAmt);
+                    const unitLabels = { 'gal': 'gal', 'fl_oz': 'fl oz', 'cup': 'cup', 'lb': 'lbs', 'oz_wt': 'oz', 'tabs': 'tabs' };
+                    return (
+                      <p className="text-2xl font-bold font-mono text-teal-700 mt-1">
+                        {formatAmount(displayAmt)} {unitLabels[displayUnit] || displayUnit}
+                        {action.safetyCapEnforced && <span className="text-sm text-orange-600 font-normal ml-2">(capped)</span>}
+                      </p>
+                    );
+                  })()}
                   {isPartial && (
                     <p className="text-xs text-orange-700 mt-0.5 flex items-center gap-1">
                       <AlertTriangle className="w-3 h-3" />
