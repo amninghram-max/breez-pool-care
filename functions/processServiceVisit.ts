@@ -216,17 +216,17 @@ Deno.serve(async (req) => {
         const otherNames = new Set();
 
         for (const key of knownBuckets) {
-          const amount = visitData.chemicalsAdded[key];
+          const amount = safeChemicalsAdded[key];
           if (amount && parseFloat(amount) > 0) {
             neededServiceVisitKeys.add(key);
           }
         }
 
         if (
-          visitData.chemicalsAdded.other &&
-          Array.isArray(visitData.chemicalsAdded.other)
+          safeChemicalsAdded.other &&
+          Array.isArray(safeChemicalsAdded.other)
         ) {
-          for (const entry of visitData.chemicalsAdded.other) {
+          for (const entry of safeChemicalsAdded.other) {
             if (entry.name && entry.amount && parseFloat(entry.amount) > 0) {
               otherNames.add(entry.name.trim().toLowerCase());
             }
