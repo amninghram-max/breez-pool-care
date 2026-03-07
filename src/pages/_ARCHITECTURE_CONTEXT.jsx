@@ -323,6 +323,148 @@ arrive → photos_before → test → analyze → dose → trichlor → wait →
  * - createCalendarEventAdmin creates single service events only; recurring creation is not part of that helper.
  */
 
+/**
+ * SCHEDULING ARCHITECTURE (repo-factual refresh)
+ *
+ * === CANONICAL BACKEND HELPERS ===
+ *
+ * Service Events:
+ * - createCalendarEventAdmin
+ *   - admin-only
+ *   - creates single service events
+ *   - blocks same-date / same-technician scheduled conflicts
+ *
+ * - updateCalendarEventAdmin
+ *   - admin/staff
+ *   - handles service scheduling metadata edits:
+ *     timeWindow, estimatedDuration, assignedTechnician, isFixed,
+ *     accessNotes, customerNotes, scheduledDate
+ *   - blocks inspection scheduledDate edits
+ *   - blocks same-date / same-technician scheduled service conflicts on update
+ *
+ * Inspection Events:
+ * - updateCalendarEventAdmin
+ *   - admin/staff
+ *   - non-date edits only
+ *   - inspection scheduledDate changes are explicitly blocked
+ *
+ * - adminRescheduleInspection
+ *   - admin-only
+ *   - dedicated inspection date/time reschedule path
+ *   - syncs:
+ *     1. InspectionRecord (authoritative)
+ *     2. CalendarEvent (projection)
+ *     3. Lead mirror fields
+ *   - notifications are out of scope in V1
+ *
+ * Route Management:
+ * - reorderRouteEvents
+ *   - admin/staff
+ *   - persists same-column manual reorder for eligible service events
+ *
+ * - optimizeRoute
+ *   - admin-only
+ *   - bulk route optimization
+ *   - writes routePosition plus driving metrics
+ *
+ * Technician Settings:
+ * - updateSchedulingTechnicians
+ *   - admin-only
+ *   - creates/updates SchedulingSettings(settingKey='default').technicians
+ *
+ * === ADMIN SCHEDULING SURFACES ===
+ *
+ * - Calendar.jsx
+ *   - admin scheduling hub
+ *   - hosts DayView / WeekView / MonthView / List
+ *
+ * - DayView
+ *   - primary editable admin scheduling surface
+ *   - single-event edits route through EventDetailsModal
+ *   - service creation routes through CreateServiceEventModal
+ *   - supports drag/drop for eligible service events only
+ *
+ * - WeekView
+ *   - summary/read-focused view
+ *   - no direct edit controls of its own
+ *
+ * - MonthView
+ *   - summary/read-focused 28-day view
+ *   - day-detail modal is read-only
+ *   - no direct event edit controls
+ *
+ * - EventDetailsModal
+ *   - verified single-event admin edit surface
+ *   - service events use generic edit flow
+ *   - inspection reschedule uses a dedicated inline flow inside this modal
+ *
+ * === DAYVIEW DRAG/DROP TRUTH ===
+ *
+ * Eligible drag targets must satisfy:
+ * - eventType === 'service'
+ * - isFixed !== true
+ * - status === 'scheduled'
+ *
+ * Supported persisted DayView drag/drop actions:
+ * - same-day cross-technician reassignment
+ *   -> updateCalendarEventAdmin({ eventId, assignedTechnician })
+ *
+ * - cross-day service move via nearby-date strip
+ *   -> updateCalendarEventAdmin({ eventId, scheduledDate })
+ *
+ * - same-column manual reorder
+ *   -> reorderRouteEvents({ date, technician, orderedEventIds })
+ *
+ * Explicit drag/drop exclusions:
+ * - inspection events
+ * - cleanup events
+ * - green_recovery events
+ * - fixed events
+ * - non-scheduled events
+ *
+ * === ROUTEPOSITION TRUTH ===
+ *
+ * routePosition is read/displayed in DayView and TechnicianRoute.
+ *
+ * Persisted writers of routePosition:
+ * 1. reorderRouteEvents
+ * 2. optimizeRoute
+ *
+ * updateCalendarEventAdmin does NOT write routePosition.
+ *
+ * === ROUTE / WORKFLOW CONTINUITY ===
+ *
+ * Service route launches:
+ * - RouteStopCard / TechnicianRoute launch ServiceVisitFlow with route context
+ * - StepCloseout returns to TechnicianRoute when returnTo=TechnicianRoute is present
+ *
+ * Inspection route launches:
+ * - RouteStopCard / TechnicianRoute launch InspectionSubmit with eventId
+ * - InspectionSubmit now honors eventId and resolves directly to the specific inspection form when possible
+ *
+ * === TECHNICIAN SETTINGS TRUTH ===
+ *
+ * SchedulingSettings technicians shape:
+ * - [{ name, email, phone, active }]
+ *
+ * Edit path:
+ * - pages/SchedulingSettings.jsx
+ * - backend persistence via updateSchedulingTechnicians
+ *
+ * Current fallback behavior:
+ * - scheduling consumers still fall back to [{ name: 'Matt', active: true }] when no default record exists
+ *
+ * === KNOWN LIMITATIONS ===
+ *
+ * - No drag/drop for inspections
+ * - No routePosition editing outside DayView reorder / optimizeRoute
+ * - Matt fallback still exists in multiple consumers when SchedulingSettings is empty
+ * - No inspection-specific technician/date/time conflict validation exists in adminRescheduleInspection or other inspection reschedule flows
+ * - Inspection reschedule flows still carry partial-write risk across InspectionRecord -> CalendarEvent -> Lead
+ * - MonthView day-detail remains read-only
+ * - createCalendarEventAdmin creates single service events only; recurring creation is not part of that helper
+ */
+
 ### Single Active Inspection Guarantee
 - A Lead must never have more than one active inspection appointment.
 - Enforcement is at the application layer.
