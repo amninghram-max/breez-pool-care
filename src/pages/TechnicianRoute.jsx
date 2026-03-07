@@ -163,10 +163,13 @@ export default function TechnicianRoute() {
             );
           }
           const pageName = next.eventType === 'inspection' ? 'InspectionSubmit' : 'ServiceVisitFlow';
-          const routeContext = next.eventType !== 'inspection'
-            ? `&returnTo=TechnicianRoute&date=${effectiveDate}&technician=${encodeURIComponent(effectiveTechnician || '')}`
-            : '';
-          const startUrl = `https://breezpoolcare.com/${pageName}?eventId=${next.id}&poolId=${next.poolId || ''}${routeContext}`;
+          const startParams = new URLSearchParams({ eventId: next.id, poolId: next.poolId || '' });
+          if (next.eventType !== 'inspection') {
+            startParams.set('returnTo', 'TechnicianRoute');
+            startParams.set('date', effectiveDate);
+            startParams.set('technician', effectiveTechnician || '');
+          }
+          const startUrl = `${createPageUrl(pageName)}?${startParams.toString()}`;
           const stopLabel = next.routePosition ? `Stop #${next.routePosition}` : `Stop ${events.indexOf(next) + 1}`;
           return (
             <div className="mt-4 space-y-2">
