@@ -73,7 +73,16 @@ export default function ServiceVisitFlow() {
       console.log('[ServiceVisitFlow] skipping wait/retest → going to trichlor (retestRequired explicitly false)');
       nextStepIdx = STEPS.indexOf('trichlor');
     }
-    if (nextStepIdx < STEPS.length) setStep(STEPS[nextStepIdx]);
+    const nextStep = STEPS[nextStepIdx];
+    if (step === 'checklist') {
+      console.log('[ServiceVisitFlow] checklist → next step:', nextStep, '| filter PSI fields:', {
+        filterPsi: data.filterPsi,
+        filterPsiHigh: data.filterPsiHigh,
+        filterAction: data.filterAction,
+        filterAfterPsi: data.filterAfterPsi,
+      });
+    }
+    if (nextStepIdx < STEPS.length) setStep(nextStep);
   };
 
   const goTo = (target) => {
