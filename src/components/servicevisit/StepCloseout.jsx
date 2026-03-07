@@ -17,33 +17,38 @@ const CHEMICAL_LABELS = {
   STABILIZER_CYA: 'Stabilizer / CYA', SALT: 'Pool Salt'
 };
 
+// Normalize canonical schema units to internal conversion keys
+const normalizeCanonicalUnit = (unit) => {
+  const map = { 'gallons': 'gal', 'lbs': 'lb', 'oz': 'oz_wt', 'oz_wt': 'oz_wt', 'gal': 'gal', 'lb': 'lb', 'tabs': 'tabs' };
+  return map[unit] || unit;
+};
+
 // Unit conversion for technician-friendly display (matches StepDoseConfirm)
 const UnitConversion = {
   convertVolume: (amount, fromUnit, toUnit) => {
     if (fromUnit === toUnit) return amount;
-    const toGal = { 'gal': amount, 'qt': amount / 4, 'cup': amount / 8, 'fl_oz': amount / 128 };
-    const gals = toGal[fromUnit];
-    return { 'gal': gals, 'qt': gals * 4, 'cup': gals * 8, 'fl_oz': gals * 128 }[toUnit];
+    const toFlOz = { 'gal': amount * 128, 'qt': amount * 32, 'cup': amount * 8, 'fl_oz': amount };
+    const flOz = toFlOz[fromUnit];
+    if (flOz === undefined) return undefined;
+    return { 'gal': flOz / 128, 'qt': flOz / 32, 'cup': flOz / 8, 'fl_oz': flOz }[toUnit];
   },
   convertWeight: (amount, fromUnit, toUnit) => {
     if (fromUnit === toUnit) return amount;
-    const toLbs = { 'lb': amount, 'oz_wt': amount / 16 };
-    const lbs = toLbs[fromUnit];
-    return { 'lb': lbs, 'oz_wt': lbs * 16 }[toUnit];
+    const toOzWt = { 'lb': amount * 16, 'oz_wt': amount };
+    const ozWt = toOzWt[fromUnit];
+    if (ozWt === undefined) return undefined;
+    return { 'lb': ozWt / 16, 'oz_wt': ozWt }[toUnit];
   },
-  getDefaultDisplayUnit: (canonicalAmount, canonicalUnit) => {
-    // Liquid ladder: fl oz < qts < gallons
-    if (canonicalUnit === 'gallons' || canonicalUnit === 'gal') {
+  getDefaultDisplayUnit: (canonicalAmount, normalizedUnit) => {
+    if (normalizedUnit === 'gal') {
       if (canonicalAmount < 0.25) return 'fl_oz';
       if (canonicalAmount < 2)    return 'qt';
       return 'gal';
     }
-    if (canonicalUnit === 'lbs') {
-      return canonicalAmount < 1 ? 'oz_wt' : 'lb';
-    }
-    return canonicalUnit;
+    if (normalizedUnit === 'lb') return canonicalAmount < 1 ? 'oz_wt' : 'lb';
+    return normalizedUnit;
   },
-  isLiquidUnit: (unit) => ['gal', 'cup', 'fl_oz', 'gallons'].includes(unit),
+  isLiquidUnit: (unit) => ['gal', 'cup', 'fl_oz'].includes(unit),
 };
 
 const unitLabels = {
