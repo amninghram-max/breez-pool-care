@@ -396,9 +396,25 @@ export default function DayView({ date, technicianFilter, userRole }) {
                                   className={`flex items-start gap-4 p-4 border rounded-lg transition-colors
                                     ${dragSnapshot.isDragging ? 'shadow-lg border-teal-400 bg-white' : 'hover:bg-gray-50'}
                                     ${draggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}
+                                    ${selectedEventIds.has(event.id) ? 'bg-teal-50 border-teal-300' : ''}
                                   `}
                                   onClick={() => setSelectedEvent(event)}
                                 >
+                                  {/* Checkbox for bulk selection — only for eligible events */}
+                                  {draggable && (
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedEventIds.has(event.id)}
+                                      onChange={(e) => {
+                                        e.stopPropagation();
+                                        const newSet = new Set(selectedEventIds);
+                                        e.target.checked ? newSet.add(event.id) : newSet.delete(event.id);
+                                        setSelectedEventIds(newSet);
+                                      }}
+                                      className="rounded border-gray-300 self-center"
+                                    />
+                                  )}
+
                                   {/* Drag handle — only for eligible events */}
                                   <div
                                     {...(draggable ? dragProvided.dragHandleProps : {})}
