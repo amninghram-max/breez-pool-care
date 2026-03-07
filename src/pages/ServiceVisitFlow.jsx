@@ -69,8 +69,8 @@ export default function ServiceVisitFlow() {
     // Apply step transition (check new data only—do not use old visitData default as fallback)
     let nextStepIdx = Math.min(STEPS.indexOf(step) + 1, STEPS.length - 1);
     if ((step === 'analyze' || step === 'dose') && data.retestRequired === false) {
-      console.log('[ServiceVisitFlow] skipping dose/wait/retest to checklist (retestRequired explicitly false)');
-      nextStepIdx = STEPS.indexOf('checklist');
+      console.log('[ServiceVisitFlow] skipping wait/retest → going to trichlor (retestRequired explicitly false)');
+      nextStepIdx = STEPS.indexOf('trichlor');
     }
     if (nextStepIdx < STEPS.length) setStep(STEPS[nextStepIdx]);
   };
