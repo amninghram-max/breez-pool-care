@@ -300,6 +300,15 @@ export default function MonthView({ startDate, technicianFilter }) {
           );
         })}
       </div>
+
+      {selectedDay && (
+        <DayDetailModal
+          dayStr={selectedDay}
+          dayEvents={eventsByDay[selectedDay] || []}
+          leadMap={leadMap}
+          onClose={() => setSelectedDay(null)}
+        />
+      )}
     </div>
   );
 }
