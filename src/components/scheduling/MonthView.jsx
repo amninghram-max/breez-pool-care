@@ -51,14 +51,14 @@ export default function MonthView({ startDate, technicianFilter }) {
     queryFn: () => base44.entities.Lead.list('-created_date', 200),
   });
 
-  const leadMap = React.useMemo(() => {
+  const leadMap = useMemo(() => {
     const m = {};
     for (const l of leads) m[l.id] = l;
     return m;
   }, [leads]);
 
   // Group events by scheduledDate
-  const eventsByDay = React.useMemo(() => {
+  const eventsByDay = useMemo(() => {
     const map = {};
     for (const event of allEvents) {
       if (!map[event.scheduledDate]) map[event.scheduledDate] = [];
