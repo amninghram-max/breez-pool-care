@@ -94,7 +94,13 @@ export default function EventDetailsModal({ event, onClose }) {
       if (!confirmed) return;
     }
 
-    updateEventMutation.mutate(formData);
+    // Only include scheduledDate in payload if it actually changed (avoids helper no-op 400)
+    const payload = { ...formData };
+    if (payload.scheduledDate === event.scheduledDate) {
+      delete payload.scheduledDate;
+    }
+
+    updateEventMutation.mutate(payload);
   };
 
   const handleOpenMaps = () => {
