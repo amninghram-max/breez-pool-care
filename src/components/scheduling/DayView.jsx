@@ -170,109 +170,149 @@ export default function DayView({ date, technicianFilter, userRole }) {
         </label>
       </div>
 
-      <div className="space-y-6">
-        {Object.keys(eventsByTechnician).length === 0 ? (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <Clock className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-              <p className="text-gray-600">No scheduled events for this date</p>
-            </CardContent>
-          </Card>
-        ) : (
-          Object.entries(eventsByTechnician).map(([technician, techEvents]) => (
-            <Card key={technician}>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <User className="w-5 h-5 text-teal-600" />
-                    {technician}
-                  </span>
-                  <span className="text-sm font-normal text-gray-600">
-                    {techEvents.length} stops
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {techEvents.map((event, idx) => {
-                    const eventType = getEventTypeIcon(event.eventType);
-                    return (
-                      <div
-                        key={event.id}
-                        className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                        onClick={() => setSelectedEvent(event)}
-                      >
-                        {/* Position */}
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-teal-100 text-teal-700 font-bold text-sm">
-                          {event.routePosition || idx + 1}
-                        </div>
+      {dragError && (
+        <div className="mb-3 px-4 py-2 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          {dragError}
+        </div>
+      )}
 
-                        {/* Event Details */}
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-lg">{eventType.icon}</span>
-                            <span className="font-medium">{event.serviceAddress}</span>
-                            {event.isFixed && (
-                              <Lock className="w-4 h-4 text-gray-400" title="Fixed position" />
-                            )}
-                          </div>
-                          
-                          <div className="text-sm text-gray-600 space-y-1">
-                            {event.timeWindow && (
-                              <div className="flex items-center gap-2">
-                                <Clock className="w-4 h-4" />
-                                {event.timeWindow}
-                              </div>
-                            )}
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{eventType.label}</span>
-                              <span>•</span>
-                              <span>{event.estimatedDuration} min</span>
-                            </div>
-                            {event.drivingTimeToNext > 0 && (
-                              <div className="flex items-center gap-2 text-teal-600">
-                                <Navigation className="w-4 h-4" />
-                                {event.drivingTimeToNext} min to next stop ({event.drivingDistanceToNext?.toFixed(1)} mi)
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Status */}
-                        <div className="flex flex-col items-end gap-2">
-                          {getStatusBadge(event.status)}
-                          <Button size="sm" variant="ghost" onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedEvent(event);
-                          }}>
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Route Summary */}
-                <div className="mt-4 pt-4 border-t">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Total route time:</span>
-                    <span className="font-semibold">
-                      {techEvents.reduce((sum, e) => sum + (e.estimatedDuration || 0) + (e.drivingTimeToNext || 0), 0)} min
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm mt-1">
-                    <span className="text-gray-600">Total distance:</span>
-                    <span className="font-semibold">
-                      {techEvents.reduce((sum, e) => sum + (e.drivingDistanceToNext || 0), 0).toFixed(1)} mi
-                    </span>
-                  </div>
-                </div>
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <div className="space-y-6">
+          {Object.keys(eventsByTechnician).length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <Clock className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                <p className="text-gray-600">No scheduled events for this date</p>
               </CardContent>
             </Card>
-          ))
-        )}
-      </div>
+          ) : (
+            Object.entries(eventsByTechnician).map(([technician, techEvents]) => (
+              <Card key={technician}>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <User className="w-5 h-5 text-teal-600" />
+                      {technician}
+                    </span>
+                    <span className="text-sm font-normal text-gray-600">
+                      {techEvents.length} stops
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Droppable droppableId={technician}>
+                    {(provided, snapshot) => (
+                      <div
+                        className={`space-y-3 min-h-[2px] rounded-lg transition-colors ${snapshot.isDraggingOver ? 'bg-teal-50' : ''}`}
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                      >
+                        {techEvents.map((event, idx) => {
+                          const eventType = getEventTypeIcon(event.eventType);
+                          const draggable = isDraggable(event);
+                          return (
+                            <Draggable
+                              key={event.id}
+                              draggableId={event.id}
+                              index={idx}
+                              isDragDisabled={!draggable}
+                            >
+                              {(dragProvided, dragSnapshot) => (
+                                <div
+                                  ref={dragProvided.innerRef}
+                                  {...dragProvided.draggableProps}
+                                  className={`flex items-start gap-4 p-4 border rounded-lg transition-colors
+                                    ${dragSnapshot.isDragging ? 'shadow-lg border-teal-400 bg-white' : 'hover:bg-gray-50'}
+                                    ${draggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}
+                                  `}
+                                  onClick={() => setSelectedEvent(event)}
+                                >
+                                  {/* Drag handle — only for eligible events */}
+                                  <div
+                                    {...(draggable ? dragProvided.dragHandleProps : {})}
+                                    className={`flex items-center self-center ${draggable ? 'text-gray-400 hover:text-teal-500' : 'invisible pointer-events-none'}`}
+                                    onClick={e => e.stopPropagation()}
+                                  >
+                                    <GripVertical className="w-4 h-4" />
+                                  </div>
+
+                                  {/* Position */}
+                                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-teal-100 text-teal-700 font-bold text-sm flex-shrink-0">
+                                    {event.routePosition || idx + 1}
+                                  </div>
+
+                                  {/* Event Details */}
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="text-lg">{eventType.icon}</span>
+                                      <span className="font-medium">{event.serviceAddress}</span>
+                                      {event.isFixed && (
+                                        <Lock className="w-4 h-4 text-gray-400" title="Fixed position" />
+                                      )}
+                                    </div>
+                                    
+                                    <div className="text-sm text-gray-600 space-y-1">
+                                      {event.timeWindow && (
+                                        <div className="flex items-center gap-2">
+                                          <Clock className="w-4 h-4" />
+                                          {event.timeWindow}
+                                        </div>
+                                      )}
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-medium">{eventType.label}</span>
+                                        <span>•</span>
+                                        <span>{event.estimatedDuration} min</span>
+                                      </div>
+                                      {event.drivingTimeToNext > 0 && (
+                                        <div className="flex items-center gap-2 text-teal-600">
+                                          <Navigation className="w-4 h-4" />
+                                          {event.drivingTimeToNext} min to next stop ({event.drivingDistanceToNext?.toFixed(1)} mi)
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Status */}
+                                  <div className="flex flex-col items-end gap-2">
+                                    {getStatusBadge(event.status)}
+                                    <Button size="sm" variant="ghost" onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedEvent(event);
+                                    }}>
+                                      <Edit className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
+                          );
+                        })}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+
+                  {/* Route Summary */}
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Total route time:</span>
+                      <span className="font-semibold">
+                        {techEvents.reduce((sum, e) => sum + (e.estimatedDuration || 0) + (e.drivingTimeToNext || 0), 0)} min
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm mt-1">
+                      <span className="text-gray-600">Total distance:</span>
+                      <span className="font-semibold">
+                        {techEvents.reduce((sum, e) => sum + (e.drivingDistanceToNext || 0), 0).toFixed(1)} mi
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+      </DragDropContext>
 
       {selectedEvent && (
         <EventDetailsModal
