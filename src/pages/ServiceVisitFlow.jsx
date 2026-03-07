@@ -18,7 +18,7 @@ import StepCloseout from '../components/servicevisit/StepCloseout';
 
 // Steps: arrive → photos_before → test → analyze → dose → wait → retest → checklist → filter_psi → water_level → photos_after → close
 // access_wait is conditional (only via explicit goTo), not part of normal sequence
-const STEPS = ['arrive', 'photos_before', 'test', 'analyze', 'dose', 'wait', 'retest', 'checklist', 'filter_psi', 'water_level', 'photos_after', 'close'];
+const STEPS = ['arrive', 'photos_before', 'test', 'analyze', 'dose', 'trichlor', 'wait', 'retest', 'checklist', 'filter_psi', 'water_level', 'photos_after', 'close'];
 
 export default function ServiceVisitFlow() {
   const urlParams = new URLSearchParams(window.location.search);
