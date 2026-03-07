@@ -38,6 +38,30 @@ Deno.serve(async (req) => {
       return Response.json({ success: false, error: 'serviceAddress is required' }, { status: 400 });
     }
 
+    // Determine effective technician (mirrors create payload default)
+    const effectiveTechnician = assignedTechnician || 'Matt';
+
+    // --- CONFLICT CHECK: block same-date same-technician double-booking ---
+    const existingEvents = await base44.asServiceRole.entities.CalendarEvent.filter({
+      scheduledDate,
+      assignedTechnician: effectiveTechnician,
+      status: 'scheduled',
+    });
+
+    if (existingEvents && existingEvents.length > 0) {
+      console.warn('[createCalendarEventAdmin] TECHNICIAN_CONFLICT', {
+        leadId,
+        scheduledDate,
+        technician: effectiveTechnician,
+        conflictCount: existingEvents.length,
+      });
+      return Response.json({
+        success: false,
+        error: 'Technician already has a scheduled service event on this date. Please select a different date or technician.',
+        code: 'TECHNICIAN_CONFLICT',
+      }, { status: 409 });
+    }
+
     // Explicit create payload — preserves current repo defaults exactly
     const createPayload = {
       leadId,
