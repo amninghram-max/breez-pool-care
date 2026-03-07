@@ -22,6 +22,16 @@ export default function CreateServiceEventModal({ date, onClose }) {
     queryFn: () => base44.entities.Lead.list('-created_date', 200),
   });
 
+  const { data: schedulingSettings } = useQuery({
+    queryKey: ['schedulingSettings'],
+    queryFn: async () => {
+      const result = await base44.entities.SchedulingSettings.filter({ settingKey: 'default' });
+      return result[0] || {};
+    }
+  });
+  const technicians = schedulingSettings?.technicians || [{ name: 'Matt', active: true }];
+  const activeTechnicians = technicians.filter(t => t.active);
+
   // When a lead is selected, auto-fill service address
   const handleLeadChange = (e) => {
     const id = e.target.value;
