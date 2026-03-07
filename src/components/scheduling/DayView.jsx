@@ -276,7 +276,7 @@ export default function DayView({ date, technicianFilter, userRole }) {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Droppable droppableId={technician}>
+                  <Droppable droppableId={makeTechDropId(technician)}>
                     {(provided, snapshot) => (
                       <div
                         className={`space-y-3 min-h-[2px] rounded-lg transition-colors ${snapshot.isDraggingOver ? 'bg-teal-50' : ''}`}
