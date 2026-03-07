@@ -94,9 +94,9 @@ export default function EventDetailsModal({ event, onClose }) {
       if (!confirmed) return;
     }
 
-    // Only include scheduledDate in payload if it actually changed (avoids helper no-op 400)
+    // Only include scheduledDate if it actually changed AND is non-empty (avoids no-op 400 and empty-string corruption)
     const payload = { ...formData };
-    if (payload.scheduledDate === event.scheduledDate) {
+    if (payload.scheduledDate === event.scheduledDate || payload.scheduledDate === '') {
       delete payload.scheduledDate;
     }
 
