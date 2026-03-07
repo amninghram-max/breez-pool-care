@@ -30,7 +30,7 @@ function SkipRetestModal({ onConfirm, onCancel }) {
             className="w-full bg-teal-600 hover:bg-teal-700 h-11"
             onClick={() => { console.log('[StepPhotosAfterService] manual override confirmed'); onConfirm(); }}
           >
-            Yes, Skip Retest & Close
+            Yes, Skip Retest & Continue
           </Button>
           <Button
             variant="outline"
