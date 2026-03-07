@@ -109,6 +109,7 @@ export default function EventDetailsModal({ event, onClose }) {
   };
 
   const technicianChanged = formData.assignedTechnician !== event.assignedTechnician;
+  const dateChanged = formData.scheduledDate !== event.scheduledDate && formData.scheduledDate !== '';
 
   return (
     <Dialog open={!!event} onOpenChange={onClose}>
