@@ -58,7 +58,7 @@ export default function ServiceVisitFlow() {
         // Determine next step: skip wait/retest if retestRequired === false
         let nextStepIdx = Math.min(STEPS.indexOf(step) + 1, STEPS.length - 1);
         if ((step === 'analyze' || step === 'dose') && next.retestRequired === false) {
-          nextStepIdx = STEPS.indexOf('checklist');
+          nextStepIdx = STEPS.indexOf('trichlor');
         }
         const nextStep = STEPS[nextStepIdx];
         localStorage.setItem(FLOW_KEY, JSON.stringify({ step: nextStep, visitData: next }));
