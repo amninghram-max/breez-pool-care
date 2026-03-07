@@ -600,7 +600,7 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
                   {isPartial && (
                     <p className="text-xs text-orange-700 mt-0.5 flex items-center gap-1">
                       <AlertTriangle className="w-3 h-3" />
-                      Partial apply — {appliedEntry.appliedAmount} of {action.dosePrimary} {action.primaryUnit}
+                      Partial apply — {formatAmount(appliedEntry.appliedAmount)} of {formatAmount(action.dosePrimary)} {action.primaryUnit}
                       {isCritical && ' · Critical: complete before leaving or trigger revisit'}
                     </p>
                   )}
