@@ -264,9 +264,58 @@ export default function DayView({ date, technicianFilter, userRole }) {
         </label>
       </div>
 
+      {/* Bulk assignment action bar */}
+      {selectedEventIds.size > 0 && (
+        <div className="flex items-center gap-3 p-3 bg-teal-50 border border-teal-200 rounded-lg mb-3">
+          <span className="text-sm text-teal-800 font-medium">
+            {selectedEventIds.size} selected
+          </span>
+          <select
+            value={bulkAssignTech || ''}
+            onChange={(e) => setBulkAssignTech(e.target.value)}
+            className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+          >
+            <option value="">Assign to...</option>
+            {settings?.technicians?.map(t => (
+              <option key={t.name} value={t.name}>{t.name}</option>
+            ))}
+          </select>
+          <Button
+            size="sm"
+            onClick={() => bulkAssignMutation.mutate({
+              date: dateStr,
+              eventIds: Array.from(selectedEventIds),
+              assignedTechnician: bulkAssignTech,
+            })}
+            disabled={!bulkAssignTech || bulkAssignMutation.isPending}
+            className="bg-teal-600 hover:bg-teal-700"
+          >
+            {bulkAssignMutation.isPending ? 'Assigning...' : 'Apply'}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setSelectedEventIds(new Set());
+              setBulkAssignTech('');
+              setBulkError(null);
+            }}
+            disabled={bulkAssignMutation.isPending}
+          >
+            Cancel
+          </Button>
+        </div>
+      )}
+
       {dragError && (
         <div className="mb-3 px-4 py-2 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
           {dragError}
+        </div>
+      )}
+
+      {bulkError && (
+        <div className="mb-3 px-4 py-2 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          {bulkError}
         </div>
       )}
 
