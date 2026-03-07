@@ -38,15 +38,16 @@ export default function CreateServiceEventModal({ date, onClose }) {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      return await base44.entities.CalendarEvent.create({
+      const response = await base44.functions.invoke('createCalendarEventAdmin', {
         leadId,
-        eventType: 'service',
         scheduledDate,
         serviceAddress,
-        status: 'scheduled',
         assignedTechnician: assignedTechnician || 'Matt',
-        estimatedDuration: 30,
       });
+      if (!response.data?.success) {
+        throw new Error(response.data?.error || 'Failed to create event');
+      }
+      return response.data.event;
     },
     onSuccess: (event) => {
       queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
