@@ -260,6 +260,15 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
     enabled: !!visitData.poolId
   });
 
+  // Load built-in 12% liquid chlorine profile for action metadata attachment
+  const { data: liquidChlorineProfile } = useQuery({
+    queryKey: ['productProfile', 'LIQUID_CHLORINE'],
+    queryFn: () =>
+      base44.entities.ProductProfile.filter({ chemicalType: 'LIQUID_CHLORINE', isActive: true }, null, 1)
+        .then(r => r[0] || null),
+    staleTime: 5 * 60 * 1000 // 5 min — profile data is stable
+  });
+
   const [volumeWarning, setVolumeWarning] = useState(null); // null | 'estimated' | 'missing'
 
   const { data: dosePlan, isLoading } = useQuery({
