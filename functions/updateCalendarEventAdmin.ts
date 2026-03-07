@@ -6,11 +6,17 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
  * Admin-only helper for updating CalendarEvent scheduling fields.
  * Replaces fragile direct frontend CalendarEvent.update in EventDetailsModal.
  *
- * Input: { eventId, timeWindow?, estimatedDuration?, assignedTechnician?, isFixed?, accessNotes?, customerNotes? }
+ * Input: { eventId, timeWindow?, estimatedDuration?, assignedTechnician?, isFixed?, accessNotes?, customerNotes?, scheduledDate? }
  * Output: { success, event, warning? }
+ *
+ * scheduledDate:
+ *   - Supported for non-inspection event types only.
+ *   - BLOCKED for eventType === 'inspection' — use approveRescheduleV2 or requestReschedulePublicV2 instead.
+ *   - When date actually changes, automatically sets originalScheduledDate and rescheduleReason = 'admin_reschedule'.
+ *   - If event was storm-impacted, clears stormImpacted = false on reschedule.
  */
 
-const BUILD = "UPDATE_CALENDAR_EVENT_ADMIN_V1_2026_03_07";
+const BUILD = "UPDATE_CALENDAR_EVENT_ADMIN_V2_2026_03_07";
 
 Deno.serve(async (req) => {
   try {
