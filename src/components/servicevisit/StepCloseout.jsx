@@ -340,22 +340,36 @@ export default function StepCloseout({ visitData, user }) {
             <div className="space-y-2">
               {chemicalsAdded.map((action, i) => {
                     const isPartial = action.appliedAmount != null && action.appliedAmount < action.dosePrimary;
-                    const canonicalUnit = action.primaryUnit;
+                    // Normalize schema unit strings (e.g. 'gallons' → 'gal', 'lbs' → 'lb')
+                    const normUnit = normalizeCanonicalUnit(action.primaryUnit);
                     const appliedCanonical = action.appliedAmount ?? action.dosePrimary;
-                    
-                    // Convert to display unit
-                    const defaultDisplay = UnitConversion.getDefaultDisplayUnit(appliedCanonical, canonicalUnit);
-                    const isLiquid = UnitConversion.isLiquidUnit(canonicalUnit);
+
+                    if (normUnit === 'tabs') {
+                      return (
+                        <div key={i} className="flex items-center justify-between py-1 border-b border-gray-100 last:border-0">
+                          <span className="text-sm text-gray-700">{CHEMICAL_LABELS[action.chemicalType] || action.chemicalType}</span>
+                          <span className="text-sm font-mono font-bold text-teal-700">{formatDose(appliedCanonical)} tabs</span>
+                        </div>
+                      );
+                    }
+
+                    const defaultDisplay = UnitConversion.getDefaultDisplayUnit(appliedCanonical, normUnit);
+                    const isLiquid = UnitConversion.isLiquidUnit(normUnit);
                     const converter = isLiquid ? UnitConversion.convertVolume : UnitConversion.convertWeight;
-                    const appliedDisplay = converter(appliedCanonical, canonicalUnit, defaultDisplay);
-                    const plannedDisplay = converter(action.dosePrimary, canonicalUnit, defaultDisplay);
-                    
+                    const appliedDisplay = converter(appliedCanonical, normUnit, defaultDisplay);
+                    const plannedDisplay = converter(action.dosePrimary, normUnit, defaultDisplay);
+
+                    // Safe fallback: if conversion failed, show canonical value + unit
+                    const safeApplied = appliedDisplay != null && !isNaN(appliedDisplay) ? appliedDisplay : appliedCanonical;
+                    const safeAppliedUnit = appliedDisplay != null && !isNaN(appliedDisplay) ? defaultDisplay : normUnit;
+                    const safePlanned = plannedDisplay != null && !isNaN(plannedDisplay) ? plannedDisplay : action.dosePrimary;
+
                     return (
                       <div key={i} className="flex items-center justify-between py-1 border-b border-gray-100 last:border-0">
                         <span className="text-sm text-gray-700">{CHEMICAL_LABELS[action.chemicalType] || action.chemicalType}</span>
                         <span className={`text-sm font-mono font-bold ${isPartial ? 'text-orange-600' : 'text-teal-700'}`}>
-                          {formatDose(appliedDisplay)} {unitLabels[defaultDisplay]}
-                          {isPartial && ` ⚠ (${formatDose(plannedDisplay)} planned)`}
+                          {formatDose(safeApplied)} {unitLabels[safeAppliedUnit] || safeAppliedUnit}
+                          {isPartial && ` ⚠ (${formatDose(safePlanned)} planned)`}
                         </span>
                       </div>
                     );
