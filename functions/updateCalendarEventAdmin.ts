@@ -31,8 +31,8 @@ Deno.serve(async (req) => {
     }
 
     const payload = await req.json();
-    const { eventId, timeWindow, estimatedDuration, assignedTechnician, isFixed, accessNotes, customerNotes } = payload || {};
-    console.log('[updateCalendarEventAdmin] PAYLOAD_PARSED', { eventId });
+    const { eventId, timeWindow, estimatedDuration, assignedTechnician, isFixed, accessNotes, customerNotes, scheduledDate } = payload || {};
+    console.log('[updateCalendarEventAdmin] PAYLOAD_PARSED', { eventId, hasScheduledDate: scheduledDate !== undefined });
 
     if (!eventId || typeof eventId !== 'string') {
       return Response.json({ success: false, error: 'eventId is required' }, { status: 400 });
