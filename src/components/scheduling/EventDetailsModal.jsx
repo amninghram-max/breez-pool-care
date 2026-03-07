@@ -188,21 +188,23 @@ export default function EventDetailsModal({ event, onClose }) {
           <div>
             <Label>Assigned Technician</Label>
             {isEditing ? (
-              <select
-                value={formData.assignedTechnician}
-                onChange={(e) => setFormData({...formData, assignedTechnician: e.target.value})}
-                className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-              >
-                <option value="">Unassigned</option>
-                {activeTechnicians.map(tech => (
-                  <option key={tech.name} value={tech.name}>{tech.name}</option>
-                ))}
-              </select>
-              {isEditing && formData.assignedTechnician !== event.assignedTechnician && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Changing from &quot;{event.assignedTechnician || 'Unassigned'}&quot; to &quot;{formData.assignedTechnician || 'Unassigned'}&quot;
-                </p>
-              )}
+              <>
+                <select
+                  value={formData.assignedTechnician}
+                  onChange={(e) => setFormData({...formData, assignedTechnician: e.target.value})}
+                  className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  <option value="">Unassigned</option>
+                  {activeTechnicians.map(tech => (
+                    <option key={tech.name} value={tech.name}>{tech.name}</option>
+                  ))}
+                </select>
+                {formData.assignedTechnician !== event.assignedTechnician && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Changing from &quot;{event.assignedTechnician || 'Unassigned'}&quot; to &quot;{formData.assignedTechnician || 'Unassigned'}&quot;
+                  </p>
+                )}
+              </>
             ) : (
               <div className="flex items-center gap-2 mt-1">
                 <User className="w-4 h-4 text-gray-400" />
