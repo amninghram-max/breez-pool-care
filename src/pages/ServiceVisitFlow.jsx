@@ -13,6 +13,7 @@ import StepDoseConfirm from '../components/servicevisit/StepDoseConfirm';
 import StepWaitTimer from '../components/servicevisit/StepWaitTimer';
 import StepRetest from '../components/servicevisit/StepRetest';
 import StepPhotosAfterService from '../components/servicevisit/StepPhotosAfterService';
+import StepTrichlor from '../components/servicevisit/StepTrichlor';
 import StepCloseout from '../components/servicevisit/StepCloseout';
 
 // Steps: arrive → photos_before → test → analyze → dose → wait → retest → checklist → filter_psi → water_level → photos_after → close
