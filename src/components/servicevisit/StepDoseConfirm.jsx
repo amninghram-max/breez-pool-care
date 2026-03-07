@@ -710,7 +710,10 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
       </Button>
 
       {!allApplied && (
-        <p className="text-xs text-center text-gray-400">Apply all steps in order to continue</p>
+        <div className="flex items-center justify-center gap-1.5 text-xs text-red-600">
+          <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+          <span>Applied dosages are final and cannot be changed after confirmation.</span>
+        </div>
       )}
     </div>
   );
