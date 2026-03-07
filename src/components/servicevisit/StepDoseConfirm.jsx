@@ -51,19 +51,14 @@ const UnitConversion = {
     return { 'lb': lbs, 'oz_wt': lbs * 16 }[toUnit];
   },
   
-  // Choose sensible default display unit
-  getDefaultDisplayUnit: (canonicalAmount, canonicalUnit) => {
-    // canonicalUnit should already be normalized
-    if (canonicalUnit === 'gal') {
-      return canonicalAmount < 0.5 ? 'cup' : 'gal';
-    }
-    if (canonicalUnit === 'lb') {
-      return canonicalAmount < 1 ? 'oz_wt' : 'lb';
-    }
-    if (canonicalUnit === 'tabs') {
-      return 'tabs';  // non-convertible
-    }
-    return canonicalUnit;  // fallback to canonical
+  // Choose default display unit by chemical type (always smallest practical unit)
+  getDefaultDisplayUnit: (_canonicalAmount, canonicalUnit, chemicalType) => {
+    if (canonicalUnit === 'tabs') return 'tabs';
+    // Liquid chemicals → fl oz
+    if (canonicalUnit === 'gal') return 'fl_oz';
+    // Dry chemicals → oz_wt
+    if (canonicalUnit === 'lb') return 'oz_wt';
+    return canonicalUnit;  // fallback
   },
   
   // Determine if unit is liquid or dry
