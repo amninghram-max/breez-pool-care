@@ -302,6 +302,12 @@ export default function Calendar() {
           searchQuery={searchQuery}
         />
       )}
+      {viewMode === 'month' && (
+        <MonthView
+          startDate={currentDate}
+          technicianFilter={selectedTechnician}
+        />
+      )}
     </div>
   );
 }
