@@ -222,7 +222,8 @@ export default function MonthView({ startDate, technicianFilter }) {
           return (
             <Card
               key={dayStr}
-              className={`min-h-[140px] ${isToday ? 'border-teal-500 border-2' : ''}`}
+              className={`min-h-[140px] cursor-pointer hover:shadow-md transition-shadow ${isToday ? 'border-teal-500 border-2' : ''}`}
+              onClick={() => setSelectedDay(dayStr)}
             >
               <CardHeader className="pb-1 pt-3 px-3">
                 <div className="flex items-start justify-between gap-1">
