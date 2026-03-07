@@ -224,6 +224,13 @@ export default function Calendar() {
                 <List className="w-4 h-4 mr-1" />
                 List
               </Button>
+              <Button
+                variant={viewMode === 'month' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('month')}
+              >
+                Month
+              </Button>
             </div>
 
             {/* Search + Date Jump */}

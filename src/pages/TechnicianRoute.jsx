@@ -126,9 +126,14 @@ export default function TechnicianRoute() {
       <div className="bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-xl p-5">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-xl font-bold">Today's Route</h1>
+            <h1 className="text-xl font-bold">
+              {effectiveTechnician ? `${effectiveTechnician}'s Route` : 'Route'}
+            </h1>
             <p className="text-teal-100 text-sm mt-0.5">
-              {events.length} stops · {completedCount} done · {remaining} remaining
+              {effectiveDate !== today
+                ? new Date(effectiveDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+                : 'Today'
+              } · {events.length} stops · {completedCount} done · {remaining} remaining
             </p>
           </div>
           {/* Timing */}
