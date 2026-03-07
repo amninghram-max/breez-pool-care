@@ -17,6 +17,20 @@ export default function InspectionSubmit() {
 
   const queryClient = useQueryClient();
 
+  const eventId = new URLSearchParams(window.location.search).get('eventId');
+
+  // Auto-resolve route-launched inspection when eventId is present
+  useEffect(() => {
+    if (!eventId || selectedLead) return;
+    if (inspectionEvents.length === 0 || leads.length === 0) return;
+    const event = inspectionEvents.find(e => e.id === eventId);
+    if (!event) return;
+    const lead = leads.find(l => l.id === event.leadId);
+    if (!lead) return;
+    setSelectedEvent(event);
+    setSelectedLead(lead);
+  }, [eventId, inspectionEvents, leads]);
+
   const { data: user } = useQuery({
     queryKey: ['user'],
     queryFn: () => base44.auth.me(),
