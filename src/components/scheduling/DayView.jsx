@@ -181,8 +181,6 @@ export default function DayView({ date, technicianFilter, userRole }) {
     );
   }
 
-  // eventsByTechnician is computed via useMemo above (hoisted for handleDragEnd access)
-
   const getStatusBadge = (status) => {
     const configs = {
       scheduled: { label: 'Scheduled', className: 'bg-blue-100 text-blue-800' },
