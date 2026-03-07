@@ -315,14 +315,19 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
       }
 
       // Normalize adjustments array into dosePlan-style actions
-      const actions = (data?.adjustments || []).map((adj, idx) => ({
-        order: idx + 1,
-        chemicalType: normalizeChemicalType(adj.chemical),
-        dosePrimary: parseFloat(adj.amount),
-        primaryUnit: normalizeUnit(adj.unit),
-        instructions: adj.reason,
-        applied: false
-      }));
+      const actions = (data?.adjustments || []).map((adj, idx) => {
+        const chemType = normalizeChemicalType(adj.chemical);
+        return {
+          order: idx + 1,
+          chemicalType: chemType,
+          dosePrimary: parseFloat(adj.amount),
+          primaryUnit: normalizeUnit(adj.unit),
+          instructions: adj.reason,
+          applied: false
+          // productProfileId / productProfileVersion attached below in confirmMutation
+          // after liquidChlorineProfile is resolved
+        };
+      });
 
       console.log('[StepDoseConfirm] normalized actions', {
         count: actions.length,
