@@ -92,16 +92,45 @@ export default function DayView({ date, technicianFilter, userRole }) {
     }
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: ({ technician, orderedEventIds }) =>
+      base44.functions.invoke('reorderRouteEvents', {
+        date: dateStr,
+        technician,
+        orderedEventIds,
+      }),
+    onSuccess: () => {
+      setDragError(null);
+      queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
+    },
+    onError: (err) => {
+      setDragError(err?.response?.data?.error || err?.message || 'Reorder failed');
+    }
+  });
+
   const handleDragEnd = (result) => {
     const { draggableId, source, destination } = result;
     setShowDateTargets(false);
     if (!destination) return;
-    if (destination.droppableId === source.droppableId) return;
 
     const event = events.find(e => e.id === draggableId);
     if (!event || !isDraggable(event)) return;
 
     const destId = destination.droppableId;
+    const srcId = source.droppableId;
+
+    // Same-column reorder
+    if (destId === srcId && destId.startsWith(TECH_PREFIX)) {
+      if (source.index === destination.index) return; // no-op
+      const technician = destId.slice(TECH_PREFIX.length);
+      const techEvents = eventsByTechnician[technician] || [];
+      // Build reordered eligible ID list for this column
+      const reordered = Array.from(techEvents.map(e => e.id));
+      reordered.splice(source.index, 1);
+      reordered.splice(destination.index, 0, draggableId);
+      reorderMutation.mutate({ technician, orderedEventIds: reordered });
+      return;
+    }
 
     if (destId.startsWith(DATE_PREFIX)) {
       // Cross-day move
@@ -109,7 +138,7 @@ export default function DayView({ date, technicianFilter, userRole }) {
       if (destDate === event.scheduledDate) return; // no-op
       moveMutation.mutate({ eventId: draggableId, scheduledDate: destDate });
     } else if (destId.startsWith(TECH_PREFIX)) {
-      // Same-day cross-technician reassignment (v1 behavior)
+      // Same-day cross-technician reassignment
       const destTech = destId.slice(TECH_PREFIX.length);
       if (destTech === event.assignedTechnician) return; // no-op
       moveMutation.mutate({ eventId: draggableId, assignedTechnician: destTech });
