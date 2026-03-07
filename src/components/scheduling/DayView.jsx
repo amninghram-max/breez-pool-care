@@ -4,9 +4,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, MapPin, User, Navigation, Lock, Edit, Plus } from 'lucide-react';
+import { Clock, MapPin, User, Navigation, Lock, Edit, Plus, GripVertical } from 'lucide-react';
 import EventDetailsModal from './EventDetailsModal';
 import CreateServiceEventModal from './CreateServiceEventModal';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 export default function DayView({ date, technicianFilter, userRole }) {
   const [selectedEvent, setSelectedEvent] = useState(null);
