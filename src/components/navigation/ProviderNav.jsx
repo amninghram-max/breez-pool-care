@@ -151,6 +151,7 @@ export default function ProviderNav({ userRole }) {
     ]},
     { key: 'system', items: [
       { name: 'Admin Settings Setup',  path: 'AdminSettingsSetup',   icon: Settings },
+      { name: 'Scheduling Settings',   path: 'SchedulingSettings',   icon: Users },
       { name: 'Release Checklist',     path: 'ReleaseReadiness',     icon: Shield },
       { name: 'Margin Stress Test',    path: 'MarginStressTest',     icon: Activity },
     ]},
