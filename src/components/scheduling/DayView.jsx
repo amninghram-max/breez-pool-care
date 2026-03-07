@@ -53,6 +53,13 @@ export default function DayView({ date, technicianFilter, userRole }) {
   const dateStr = date.toISOString().split('T')[0];
   const nearbyDates = React.useMemo(() => getNearbyDates(dateStr), [dateStr]);
 
+  // Clear bulk selection when date changes
+  React.useEffect(() => {
+    setSelectedEventIds(new Set());
+    setBulkAssignTech('');
+    setBulkError(null);
+  }, [dateStr]);
+
   const { data: events = [], isLoading } = useQuery({
     queryKey: ['calendarEvents', dateStr, technicianFilter],
     queryFn: async () => {
@@ -405,6 +412,7 @@ export default function DayView({ date, technicianFilter, userRole }) {
                                     <input
                                       type="checkbox"
                                       checked={selectedEventIds.has(event.id)}
+                                      disabled={bulkAssignMutation.isPending}
                                       onChange={(e) => {
                                         e.stopPropagation();
                                         const newSet = new Set(selectedEventIds);
