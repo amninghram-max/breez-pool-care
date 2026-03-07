@@ -9,10 +9,16 @@ import EventDetailsModal from './EventDetailsModal';
 import CreateServiceEventModal from './CreateServiceEventModal';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
+const isDraggable = (event) =>
+  event.eventType === 'service' &&
+  event.isFixed !== true &&
+  event.status === 'scheduled';
+
 export default function DayView({ date, technicianFilter, userRole }) {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showCancelled, setShowCancelled] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [dragError, setDragError] = useState(null);
   const queryClient = useQueryClient();
   const dateStr = date.toISOString().split('T')[0];
 
