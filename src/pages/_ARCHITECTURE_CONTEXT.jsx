@@ -243,22 +243,85 @@ arrive → photos_before → test → analyze → dose → trichlor → wait →
 
 ## Canonical Scheduling / Inspection Flow
 
-### Scheduling Authority
-- \`scheduleFirstInspectionPublicV2\` is the primary public scheduling path.
-- V1 fallback is transitional and allowed only for platform/deployment failures.
-- V1 fallback must never be used for business-rule failures.
-
-### Scheduling Source of Truth
-- InspectionRecord is authoritative for appointment time.
-- CalendarEvent is a projection of InspectionRecord.
-- Lead mirror fields must stay synced with InspectionRecord.
-
-After any schedule change, these must match:
-- InspectionRecord appointment fields
-- CalendarEvent appointment fields
-- Lead mirror appointment fields
-
-If these drift, it is a defect: SPLIT_BRAIN_APPOINTMENT_TIME
+/**
+ * Scheduling & Workflow Architecture (repo-factual refresh)
+ *
+ * SURFACES
+ * - pages/Calendar.jsx is the admin scheduling hub.
+ * - DayView is the primary editable admin scheduling surface.
+ * - WeekView is a summary/read-focused view and does not provide its own edit controls.
+ * - MonthView is a 28-day admin summary view with a read-only day-detail modal.
+ * - EventDetailsModal is the verified single-event admin edit surface.
+ * - CreateServiceEventModal is the verified single-service-event creation surface.
+ * - TechnicianRoute is the daily route workflow surface for technicians/admin route viewing.
+ *
+ * MUTATION PATTERN
+ * Admin scheduling mutations now flow through backend helpers rather than direct
+ * frontend CalendarEvent.create/update calls.
+ *
+ * Current backend helpers:
+ * - updateCalendarEventAdmin
+ * - createCalendarEventAdmin
+ * - adminRescheduleInspection
+ * - updateEventStatus
+ * - reopenAccessIssueVisit
+ *
+ * SERVICE VS INSPECTION BOUNDARY
+ * - Service events use the generic EventDetailsModal edit path, including scheduledDate edits,
+ *   through updateCalendarEventAdmin.
+ * - Inspection events do NOT use the generic main-form scheduledDate edit path.
+ * - Inspection date/time changes use the dedicated inline “Reschedule Inspection” flow inside
+ *   EventDetailsModal, which calls adminRescheduleInspection.
+ * - updateCalendarEventAdmin explicitly blocks inspection scheduledDate changes.
+ *
+ * CURRENT CANONICAL PATHS
+ * - Edit service event:
+ *   DayView -> EventDetailsModal -> updateCalendarEventAdmin
+ *
+ * - Create service event:
+ *   DayView -> CreateServiceEventModal -> createCalendarEventAdmin
+ *
+ * - Edit inspection non-date fields:
+ *   DayView -> EventDetailsModal -> updateCalendarEventAdmin
+ *
+ * - Reschedule inspection date/time:
+ *   DayView -> EventDetailsModal -> inline "Reschedule Inspection" panel -> adminRescheduleInspection
+ *
+ * - Technician/service status transitions:
+ *   TechnicianRoute / RouteStopCard / ServiceVisitFlow -> updateEventStatus
+ *
+ * - Reopen access-issue visit:
+ *   EventDetailsModal -> reopenAccessIssueVisit
+ *
+ * ROUTE CONTINUITY
+ * - Service-stop launches from TechnicianRoute carry return context back to TechnicianRoute.
+ * - StepCloseout returns service stops to TechnicianRoute when route context is present.
+ * - Inspection stops still use their separate InspectionSubmit flow.
+ *
+ * MONTHVIEW
+ * - MonthView fetches the visible date range once and groups events by scheduledDate.
+ * - Clicking a day opens a read-only DayDetailModal.
+ * - MonthView does not provide direct edit controls.
+ * - "Start Route" appears only when a specific technician filter is selected.
+ *
+ * INSPECTION RESCHEDULE PATH
+ * - adminRescheduleInspection is backend-only and admin-only.
+ * - It syncs:
+ *   - InspectionRecord (authoritative)
+ *   - CalendarEvent (projection)
+ *   - Lead mirror fields
+ * - Notifications are out of scope in V1.
+ *
+ * VERIFIED LIMITATIONS
+ * - Drag/drop rescheduling is not implemented in scheduling UI.
+ * - @hello-pangea/dnd may be installed, but it is not currently used in calendar scheduling views.
+ * - No bulk reassignment UI is implemented.
+ * - SchedulingSettings technician list still falls back to "Matt" when settings are empty.
+ * - No double-booking validation is implemented in current scheduling helpers.
+ * - Inspection reschedule flows remain vulnerable to partial-write risk across multiple entities.
+ * - MonthView day-detail is read-only.
+ * - createCalendarEventAdmin creates single service events only; recurring creation is not part of that helper.
+ */
 
 ### Single Active Inspection Guarantee
 - A Lead must never have more than one active inspection appointment.
