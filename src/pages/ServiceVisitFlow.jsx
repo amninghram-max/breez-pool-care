@@ -140,6 +140,7 @@ export default function ServiceVisitFlow() {
          {step === 'test'           && <StepTest               {...stepProps} />}
          {step === 'analyze'        && <StepAnalyze            {...stepProps} />}
          {step === 'dose'           && <StepDoseConfirm        {...stepProps} />}
+         {step === 'trichlor'       && <StepTrichlor           {...stepProps} />}
          {step === 'wait'           && <StepWaitTimer          {...stepProps} />}
          {step === 'retest'         && <StepRetest             {...stepProps} />}
          {step === 'photos_after'   && <StepPhotosAfterService {...stepProps} />}
