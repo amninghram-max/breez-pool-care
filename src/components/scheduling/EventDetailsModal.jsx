@@ -178,10 +178,16 @@ export default function EventDetailsModal({ event, onClose }) {
           <div>
             <Label>Assigned Technician</Label>
             {isEditing ? (
-              <Input
+              <select
                 value={formData.assignedTechnician}
                 onChange={(e) => setFormData({...formData, assignedTechnician: e.target.value})}
-              />
+                className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              >
+                <option value="">Unassigned</option>
+                {activeTechnicians.map(tech => (
+                  <option key={tech.name} value={tech.name}>{tech.name}</option>
+                ))}
+              </select>
             ) : (
               <div className="flex items-center gap-2 mt-1">
                 <User className="w-4 h-4 text-gray-400" />
