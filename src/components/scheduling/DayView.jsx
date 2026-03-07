@@ -45,8 +45,10 @@ export default function DayView({ date, technicianFilter, userRole }) {
   const [showCancelled, setShowCancelled] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [dragError, setDragError] = useState(null);
+  const [showDateTargets, setShowDateTargets] = useState(false);
   const queryClient = useQueryClient();
   const dateStr = date.toISOString().split('T')[0];
+  const nearbyDates = React.useMemo(() => getNearbyDates(dateStr), [dateStr]);
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ['calendarEvents', dateStr, technicianFilter],
