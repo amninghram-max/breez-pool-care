@@ -368,6 +368,90 @@ export default function EventDetailsModal({ event, onClose }) {
             </Card>
           )}
 
+          {/* Inline Inspection Reschedule Panel */}
+          {showReschedulePanel && event.eventType === 'inspection' && (
+            <div className="pt-4 border-t space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-amber-800">Reschedule Inspection</p>
+                {!rescheduleMutation.isPending && !rescheduleSuccess && (
+                  <button onClick={() => { setShowReschedulePanel(false); rescheduleMutation.reset(); }} className="text-xs text-gray-400 hover:text-gray-600">✕ Cancel</button>
+                )}
+              </div>
+
+              {/* Current values */}
+              <div className="bg-amber-50 border border-amber-200 rounded-md px-3 py-2 text-xs text-amber-800 space-y-0.5">
+                <p><span className="font-medium">Current date:</span> {event.scheduledDate || '—'}</p>
+                <p><span className="font-medium">Current window:</span> {event.timeWindow || '—'}</p>
+              </div>
+
+              {rescheduleSuccess ? (
+                <Card className="border-green-200 bg-green-50">
+                  <CardContent className="pt-3 pb-3">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />
+                      <p className="text-sm font-semibold text-green-900">Inspection rescheduled successfully</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  {rescheduleMutation.isError && (
+                    <Card className="border-red-200 bg-red-50">
+                      <CardContent className="pt-3 pb-3">
+                        <div className="flex items-start gap-2">
+                          <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                          <p className="text-sm text-red-800">{rescheduleMutation.error?.message || 'Reschedule failed'}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  <div>
+                    <Label className="text-xs">New Date</Label>
+                    <Input
+                      type="date"
+                      value={rescheduleForm.scheduledDate}
+                      onChange={(e) => setRescheduleForm(f => ({ ...f, scheduledDate: e.target.value }))}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-xs">New Time Slot</Label>
+                    <select
+                      value={rescheduleForm.startTime}
+                      onChange={(e) => setRescheduleForm(f => ({ ...f, startTime: e.target.value }))}
+                      className="w-full border rounded-md px-3 py-2 text-sm mt-1 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                    >
+                      <option value="09:00">Morning (8:00 AM – 11:00 AM)</option>
+                      <option value="12:00">Midday (11:00 AM – 2:00 PM)</option>
+                      <option value="14:00">Afternoon (2:00 PM – 5:00 PM)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs">Reason (optional)</Label>
+                    <Textarea
+                      value={rescheduleForm.reason}
+                      onChange={(e) => setRescheduleForm(f => ({ ...f, reason: e.target.value }))}
+                      placeholder="e.g. Customer request, schedule conflict..."
+                      rows={2}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <Button
+                    onClick={() => rescheduleMutation.mutate()}
+                    disabled={rescheduleMutation.isPending || !rescheduleForm.scheduledDate}
+                    className="w-full bg-amber-600 hover:bg-amber-700"
+                  >
+                    {rescheduleMutation.isPending ? 'Rescheduling...' : 'Confirm Reschedule'}
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
+
           {/* Actions */}
           {isEditing ? (
             <div className="flex gap-2 pt-4 border-t">
@@ -405,6 +489,15 @@ export default function EventDetailsModal({ event, onClose }) {
                   className="bg-teal-600 hover:bg-teal-700"
                 >
                   {reopenMutation.isPending ? 'Reopening...' : 'Reopen Visit'}
+                </Button>
+              )}
+              {event.eventType === 'inspection' && !showReschedulePanel && (
+                <Button
+                  variant="outline"
+                  onClick={() => { setShowReschedulePanel(true); setRescheduleForm({ scheduledDate: '', startTime: '09:00', reason: '' }); rescheduleMutation.reset(); }}
+                  className="border-amber-300 text-amber-700 hover:bg-amber-50"
+                >
+                  Reschedule Inspection
                 </Button>
               )}
               <Button variant="outline" onClick={onClose} className="flex-1">
