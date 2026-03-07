@@ -113,8 +113,10 @@ export default function StepPhotosAfterService({ visitData, advance, goTo }) {
   };
 
   const handleSkipRetest = () => {
-    console.log('[StepPhotosAfterService] skip retest override applied, clearing retestRequired');
+    console.log('[StepPhotosAfterService] skip retest confirmed — retestRequired cleared');
+    console.log('[StepPhotosAfterService] skip retest routing → checklist (service tasks continue normally)');
     advance({ photosAfter, retestRequired: false });
+    goTo('checklist');
   };
 
   return (
