@@ -371,9 +371,17 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
       const actions = dosePlan?.actions || [];
       const enrichedActions = actions.map((a, i) => {
         const applied = appliedActions.find(ap => ap.index === i);
-        return applied
+        const applyBase = applied
           ? { ...a, applied: true, appliedAmount: applied.appliedAmount, appliedAt: applied.appliedAt }
           : { ...a, applied: false };
+
+        // Attach 12% liquid chlorine profile metadata to LIQUID_CHLORINE actions only
+        if (a.chemicalType === 'LIQUID_CHLORINE' && liquidChlorineProfile) {
+          applyBase.productProfileId = liquidChlorineProfile.id;
+          applyBase.productProfileVersion = liquidChlorineProfile.version;
+        }
+
+        return applyBase;
       });
 
       const payload = {
