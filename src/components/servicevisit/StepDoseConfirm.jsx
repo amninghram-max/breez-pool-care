@@ -610,17 +610,11 @@ export default function StepDoseConfirm({ visitData, user, settings, advance, go
                     );
                   })()}
                   {isPartial && (() => {
-                    const pCanonUnit = normalizeCanonicalUnit(action.primaryUnit);
-                    const pDisplayUnit = UnitConversion.getDefaultDisplayUnit(action.dosePrimary, pCanonUnit, action.chemicalType);
                     const pUnitLabels = { 'gal': 'gal', 'fl_oz': 'fl oz', 'cup': 'cup', 'lb': 'lbs', 'oz_wt': 'oz', 'tabs': 'tabs' };
-                    const pIsLiquid = UnitConversion.isLiquidUnit(pCanonUnit);
-                    const pConverter = pIsLiquid ? UnitConversion.convertVolume : UnitConversion.convertWeight;
-                    const pApplied = pCanonUnit === 'tabs' ? appliedEntry.appliedAmount : (pConverter(appliedEntry.appliedAmount, pCanonUnit, pDisplayUnit) ?? appliedEntry.appliedAmount);
-                    const pPlanned = pCanonUnit === 'tabs' ? action.dosePrimary : (pConverter(action.dosePrimary, pCanonUnit, pDisplayUnit) ?? action.dosePrimary);
                     return (
                       <p className="text-xs text-orange-700 mt-0.5 flex items-center gap-1">
                         <AlertTriangle className="w-3 h-3" />
-                        Partial apply — {formatAmount(pApplied)} of {formatAmount(pPlanned)} {pUnitLabels[pDisplayUnit] || pDisplayUnit}
+                        Partial apply — {formatAmount(_pAppliedDisplay)} of {formatAmount(_pPlannedDisplay)} {pUnitLabels[_pDisplayUnit] || _pDisplayUnit}
                         {isCritical && ' · Critical: complete before leaving or trigger revisit'}
                       </p>
                     );
